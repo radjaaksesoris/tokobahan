@@ -81,6 +81,9 @@ export async function registerPushSubscription() {
 }
 
 export async function notifyLowStockPush() {
-  const { error } = await supabase.functions.invoke('notify-low-stock')
+  const { data, error } = await supabase.functions.invoke('notify-low-stock', {
+    body: {},
+  })
   if (error) throw error
+  return data as { sent?: number }
 }

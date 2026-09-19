@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import {
   isStockSoundEnabled,
+  notifyLowStockPush,
   playLowStockSound,
   registerPushSubscription,
   setStockSoundEnabled,
@@ -77,7 +78,12 @@ export default function Settings() {
     if (permission === 'granted') {
       try {
         await registerPushSubscription()
-        toast.success('Push notification stok diaktifkan')
+        const result = await notifyLowStockPush()
+        toast.success(
+          result.sent
+            ? `Push notification aktif (${result.sent} notifikasi terkirim)`
+            : 'Push notification stok diaktifkan',
+        )
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Gagal mengaktifkan push notification')
       }
