@@ -154,7 +154,7 @@ DECLARE
   current_stock NUMERIC;
   requested_quantity NUMERIC;
 BEGIN
-  FOR item IN SELECT * FROM jsonb_array_elements(p_items)
+  FOR item IN SELECT item_json FROM jsonb_array_elements(p_items) AS elements(item_json)
   LOOP
     requested_quantity := (item->>'quantity')::NUMERIC;
     SELECT stock INTO current_stock
@@ -192,7 +192,7 @@ BEGIN
     (item->>'line_profit')::NUMERIC
   FROM jsonb_array_elements(p_items) AS item;
 
-  FOR item IN SELECT * FROM jsonb_array_elements(p_items)
+  FOR item IN SELECT item_json FROM jsonb_array_elements(p_items) AS elements(item_json)
   LOOP
     UPDATE public.products
     SET stock = stock - (item->>'quantity')::NUMERIC
