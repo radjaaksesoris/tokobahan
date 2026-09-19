@@ -335,7 +335,7 @@ export default function Products() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium">Harga Jual per Satuan</label>
+                  <label className="text-sm font-medium">Harga Jual per Unit</label>
                   <Button variant="outline" size="sm" onClick={addPriceRow}>
                     <Plus className="h-3 w-3" /> Tambah
                   </Button>
@@ -356,13 +356,6 @@ export default function Products() {
                         placeholder="Harga"
                         value={pr.price || ''}
                         onChange={(e) => updatePrice(idx, 'price', Number(e.target.value))}
-                      />
-                      <Input
-                        type="number"
-                        className="w-20"
-                        title="Konversi ke base unit"
-                        value={pr.conversion}
-                        onChange={(e) => updatePrice(idx, 'conversion', Number(e.target.value))}
                       />
                       {prices.length > 1 && (
                         <button onClick={() => removePrice(idx)} className="text-red-400">

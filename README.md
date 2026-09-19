@@ -55,6 +55,8 @@ npm install
 
 1. Buka [supabase.com](https://supabase.com) → New Project
 2. Masuk ke **SQL Editor** → paste seluruh isi file `supabase/schema.sql` → Run
+   - Stok, harga modal, dan harga jual menggunakan satuan yang dipilih secara langsung;
+     sistem tidak mengonversi nilai ke pcs/base unit.
    - Jika database sudah pernah dibuat, jalankan file
      `supabase/migrations/20260919210000_restore_checkout_sale.sql` untuk mengaktifkan RPC
      checkout dan menyegarkan schema cache PostgREST.

@@ -30,10 +30,10 @@ export interface Product {
   sku: string | null
   barcode: string | null
   category_id: string | null
-  cost_price: number // per base unit (pcs/meter)
+  cost_price: number // per configured cost unit
   cost_unit: UnitType
   cost_conversion: number
-  stock: number // in base units
+  stock: number // in configured stock unit
   stock_unit: UnitType
   stock_conversion: number
   min_stock: number
