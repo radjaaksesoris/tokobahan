@@ -39,8 +39,9 @@ export default function App() {
         <div className="w-full max-w-lg rounded-xl border border-amber-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-xl font-bold text-slate-900">Konfigurasi aplikasi belum lengkap</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Tambahkan secrets <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code>
-            di GitHub Repository Settings, lalu jalankan deploy ulang.
+            Periksa secrets <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code>
+            di GitHub Repository Settings, lalu jalankan deploy ulang. URL harus berbentuk
+            <code>https://project-id.supabase.co</code>.
           </p>
         </div>
       </div>
