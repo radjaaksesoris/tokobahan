@@ -94,7 +94,12 @@ export default function POS() {
       return
     }
 
-    const invoiceNo = `INV-${Date.now().toString(36).toUpperCase()}`
+    const { data: invoiceNo, error: invoiceError } = await supabase.rpc('next_invoice_number')
+    if (invoiceError || !invoiceNo) {
+      toast.error(invoiceError?.message || 'Gagal membuat nomor transaksi')
+      setCheckoutLoading(false)
+      return
+    }
 
     const { data: sale, error: saleError } = await supabase
       .from('sales')

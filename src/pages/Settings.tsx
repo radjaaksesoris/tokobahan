@@ -50,6 +50,15 @@ export default function Settings() {
         return
       }
     }
+    const { error: counterError } = await supabase
+      .from('invoice_sequences')
+      .update({ next_number: 1 })
+      .eq('id', 1)
+    if (counterError) {
+      toast.error(`Reset nomor transaksi gagal: ${counterError.message}`)
+      setResetting(false)
+      return
+    }
 
     toast.success('Database operasional berhasil dikosongkan')
     setPassword('')

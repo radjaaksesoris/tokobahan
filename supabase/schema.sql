@@ -66,6 +66,37 @@ CREATE TABLE IF NOT EXISTS public.sales (
 
 CREATE INDEX IF NOT EXISTS idx_sales_created ON public.sales(created_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.invoice_sequences (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  next_number INTEGER NOT NULL DEFAULT 1
+);
+
+INSERT INTO public.invoice_sequences (id, next_number)
+VALUES (1, 1)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.next_invoice_number()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_number INTEGER;
+BEGIN
+  UPDATE public.invoice_sequences
+  SET next_number = next_number + 1
+  WHERE id = 1
+  RETURNING next_number - 1 INTO current_number;
+
+  RETURN 'RJA-' || LPAD(current_number::TEXT, 4, '0');
+END;
+$$;
+
+ALTER TABLE public.invoice_sequences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Invoice sequence is usable by authenticated users"
+  ON public.invoice_sequences FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 -- Sale items
 CREATE TABLE IF NOT EXISTS public.sale_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

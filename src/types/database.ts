@@ -160,9 +160,28 @@ export interface Database {
         Update: Record<string, never>
         Relationships: []
       }
+      invoice_sequences: {
+        Row: {
+          id: number
+          next_number: number
+        }
+        Insert: {
+          id?: number
+          next_number?: number
+        }
+        Update: {
+          next_number?: number
+        }
+        Relationships: []
+      }
     }
     Views: {}
-    Functions: {}
+    Functions: {
+      next_invoice_number: {
+        Args: Record<string, never>
+        Returns: string
+      }
+    }
     Enums: {}
     CompositeTypes: {}
   }
