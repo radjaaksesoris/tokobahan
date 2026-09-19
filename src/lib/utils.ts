@@ -17,3 +17,17 @@ export function formatCurrency(amount: number): string {
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat('id-ID').format(num)
 }
+
+export function formatCurrencyInput(amount: number): string {
+  return amount > 0 ? formatCurrency(amount) : ''
+}
+
+export function parseCurrencyInput(value: string): number {
+  return Number(value.replace(/\D/g, '')) || 0
+}
+
+export function toTitleCase(value: string): string {
+  return value.replace(/\S+/g, (word) =>
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  )
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { UNIT_LABELS, UNIT_FACTORS } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -258,7 +258,7 @@ export default function Products() {
             <CardContent className="flex-1 overflow-y-auto space-y-4 pt-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jarum Jahit No.14" />
+                <Input value={name} onChange={(e) => setName(toTitleCase(e.target.value))} placeholder="Jarum Jahit No.14" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -310,9 +310,9 @@ export default function Products() {
                   <label className="mb-1 block text-sm font-medium">Harga Modal</label>
                   <div className="flex gap-2">
                     <Input
-                      type="number"
-                      value={costPrice}
-                      onChange={(e) => setCostPrice(Number(e.target.value))}
+                      inputMode="numeric"
+                      value={formatCurrencyInput(costPrice)}
+                      onChange={(e) => setCostPrice(parseCurrencyInput(e.target.value))}
                     />
                     <Select
                       className="w-32"
@@ -351,11 +351,11 @@ export default function Products() {
                         aria-label={`Satuan harga jual ${idx + 1}`}
                       />
                       <Input
-                        type="number"
                         className="flex-1"
                         placeholder="Harga"
-                        value={pr.price || ''}
-                        onChange={(e) => updatePrice(idx, 'price', Number(e.target.value))}
+                        inputMode="numeric"
+                        value={formatCurrencyInput(pr.price)}
+                        onChange={(e) => updatePrice(idx, 'price', parseCurrencyInput(e.target.value))}
                       />
                       {prices.length > 1 && (
                         <button onClick={() => removePrice(idx)} className="text-red-400">
@@ -381,7 +381,7 @@ export default function Products() {
                               </p>
                               <Input
                                 value={deleteName}
-                                onChange={(e) => setDeleteName(e.target.value)}
+                                onChange={(e) => setDeleteName(toTitleCase(e.target.value))}
                                 placeholder="Nama produk"
                                 autoFocus
                               />
