@@ -22,6 +22,7 @@ import {
 } from 'recharts'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
+import { toast } from 'sonner'
 
 interface Stats {
   todaySales: number
@@ -31,6 +32,15 @@ interface Stats {
   lowStock: number
   weekData: { date: string; sales: number; profit: number }[]
 }
+
+interface LowStockProduct {
+  id: string
+  name: string
+  stock: number
+  min_stock: number
+}
+
+const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({
@@ -43,6 +53,10 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
+  )
 
   useEffect(() => {
     loadStats()
@@ -74,7 +88,7 @@ export default function Dashboard() {
         .select('total_amount, total_profit')
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd),
-      supabase.from('products').select('id, stock, min_stock').eq('is_active', true),
+      supabase.from('products').select('id, name, stock, min_stock').eq('is_active', true),
       supabase.rpc('sales_daily_summary', {
         p_start: startOfDay(subDays(new Date(), 6)).toISOString(),
         p_end: endOfDay(new Date()).toISOString(),
@@ -91,7 +105,10 @@ export default function Dashboard() {
     const todayProfit = salesRes.data?.reduce((s, r) => s + Number(r.total_profit), 0) ?? 0
     const todayOrders = salesRes.data?.length ?? 0
     const totalProducts = productsRes.data?.length ?? 0
-    const lowStock = productsRes.data?.filter((p) => p.stock <= p.min_stock).length ?? 0
+    const lowStockRows = (productsRes.data || []).filter((p) => p.stock <= p.min_stock) as LowStockProduct[]
+    const lowStock = lowStockRows.length
+    setLowStockProducts(lowStockRows)
+    notifyLowStock(lowStockRows)
 
     // Aggregate week
     const days: Record<string, { sales: number; profit: number }> = {}
@@ -115,6 +132,62 @@ export default function Dashboard() {
 
     setStats({ todaySales, todayProfit, todayOrders, totalProducts, lowStock, weekData })
     setLoading(false)
+  }
+
+  function notifyLowStock(products: LowStockProduct[]) {
+    if (products.length === 0) {
+      window.localStorage.removeItem(LOW_STOCK_NOTIFIED_KEY)
+      return
+    }
+
+    let storedIds: string[] = []
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(LOW_STOCK_NOTIFIED_KEY) || '[]')
+      if (Array.isArray(parsed)) storedIds = parsed.filter((id): id is string => typeof id === 'string')
+    } catch {
+      storedIds = []
+    }
+    const notifiedIds = new Set(storedIds)
+    const newProducts = products.filter((product) => !notifiedIds.has(product.id))
+    newProducts.forEach((product) => {
+      toast.warning(`Stok menipis: ${product.name}`, {
+        description: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+      })
+      notifiedIds.add(product.id)
+    })
+    window.localStorage.setItem(LOW_STOCK_NOTIFIED_KEY, JSON.stringify([...notifiedIds]))
+
+    if (notificationPermission === 'granted') {
+      newProducts.forEach((product) => {
+        new Notification(`Stok menipis: ${product.name}`, {
+          body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+          icon: `${import.meta.env.BASE_URL}icon-192.png`,
+          tag: `low-stock-${product.id}`,
+        })
+      })
+    }
+  }
+
+  async function enableStockNotifications() {
+    if (!('Notification' in window)) {
+      setNotificationPermission('unsupported')
+      toast.error('Browser ini tidak mendukung notifikasi')
+      return
+    }
+    const permission = await Notification.requestPermission()
+    setNotificationPermission(permission)
+    if (permission === 'granted') {
+      toast.success('Notifikasi stok diaktifkan')
+      lowStockProducts.forEach((product) => {
+        new Notification(`Stok menipis: ${product.name}`, {
+          body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+          icon: `${import.meta.env.BASE_URL}icon-192.png`,
+          tag: `low-stock-${product.id}`,
+        })
+      })
+    } else {
+      toast.error('Izin notifikasi stok ditolak')
+    }
   }
 
   const cards = [
@@ -181,9 +254,19 @@ export default function Dashboard() {
       {stats.lowStock > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <AlertTriangle className="h-5 w-5 shrink-0" />
-          <span>
-            <strong>{stats.lowStock}</strong> produk stok menipis. Segera restock!
-          </span>
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <span>
+              <strong>{stats.lowStock}</strong> produk stok menipis. Segera restock!
+            </span>
+            {notificationPermission === 'default' && (
+              <button
+                className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                onClick={enableStockNotifications}
+              >
+                Aktifkan notifikasi
+              </button>
+            )}
+          </div>
         </div>
       )}
 
