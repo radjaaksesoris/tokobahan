@@ -22,26 +22,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single()
+        if (profileError) {
+          console.error('Failed to load user profile:', profileError)
+        }
         set({ user: session.user, profile: profile as Profile | null, loading: false })
       } else {
         set({ user: null, profile: null, loading: false })
       }
-    } catch {
+    } catch (error) {
+      console.error('Failed to initialize authentication:', error)
       set({ loading: false })
     }
 
     supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single()
+        if (profileError) {
+          console.error('Failed to load user profile after auth change:', profileError)
+        }
         set({ user: session.user, profile: profile as Profile | null })
       } else {
         set({ user: null, profile: null })

@@ -166,7 +166,7 @@ export default function Products() {
 
   async function handleDelete() {
     if (!deleteTarget) return
-    if (deleteName.trim() !== deleteTarget.name) {
+    if (deleteName.trim().toLowerCase() !== deleteTarget.name.trim().toLowerCase()) {
       toast.error('Nama produk tidak cocok')
       return
     }
