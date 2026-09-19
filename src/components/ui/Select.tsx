@@ -26,7 +26,12 @@ export function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const selected = options.find((option) => option.value === value)
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  )
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -49,10 +54,23 @@ export function Select({
         className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 transition-colors hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') setOpen(false)
+          if (event.key === 'Escape' && open) {
+            event.preventDefault()
+            setOpen(false)
+          }
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setOpen((current) => !current)
+          }
           if (event.key === 'ArrowDown') {
             event.preventDefault()
             setOpen(true)
+            optionRefs.current[selectedIndex]?.focus()
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            setOpen(true)
+            optionRefs.current[selectedIndex]?.focus()
           }
         }}
       >
@@ -68,10 +86,14 @@ export function Select({
             menuClassName,
           )}
         >
-          {options.map((option) => (
+          {options.map((option, index) => (
             <button
               key={option.value}
+              ref={(element) => {
+                optionRefs.current[index] = element
+              }}
               type="button"
+              tabIndex={-1}
               role="option"
               aria-selected={option.value === value}
               className={cn(
@@ -81,6 +103,28 @@ export function Select({
               onClick={() => {
                 onChange(option.value)
                 setOpen(false)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  const direction = event.key === 'ArrowDown' ? 1 : -1
+                  const nextIndex = Math.min(
+                    options.length - 1,
+                    Math.max(0, index + direction),
+                  )
+                  optionRefs.current[nextIndex]?.focus()
+                }
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onChange(option.value)
+                  setOpen(false)
+                  rootRef.current?.querySelector('button')?.focus()
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  setOpen(false)
+                  rootRef.current?.querySelector('button')?.focus()
+                }
               }}
             >
               <span>{option.label}</span>
