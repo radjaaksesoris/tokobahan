@@ -17,6 +17,8 @@ export default function Products() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
+  const [deleteName, setDeleteName] = useState('')
   const [saving, setSaving] = useState(false)
 
   // form
@@ -147,15 +149,26 @@ export default function Products() {
     setSaving(false)
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Nonaktifkan produk ini? Riwayat transaksi akan tetap tersimpan.')) return
+  function requestDelete(product: Product) {
+    setDeleteTarget(product)
+    setDeleteName('')
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    if (deleteName.trim() !== deleteTarget.name) {
+      toast.error('Nama produk tidak cocok')
+      return
+    }
     const { error } = await supabase
       .from('products')
       .update({ is_active: false })
-      .eq('id', id)
+      .eq('id', deleteTarget.id)
     if (error) toast.error(error.message)
     else {
       toast.success('Produk dinonaktifkan')
+      setDeleteTarget(null)
+      setDeleteName('')
       load()
     }
   }
@@ -215,7 +228,7 @@ export default function Products() {
                   <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => requestDelete(p)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
@@ -334,6 +347,50 @@ export default function Products() {
                         <button onClick={() => removePrice(idx)} className="text-red-400">
                           <Trash2 className="h-4 w-4" />
                         </button>
+                      )}
+
+                      {deleteTarget && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                          <Card className="w-full max-w-md">
+                            <CardHeader className="flex-row items-center justify-between border-b">
+                              <CardTitle>Konfirmasi nonaktifkan produk</CardTitle>
+                              <button onClick={() => setDeleteTarget(null)}>
+                                <X className="h-5 w-5" />
+                              </button>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-4">
+                              <p className="text-sm text-slate-600">
+                                Produk akan disembunyikan dari kasir. Riwayat transaksi tetap tersimpan.
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                Ketik <strong>{deleteTarget.name}</strong> untuk melanjutkan.
+                              </p>
+                              <Input
+                                value={deleteName}
+                                onChange={(e) => setDeleteName(e.target.value)}
+                                placeholder="Nama produk"
+                                autoFocus
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => setDeleteTarget(null)}
+                                >
+                                  Batal
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  className="flex-1"
+                                  disabled={deleteName.trim() !== deleteTarget.name}
+                                  onClick={handleDelete}
+                                >
+                                  Nonaktifkan
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
                       )}
                     </div>
                   ))}
