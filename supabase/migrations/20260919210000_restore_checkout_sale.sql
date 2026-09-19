@@ -47,16 +47,16 @@ BEGIN
   )
   SELECT
     new_sale_id,
-    (item->>'product_id')::UUID,
-    item->>'product_name',
-    item->>'unit',
-    (item->>'quantity')::NUMERIC,
-    (item->>'conversion')::NUMERIC,
-    (item->>'unit_price')::NUMERIC,
-    (item->>'line_total')::NUMERIC,
-    (item->>'line_cost')::NUMERIC,
-    (item->>'line_profit')::NUMERIC
-  FROM jsonb_array_elements(p_items) AS item;
+    (item_element->>'product_id')::UUID,
+    item_element->>'product_name',
+    item_element->>'unit',
+    (item_element->>'quantity')::NUMERIC,
+    (item_element->>'conversion')::NUMERIC,
+    (item_element->>'unit_price')::NUMERIC,
+    (item_element->>'line_total')::NUMERIC,
+    (item_element->>'line_cost')::NUMERIC,
+    (item_element->>'line_profit')::NUMERIC
+  FROM jsonb_array_elements(p_items) AS elements(item_element);
 
   FOR item IN SELECT item_json FROM jsonb_array_elements(p_items) AS elements(item_json)
   LOOP
