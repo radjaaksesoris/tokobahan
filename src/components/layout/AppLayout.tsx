@@ -7,7 +7,6 @@ import {
   LogOut,
   Menu,
   X,
-  Store,
   Settings,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -53,10 +52,10 @@ export function AppLayout() {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b border-teal-800 px-4">
-          <Store className="h-7 w-7 text-amber-400" />
+          <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-lg" />
           <div>
-            <h1 className="text-lg font-bold leading-tight">KonveksiPOS</h1>
-            <p className="text-xs text-teal-300">Grosir Alat Konveksi</p>
+            <h1 className="text-lg font-bold leading-tight">RADJA AKSESORIS</h1>
+            <p className="text-xs text-teal-300">Aksesoris Konveksi</p>
           </div>
           <button className="ml-auto lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Store, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -32,10 +32,10 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center pb-2">
           <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100">
-            <Store className="h-8 w-8 text-teal-700" />
+            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-12 w-12 rounded-xl" />
           </div>
-          <CardTitle className="text-2xl">KonveksiPOS</CardTitle>
-          <p className="text-sm text-slate-500">Toko Grosir Alat Konveksi</p>
+          <CardTitle className="text-2xl">RADJA AKSESORIS</CardTitle>
+          <p className="text-sm text-slate-500">Aksesoris Konveksi</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
