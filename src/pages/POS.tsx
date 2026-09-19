@@ -87,6 +87,15 @@ export default function POS() {
     if (items.length === 0) return
     setCheckoutLoading(true)
 
+    const insufficientStock = items.find(
+      (item) => item.quantity * item.conversion > item.product.stock,
+    )
+    if (insufficientStock) {
+      toast.error(`Stok ${insufficientStock.product.name} tidak mencukupi`)
+      setCheckoutLoading(false)
+      return
+    }
+
     const invoiceNo = `INV-${Date.now().toString(36).toUpperCase()}`
 
     const { data: sale, error: saleError } = await supabase

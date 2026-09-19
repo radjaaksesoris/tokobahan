@@ -34,6 +34,8 @@ export interface Product {
   cost_unit: UnitType
   cost_conversion: number
   stock: number // in base units
+  stock_unit: UnitType
+  stock_conversion: number
   min_stock: number
   unit_base: 'pcs' | 'meter'
   prices: ProductPrice[]

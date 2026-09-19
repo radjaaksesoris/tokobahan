@@ -12,6 +12,10 @@ import type { Json } from '@/types/database'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
+function getUnitConversion(unit: UnitType, prices: ProductPrice[]) {
+  return prices.find((price) => price.unit === unit)?.conversion || UNIT_FACTORS[unit] || 1
+}
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,6 +29,7 @@ export default function Products() {
   const [costPrice, setCostPrice] = useState(0)
   const [costUnit, setCostUnit] = useState<UnitType>('satuan')
   const [stock, setStock] = useState(0)
+  const [stockUnit, setStockUnit] = useState<UnitType>('satuan')
   const [minStock, setMinStock] = useState(10)
   const [unitBase, setUnitBase] = useState<'pcs' | 'meter'>('pcs')
   const [prices, setPrices] = useState<ProductPrice[]>([
@@ -51,6 +56,7 @@ export default function Products() {
     setCostPrice(0)
     setCostUnit('satuan')
     setStock(0)
+    setStockUnit('satuan')
     setMinStock(10)
     setUnitBase('pcs')
     setPrices([{ unit: 'satuan', price: 0, conversion: 1 }])
@@ -63,10 +69,15 @@ export default function Products() {
     setSku(p.sku || '')
     setCostPrice(p.cost_price)
     setCostUnit((p.cost_unit || 'satuan') as UnitType)
-    setStock(p.stock)
+    const productPrices: ProductPrice[] = p.prices?.length
+      ? p.prices
+      : [{ unit: 'satuan', price: 0, conversion: 1 }]
+    const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
+    setStock(p.stock / (p.stock_conversion || getUnitConversion(savedStockUnit, productPrices)))
+    setStockUnit(savedStockUnit)
     setMinStock(p.min_stock)
     setUnitBase(p.unit_base as 'pcs' | 'meter')
-    setPrices(p.prices?.length ? p.prices : [{ unit: 'satuan', price: 0, conversion: 1 }])
+    setPrices(productPrices)
     setModal(true)
   }
 
@@ -107,7 +118,9 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: UNIT_FACTORS[costUnit] || 1,
-      stock,
+      stock: stock * getUnitConversion(stockUnit, prices),
+      stock_unit: stockUnit,
+      stock_conversion: getUnitConversion(stockUnit, prices),
       min_stock: minStock,
       unit_base: unitBase,
       prices: prices.map((price) => ({ ...price })) as Json,
@@ -182,7 +195,7 @@ export default function Products() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium truncate">{p.name}</p>
                   <p className="text-xs text-slate-500">
-                    Stok: {p.stock} · Modal: {formatCurrency(p.cost_price)} / {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}
+                    Stok: {Math.floor(p.stock / (p.stock_conversion || 1))} {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]} · Modal: {formatCurrency(p.cost_price)} / {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {p.prices?.map((pr) => (
@@ -230,12 +243,23 @@ export default function Products() {
                   <Input value={sku} onChange={(e) => setSku(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Stok (base)</label>
-                  <Input
-                    type="number"
-                    value={stock}
-                    onChange={(e) => setStock(Number(e.target.value))}
-                  />
+                  <label className="mb-1 block text-sm font-medium">Stok</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={stock}
+                      onChange={(e) => setStock(Number(e.target.value))}
+                    />
+                    <select
+                      className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-sm"
+                      value={stockUnit}
+                      onChange={(e) => setStockUnit(e.target.value as UnitType)}
+                    >
+                      {ALL_UNITS.map((u) => (
+                        <option key={u} value={u}>{UNIT_LABELS[u]}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

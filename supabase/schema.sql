@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS public.products (
   cost_price NUMERIC(15,2) NOT NULL DEFAULT 0,
   cost_unit TEXT NOT NULL DEFAULT 'satuan',
   cost_conversion NUMERIC(15,3) NOT NULL DEFAULT 1,
+  stock_unit TEXT NOT NULL DEFAULT 'satuan',
+  stock_conversion NUMERIC(15,3) NOT NULL DEFAULT 1,
   stock NUMERIC(15,3) NOT NULL DEFAULT 0,
   min_stock NUMERIC(15,3) NOT NULL DEFAULT 10,
   unit_base TEXT NOT NULL DEFAULT 'pcs',
@@ -42,6 +44,8 @@ CREATE TABLE IF NOT EXISTS public.products (
 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS cost_unit TEXT NOT NULL DEFAULT 'satuan';
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS cost_conversion NUMERIC(15,3) NOT NULL DEFAULT 1;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_unit TEXT NOT NULL DEFAULT 'satuan';
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_conversion NUMERIC(15,3) NOT NULL DEFAULT 1;
 
 CREATE INDEX IF NOT EXISTS idx_products_name ON public.products USING gin (to_tsvector('indonesian', name));
 CREATE INDEX IF NOT EXISTS idx_products_sku ON public.products(sku);
