@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard'
 import POS from '@/pages/POS'
 import Products from '@/pages/Products'
 import Reports from '@/pages/Reports'
+import SettingsPage from '@/pages/Settings'
 import { Loader2 } from 'lucide-react'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="pos" element={<POS />} />
           <Route path="products" element={<Products />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
