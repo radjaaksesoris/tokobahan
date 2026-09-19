@@ -10,16 +10,15 @@ const vapidSubject = Deno.env.get('VAPID_SUBJECT')
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
 
-if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
-  throw new Error('VAPID secrets are not configured')
-}
-
-webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
-
 Deno.serve(async (request) => {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 })
   }
+
+  if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
+    return Response.json({ error: 'VAPID secrets are not configured' }, { status: 500 })
+  }
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
 
   const authHeader = request.headers.get('Authorization')
   if (!authHeader) return new Response('Unauthorized', { status: 401 })

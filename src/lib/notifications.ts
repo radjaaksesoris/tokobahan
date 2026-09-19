@@ -85,6 +85,20 @@ export async function notifyLowStockPush() {
   const { data, error } = await supabase.functions.invoke('notify-low-stock', {
     body: {},
   })
-  if (error) throw error
+  if (error) {
+    if (error.context instanceof Response) {
+      const responseBody = await error.context.text()
+      if (responseBody) {
+        try {
+          const payload = JSON.parse(responseBody) as { error?: string; message?: string }
+          throw new Error(payload.error || payload.message || responseBody)
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message !== responseBody) throw parseError
+          throw new Error(responseBody)
+        }
+      }
+    }
+    throw error
+  }
   return data as { sent?: number }
 }
