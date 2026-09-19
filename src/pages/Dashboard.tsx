@@ -23,6 +23,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { playLowStockSound } from '@/lib/notifications'
 
 interface Stats {
   todaySales: number
@@ -153,6 +154,7 @@ export default function Dashboard() {
       toast.warning(`Stok menipis: ${product.name}`, {
         description: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
       })
+      if (newProducts.length > 0) playLowStockSound()
       notifiedIds.add(product.id)
     })
     window.localStorage.setItem(LOW_STOCK_NOTIFIED_KEY, JSON.stringify([...notifiedIds]))

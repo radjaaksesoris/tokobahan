@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { AlertTriangle, Bell, Database, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { isStockSoundEnabled, playLowStockSound, setStockSoundEnabled } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -16,6 +17,7 @@ export default function Settings() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
+  const [soundEnabled, setSoundEnabled] = useState(isStockSoundEnabled)
 
   if (!isRole('admin')) return <Navigate to="/" replace />
 
@@ -71,6 +73,16 @@ export default function Settings() {
       toast.success('Notifikasi stok diaktifkan')
     } else if (permission === 'denied') {
       toast.error('Izin notifikasi ditolak oleh browser')
+    }
+  }
+
+  function toggleStockSound() {
+    const enabled = !soundEnabled
+    setStockSoundEnabled(enabled)
+    setSoundEnabled(enabled)
+    if (enabled) {
+      playLowStockSound()
+      toast.success('Suara notifikasi stok diaktifkan')
     }
   }
 
@@ -164,6 +176,32 @@ export default function Settings() {
               Aktifkan notifikasi
             </Button>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-5 w-5 text-primary" />
+            Suara Notifikasi
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-900">
+              {soundEnabled ? 'Suara stok menipis aktif' : 'Aktifkan suara stok menipis'}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Bunyi pendek akan diputar saat produk baru terdeteksi stoknya menipis.
+            </p>
+          </div>
+          <Button
+            variant={soundEnabled ? 'secondary' : 'outline'}
+            onClick={toggleStockSound}
+          >
+            <Bell className="h-4 w-4" />
+            {soundEnabled ? 'Suara aktif' : 'Aktifkan suara'}
+          </Button>
         </CardContent>
       </Card>
     </div>
