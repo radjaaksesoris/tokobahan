@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Plus, Pencil, Trash2, Loader2, X, Package } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
+import { Select } from '@/components/ui/Select'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
+const UNIT_OPTIONS = ALL_UNITS.map((unit) => ({ value: unit, label: UNIT_LABELS[unit] }))
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([])
@@ -266,15 +268,13 @@ export default function Products() {
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
                     />
-                    <select
-                      className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-sm"
+                    <Select
+                      className="w-32"
                       value={stockUnit}
-                      onChange={(e) => setStockUnit(e.target.value as UnitType)}
-                    >
-                      {ALL_UNITS.map((u) => (
-                        <option key={u} value={u}>{UNIT_LABELS[u]}</option>
-                      ))}
-                    </select>
+                      options={UNIT_OPTIONS}
+                      onChange={(value) => setStockUnit(value as UnitType)}
+                      aria-label="Satuan stok"
+                    />
                   </div>
                 </div>
               </div>
@@ -287,15 +287,13 @@ export default function Products() {
                       value={costPrice}
                       onChange={(e) => setCostPrice(Number(e.target.value))}
                     />
-                    <select
-                      className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-sm"
+                    <Select
+                      className="w-32"
                       value={costUnit}
-                      onChange={(e) => setCostUnit(e.target.value as UnitType)}
-                    >
-                      {ALL_UNITS.map((u) => (
-                        <option key={u} value={u}>{UNIT_LABELS[u]}</option>
-                      ))}
-                    </select>
+                      options={UNIT_OPTIONS}
+                      onChange={(value) => setCostUnit(value as UnitType)}
+                      aria-label="Satuan harga modal"
+                    />
                   </div>
                 </div>
                 <div>
@@ -318,17 +316,13 @@ export default function Products() {
                 <div className="space-y-2">
                   {prices.map((pr, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <select
-                        className="h-10 rounded-lg border border-slate-300 px-2 text-sm"
+                      <Select
+                        className="w-32 shrink-0"
                         value={pr.unit}
-                        onChange={(e) => updatePrice(idx, 'unit', e.target.value)}
-                      >
-                        {ALL_UNITS.map((u) => (
-                          <option key={u} value={u}>
-                            {UNIT_LABELS[u]}
-                          </option>
-                        ))}
-                      </select>
+                        options={UNIT_OPTIONS}
+                        onChange={(value) => updatePrice(idx, 'unit', value)}
+                        aria-label={`Satuan harga jual ${idx + 1}`}
+                      />
                       <Input
                         type="number"
                         className="flex-1"
