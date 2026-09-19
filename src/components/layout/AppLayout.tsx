@@ -24,6 +24,7 @@ const navItems = [
 
 export function AppLayout() {
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const { profile, signOut, isRole } = useAuthStore()
   const navigate = useNavigate()
 
@@ -47,13 +48,15 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-teal-900 text-white transition-transform duration-200 lg:static lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-50 flex flex-col bg-teal-900 text-white transition-all duration-200 lg:static lg:translate-x-0',
+          open ? 'translate-x-0' : '-translate-x-full',
+          'w-64',
+          collapsed ? 'lg:w-20' : 'lg:w-64'
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-teal-800 px-4">
+        <div className={cn('flex h-16 items-center border-b border-teal-800', collapsed ? 'justify-center px-2' : 'gap-2 px-4')}>
           <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-lg" />
-          <div>
+          <div className={cn('min-w-0', collapsed && 'hidden')}>
             <h1 className="text-lg font-bold leading-tight">RADJA AKSESORIS</h1>
             <p className="text-xs text-teal-300">Aksesoris Konveksi</p>
           </div>
@@ -71,32 +74,38 @@ export function AppLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors',
+                  collapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-teal-700 text-white'
                     : 'text-teal-100 hover:bg-teal-800 hover:text-white'
                 )
               }
+              title={collapsed ? item.label : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0" />
-              {item.label}
+              <span className={cn(collapsed && 'hidden')}>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="border-t border-teal-800 p-4">
-          <div className="mb-3 text-sm">
+        <div className={cn('border-t border-teal-800', collapsed ? 'p-2' : 'p-4')}>
+          <div className={cn('mb-3 text-sm', collapsed && 'hidden')}>
             <p className="font-medium">{profile?.full_name || 'User'}</p>
             <p className="text-xs capitalize text-teal-300">{profile?.role}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="w-full border-teal-600 bg-transparent text-teal-100 hover:bg-teal-800 hover:text-white"
+            className={cn(
+              'border-teal-600 bg-transparent text-teal-100 hover:bg-teal-800 hover:text-white',
+              collapsed ? 'w-full px-0' : 'w-full'
+            )}
             onClick={handleLogout}
+            title={collapsed ? 'Keluar' : undefined}
           >
             <LogOut className="h-4 w-4" />
-            Keluar
+            <span className={cn(collapsed && 'hidden')}>Keluar</span>
           </Button>
         </div>
       </aside>
@@ -105,8 +114,13 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:px-6">
           <button
-            className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"
-            onClick={() => setOpen(true)}
+            className="rounded-lg p-2 hover:bg-slate-100"
+            onClick={() => {
+              setOpen((current) => !current)
+              setCollapsed((current) => !current)
+            }}
+            aria-label={collapsed ? 'Tampilkan navbar' : 'Sembunyikan navbar'}
+            title={collapsed ? 'Tampilkan navbar' : 'Sembunyikan navbar'}
           >
             <Menu className="h-5 w-5" />
           </button>
