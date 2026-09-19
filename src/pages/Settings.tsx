@@ -92,6 +92,20 @@ export default function Settings() {
     }
   }
 
+  async function syncNotifications() {
+    try {
+      await registerPushSubscription()
+      const result = await notifyLowStockPush()
+      toast.success(
+        result.sent
+          ? `Notifikasi tersinkron (${result.sent} notifikasi terkirim)`
+          : 'Notifikasi tersinkron. Belum ada stok menipis untuk dikirim.',
+      )
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal menyinkronkan push notification')
+    }
+  }
+
   function toggleStockSound() {
     const enabled = !soundEnabled
     setStockSoundEnabled(enabled)
@@ -179,9 +193,15 @@ export default function Settings() {
           {notificationPermission === 'unsupported' ? (
             <span className="text-xs text-slate-500">Browser tidak mendukung</span>
           ) : notificationPermission === 'granted' ? (
-            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-              Aktif
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                Aktif
+              </span>
+              <Button variant="outline" onClick={syncNotifications}>
+                <Bell className="h-4 w-4" />
+                Sinkronkan
+              </Button>
+            </div>
           ) : notificationPermission === 'denied' ? (
             <span className="max-w-48 text-right text-xs text-amber-700">
               Izin ditolak. Ubah izin notifikasi dari pengaturan browser.
