@@ -9,37 +9,49 @@ const supabase = createClient(
 const vapidSubject = Deno.env.get('VAPID_SUBJECT')
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return Response.json(body, { status, headers: corsHeaders })
+}
 
 Deno.serve(async (request) => {
+  if (request.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
   if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
-    return Response.json({ error: 'VAPID secrets are not configured' }, { status: 500 })
+    return jsonResponse({ error: 'VAPID secrets are not configured' }, 500)
   }
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
 
   const authHeader = request.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401 })
+  if (!authHeader) return jsonResponse({ error: 'Unauthorized' }, 401)
   const token = authHeader.replace('Bearer ', '')
   const { data: { user } } = await supabase.auth.getUser(token)
-  if (!user) return new Response('Unauthorized', { status: 401 })
+  if (!user) return jsonResponse({ error: 'Unauthorized' }, 401)
 
   const { data: products, error: productsError } = await supabase
     .from('products')
     .select('id, name, stock, min_stock')
     .eq('is_active', true)
 
-  if (productsError) return Response.json({ error: productsError.message }, { status: 500 })
+  if (productsError) return jsonResponse({ error: productsError.message }, 500)
 
   const lowStock = (products || []).filter((product) => Number(product.stock) <= Number(product.min_stock))
-  if (lowStock.length === 0) return Response.json({ sent: 0 })
+  if (lowStock.length === 0) return jsonResponse({ sent: 0 })
 
   const { data: subscriptions, error: subscriptionsError } = await supabase
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
-  if (subscriptionsError) return Response.json({ error: subscriptionsError.message }, { status: 500 })
+  if (subscriptionsError) return jsonResponse({ error: subscriptionsError.message }, 500)
 
   let sent = 0
   for (const subscription of subscriptions || []) {
@@ -65,5 +77,5 @@ Deno.serve(async (request) => {
     }
   }
 
-  return Response.json({ sent })
+  return jsonResponse({ sent })
 })
