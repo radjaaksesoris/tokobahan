@@ -12,10 +12,6 @@ import type { Json } from '@/types/database'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
-function getUnitConversion(unit: UnitType, prices: ProductPrice[]) {
-  return prices.find((price) => price.unit === unit)?.conversion || UNIT_FACTORS[unit] || 1
-}
-
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,7 +69,7 @@ export default function Products() {
       ? p.prices
       : [{ unit: 'satuan', price: 0, conversion: 1 }]
     const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
-    setStock(p.stock / (p.stock_conversion || getUnitConversion(savedStockUnit, productPrices)))
+    setStock(p.stock)
     setStockUnit(savedStockUnit)
     setMinStock(p.min_stock)
     setUnitBase(p.unit_base as 'pcs' | 'meter')
@@ -118,9 +114,9 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: UNIT_FACTORS[costUnit] || 1,
-      stock: stock * getUnitConversion(stockUnit, prices),
+      stock,
       stock_unit: stockUnit,
-      stock_conversion: getUnitConversion(stockUnit, prices),
+      stock_conversion: 1,
       min_stock: minStock,
       unit_base: unitBase,
       prices: prices.map((price) => ({ ...price })) as Json,

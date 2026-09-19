@@ -87,9 +87,7 @@ export default function POS() {
     if (items.length === 0) return
     setCheckoutLoading(true)
 
-    const insufficientStock = items.find(
-      (item) => item.quantity * item.conversion > item.product.stock,
-    )
+    const insufficientStock = items.find((item) => item.quantity > item.product.stock)
     if (insufficientStock) {
       toast.error(`Stok ${insufficientStock.product.name} tidak mencukupi`)
       setCheckoutLoading(false)
@@ -139,10 +137,9 @@ export default function POS() {
 
     // Update stock
     for (const item of items) {
-      const deduct = item.quantity * item.conversion
       await supabase
         .from('products')
-        .update({ stock: Math.max(0, item.product.stock - deduct) })
+        .update({ stock: Math.max(0, item.product.stock - item.quantity) })
         .eq('id', item.product.id)
     }
 
@@ -259,9 +256,11 @@ export default function POS() {
               <p className="mb-4 text-sm text-slate-500">Pilih satuan & jumlah</p>
 
               <div className="mb-4 grid grid-cols-3 gap-2">
-                {(selectedProduct.prices?.length
-                  ? selectedProduct.prices.map((p) => p.unit)
-                  : (['satuan', 'lusin', 'gross'] as UnitType[])
+                {(selectedProduct.stock_unit
+                  ? [selectedProduct.stock_unit]
+                  : selectedProduct.prices?.length
+                    ? selectedProduct.prices.map((p) => p.unit)
+                    : (['satuan'] as UnitType[])
                 ).map((u) => (
                   <button
                     key={u}
