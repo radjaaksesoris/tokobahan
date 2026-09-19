@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import {
   TrendingUp,
@@ -22,7 +22,7 @@ import {
   Legend,
 } from 'recharts'
 
-type Period = 'today' | 'week' | 'month' | 'custom'
+type Period = 'today' | 'week' | 'month' | 'year'
 
 interface SaleRow {
   id: string
@@ -59,6 +59,9 @@ export default function Reports() {
     }
     if (period === 'week') {
       return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) }
+    }
+    if (period === 'year') {
+      return { start: startOfYear(now), end: endOfYear(now) }
     }
     return { start: startOfMonth(now), end: endOfMonth(now) }
   }
@@ -127,6 +130,7 @@ export default function Reports() {
   const totalRevenue = Number(summary.total_revenue)
   const totalCost = Number(summary.total_cost)
   const totalProfit = Number(summary.total_profit)
+  const zakatAmount = Math.max(0, totalProfit) * 0.025
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
 
   // daily breakdown for chart
@@ -149,6 +153,7 @@ export default function Reports() {
     { key: 'today', label: 'Hari Ini' },
     { key: 'week', label: '7 Hari' },
     { key: 'month', label: 'Bulan Ini' },
+    { key: 'year', label: 'Tahun Ini' },
   ]
 
   return (
@@ -180,7 +185,7 @@ export default function Reports() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
@@ -212,6 +217,15 @@ export default function Reports() {
             </div>
             <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
             <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+              <DollarSign className="h-4 w-4" /> Zakat (2,5%)
+            </div>
+            <p className="text-xl font-bold text-amber-600">{formatCurrency(zakatAmount)}</p>
+            <p className="text-xs text-slate-400">Dari laba bersih</p>
           </CardContent>
         </Card>
       </div>
