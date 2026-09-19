@@ -10,6 +10,7 @@ import POS from '@/pages/POS'
 import Products from '@/pages/Products'
 import Reports from '@/pages/Reports'
 import SettingsPage from '@/pages/Settings'
+import NotFound from '@/pages/NotFound'
 import { Loader2 } from 'lucide-react'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -67,7 +68,7 @@ export default function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
