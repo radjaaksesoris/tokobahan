@@ -1,17 +1,26 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
-import Login from '@/pages/Login'
-import Dashboard from '@/pages/Dashboard'
-import POS from '@/pages/POS'
-import Products from '@/pages/Products'
-import Reports from '@/pages/Reports'
-import SettingsPage from '@/pages/Settings'
-import NotFound from '@/pages/NotFound'
 import { Loader2 } from 'lucide-react'
+
+const Login = lazy(() => import('@/pages/Login'))
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const POS = lazy(() => import('@/pages/POS'))
+const Products = lazy(() => import('@/pages/Products'))
+const Reports = lazy(() => import('@/pages/Reports'))
+const SettingsPage = lazy(() => import('@/pages/Settings'))
+const NotFound = lazy(() => import('@/pages/NotFound'))
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <Loader2 className="h-7 w-7 animate-spin text-primary" aria-label="Memuat halaman" />
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore()
@@ -53,23 +62,25 @@ export default function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-center" richColors closeButton />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="pos" element={<POS />} />
-          <Route path="products" element={<Products />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="pos" element={<POS />} />
+            <Route path="products" element={<Products />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
