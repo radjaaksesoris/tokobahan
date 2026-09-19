@@ -53,7 +53,7 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from(window.atob(base64), (char) => char.charCodeAt(0))
 }
 
-export async function registerPushSubscription() {
+export async function registerPushSubscription(options: { force?: boolean } = {}) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     throw new Error('Browser tidak mendukung push notification')
   }
@@ -63,8 +63,12 @@ export async function registerPushSubscription() {
   }
 
   const registration = await navigator.serviceWorker.ready
-  const subscription = await registration.pushManager.getSubscription() ||
-    await registration.pushManager.subscribe({
+  let subscription = await registration.pushManager.getSubscription()
+  if (options.force && subscription) {
+    await subscription.unsubscribe()
+    subscription = null
+  }
+  subscription = subscription || await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     })
@@ -100,5 +104,5 @@ export async function notifyLowStockPush() {
     }
     throw error
   }
-  return data as { sent?: number }
+  return data as { sent?: number; removed?: number }
 }

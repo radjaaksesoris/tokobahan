@@ -79,6 +79,7 @@ export default function Settings() {
       try {
         await registerPushSubscription()
         const result = await notifyLowStockPush()
+        if (result.removed) await registerPushSubscription({ force: true })
         toast.success(
           result.sent
             ? `Push notification aktif (${result.sent} notifikasi terkirim)`
@@ -96,6 +97,7 @@ export default function Settings() {
     try {
       await registerPushSubscription()
       const result = await notifyLowStockPush()
+      if (result.removed) await registerPushSubscription({ force: true })
       toast.success(
         result.sent
           ? `Notifikasi tersinkron (${result.sent} notifikasi terkirim)`

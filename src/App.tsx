@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { registerPushSubscription } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Loader2 } from 'lucide-react'
@@ -40,10 +41,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
+  const user = useAuthStore((s) => s.user)
+  const authLoading = useAuthStore((s) => s.loading)
 
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  useEffect(() => {
+    if (authLoading || !user || !('Notification' in window) || Notification.permission !== 'granted') return
+
+    registerPushSubscription().catch((error) => {
+      console.warn('Push subscription sync failed:', error)
+    })
+  }, [authLoading, user])
 
   if (!isSupabaseConfigured) {
     return (

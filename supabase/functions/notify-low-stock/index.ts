@@ -69,6 +69,7 @@ Deno.serve(async (request) => {
   if (subscriptionsError) return jsonResponse({ error: subscriptionsError.message }, 500)
 
   let sent = 0
+  let removed = 0
   for (const subscription of subscriptions || []) {
     for (const product of lowStock) {
       try {
@@ -85,6 +86,7 @@ Deno.serve(async (request) => {
       } catch (error) {
         if (error instanceof webpush.WebPushError && [404, 410].includes(error.statusCode)) {
           await supabase.from('push_subscriptions').delete().eq('id', subscription.id)
+          removed += 1
         } else {
           console.error('Push delivery failed:', error)
         }
@@ -92,5 +94,5 @@ Deno.serve(async (request) => {
     }
   }
 
-  return jsonResponse({ sent })
+  return jsonResponse({ sent, removed })
 })
