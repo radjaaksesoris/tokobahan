@@ -61,8 +61,8 @@ export function AppLayout() {
             <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-[0.95rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
-            <p className="mt-0.5 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-accent">Aksesoris konveksi</p>
+            <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
+            <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.12em] text-accent">Aksesoris konveksi</p>
           </div>
           <button
             className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
