@@ -71,6 +71,10 @@ export default function POS() {
   }, [products, search])
 
   function openAdd(product: Product) {
+    if (product.stock <= 0) {
+      toast.error(`${product.name} habis`)
+      return
+    }
     setSelectedProduct(product)
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
@@ -79,6 +83,15 @@ export default function POS() {
 
   function confirmAdd() {
     if (!selectedProduct) return
+    if (selectedProduct.stock <= 0) {
+      toast.error(`${selectedProduct.name} habis`)
+      setSelectedProduct(null)
+      return
+    }
+    if (qty > selectedProduct.stock) {
+      toast.error(`Stok ${selectedProduct.name} hanya tersisa ${selectedProduct.stock}`)
+      return
+    }
     addItem(selectedProduct, selectedUnit, qty)
     toast.success(`${selectedProduct.name} ditambahkan`)
     setSelectedProduct(null)
@@ -90,7 +103,11 @@ export default function POS() {
 
     const insufficientStock = items.find((item) => item.quantity > item.product.stock)
     if (insufficientStock) {
-      toast.error(`Stok ${insufficientStock.product.name} tidak mencukupi`)
+      toast.error(
+        insufficientStock.product.stock <= 0
+          ? `${insufficientStock.product.name} habis`
+          : `Stok ${insufficientStock.product.name} hanya tersisa ${insufficientStock.product.stock}`
+      )
       setCheckoutLoading(false)
       return
     }
@@ -127,9 +144,12 @@ export default function POS() {
       const isMissingCheckoutFunction =
         checkoutError.code === 'PGRST202' ||
         checkoutError.message.includes('Could not find the function public.checkout_sale')
+      const isInsufficientStock = checkoutError.message.toLowerCase().includes('tidak mencukupi')
       toast.error(
         isMissingCheckoutFunction
           ? 'Fitur pembayaran belum aktif. Jalankan migration checkout_sale di Supabase.'
+          : isInsufficientStock
+            ? 'Transaksi dibatalkan: stok barang habis atau tidak mencukupi.'
           : checkoutError.message
       )
       setCheckoutLoading(false)
@@ -195,13 +215,19 @@ export default function POS() {
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className="group flex flex-col rounded-2xl border border-stone-200/80 bg-surface p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]"
+                  className={`group flex flex-col rounded-2xl border border-stone-200/80 bg-surface p-3 text-left transition-all duration-200 ${
+                    p.stock <= 0
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
+                  }`}
                 >
                   <div className="mb-2 flex h-16 items-center justify-center rounded-xl bg-stone-100 text-2xl font-bold text-stone-300 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                     {p.name.charAt(0)}
                   </div>
                   <p className="line-clamp-2 text-sm font-medium text-slate-800">{p.name}</p>
-                  <p className="mt-1 text-xs text-slate-400">Stok: {p.stock}</p>
+                  <p className={`mt-1 text-xs ${p.stock <= 0 ? 'font-semibold text-red-500' : 'text-slate-400'}`}>
+                    {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-teal-700">
                     {formatCurrency(
                       p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
@@ -290,11 +316,18 @@ export default function POS() {
                 <Input
                   type="number"
                   min={1}
+                  max={selectedProduct.stock}
                   value={qty}
-                  onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setQty(Math.min(
+                      selectedProduct.stock,
+                      Math.max(1, parseInt(e.target.value) || 1)
+                    ))
+                  }
                   className="w-20 text-center text-lg font-bold"
                 />
-                <Button variant="outline" size="icon" onClick={() => setQty(qty + 1)}>
+                <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
+                disabled={qty >= selectedProduct.stock}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -313,7 +346,7 @@ export default function POS() {
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedProduct(null)}>
                   Batal
                 </Button>
-                <Button className="flex-1" onClick={confirmAdd}>
+                <Button className="flex-1" onClick={confirmAdd} disabled={selectedProduct.stock <= 0}>
                   Tambah
                 </Button>
               </div>
