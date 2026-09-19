@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Plus, Pencil, Trash2, Loader2, X, Package } from 'lucide-react'
 import { toast } from 'sonner'
+import type { Json } from '@/types/database'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -104,7 +105,7 @@ export default function Products() {
       stock,
       min_stock: minStock,
       unit_base: unitBase,
-      prices,
+      prices: prices.map((price) => ({ ...price })) as Json,
       is_active: true,
     }
 

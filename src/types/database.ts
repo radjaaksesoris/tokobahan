@@ -28,6 +28,7 @@ export interface Database {
           role?: 'admin' | 'cashier' | 'monitor'
           avatar_url?: string | null
         }
+        Relationships: []
       }
       categories: {
         Row: {
@@ -42,6 +43,7 @@ export interface Database {
         Update: {
           name?: string
         }
+        Relationships: []
       }
       products: {
         Row: {
@@ -87,6 +89,7 @@ export interface Database {
           image_url?: string | null
           is_active?: boolean
         }
+        Relationships: []
       }
       sales: {
         Row: {
@@ -113,6 +116,7 @@ export interface Database {
         Update: {
           notes?: string | null
         }
+        Relationships: []
       }
       sale_items: {
         Row: {
@@ -142,7 +146,12 @@ export interface Database {
           line_profit: number
         }
         Update: Record<string, never>
+        Relationships: []
       }
     }
+    Views: {}
+    Functions: {}
+    Enums: {}
+    CompositeTypes: {}
   }
 }

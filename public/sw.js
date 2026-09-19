@@ -1,5 +1,13 @@
 const CACHE_NAME = 'konveksipos-v1'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.svg', '/icon-512.svg']
+const BASE_PATH = new URL('./', self.registration.scope).pathname
+const APP_SHELL = [
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.webmanifest`,
+  `${BASE_PATH}icon.svg`,
+  `${BASE_PATH}icon-192.svg`,
+  `${BASE_PATH}icon-512.svg`,
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,10 +32,10 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy))
+          caches.open(CACHE_NAME).then((cache) => cache.put(`${BASE_PATH}index.html`, copy))
           return response
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(() => caches.match(`${BASE_PATH}index.html`)),
     )
     return
   }
