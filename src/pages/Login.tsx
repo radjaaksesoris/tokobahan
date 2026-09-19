@@ -34,7 +34,7 @@ export default function Login() {
       <Card className="relative w-full max-w-md border-white/10 bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         <CardHeader className="items-center text-center pb-2">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-ink shadow-[0_0_0_6px_rgba(228,168,83,0.14)]">
-            <span className="font-heading text-2xl font-bold">R</span>
+            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
           </div>
           <CardTitle className="text-2xl tracking-tight text-ink">RADJA AKSESORIS</CardTitle>
           <p className="text-sm text-slate-500">Aksesoris Konveksi</p>

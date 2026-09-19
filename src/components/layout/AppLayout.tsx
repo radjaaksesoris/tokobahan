@@ -61,7 +61,7 @@ export function AppLayout() {
       >
         <div className={cn('flex h-[4.5rem] items-center border-b border-white/10', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink shadow-[0_0_0_4px_rgba(228,168,83,0.14)]">
-            <span className="font-heading text-lg font-bold">R</span>
+            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
           </div>
           <div className={cn('min-w-0', collapsed && 'hidden')}>
             <h1 className="truncate text-[0.95rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
