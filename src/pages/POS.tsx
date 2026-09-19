@@ -37,16 +37,19 @@ export default function POS() {
 
   useEffect(() => {
     loadProducts()
-  }, [])
+  }, [search])
 
   async function loadProducts() {
     setLoading(true)
-    const { data, error } = await supabase
+    let query = supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
       .order('name')
-      .limit(500)
+      .limit(100)
+    const term = search.trim().replace(/[%_,]/g, ' ')
+    if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
+    const { data, error } = await query
     if (error) toast.error(error.message)
     else {
       setProducts(

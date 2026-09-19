@@ -205,6 +205,23 @@ export interface Database {
           transaction_count: number
         }[]
       }
+      sales_daily_summary: {
+        Args: {
+          p_start: string
+          p_end: string
+        }
+        Returns: {
+          sale_date: string
+          total_revenue: number
+          total_cost: number
+          total_profit: number
+          transaction_count: number
+        }[]
+      }
+      reset_operational_data: {
+        Args: Record<string, never>
+        Returns: undefined
+      }
     }
     Enums: {}
     CompositeTypes: {}

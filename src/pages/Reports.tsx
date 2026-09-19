@@ -34,9 +34,18 @@ interface SaleRow {
   created_at: string
 }
 
+interface DailySummaryRow {
+  sale_date: string
+  total_revenue: number
+  total_cost: number
+  total_profit: number
+  transaction_count: number
+}
+
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
   const [sales, setSales] = useState<SaleRow[]>([])
+  const [dailySummary, setDailySummary] = useState<DailySummaryRow[]>([])
   const [summary, setSummary] = useState({
     total_revenue: 0,
     total_cost: 0,
@@ -70,7 +79,7 @@ export default function Reports() {
     setLoading(true)
     setError(null)
     const { start, end } = getRange()
-    const [{ data, error: queryError }, { data: summaryData, error: summaryError }] = await Promise.all([
+    const [{ data, error: queryError }, { data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
       supabase
       .from('sales')
       .select('*')
@@ -79,6 +88,10 @@ export default function Reports() {
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1),
       supabase.rpc('sales_summary', {
+        p_start: start.toISOString(),
+        p_end: end.toISOString(),
+      }),
+      supabase.rpc('sales_daily_summary', {
         p_start: start.toISOString(),
         p_end: end.toISOString(),
       }),
@@ -92,30 +105,20 @@ export default function Reports() {
     }
 
     setSales((data as SaleRow[]) || [])
+    if (dailyError) {
+      setDailySummary([])
+    } else {
+      setDailySummary((dailyData || []) as DailySummaryRow[])
+    }
 
     if (summaryError) {
-      // Older production databases may not have the sales_summary RPC yet.
-      // Keep the report usable by calculating the totals from the same date range.
-      const { data: fallbackRows, error: fallbackError } = await supabase
-        .from('sales')
-        .select('total_amount, total_cost, total_profit')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())
-
-      if (fallbackError) {
-        setError(summaryError.message || 'Gagal memuat ringkasan laporan')
-      } else {
-        const fallbackSummary = (fallbackRows || []).reduce(
-          (result, sale) => ({
-            total_revenue: result.total_revenue + Number(sale.total_amount),
-            total_cost: result.total_cost + Number(sale.total_cost),
-            total_profit: result.total_profit + Number(sale.total_profit),
-            transaction_count: result.transaction_count + 1,
-          }),
-          { total_revenue: 0, total_cost: 0, total_profit: 0, transaction_count: 0 },
-        )
-        setSummary(fallbackSummary)
-      }
+      setError(summaryError.message || 'Gagal memuat ringkasan laporan')
+      setSummary({
+        total_revenue: 0,
+        total_cost: 0,
+        total_profit: 0,
+        transaction_count: 0,
+      })
     } else {
       setSummary(summaryData?.[0] || {
         total_revenue: 0,
@@ -135,12 +138,13 @@ export default function Reports() {
 
   // daily breakdown for chart
   const dailyMap: Record<string, { revenue: number; cost: number; profit: number }> = {}
-  sales.forEach((s) => {
-    const d = format(new Date(s.created_at), 'yyyy-MM-dd')
-    if (!dailyMap[d]) dailyMap[d] = { revenue: 0, cost: 0, profit: 0 }
-    dailyMap[d].revenue += Number(s.total_amount)
-    dailyMap[d].cost += Number(s.total_cost)
-    dailyMap[d].profit += Number(s.total_profit)
+  dailySummary.forEach((s) => {
+    const d = s.sale_date
+    dailyMap[d] = {
+      revenue: Number(s.total_revenue),
+      cost: Number(s.total_cost),
+      profit: Number(s.total_profit),
+    }
   })
   const chartData = Object.entries(dailyMap)
     .sort(([a], [b]) => a.localeCompare(b))

@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS public.sales (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sales_created ON public.sales(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sales_invoice_no ON public.sales(invoice_no);
 
 CREATE OR REPLACE FUNCTION public.sales_summary(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
 RETURNS TABLE (
@@ -87,6 +88,50 @@ AS $$
     COUNT(*)
   FROM public.sales
   WHERE created_at >= p_start AND created_at <= p_end;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sales_daily_summary(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
+RETURNS TABLE (
+  sale_date DATE,
+  total_revenue NUMERIC,
+  total_cost NUMERIC,
+  total_profit NUMERIC,
+  transaction_count BIGINT
+)
+LANGUAGE SQL
+STABLE
+SECURITY INVOKER
+AS $$
+  SELECT
+    (created_at AT TIME ZONE 'Asia/Jakarta')::DATE,
+    COALESCE(SUM(total_amount), 0),
+    COALESCE(SUM(total_cost), 0),
+    COALESCE(SUM(total_profit), 0),
+    COUNT(*)
+  FROM public.sales
+  WHERE created_at >= p_start AND created_at <= p_end
+  GROUP BY 1
+  ORDER BY 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reset_operational_data()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Hanya admin yang dapat mereset database';
+  END IF;
+
+  TRUNCATE TABLE public.sale_items, public.sales, public.products, public.categories
+    RESTART IDENTITY CASCADE;
+  UPDATE public.invoice_sequences SET next_number = 1 WHERE id = 1;
+END;
 $$;
 
 CREATE TABLE IF NOT EXISTS public.invoice_sequences (
@@ -136,6 +181,7 @@ CREATE TABLE IF NOT EXISTS public.sale_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON public.sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_sale_items_product ON public.sale_items(product_id);
 
 CREATE OR REPLACE FUNCTION public.checkout_sale(
   p_invoice_no TEXT,

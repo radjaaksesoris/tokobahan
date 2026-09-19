@@ -41,21 +41,9 @@ export default function Settings() {
       return
     }
 
-    const resetTables = ['sale_items', 'sales', 'products', 'categories'] as const
-    for (const table of resetTables) {
-      const { error } = await supabase.from(table).delete().not('id', 'is', null)
-      if (error) {
-        toast.error(`Reset gagal pada ${table}: ${error.message}`)
-        setResetting(false)
-        return
-      }
-    }
-    const { error: counterError } = await supabase
-      .from('invoice_sequences')
-      .update({ next_number: 1 })
-      .eq('id', 1)
-    if (counterError) {
-      toast.error(`Reset nomor transaksi gagal: ${counterError.message}`)
+    const { error: resetError } = await supabase.rpc('reset_operational_data')
+    if (resetError) {
+      toast.error(`Reset database gagal: ${resetError.message}`)
       setResetting(false)
       return
     }

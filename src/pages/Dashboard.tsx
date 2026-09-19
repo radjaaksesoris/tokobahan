@@ -75,10 +75,10 @@ export default function Dashboard() {
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd),
       supabase.from('products').select('id, stock, min_stock').eq('is_active', true),
-      supabase
-        .from('sales')
-        .select('total_amount, total_profit, created_at')
-        .gte('created_at', startOfDay(subDays(new Date(), 6)).toISOString()),
+      supabase.rpc('sales_daily_summary', {
+        p_start: startOfDay(subDays(new Date(), 6)).toISOString(),
+        p_end: endOfDay(new Date()).toISOString(),
+      }),
     ])
 
     const queryError = salesRes.error || productsRes.error || weekSales.error
@@ -100,9 +100,9 @@ export default function Dashboard() {
       days[d] = { sales: 0, profit: 0 }
     }
     weekSales.data?.forEach((s) => {
-      const d = format(new Date(s.created_at), 'yyyy-MM-dd')
+      const d = s.sale_date
       if (days[d]) {
-        days[d].sales += Number(s.total_amount)
+        days[d].sales += Number(s.total_revenue)
         days[d].profit += Number(s.total_profit)
       }
     })

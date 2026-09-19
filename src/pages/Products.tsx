@@ -6,7 +6,7 @@ import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } 
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Plus, Pencil, Trash2, Loader2, X, Package } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, X, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
@@ -22,6 +22,10 @@ export default function Products() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(0)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const pageSize = 100
 
   // form
   const [name, setName] = useState('')
@@ -39,18 +43,23 @@ export default function Products() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [search, page])
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
+    let query = supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
       .order('name')
-      .limit(500)
+      .range(page * pageSize, (page + 1) * pageSize)
+    const term = search.trim().replace(/[%_,]/g, ' ')
+    if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
+    const { data } = await query
+    const rows = data || []
+    setHasNextPage(rows.length > pageSize)
     setProducts(
-      (data || []).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
+      rows.slice(0, pageSize).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
     )
     setLoading(false)
   }
@@ -191,10 +200,24 @@ export default function Products() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-slate-500">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          Tambah
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="relative sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              className="pl-9"
+              placeholder="Cari nama, SKU, atau barcode..."
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(0)
+              }}
+            />
+          </div>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Tambah
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -233,6 +256,17 @@ export default function Products() {
                         {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
                       </span>
                     ))}
+                    {(page > 0 || hasNextPage) && (
+                      <div className="flex items-center justify-between pt-3">
+                        <Button variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
+                          <ChevronLeft className="h-4 w-4" /> Sebelumnya
+                        </Button>
+                        <span className="text-xs text-slate-500">Halaman {page + 1}</span>
+                        <Button variant="outline" disabled={!hasNextPage} onClick={() => setPage((current) => current + 1)}>
+                          Berikutnya <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-1">

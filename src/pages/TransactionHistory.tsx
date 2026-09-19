@@ -43,7 +43,7 @@ export default function TransactionHistory() {
 
   useEffect(() => {
     loadSales()
-  }, [date, page])
+  }, [date, page, search])
 
   async function loadSales() {
     setLoading(true)
@@ -51,7 +51,12 @@ export default function TransactionHistory() {
       .from('sales')
       .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
       .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+    const term = search.trim().replace(/[%_,]/g, ' ')
+    if (term) {
+      query = query.or(`invoice_no.ilike.%${term}%,payment_method.ilike.%${term}%`)
+    }
 
     if (date) {
       const selectedDate = new Date(`${date}T00:00:00`)
@@ -68,7 +73,7 @@ export default function TransactionHistory() {
     } else {
       const rows = (data || []) as SaleRow[]
       setHasNextPage(rows.length > PAGE_SIZE)
-      setSales(rows.slice(0, PAGE_SIZE))
+      setSales(rows)
     }
     setLoading(false)
   }

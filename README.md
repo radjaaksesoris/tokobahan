@@ -60,6 +60,9 @@ npm install
    - Jika database sudah pernah dibuat, jalankan file
      `supabase/migrations/20260919210000_restore_checkout_sale.sql` untuk mengaktifkan RPC
      checkout dan menyegarkan schema cache PostgREST.
+   - Untuk database yang sudah memakai migration checkout, jalankan juga
+     `supabase/migrations/20260919223000_scale_hardening.sql` agar agregasi laporan,
+     pencarian data besar, index tambahan, dan reset database atomik aktif.
 3. Ambil **Project URL** dan **anon public key** di Settings → API
 
 ### 3. Environment
