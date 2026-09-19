@@ -4,6 +4,7 @@ import {
   ShoppingCart,
   Package,
   BarChart3,
+  History,
   LogOut,
   Menu,
   X,
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'] },
   { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'] },
   { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'] },
+  { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'] },
   { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'] },
 ]
 

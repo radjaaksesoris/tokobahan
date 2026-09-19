@@ -11,6 +11,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const POS = lazy(() => import('@/pages/POS'))
 const Products = lazy(() => import('@/pages/Products'))
 const Reports = lazy(() => import('@/pages/Reports'))
+const TransactionHistory = lazy(() => import('@/pages/TransactionHistory'))
 const SettingsPage = lazy(() => import('@/pages/Settings'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="pos" element={<POS />} />
             <Route path="products" element={<Products />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="transactions" element={<TransactionHistory />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
