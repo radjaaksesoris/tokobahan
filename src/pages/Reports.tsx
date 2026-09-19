@@ -80,11 +80,40 @@ export default function Reports() {
         p_end: end.toISOString(),
       }),
     ])
-    if (queryError || summaryError) {
-      setError((queryError || summaryError)?.message || 'Gagal memuat laporan')
+
+    if (queryError) {
+      setError(queryError.message || 'Gagal memuat transaksi')
       setSales([])
+      setLoading(false)
+      return
+    }
+
+    setSales((data as SaleRow[]) || [])
+
+    if (summaryError) {
+      // Older production databases may not have the sales_summary RPC yet.
+      // Keep the report usable by calculating the totals from the same date range.
+      const { data: fallbackRows, error: fallbackError } = await supabase
+        .from('sales')
+        .select('total_amount, total_cost, total_profit')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+
+      if (fallbackError) {
+        setError(summaryError.message || 'Gagal memuat ringkasan laporan')
+      } else {
+        const fallbackSummary = (fallbackRows || []).reduce(
+          (result, sale) => ({
+            total_revenue: result.total_revenue + Number(sale.total_amount),
+            total_cost: result.total_cost + Number(sale.total_cost),
+            total_profit: result.total_profit + Number(sale.total_profit),
+            transaction_count: result.transaction_count + 1,
+          }),
+          { total_revenue: 0, total_cost: 0, total_profit: 0, transaction_count: 0 },
+        )
+        setSummary(fallbackSummary)
+      }
     } else {
-      setSales((data as SaleRow[]) || [])
       setSummary(summaryData?.[0] || {
         total_revenue: 0,
         total_cost: 0,
