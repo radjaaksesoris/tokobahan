@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session?.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, full_name, role, avatar_url, created_at')
           .eq('id', session.user.id)
           .single()
         if (profileError) {
@@ -43,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session?.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, full_name, role, avatar_url, created_at')
           .eq('id', session.user.id)
           .single()
         if (profileError) {

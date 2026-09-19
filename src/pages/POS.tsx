@@ -36,14 +36,15 @@ export default function POS() {
   const totals = getTotals()
 
   useEffect(() => {
-    loadProducts()
+    const timer = window.setTimeout(loadProducts, 250)
+    return () => window.clearTimeout(timer)
   }, [search])
 
   async function loadProducts() {
     setLoading(true)
     let query = supabase
       .from('products')
-      .select('*')
+      .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('name')
       .limit(100)

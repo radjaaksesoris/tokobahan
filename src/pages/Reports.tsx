@@ -82,7 +82,7 @@ export default function Reports() {
     const [{ data, error: queryError }, { data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
       supabase
       .from('sales')
-      .select('*')
+      .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
       .gte('created_at', start.toISOString())
       .lte('created_at', end.toISOString())
       .order('created_at', { ascending: false })

@@ -134,6 +134,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.reset_operational_data() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reset_operational_data() TO authenticated;
+
 CREATE TABLE IF NOT EXISTS public.invoice_sequences (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   next_number INTEGER NOT NULL DEFAULT 1
@@ -164,6 +167,9 @@ $$;
 ALTER TABLE public.invoice_sequences ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Invoice sequence is usable by authenticated users"
   ON public.invoice_sequences FOR ALL TO authenticated USING (true) WITH CHECK (true);
+REVOKE ALL ON TABLE public.invoice_sequences FROM PUBLIC, authenticated;
+REVOKE ALL ON FUNCTION public.next_invoice_number() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.next_invoice_number() TO authenticated;
 
 -- Sale items
 CREATE TABLE IF NOT EXISTS public.sale_items (
@@ -203,6 +209,14 @@ DECLARE
   current_stock NUMERIC;
   requested_quantity NUMERIC;
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Sesi pengguna tidak valid';
+  END IF;
+
+  IF p_cashier_id IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Kasir transaksi tidak valid';
+  END IF;
+
   IF p_items IS NULL
     OR jsonb_typeof(p_items) <> 'array'
     OR jsonb_array_length(p_items) = 0
@@ -267,6 +281,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) TO authenticated;
+
 -- Refresh PostgREST after function changes so RPC calls see the current signature.
 NOTIFY pgrst, 'reload schema';
 
@@ -327,11 +344,12 @@ CREATE POLICY "Categories full access"
   ON public.categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Sales: all authenticated
-CREATE POLICY "Sales full access"
-  ON public.sales FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Sales viewable by authenticated"
+  ON public.sales FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Sale items full access"
-  ON public.sale_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Sale items viewable by authenticated"
+  ON public.sale_items FOR SELECT TO authenticated USING (true);
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.sales, public.sale_items FROM authenticated;
 
 -- Enable Realtime for monitoring
 ALTER PUBLICATION supabase_realtime ADD TABLE public.sales;

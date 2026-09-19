@@ -42,20 +42,28 @@ export default function Products() {
   ])
 
   useEffect(() => {
-    load()
+    const timer = window.setTimeout(load, 250)
+    return () => window.clearTimeout(timer)
   }, [search, page])
 
   async function load() {
     setLoading(true)
     let query = supabase
       .from('products')
-      .select('*')
+      .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('name')
       .range(page * pageSize, (page + 1) * pageSize)
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data } = await query
+    const { data, error } = await query
+    if (error) {
+      toast.error(error.message)
+      setProducts([])
+      setHasNextPage(false)
+      setLoading(false)
+      return
+    }
     const rows = data || []
     setHasNextPage(rows.length > pageSize)
     setProducts(
@@ -256,17 +264,6 @@ export default function Products() {
                         {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
                       </span>
                     ))}
-                    {(page > 0 || hasNextPage) && (
-                      <div className="flex items-center justify-between pt-3">
-                        <Button variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
-                          <ChevronLeft className="h-4 w-4" /> Sebelumnya
-                        </Button>
-                        <span className="text-xs text-slate-500">Halaman {page + 1}</span>
-                        <Button variant="outline" disabled={!hasNextPage} onClick={() => setPage((current) => current + 1)}>
-                          Berikutnya <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -280,6 +277,17 @@ export default function Products() {
               </CardContent>
             </Card>
           ))}
+          {(page > 0 || hasNextPage) && (
+            <div className="flex items-center justify-between pt-3">
+              <Button variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Sebelumnya
+              </Button>
+              <span className="text-xs text-slate-500">Halaman {page + 1}</span>
+              <Button variant="outline" disabled={!hasNextPage} onClick={() => setPage((current) => current + 1)}>
+                Berikutnya <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

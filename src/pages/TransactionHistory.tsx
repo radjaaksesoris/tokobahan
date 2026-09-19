@@ -42,7 +42,8 @@ export default function TransactionHistory() {
   const [itemsLoading, setItemsLoading] = useState(false)
 
   useEffect(() => {
-    loadSales()
+    const timer = window.setTimeout(loadSales, 250)
+    return () => window.clearTimeout(timer)
   }, [date, page, search])
 
   async function loadSales() {
@@ -51,7 +52,7 @@ export default function TransactionHistory() {
       .from('sales')
       .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
       .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) {

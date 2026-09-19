@@ -20,6 +20,14 @@ DECLARE
   current_stock NUMERIC;
   requested_quantity NUMERIC;
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Sesi pengguna tidak valid';
+  END IF;
+
+  IF p_cashier_id IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Kasir transaksi tidak valid';
+  END IF;
+
   IF p_items IS NULL
     OR jsonb_typeof(p_items) <> 'array'
     OR jsonb_array_length(p_items) = 0
