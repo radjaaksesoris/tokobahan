@@ -119,6 +119,10 @@ export default function Products() {
       toast.error('Nama produk wajib diisi')
       return
     }
+    if (stock < 0 || minStock < 0 || costPrice < 0 || prices.some((price) => price.price < 0)) {
+      toast.error('Stok, harga modal, harga jual, dan stok minimum tidak boleh negatif')
+      return
+    }
     setSaving(true)
     const payload = {
       name: name.trim(),

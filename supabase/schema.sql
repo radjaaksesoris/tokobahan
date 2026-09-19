@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS public.products (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_stock_nonnegative;
+ALTER TABLE public.products ADD CONSTRAINT products_stock_nonnegative CHECK (stock >= 0);
+
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS cost_unit TEXT NOT NULL DEFAULT 'satuan';
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS cost_conversion NUMERIC(15,3) NOT NULL DEFAULT 1;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_unit TEXT NOT NULL DEFAULT 'satuan';
@@ -157,6 +160,9 @@ BEGIN
   FOR item IN SELECT item_json FROM jsonb_array_elements(p_items) AS elements(item_json)
   LOOP
     requested_quantity := (item->>'quantity')::NUMERIC;
+    IF requested_quantity IS NULL OR requested_quantity <= 0 THEN
+      RAISE EXCEPTION 'Jumlah produk harus lebih besar dari 0';
+    END IF;
     SELECT stock INTO current_stock
     FROM public.products
     WHERE id = (item->>'product_id')::UUID
@@ -196,7 +202,12 @@ BEGIN
   LOOP
     UPDATE public.products
     SET stock = stock - (item->>'quantity')::NUMERIC
-    WHERE id = (item->>'product_id')::UUID;
+    WHERE id = (item->>'product_id')::UUID
+      AND stock >= (item->>'quantity')::NUMERIC;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Stok % tidak mencukupi', item->>'product_name';
+    END IF;
   END LOOP;
 
   RETURN new_sale_id;

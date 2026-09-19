@@ -23,6 +23,9 @@ BEGIN
   FOR item IN SELECT item_json FROM jsonb_array_elements(p_items) AS elements(item_json)
   LOOP
     requested_quantity := (item->>'quantity')::NUMERIC;
+    IF requested_quantity IS NULL OR requested_quantity <= 0 THEN
+      RAISE EXCEPTION 'Jumlah produk harus lebih besar dari 0';
+    END IF;
     SELECT stock INTO current_stock
     FROM public.products
     WHERE id = (item->>'product_id')::UUID
@@ -62,11 +65,19 @@ BEGIN
   LOOP
     UPDATE public.products
     SET stock = stock - (item->>'quantity')::NUMERIC
-    WHERE id = (item->>'product_id')::UUID;
+    WHERE id = (item->>'product_id')::UUID
+      AND stock >= (item->>'quantity')::NUMERIC;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Stok % tidak mencukupi', item->>'product_name';
+    END IF;
   END LOOP;
 
   RETURN new_sale_id;
 END;
 $$;
+
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_stock_nonnegative;
+ALTER TABLE public.products ADD CONSTRAINT products_stock_nonnegative CHECK (stock >= 0);
 
 NOTIFY pgrst, 'reload schema';
