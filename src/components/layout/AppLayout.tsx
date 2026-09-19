@@ -25,7 +25,7 @@ const navItems = [
 ]
 
 export function AppLayout() {
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const { profile, signOut, isRole } = useAuthStore()
   const navigate = useNavigate()
 
@@ -42,10 +42,10 @@ export function AppLayout() {
         Lewati ke konten utama
       </a>
       {/* Mobile overlay */}
-      {mobileOpen && (
+      {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
@@ -53,7 +53,7 @@ export function AppLayout() {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col bg-ink text-white transition-all duration-300 lg:static lg:translate-x-0',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          sidebarOpen ? 'translate-x-0 lg:w-64' : '-translate-x-full lg:w-0 lg:overflow-hidden',
           'w-64'
         )}
       >
@@ -65,7 +65,7 @@ export function AppLayout() {
             <h1 className="truncate text-[0.95rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
             <p className="mt-0.5 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-accent">Aksesoris konveksi</p>
           </div>
-          <button className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Tutup navbar">
+          <button className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Tutup navbar">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -76,7 +76,7 @@ export function AppLayout() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 cn(
                   'group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all duration-200',
@@ -117,10 +117,10 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-stone-200/80 bg-canvas/90 px-4 backdrop-blur lg:px-8">
           <button
-            className="rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:hidden"
-            onClick={() => setMobileOpen((current) => !current)}
-            aria-label="Tampilkan navbar"
-            title="Tampilkan navbar"
+            className="rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
+            onClick={() => setSidebarOpen((current) => !current)}
+            aria-label={sidebarOpen ? 'Sembunyikan navbar' : 'Tampilkan navbar'}
+            title={sidebarOpen ? 'Sembunyikan navbar' : 'Tampilkan navbar'}
           >
             <Menu className="h-5 w-5" />
           </button>
