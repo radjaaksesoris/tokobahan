@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Database, Loader2 } from 'lucide-react'
+import { AlertTriangle, Bell, Database, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -13,6 +13,9 @@ export default function Settings() {
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [resetting, setResetting] = useState(false)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
+  )
 
   if (!isRole('admin')) return <Navigate to="/" replace />
 
@@ -21,6 +24,7 @@ export default function Settings() {
       toast.error('Sesi pengguna tidak ditemukan')
       return
     }
+
     if (!password) {
       toast.error('Masukkan password akun admin')
       return
@@ -52,6 +56,22 @@ export default function Settings() {
     setPassword('')
     setConfirmation('')
     setResetting(false)
+  }
+
+  async function enableNotifications() {
+    if (!('Notification' in window)) {
+      setNotificationPermission('unsupported')
+      toast.error('Browser ini tidak mendukung notifikasi')
+      return
+    }
+
+    const permission = await Notification.requestPermission()
+    setNotificationPermission(permission)
+    if (permission === 'granted') {
+      toast.success('Notifikasi stok diaktifkan')
+    } else if (permission === 'denied') {
+      toast.error('Izin notifikasi ditolak oleh browser')
+    }
   }
 
   return (
@@ -107,6 +127,43 @@ export default function Settings() {
             {resetting && <Loader2 className="h-4 w-4 animate-spin" />}
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-5 w-5 text-primary" />
+            Notifikasi Stok
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-900">
+              {notificationPermission === 'granted'
+                ? 'Notifikasi stok sudah aktif'
+                : 'Aktifkan notifikasi stok menipis'}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Terima pemberitahuan saat stok produk berada di bawah atau sama dengan minimum stok.
+            </p>
+          </div>
+          {notificationPermission === 'unsupported' ? (
+            <span className="text-xs text-slate-500">Browser tidak mendukung</span>
+          ) : notificationPermission === 'granted' ? (
+            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+              Aktif
+            </span>
+          ) : notificationPermission === 'denied' ? (
+            <span className="max-w-48 text-right text-xs text-amber-700">
+              Izin ditolak. Ubah izin notifikasi dari pengaturan browser.
+            </span>
+          ) : (
+            <Button variant="outline" onClick={enableNotifications}>
+              <Bell className="h-4 w-4" />
+              Aktifkan notifikasi
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>
