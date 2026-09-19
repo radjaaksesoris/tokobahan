@@ -26,6 +26,7 @@ export default function Products() {
   // form
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
+  const [skuEditing, setSkuEditing] = useState(false)
   const [costPrice, setCostPrice] = useState(0)
   const [costUnit, setCostUnit] = useState<UnitType>('satuan')
   const [stock, setStock] = useState(0)
@@ -58,6 +59,7 @@ export default function Products() {
     setEditing(null)
     setName('')
     setSku('')
+    setSkuEditing(true)
     setCostPrice(0)
     setCostUnit('satuan')
     setStock(0)
@@ -72,6 +74,7 @@ export default function Products() {
     setEditing(p)
     setName(p.name)
     setSku(p.sku || '')
+    setSkuEditing(!p.sku)
     setCostPrice(p.cost_price)
     setCostUnit((p.cost_unit || 'satuan') as UnitType)
     const productPrices: ProductPrice[] = p.prices?.length
@@ -260,7 +263,29 @@ export default function Products() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium">SKU</label>
-                  <Input value={sku} onChange={(e) => setSku(e.target.value)} />
+                  <div className="flex gap-2">
+                    <Input
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      readOnly={Boolean(editing?.sku) && !skuEditing}
+                      className={Boolean(editing?.sku) && !skuEditing ? 'bg-stone-100 text-slate-500' : undefined}
+                    />
+                    {editing?.sku && (
+                      <Button
+                        type="button"
+                        variant={skuEditing ? 'secondary' : 'outline'}
+                        size="icon"
+                        onClick={() => setSkuEditing((current) => !current)}
+                        aria-label={skuEditing ? 'Kunci SKU' : 'Edit SKU'}
+                        title={skuEditing ? 'Kunci SKU' : 'Edit SKU'}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {editing?.sku && !skuEditing && (
+                    <p className="mt-1 text-[11px] text-slate-400">SKU dikunci saat mengubah stok atau harga.</p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium">Stok</label>
