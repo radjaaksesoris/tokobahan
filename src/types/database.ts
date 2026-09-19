@@ -181,6 +181,30 @@ export interface Database {
         Args: Record<string, never>
         Returns: string
       }
+      checkout_sale: {
+        Args: {
+          p_invoice_no: string
+          p_total_amount: number
+          p_total_cost: number
+          p_total_profit: number
+          p_payment_method: string
+          p_cashier_id: string | null
+          p_items: Json
+        }
+        Returns: string
+      }
+      sales_summary: {
+        Args: {
+          p_start: string
+          p_end: string
+        }
+        Returns: {
+          total_revenue: number
+          total_cost: number
+          total_profit: number
+          transaction_count: number
+        }[]
+      }
     }
     Enums: {}
     CompositeTypes: {}

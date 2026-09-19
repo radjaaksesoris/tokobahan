@@ -37,11 +37,20 @@ interface SaleRow {
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
   const [sales, setSales] = useState<SaleRow[]>([])
+  const [summary, setSummary] = useState({
+    total_revenue: 0,
+    total_cost: 0,
+    total_profit: 0,
+    transaction_count: 0,
+  })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const pageSize = 100
 
   useEffect(() => {
     load()
-  }, [period])
+  }, [period, page])
 
   function getRange() {
     const now = new Date()
@@ -56,20 +65,39 @@ export default function Reports() {
 
   async function load() {
     setLoading(true)
+    setError(null)
     const { start, end } = getRange()
-    const { data } = await supabase
+    const [{ data, error: queryError }, { data: summaryData, error: summaryError }] = await Promise.all([
+      supabase
       .from('sales')
       .select('*')
       .gte('created_at', start.toISOString())
       .lte('created_at', end.toISOString())
       .order('created_at', { ascending: false })
-    setSales((data as SaleRow[]) || [])
+      .range(page * pageSize, (page + 1) * pageSize - 1),
+      supabase.rpc('sales_summary', {
+        p_start: start.toISOString(),
+        p_end: end.toISOString(),
+      }),
+    ])
+    if (queryError || summaryError) {
+      setError((queryError || summaryError)?.message || 'Gagal memuat laporan')
+      setSales([])
+    } else {
+      setSales((data as SaleRow[]) || [])
+      setSummary(summaryData?.[0] || {
+        total_revenue: 0,
+        total_cost: 0,
+        total_profit: 0,
+        transaction_count: 0,
+      })
+    }
     setLoading(false)
   }
 
-  const totalRevenue = sales.reduce((s, r) => s + Number(r.total_amount), 0)
-  const totalCost = sales.reduce((s, r) => s + Number(r.total_cost), 0)
-  const totalProfit = sales.reduce((s, r) => s + Number(r.total_profit), 0)
+  const totalRevenue = Number(summary.total_revenue)
+  const totalCost = Number(summary.total_cost)
+  const totalProfit = Number(summary.total_profit)
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
 
   // daily breakdown for chart
@@ -105,7 +133,10 @@ export default function Reports() {
           {periods.map((p) => (
             <button
               key={p.key}
-              onClick={() => setPeriod(p.key)}
+              onClick={() => {
+                setPeriod(p.key)
+                setPage(0)
+              }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 period === p.key
                   ? 'bg-teal-700 text-white'
@@ -150,7 +181,7 @@ export default function Reports() {
               <Receipt className="h-4 w-4" /> Margin
             </div>
             <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
-            <p className="text-xs text-slate-400">{formatNumber(sales.length)} transaksi</p>
+            <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
       </div>
@@ -193,6 +224,8 @@ export default function Reports() {
         <CardContent className="p-0">
           {loading ? (
             <p className="py-8 text-center text-slate-400">Memuat...</p>
+          ) : error ? (
+            <p className="py-8 text-center text-red-600">{error}</p>
           ) : sales.length === 0 ? (
             <p className="py-8 text-center text-slate-400">Belum ada transaksi</p>
           ) : (
@@ -217,6 +250,24 @@ export default function Reports() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {!loading && !error && sales.length === pageSize && (
+            <div className="flex items-center justify-between border-t p-4">
+              <button
+                className="rounded border px-3 py-1 text-sm disabled:opacity-40"
+                disabled={page === 0}
+                onClick={() => setPage((current) => current - 1)}
+              >
+                Sebelumnya
+              </button>
+              <span className="text-xs text-slate-500">Halaman {page + 1}</span>
+              <button
+                className="rounded border px-3 py-1 text-sm"
+                onClick={() => setPage((current) => current + 1)}
+              >
+                Berikutnya
+              </button>
             </div>
           )}
         </CardContent>

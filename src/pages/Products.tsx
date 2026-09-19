@@ -47,6 +47,7 @@ export default function Products() {
       .select('*')
       .eq('is_active', true)
       .order('name')
+      .limit(500)
     setProducts(
       (data || []).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
     )

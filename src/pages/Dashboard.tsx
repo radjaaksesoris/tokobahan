@@ -42,6 +42,7 @@ export default function Dashboard() {
     weekData: [],
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadStats()
@@ -63,6 +64,7 @@ export default function Dashboard() {
 
   async function loadStats() {
     setLoading(true)
+    setError(null)
     const todayStart = startOfDay(new Date()).toISOString()
     const todayEnd = endOfDay(new Date()).toISOString()
 
@@ -79,6 +81,12 @@ export default function Dashboard() {
         .gte('created_at', startOfDay(subDays(new Date(), 6)).toISOString()),
     ])
 
+    const queryError = salesRes.error || productsRes.error || weekSales.error
+    if (queryError) {
+      setError(queryError.message)
+      setLoading(false)
+      return
+    }
     const todaySales = salesRes.data?.reduce((s, r) => s + Number(r.total_amount), 0) ?? 0
     const todayProfit = salesRes.data?.reduce((s, r) => s + Number(r.total_profit), 0) ?? 0
     const todayOrders = salesRes.data?.length ?? 0
@@ -141,6 +149,7 @@ export default function Dashboard() {
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
         <p className="text-sm text-slate-500">Monitoring real-time toko grosir</p>
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
 
       {/* KPI Cards */}

@@ -46,6 +46,7 @@ export default function POS() {
       .select('*')
       .eq('is_active', true)
       .order('name')
+      .limit(500)
     if (error) toast.error(error.message)
     else {
       setProducts(
@@ -101,27 +102,7 @@ export default function POS() {
       return
     }
 
-    const { data: sale, error: saleError } = await supabase
-      .from('sales')
-      .insert({
-        invoice_no: invoiceNo,
-        total_amount: totals.subtotal,
-        total_cost: totals.totalCost,
-        total_profit: totals.totalProfit,
-        payment_method: paymentMethod,
-        cashier_id: profile?.id || null,
-      })
-      .select()
-      .single()
-
-    if (saleError || !sale) {
-      toast.error(saleError?.message || 'Gagal menyimpan transaksi')
-      setCheckoutLoading(false)
-      return
-    }
-
     const saleItems = items.map((i) => ({
-      sale_id: sale.id,
       product_id: i.product.id,
       product_name: i.product.name,
       unit: i.unit,
@@ -133,19 +114,19 @@ export default function POS() {
       line_profit: i.line_profit,
     }))
 
-    const { error: itemsError } = await supabase.from('sale_items').insert(saleItems)
-    if (itemsError) {
-      toast.error(itemsError.message)
+    const { error: checkoutError } = await supabase.rpc('checkout_sale', {
+      p_invoice_no: invoiceNo,
+      p_total_amount: totals.subtotal,
+      p_total_cost: totals.totalCost,
+      p_total_profit: totals.totalProfit,
+      p_payment_method: paymentMethod,
+      p_cashier_id: profile?.id || null,
+      p_items: saleItems,
+    })
+    if (checkoutError) {
+      toast.error(checkoutError.message)
       setCheckoutLoading(false)
       return
-    }
-
-    // Update stock
-    for (const item of items) {
-      await supabase
-        .from('products')
-        .update({ stock: Math.max(0, item.product.stock - item.quantity) })
-        .eq('id', item.product.id)
     }
 
     toast.success(`Transaksi ${invoiceNo} berhasil! Laba: ${formatCurrency(totals.totalProfit)}`)
