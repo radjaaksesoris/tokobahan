@@ -39,6 +39,9 @@ export function AppLayout() {
 
   return (
     <div className="flex h-full min-h-screen bg-canvas/80">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
+        Lewati ke konten utama
+      </a>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div

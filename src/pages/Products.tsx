@@ -177,11 +177,12 @@ export default function Products() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-[1200px] space-y-6">
+      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Produk</h2>
-          <p className="text-sm text-slate-500">Kelola katalog & harga multi-satuan</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Katalog inventori</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
+          <p className="mt-1 text-sm text-slate-500">Kelola katalog dan harga multi-satuan.</p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
@@ -208,7 +209,7 @@ export default function Products() {
           {products.map((p) => (
             <Card key={p.id}>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-lg font-bold text-teal-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary">
                   {p.name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -220,7 +221,7 @@ export default function Products() {
                     {p.prices?.map((pr) => (
                       <span
                         key={pr.unit}
-                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600"
+                        className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] text-slate-600"
                       >
                         {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
                       </span>

@@ -68,9 +68,10 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Pengaturan</h2>
-        <p className="text-sm text-slate-500">Pengaturan khusus administrator</p>
+      <div className="border-b border-stone-300/80 pb-5">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Kontrol administrator</p>
+        <h2 className="text-3xl font-bold tracking-tight text-ink">Pengaturan</h2>
+        <p className="mt-1 text-sm text-slate-500">Pengaturan operasional khusus administrator.</p>
       </div>
 
       <Card className="border-red-200">

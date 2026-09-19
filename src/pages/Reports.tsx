@@ -123,13 +123,14 @@ export default function Reports() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-[1440px] space-y-7">
+      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Laporan Laba Rugi</h2>
-          <p className="text-sm text-slate-500">Pendapatan, biaya, dan laba bersih</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Baca performa toko</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
+          <p className="mt-1 text-sm text-slate-500">Pendapatan, biaya, dan laba bersih.</p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+        <div className="flex gap-1 rounded-xl border border-stone-300 bg-surface p-1">
           {periods.map((p) => (
             <button
               key={p.key}
@@ -139,8 +140,8 @@ export default function Reports() {
               }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 period === p.key
-                  ? 'bg-teal-700 text-white'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-ink text-white'
+                  : 'text-slate-600 hover:bg-stone-100'
               }`}
             >
               {p.label}
