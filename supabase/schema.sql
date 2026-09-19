@@ -203,6 +203,9 @@ BEGIN
 END;
 $$;
 
+-- Refresh PostgREST after function changes so RPC calls see the current signature.
+NOTIFY pgrst, 'reload schema';
+
 -- Auto create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

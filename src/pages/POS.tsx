@@ -124,7 +124,14 @@ export default function POS() {
       p_items: saleItems,
     })
     if (checkoutError) {
-      toast.error(checkoutError.message)
+      const isMissingCheckoutFunction =
+        checkoutError.code === 'PGRST202' ||
+        checkoutError.message.includes('Could not find the function public.checkout_sale')
+      toast.error(
+        isMissingCheckoutFunction
+          ? 'Fitur pembayaran belum aktif. Jalankan migration checkout_sale di Supabase.'
+          : checkoutError.message
+      )
       setCheckoutLoading(false)
       return
     }

@@ -55,6 +55,9 @@ npm install
 
 1. Buka [supabase.com](https://supabase.com) → New Project
 2. Masuk ke **SQL Editor** → paste seluruh isi file `supabase/schema.sql` → Run
+   - Jika database sudah pernah dibuat, jalankan file
+     `supabase/migrations/20260919210000_restore_checkout_sale.sql` untuk mengaktifkan RPC
+     checkout dan menyegarkan schema cache PostgREST.
 3. Ambil **Project URL** dan **anon public key** di Settings → API
 
 ### 3. Environment
