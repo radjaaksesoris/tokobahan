@@ -8,6 +8,8 @@ import {
   Menu,
   X,
   Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -23,7 +25,7 @@ const navItems = [
 ]
 
 export function AppLayout() {
-  const [open, setOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const { profile, signOut, isRole } = useAuthStore()
   const navigate = useNavigate()
@@ -38,10 +40,10 @@ export function AppLayout() {
   return (
     <div className="flex h-full min-h-screen bg-slate-50">
       {/* Mobile overlay */}
-      {open && (
+      {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setOpen(false)}
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
@@ -49,47 +51,47 @@ export function AppLayout() {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col bg-teal-900 text-white transition-all duration-200 lg:static lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'w-64',
           collapsed ? 'lg:w-20' : 'lg:w-64'
         )}
       >
-        <div className={cn('flex h-16 items-center border-b border-teal-800', collapsed ? 'justify-center px-2' : 'gap-2 px-4')}>
+        <div className={cn('flex h-[4.5rem] items-center border-b border-teal-800/80', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
           <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-lg" />
           <div className={cn('min-w-0', collapsed && 'hidden')}>
-            <h1 className="text-lg font-bold leading-tight">RADJA AKSESORIS</h1>
-            <p className="text-xs text-teal-300">Aksesoris Konveksi</p>
+            <h1 className="truncate text-[0.95rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
+            <p className="mt-0.5 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-teal-300">Aksesoris Konveksi</p>
           </div>
-          <button className="ml-auto lg:hidden" onClick={() => setOpen(false)}>
+          <button className="ml-auto rounded-lg p-1.5 text-teal-200 transition-colors hover:bg-teal-800 hover:text-white lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Tutup navbar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1.5 p-3">
           {filteredNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              onClick={() => setOpen(false)}
+              onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors',
+                  'group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all duration-200',
                   collapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
-                    ? 'bg-teal-700 text-white'
-                    : 'text-teal-100 hover:bg-teal-800 hover:text-white'
+                    ? 'bg-teal-700 text-white shadow-[0_8px_20px_rgba(13,148,136,0.18)]'
+                    : 'text-teal-100/80 hover:bg-teal-800/80 hover:text-white'
                 )
               }
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
+              <item.icon className="h-[1.15rem] w-[1.15rem] shrink-0 transition-transform duration-200 group-hover:scale-105" />
               <span className={cn(collapsed && 'hidden')}>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className={cn('border-t border-teal-800', collapsed ? 'p-2' : 'p-4')}>
+        <div className={cn('border-t border-teal-800/80', collapsed ? 'p-2' : 'p-4')}>
           <div className={cn('mb-3 text-sm', collapsed && 'hidden')}>
             <p className="font-medium">{profile?.full_name || 'User'}</p>
             <p className="text-xs capitalize text-teal-300">{profile?.role}</p>
@@ -98,7 +100,7 @@ export function AppLayout() {
             variant="outline"
             size="sm"
             className={cn(
-              'border-teal-600 bg-transparent text-teal-100 hover:bg-teal-800 hover:text-white',
+              'border-teal-600/80 bg-transparent text-teal-100 transition-colors hover:bg-teal-800 hover:text-white',
               collapsed ? 'w-full px-0' : 'w-full'
             )}
             onClick={handleLogout}
@@ -114,15 +116,20 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:px-6">
           <button
-            className="rounded-lg p-2 hover:bg-slate-100"
-            onClick={() => {
-              setOpen((current) => !current)
-              setCollapsed((current) => !current)
-            }}
+            className="rounded-xl border border-slate-200 p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:hidden"
+            onClick={() => setMobileOpen((current) => !current)}
+            aria-label="Tampilkan navbar"
+            title="Tampilkan navbar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <button
+            className="hidden rounded-xl border border-slate-200 p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:block"
+            onClick={() => setCollapsed((current) => !current)}
             aria-label={collapsed ? 'Tampilkan navbar' : 'Sembunyikan navbar'}
             title={collapsed ? 'Tampilkan navbar' : 'Sembunyikan navbar'}
           >
-            <Menu className="h-5 w-5" />
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
           <span className="text-sm text-slate-500 hidden sm:inline">

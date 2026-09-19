@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@21st-dev/cli": "^1.17.1"
+  },
+  "_npx": {
+    "packages": [
+      "@21st-dev/cli@latest"
+    ]
+  }
+}

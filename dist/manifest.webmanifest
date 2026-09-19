@@ -1,9 +1,9 @@
 {
-  "name": "KonveksiPOS - Grosir Alat Konveksi",
-  "short_name": "KonveksiPOS",
-  "description": "Point of sale untuk bisnis grosir alat konveksi.",
-  "start_url": "/",
-  "scope": "/",
+  "name": "RADJA AKSESORIS",
+  "short_name": "RADJA AKSESORIS",
+  "description": "Point of sale RADJA AKSESORIS.",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f8fafc",
@@ -12,15 +12,15 @@
   "categories": ["business", "finance", "shopping"],
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
