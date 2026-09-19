@@ -145,19 +145,26 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
-        <p className="text-sm text-slate-500">Monitoring real-time toko grosir</p>
+    <div className="mx-auto max-w-[1440px] space-y-7">
+      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ringkasan operasional</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
+          <p className="mt-1 max-w-[42rem] text-sm text-slate-500">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
+        </div>
+        <div className="self-start rounded-2xl bg-ink px-4 py-3 text-white sm:self-auto">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
+          <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Operasional aktif</p>
+        </div>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.title}>
+          <Card key={c.title} className="overflow-hidden border-0">
             <CardContent className="flex items-start gap-3 p-4">
-              <div className={`rounded-lg p-2.5 ${c.color}`}>
+              <div className={`rounded-xl p-2.5 ${c.color}`}>
                 <c.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
@@ -181,8 +188,8 @@ export default function Dashboard() {
       )}
 
       {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+        <Card className="overflow-hidden border-0">
           <CardHeader>
             <CardTitle className="text-base">Penjualan 7 Hari</CardTitle>
           </CardHeader>
@@ -210,7 +217,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden border-0">
           <CardHeader>
             <CardTitle className="text-base">Laba 7 Hari</CardTitle>
           </CardHeader>

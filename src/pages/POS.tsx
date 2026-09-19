@@ -137,9 +137,19 @@ export default function POS() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem-1.5rem)] flex-col gap-3 lg:flex-row lg:h-[calc(100vh-3.5rem-3rem)]">
+    <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-[1440px] flex-col gap-4 lg:flex-row">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
+            <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
+          </div>
+          <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
+            <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
+          </div>
+        </div>
         <div className="mb-3 flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -158,7 +168,7 @@ export default function POS() {
           >
             <ShoppingCart className="h-5 w-5" />
             {items.length > 0 && (
-              <span className="ml-1 rounded-full bg-teal-700 px-1.5 text-xs text-white">
+              <span className="ml-1 rounded-full bg-ink px-1.5 text-xs text-white">
                 {items.length}
               </span>
             )}
@@ -178,9 +188,9 @@ export default function POS() {
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className="flex flex-col rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-teal-400 hover:shadow-md active:scale-[0.98]"
+                  className="group flex flex-col rounded-2xl border border-stone-200/80 bg-surface p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]"
                 >
-                  <div className="mb-2 flex h-16 items-center justify-center rounded-lg bg-slate-100 text-2xl font-bold text-slate-300">
+                  <div className="mb-2 flex h-16 items-center justify-center rounded-xl bg-stone-100 text-2xl font-bold text-stone-300 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                     {p.name.charAt(0)}
                   </div>
                   <p className="line-clamp-2 text-sm font-medium text-slate-800">{p.name}</p>
@@ -198,7 +208,7 @@ export default function POS() {
       </div>
 
       {/* Cart - desktop */}
-      <div className="hidden w-full max-w-sm flex-col rounded-xl border border-slate-200 bg-white lg:flex">
+      <div className="hidden w-full max-w-sm flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:flex">
         <CartPanel
           items={items}
           totals={totals}
@@ -213,7 +223,7 @@ export default function POS() {
 
       {/* Cart - mobile sheet */}
       {showCart && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white lg:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col bg-surface lg:hidden">
           <div className="flex h-14 items-center justify-between border-b px-4">
             <h3 className="font-semibold">Keranjang</h3>
             <button onClick={() => setShowCart(false)}>
@@ -329,8 +339,9 @@ function CartPanel({
 }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b px-4 py-3">
-        <h3 className="font-semibold text-slate-800">Keranjang ({items.length})</h3>
+      <div className="border-b border-white/10 px-4 py-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
+        <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -340,18 +351,18 @@ function CartPanel({
           items.map((item) => (
             <div
               key={`${item.product.id}-${item.unit}`}
-              className="rounded-lg border border-slate-100 bg-slate-50 p-3"
+              className="rounded-xl border border-white/10 bg-white/5 p-3"
             >
               <div className="flex justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.product.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate text-sm font-medium text-white">{item.product.name}</p>
+                  <p className="text-xs text-stone-400">
                     {UNIT_LABELS[item.unit]} × {formatCurrency(item.unit_price)}
                   </p>
                 </div>
                 <button
                   onClick={() => removeItem(item.product.id, item.unit)}
-                  className="text-slate-400 hover:text-red-500"
+                  className="text-stone-400 hover:text-red-300"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -359,20 +370,20 @@ function CartPanel({
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <button
-                    className="rounded border bg-white p-1"
+                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity - 1)}
                   >
                     <Minus className="h-3 w-3" />
                   </button>
                   <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                   <button
-                    className="rounded border bg-white p-1"
+                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity + 1)}
                   >
                     <Plus className="h-3 w-3" />
                   </button>
                 </div>
-                <p className="text-sm font-semibold text-teal-700">
+                <p className="text-sm font-semibold text-accent">
                   {formatCurrency(item.line_total)}
                 </p>
               </div>
@@ -381,11 +392,11 @@ function CartPanel({
         )}
       </div>
 
-      <div className="border-t p-4 space-y-3">
+      <div className="space-y-3 border-t border-white/10 p-4">
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-slate-500">Subtotal</span>
-            <span className="font-medium">{formatCurrency(totals.subtotal)}</span>
+            <span className="text-stone-400">Subtotal</span>
+            <span className="font-medium text-white">{formatCurrency(totals.subtotal)}</span>
           </div>
           <div className="flex justify-between text-emerald-600">
             <span>Estimasi Laba</span>
@@ -399,9 +410,9 @@ function CartPanel({
               key={m}
               onClick={() => setPaymentMethod(m)}
               className={`flex-1 rounded-lg border py-2 text-xs font-medium capitalize ${
-                paymentMethod === m
-                  ? 'border-teal-600 bg-teal-50 text-teal-700'
-                  : 'border-slate-200 text-slate-600'
+              paymentMethod === m
+                  ? 'border-accent bg-accent text-ink'
+                  : 'border-white/15 text-stone-300 hover:border-white/30'
               }`}
             >
               {m === 'cash' ? 'Tunai' : m === 'transfer' ? 'TF' : m === 'qris' ? 'QRIS' : 'Kredit'}

@@ -28,13 +28,15 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-800 via-teal-700 to-teal-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink p-4">
+      <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
+      <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true" />
+      <Card className="relative w-full max-w-md border-white/10 bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         <CardHeader className="items-center text-center pb-2">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100">
-            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-12 w-12 rounded-xl" />
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-ink shadow-[0_0_0_6px_rgba(228,168,83,0.14)]">
+            <span className="font-heading text-2xl font-bold">R</span>
           </div>
-          <CardTitle className="text-2xl">RADJA AKSESORIS</CardTitle>
+          <CardTitle className="text-2xl tracking-tight text-ink">RADJA AKSESORIS</CardTitle>
           <p className="text-sm text-slate-500">Aksesoris Konveksi</p>
         </CardHeader>
         <CardContent>
