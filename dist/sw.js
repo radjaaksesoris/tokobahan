@@ -40,7 +40,21 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(clients.openWindow(event.notification.data?.url || BASE_PATH))
+  event.waitUntil((async () => {
+    const requestedUrl = event.notification.data?.url
+    const targetPath = !requestedUrl || requestedUrl === '/' ? BASE_PATH : requestedUrl
+    const targetUrl = new URL(targetPath, self.location.origin).href
+    const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const existingClient = windowClients.find((client) => client.url.startsWith(self.location.origin + BASE_PATH))
+
+    if (existingClient) {
+      await existingClient.focus()
+      if ('navigate' in existingClient && existingClient.url !== targetUrl) await existingClient.navigate(targetUrl)
+      return
+    }
+
+    await clients.openWindow(targetUrl)
+  })())
 })
 
 self.addEventListener('fetch', (event) => {

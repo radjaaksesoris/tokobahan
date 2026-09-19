@@ -43,6 +43,14 @@ interface LowStockProduct {
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 
+function attachNotificationClick(notification: Notification) {
+  notification.onclick = () => {
+    notification.close()
+    window.focus()
+    window.location.assign(`${import.meta.env.BASE_URL}`)
+  }
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
@@ -161,11 +169,12 @@ export default function Dashboard() {
 
     if (notificationPermission === 'granted') {
       newProducts.forEach((product) => {
-        new Notification(`Stok menipis: ${product.name}`, {
+        const notification = new Notification(`Stok menipis: ${product.name}`, {
           body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
           icon: `${import.meta.env.BASE_URL}icon-192.png`,
           tag: `low-stock-${product.id}`,
         })
+        attachNotificationClick(notification)
       })
     }
   }
@@ -181,11 +190,12 @@ export default function Dashboard() {
     if (permission === 'granted') {
       toast.success('Notifikasi stok diaktifkan')
       lowStockProducts.forEach((product) => {
-        new Notification(`Stok menipis: ${product.name}`, {
+        const notification = new Notification(`Stok menipis: ${product.name}`, {
           body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
           icon: `${import.meta.env.BASE_URL}icon-192.png`,
           tag: `low-stock-${product.id}`,
         })
+        attachNotificationClick(notification)
       })
     } else {
       toast.error('Izin notifikasi stok ditolak')
