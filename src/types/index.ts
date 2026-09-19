@@ -31,6 +31,8 @@ export interface Product {
   barcode: string | null
   category_id: string | null
   cost_price: number // per base unit (pcs/meter)
+  cost_unit: UnitType
+  cost_conversion: number
   stock: number // in base units
   min_stock: number
   unit_base: 'pcs' | 'meter'

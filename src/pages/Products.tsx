@@ -23,6 +23,7 @@ export default function Products() {
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
   const [costPrice, setCostPrice] = useState(0)
+  const [costUnit, setCostUnit] = useState<UnitType>('satuan')
   const [stock, setStock] = useState(0)
   const [minStock, setMinStock] = useState(10)
   const [unitBase, setUnitBase] = useState<'pcs' | 'meter'>('pcs')
@@ -48,6 +49,7 @@ export default function Products() {
     setName('')
     setSku('')
     setCostPrice(0)
+    setCostUnit('satuan')
     setStock(0)
     setMinStock(10)
     setUnitBase('pcs')
@@ -60,6 +62,7 @@ export default function Products() {
     setName(p.name)
     setSku(p.sku || '')
     setCostPrice(p.cost_price)
+    setCostUnit((p.cost_unit || 'satuan') as UnitType)
     setStock(p.stock)
     setMinStock(p.min_stock)
     setUnitBase(p.unit_base as 'pcs' | 'meter')
@@ -102,6 +105,8 @@ export default function Products() {
       name: name.trim(),
       sku: sku || null,
       cost_price: costPrice,
+      cost_unit: costUnit,
+      cost_conversion: UNIT_FACTORS[costUnit] || 1,
       stock,
       min_stock: minStock,
       unit_base: unitBase,
@@ -177,7 +182,7 @@ export default function Products() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium truncate">{p.name}</p>
                   <p className="text-xs text-slate-500">
-                    Stok: {p.stock} · Modal: {formatCurrency(p.cost_price)}
+                    Stok: {p.stock} · Modal: {formatCurrency(p.cost_price)} / {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {p.prices?.map((pr) => (
@@ -235,12 +240,23 @@ export default function Products() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Harga Modal / unit</label>
-                  <Input
-                    type="number"
-                    value={costPrice}
-                    onChange={(e) => setCostPrice(Number(e.target.value))}
-                  />
+                  <label className="mb-1 block text-sm font-medium">Harga Modal</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={costPrice}
+                      onChange={(e) => setCostPrice(Number(e.target.value))}
+                    />
+                    <select
+                      className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-sm"
+                      value={costUnit}
+                      onChange={(e) => setCostUnit(e.target.value as UnitType)}
+                    >
+                      {ALL_UNITS.map((u) => (
+                        <option key={u} value={u}>{UNIT_LABELS[u]}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium">Min. Stok</label>

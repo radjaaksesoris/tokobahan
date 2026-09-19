@@ -23,6 +23,11 @@ function getPriceForUnit(product: Product, unit: UnitType): { price: number; con
   return { price: Math.round(basePrice * conversion), conversion }
 }
 
+function getCostForUnit(product: Product, conversion: number) {
+  const costConversion = product.cost_conversion || 1
+  return (conversion / costConversion) * product.cost_price
+}
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
@@ -41,15 +46,15 @@ export const useCartStore = create<CartState>((set, get) => ({
                   ...i,
                   quantity: newQty,
                   line_total: newQty * price,
-                  line_cost: newQty * conversion * product.cost_price,
-                  line_profit: newQty * price - newQty * conversion * product.cost_price,
+                  line_cost: newQty * getCostForUnit(product, conversion),
+                  line_profit: newQty * price - newQty * getCostForUnit(product, conversion),
                 }
               : i
           ),
         }
       }
       const line_total = quantity * price
-      const line_cost = quantity * conversion * product.cost_price
+      const line_cost = quantity * getCostForUnit(product, conversion)
       return {
         items: [
           ...state.items,
@@ -80,8 +85,8 @@ export const useCartStore = create<CartState>((set, get) => ({
             ...i,
             quantity,
             line_total: quantity * i.unit_price,
-            line_cost: quantity * i.conversion * i.product.cost_price,
-            line_profit: quantity * i.unit_price - quantity * i.conversion * i.product.cost_price,
+            line_cost: quantity * getCostForUnit(i.product, i.conversion),
+            line_profit: quantity * i.unit_price - quantity * getCostForUnit(i.product, i.conversion),
           }
         }
         return i

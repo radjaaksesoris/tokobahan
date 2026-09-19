@@ -53,6 +53,8 @@ export interface Database {
           barcode: string | null
           category_id: string | null
           cost_price: number
+          cost_unit: string
+          cost_conversion: number
           stock: number
           min_stock: number
           unit_base: string
@@ -69,6 +71,8 @@ export interface Database {
           barcode?: string | null
           category_id?: string | null
           cost_price?: number
+          cost_unit?: string
+          cost_conversion?: number
           stock?: number
           min_stock?: number
           unit_base?: string
@@ -82,6 +86,8 @@ export interface Database {
           barcode?: string | null
           category_id?: string | null
           cost_price?: number
+          cost_unit?: string
+          cost_conversion?: number
           stock?: number
           min_stock?: number
           unit_base?: string
