@@ -118,6 +118,14 @@ git push -u origin main
    - `VITE_SUPABASE_ANON_KEY`
 4. Deploy
 
+Untuk GitHub Pages, tambahkan dua **Repository secrets** berikut di
+`Settings → Secrets and variables → Actions`:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Workflow deploy membaca secrets tersebut saat menjalankan `npm run build`.
+
 Setiap push ke `main` akan auto-deploy.
 
 ### Alternatif: Netlify

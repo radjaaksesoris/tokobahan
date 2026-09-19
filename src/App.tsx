@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import Login from '@/pages/Login'
@@ -31,6 +32,20 @@ export default function App() {
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-lg rounded-xl border border-amber-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-slate-900">Konfigurasi aplikasi belum lengkap</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Tambahkan secrets <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code>
+            di GitHub Repository Settings, lalu jalankan deploy ulang.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <BrowserRouter>
