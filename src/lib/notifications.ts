@@ -1,3 +1,5 @@
+import { supabase } from '@/lib/supabase'
+
 const SOUND_ENABLED_KEY = 'tokobahan.low-stock-sound-enabled'
 
 declare global {
@@ -39,4 +41,46 @@ export function playLowStockSound() {
   oscillator.addEventListener('ended', () => {
     void context.close()
   }, { once: true })
+}
+
+function getVapidPublicKey() {
+  return import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim() || ''
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4)
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/')
+  return Uint8Array.from(window.atob(base64), (char) => char.charCodeAt(0))
+}
+
+export async function registerPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    throw new Error('Browser tidak mendukung push notification')
+  }
+  const vapidPublicKey = getVapidPublicKey()
+  if (!vapidPublicKey) {
+    throw new Error('VAPID public key belum dikonfigurasi')
+  }
+
+  const registration = await navigator.serviceWorker.ready
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+  })
+  const json = subscription.toJSON()
+  if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
+    throw new Error('Subscription push tidak valid')
+  }
+
+  const { error } = await supabase.from('push_subscriptions').upsert({
+    endpoint: json.endpoint,
+    p256dh: json.keys.p256dh,
+    auth: json.keys.auth,
+  }, { onConflict: 'endpoint' })
+  if (error) throw error
+}
+
+export async function notifyLowStockPush() {
+  const { error } = await supabase.functions.invoke('notify-low-stock')
+  if (error) throw error
 }

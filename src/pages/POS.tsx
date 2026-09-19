@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { notifyLowStockPush } from '@/lib/notifications'
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([])
@@ -164,6 +165,9 @@ export default function POS() {
     clearCart()
     setShowCart(false)
     loadProducts()
+    notifyLowStockPush().catch((error) => {
+      console.error('Failed to send low-stock push notifications:', error)
+    })
     setCheckoutLoading(false)
   }
 

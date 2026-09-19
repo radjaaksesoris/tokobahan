@@ -63,6 +63,10 @@ npm install
    - Untuk database yang sudah memakai migration checkout, jalankan juga
      `supabase/migrations/20260919223000_scale_hardening.sql` agar agregasi laporan,
      pencarian data besar, index tambahan, dan reset database atomik aktif.
+   - Untuk push notification saat aplikasi tidak aktif, jalankan
+     `supabase/migrations/20260919231000_push_notifications.sql`, deploy function
+     `supabase/functions/notify-low-stock`, lalu isi secret `VAPID_SUBJECT`,
+     `VAPID_PUBLIC_KEY`, dan `VAPID_PRIVATE_KEY` di Supabase Edge Functions.
 3. Ambil **Project URL** dan **anon public key** di Settings → API
 
 ### 3. Environment

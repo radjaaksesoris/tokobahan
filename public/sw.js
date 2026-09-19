@@ -24,6 +24,25 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  const data = event.data.json()
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Stok menipis', {
+      body: data.body || 'Ada produk yang perlu direstock.',
+      icon: `${BASE_PATH}icon-192.png`,
+      badge: `${BASE_PATH}favicon.png`,
+      tag: data.tag || 'low-stock',
+      data: { url: data.url || BASE_PATH },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(clients.openWindow(event.notification.data?.url || BASE_PATH))
+})
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return
 

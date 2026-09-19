@@ -3,7 +3,12 @@ import { Navigate } from 'react-router-dom'
 import { AlertTriangle, Bell, Database, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { isStockSoundEnabled, playLowStockSound, setStockSoundEnabled } from '@/lib/notifications'
+import {
+  isStockSoundEnabled,
+  playLowStockSound,
+  registerPushSubscription,
+  setStockSoundEnabled,
+} from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -70,7 +75,12 @@ export default function Settings() {
     const permission = await Notification.requestPermission()
     setNotificationPermission(permission)
     if (permission === 'granted') {
-      toast.success('Notifikasi stok diaktifkan')
+      try {
+        await registerPushSubscription()
+        toast.success('Push notification stok diaktifkan')
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Gagal mengaktifkan push notification')
+      }
     } else if (permission === 'denied') {
       toast.error('Izin notifikasi ditolak oleh browser')
     }

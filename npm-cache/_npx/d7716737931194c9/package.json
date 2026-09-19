@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "_npx": {
+    "packages": [
+      "web-push"
+    ]
+  }
+}
