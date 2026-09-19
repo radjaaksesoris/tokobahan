@@ -1,0 +1,226 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { formatCurrency, formatNumber } from '@/lib/utils'
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from 'date-fns'
+import { id as localeId } from 'date-fns/locale'
+import {
+  TrendingUp,
+  TrendingDown,
+  Receipt,
+  DollarSign,
+  Calendar,
+} from 'lucide-react'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts'
+
+type Period = 'today' | 'week' | 'month' | 'custom'
+
+interface SaleRow {
+  id: string
+  invoice_no: string
+  total_amount: number
+  total_cost: number
+  total_profit: number
+  payment_method: string
+  created_at: string
+}
+
+export default function Reports() {
+  const [period, setPeriod] = useState<Period>('today')
+  const [sales, setSales] = useState<SaleRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    load()
+  }, [period])
+
+  function getRange() {
+    const now = new Date()
+    if (period === 'today') {
+      return { start: startOfDay(now), end: endOfDay(now) }
+    }
+    if (period === 'week') {
+      return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) }
+    }
+    return { start: startOfMonth(now), end: endOfMonth(now) }
+  }
+
+  async function load() {
+    setLoading(true)
+    const { start, end } = getRange()
+    const { data } = await supabase
+      .from('sales')
+      .select('*')
+      .gte('created_at', start.toISOString())
+      .lte('created_at', end.toISOString())
+      .order('created_at', { ascending: false })
+    setSales((data as SaleRow[]) || [])
+    setLoading(false)
+  }
+
+  const totalRevenue = sales.reduce((s, r) => s + Number(r.total_amount), 0)
+  const totalCost = sales.reduce((s, r) => s + Number(r.total_cost), 0)
+  const totalProfit = sales.reduce((s, r) => s + Number(r.total_profit), 0)
+  const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+
+  // daily breakdown for chart
+  const dailyMap: Record<string, { revenue: number; cost: number; profit: number }> = {}
+  sales.forEach((s) => {
+    const d = format(new Date(s.created_at), 'yyyy-MM-dd')
+    if (!dailyMap[d]) dailyMap[d] = { revenue: 0, cost: 0, profit: 0 }
+    dailyMap[d].revenue += Number(s.total_amount)
+    dailyMap[d].cost += Number(s.total_cost)
+    dailyMap[d].profit += Number(s.total_profit)
+  })
+  const chartData = Object.entries(dailyMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({
+      date: format(new Date(date), 'dd MMM', { locale: localeId }),
+      ...v,
+    }))
+
+  const periods: { key: Period; label: string }[] = [
+    { key: 'today', label: 'Hari Ini' },
+    { key: 'week', label: '7 Hari' },
+    { key: 'month', label: 'Bulan Ini' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Laporan Laba Rugi</h2>
+          <p className="text-sm text-slate-500">Pendapatan, biaya, dan laba bersih</p>
+        </div>
+        <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+          {periods.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                period === p.key
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+              <DollarSign className="h-4 w-4" /> Pendapatan
+            </div>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totalRevenue)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+              <TrendingDown className="h-4 w-4" /> HPP / Modal
+            </div>
+            <p className="text-xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+              <TrendingUp className="h-4 w-4" /> Laba Bersih
+            </div>
+            <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalProfit)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+              <Receipt className="h-4 w-4" /> Margin
+            </div>
+            <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
+            <p className="text-xs text-slate-400">{formatNumber(sales.length)} transaksi</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chart */}
+      {chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Grafik Pendapatan vs Laba</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip
+                    formatter={(v: number) => formatCurrency(v)}
+                    contentStyle={{ borderRadius: 8 }}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" name="Pendapatan" fill="#0f766e" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="profit" name="Laba" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transaction list */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Riwayat Transaksi
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="py-8 text-center text-slate-400">Memuat...</p>
+          ) : sales.length === 0 ? (
+            <p className="py-8 text-center text-slate-400">Belum ada transaksi</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {sales.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{s.invoice_no}</p>
+                    <p className="text-xs text-slate-400">
+                      {format(new Date(s.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })} ·{' '}
+                      {s.payment_method}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">{formatCurrency(s.total_amount)}</p>
+                    <p className="text-xs text-emerald-600">
+                      +{formatCurrency(s.total_profit)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
