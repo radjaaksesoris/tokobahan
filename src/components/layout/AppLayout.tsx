@@ -7,7 +7,6 @@ import {
   History,
   LogOut,
   Menu,
-  X,
   Settings,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -65,8 +64,13 @@ export function AppLayout() {
             <h1 className="truncate text-[0.95rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
             <p className="mt-0.5 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-accent">Aksesoris konveksi</p>
           </div>
-          <button className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Tutup navbar">
-            <X className="h-5 w-5" />
+          <button
+            className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Sembunyikan navbar"
+            title="Sembunyikan navbar"
+          >
+            <Menu className="h-5 w-5" />
           </button>
         </div>
 
@@ -115,20 +119,8 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex flex-1 flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-stone-200/80 bg-canvas/90 px-4 backdrop-blur lg:px-8">
-          <button
-            className="rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
-            onClick={() => setSidebarOpen((current) => !current)}
-            aria-label={sidebarOpen ? 'Sembunyikan navbar' : 'Tampilkan navbar'}
-            title={sidebarOpen ? 'Sembunyikan navbar' : 'Tampilkan navbar'}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex-1" />
-        </header>
-
         <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-5 lg:p-8">
-          <div className="mb-3 text-right text-xs font-medium text-slate-500">
+          <div className="mb-2 text-right text-xs font-medium text-slate-500">
             {new Date().toLocaleDateString('id-ID', {
               weekday: 'long',
               day: 'numeric',
@@ -139,6 +131,16 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      {!sidebarOpen && (
+        <button
+          className="fixed left-4 top-4 z-50 rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Tampilkan navbar"
+          title="Tampilkan navbar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
     </div>
   )
 }
