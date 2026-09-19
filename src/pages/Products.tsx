@@ -38,7 +38,11 @@ export default function Products() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('products').select('*').order('name')
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('name')
     setProducts(
       (data || []).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
     )
@@ -144,11 +148,14 @@ export default function Products() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Hapus produk ini?')) return
-    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (!confirm('Nonaktifkan produk ini? Riwayat transaksi akan tetap tersimpan.')) return
+    const { error } = await supabase
+      .from('products')
+      .update({ is_active: false })
+      .eq('id', id)
     if (error) toast.error(error.message)
     else {
-      toast.success('Produk dihapus')
+      toast.success('Produk dinonaktifkan')
       load()
     }
   }
