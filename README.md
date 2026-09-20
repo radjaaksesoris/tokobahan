@@ -60,6 +60,10 @@ npm install
    - Jika database sudah pernah dibuat, jalankan file
      `supabase/migrations/20260919210000_restore_checkout_sale.sql` untuk mengaktifkan RPC
      checkout dan menyegarkan schema cache PostgREST.
+   - Jalankan `supabase/migrations/20260920150000_add_fifo_stock_batches.sql` setelah migration
+     checkout untuk mengaktifkan penerimaan stok, pencatatan batch HPP FIFO, dan checkout
+     atomik terbaru. Migration ini menggantikan implementasi checkout lama secara aman dengan
+     `CREATE OR REPLACE FUNCTION`.
    - Untuk database yang sudah memakai migration checkout, jalankan juga
      `supabase/migrations/20260919223000_scale_hardening.sql` agar agregasi laporan,
      pencarian data besar, index tambahan, dan reset database atomik aktif.
@@ -178,6 +182,8 @@ supabase/
 - Realtime: setiap transaksi langsung muncul di dashboard monitor lain.
 - Stok otomatis berkurang saat checkout (berdasarkan conversion satuan).
 - Untuk production: aktifkan RLS lebih ketat jika perlu multi-toko.
+- Setelah migration Supabase dijalankan, uji alur tambah stok dan checkout dari aplikasi
+  menggunakan akun cashier sebelum digunakan pada transaksi nyata.
 
 ---
 
