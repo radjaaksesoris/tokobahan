@@ -83,6 +83,11 @@ export default function POS() {
     )
   }, [products, search])
 
+  function clearSearch() {
+    setSearch('')
+    setActiveProductIndex(-1)
+  }
+
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (filtered.length === 0) return
 
@@ -243,7 +248,7 @@ export default function POS() {
               <button
                 type="button"
                 aria-label="Reset pencarian"
-                onClick={() => setSearch('')}
+                onClick={clearSearch}
                 className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-stone-200 hover:text-slate-700"
               >
                 <X className="h-4 w-4" />
