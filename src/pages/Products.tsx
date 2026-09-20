@@ -15,6 +15,18 @@ import { Select } from '@/components/ui/Select'
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 const UNIT_OPTIONS = ALL_UNITS.map((unit) => ({ value: unit, label: UNIT_LABELS[unit] }))
 
+function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
+  const costPerBaseUnit = batchCost / (product.cost_conversion || 1)
+  const priceConversion = price.conversion || UNIT_FACTORS[price.unit] || 1
+  const unitCost = costPerBaseUnit * priceConversion
+  const margin = price.price - unitCost
+  return {
+    unitCost,
+    margin,
+    marginPercent: price.price > 0 ? (margin / price.price) * 100 : 0,
+  }
+}
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -386,6 +398,49 @@ export default function Products() {
                     <p className="mt-1 text-xs text-slate-400">
                       HPP ini hanya berlaku untuk stok baru. Stok lama tetap dihitung dengan HPP batch sebelumnya.
                     </p>
+                  </div>
+                  <div className="rounded-lg border border-stone-200">
+                    <div className="border-b border-stone-200 bg-stone-50 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                        Simulasi margin stok baru
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        Harga jual aktif dibandingkan dengan HPP yang dimasukkan.
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[430px] text-xs">
+                        <thead className="bg-primary text-center text-[10px] uppercase tracking-wide text-white">
+                          <tr>
+                            <th className="px-2 py-1.5 font-semibold">Satuan</th>
+                            <th className="px-2 py-1.5 font-semibold">Harga jual</th>
+                            <th className="px-2 py-1.5 font-semibold">HPP</th>
+                            <th className="px-2 py-1.5 font-semibold">Margin</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {stockProduct.prices?.map((price) => {
+                            const margin = getBatchMargin(stockProduct, price, stockCost)
+                            const profitable = margin.margin > 0
+                            return (
+                              <tr key={price.unit} className="text-center">
+                                <td className="px-2 py-1.5 font-medium text-slate-700">{UNIT_LABELS[price.unit]}</td>
+                                <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{formatCurrency(price.price)}</td>
+                                <td className="whitespace-nowrap px-2 py-1.5 text-slate-500">{formatCurrency(margin.unitCost)}</td>
+                                <td className={`whitespace-nowrap px-2 py-1.5 font-semibold ${profitable ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {formatCurrency(margin.margin)} ({margin.marginPercent.toFixed(1)}%)
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {stockProduct.prices?.some((price) => getBatchMargin(stockProduct, price, stockCost).margin <= 0) && (
+                      <p className="border-t border-red-100 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                        Peringatan: ada harga jual yang tidak menghasilkan keuntungan pada HPP baru ini.
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button variant="outline" className="flex-1" onClick={() => setStockProduct(null)}>
