@@ -29,9 +29,18 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink p-4">
-      <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
-      <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-secondary/20 blur-3xl" aria-hidden="true" />
-      <Card className="relative w-full max-w-md border-white/10 bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      <img
+        src={`${import.meta.env.BASE_URL}login-background.jpg`}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover opacity-75"
+      />
+      <div
+        className="absolute inset-0 bg-[linear-gradient(90deg,rgba(32,42,46,0.94)_0%,rgba(32,42,46,0.62)_45%,rgba(32,42,46,0.86)_100%)]"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,253,248,0.1),transparent_48%)]" aria-hidden="true" />
+      <Card className="relative w-full max-w-md border-white/35 bg-surface/90 shadow-[0_24px_80px_rgba(20,27,30,0.32)] backdrop-blur-md">
         <CardHeader className="items-center text-center pb-2">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-ink shadow-[0_0_0_6px_rgba(228,168,83,0.14)]">
             <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
