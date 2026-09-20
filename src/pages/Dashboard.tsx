@@ -210,24 +210,28 @@ export default function Dashboard() {
       value: formatCurrency(stats.todaySales),
       icon: ShoppingBag,
       color: 'bg-teal-100 text-teal-700',
+      watermark: 'text-teal-700/[0.08]',
     },
     {
       title: 'Laba Bersih Hari Ini',
       value: formatCurrency(stats.todayProfit),
       icon: TrendingUp,
       color: 'bg-emerald-100 text-emerald-700',
+      watermark: 'text-emerald-600/[0.09]',
     },
     {
       title: 'Transaksi Hari Ini',
       value: formatNumber(stats.todayOrders),
       icon: DollarSign,
       color: 'bg-amber-100 text-amber-700',
+      watermark: 'text-amber-600/[0.09]',
     },
     {
       title: 'Produk Aktif',
       value: formatNumber(stats.totalProducts),
       icon: Package,
       color: 'bg-blue-100 text-blue-700',
+      watermark: 'text-blue-600/[0.08]',
     },
   ]
 
@@ -249,8 +253,12 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.title} className="overflow-hidden border-0">
-            <CardContent className="flex items-start gap-3 p-4">
+          <Card key={c.title} className="relative overflow-hidden border-0">
+                <c.icon
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 ${c.watermark}`}
+                />
+                <CardContent className="relative z-10 flex items-start gap-3 p-4">
               <div className={`rounded-xl p-2.5 ${c.color}`}>
                 <c.icon className="h-5 w-5" />
               </div>
@@ -292,8 +300,9 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card className="overflow-hidden border-0">
-          <CardHeader>
+        <Card className="relative overflow-hidden border-0">
+          <TrendingUp aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
+          <CardHeader className="relative z-10">
             <CardTitle className="text-base">Penjualan 7 Hari</CardTitle>
           </CardHeader>
           <CardContent>
@@ -320,8 +329,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-0">
-          <CardHeader>
+        <Card className="relative overflow-hidden border-0">
+          <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-amber-600/[0.09]" />
+          <CardHeader className="relative z-10">
             <CardTitle className="text-base">Laba 7 Hari</CardTitle>
           </CardHeader>
           <CardContent>
