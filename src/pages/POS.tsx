@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -31,6 +31,7 @@ export default function POS() {
   const [qty, setQty] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'qris' | 'credit'>('cash')
   const [showCart, setShowCart] = useState(false)
+  const initialLoadComplete = useRef(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -42,7 +43,7 @@ export default function POS() {
   }, [search])
 
   async function loadProducts() {
-    setLoading(true)
+    if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
@@ -61,6 +62,7 @@ export default function POS() {
         })) as Product[]
       )
     }
+    initialLoadComplete.current = true
     setLoading(false)
   }
 
