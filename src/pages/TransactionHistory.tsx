@@ -187,6 +187,7 @@ export default function TransactionHistory() {
               <table className="w-full min-w-[680px] text-sm">
                 <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
                   <tr>
+                    <th className="w-12 px-4 py-2.5 font-semibold">No.</th>
                     <th className="px-4 py-2.5 font-semibold">Invoice</th>
                     <th className="px-4 py-2.5 font-semibold">Tanggal & waktu</th>
                     <th className="px-4 py-2.5 font-semibold">Pembayaran</th>
@@ -203,6 +204,7 @@ export default function TransactionHistory() {
                         index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
                       }`}
                     >
+                      <td className="px-4 py-2.5 text-center text-xs text-slate-500">{page * PAGE_SIZE + index + 1}</td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-center font-medium text-slate-900">{sale.invoice_no}</td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs text-slate-500">
                         {format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}

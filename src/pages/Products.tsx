@@ -328,6 +328,7 @@ export default function Products() {
             <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
+                  <th className="w-12 px-3 py-2 font-semibold">No.</th>
                   <th className="px-3 py-2 font-semibold">Produk</th>
                   <th className="px-3 py-2 font-semibold">Stok</th>
                   <th className="px-3 py-2 font-semibold">Modal</th>
@@ -336,8 +337,9 @@ export default function Products() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {products.map((p) => (
+                {products.map((p, index) => (
                   <tr key={p.id} className="odd:bg-white even:bg-stone-50/70 hover:bg-teal-50/50">
+                    <td className="px-3 py-2 text-center text-xs text-slate-500">{page * pageSize + index + 1}</td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
@@ -466,6 +468,7 @@ export default function Products() {
                       <table className="w-full min-w-[430px] text-xs">
                         <thead className="bg-primary text-center text-[10px] uppercase tracking-wide text-white">
                           <tr>
+                            <th className="w-10 px-2 py-1.5 font-semibold">No.</th>
                             <th className="px-2 py-1.5 font-semibold">Satuan</th>
                             <th className="px-2 py-1.5 font-semibold">Harga jual</th>
                             <th className="px-2 py-1.5 font-semibold">HPP</th>
@@ -473,11 +476,12 @@ export default function Products() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                          {stockProduct.prices?.map((price) => {
+                          {stockProduct.prices?.map((price, index) => {
                             const margin = getBatchMargin(stockProduct, price, stockCost)
                             const profitable = margin.margin > 0
                             return (
                               <tr key={price.unit} className="text-center">
+                                <td className="px-2 py-1.5 text-slate-500">{index + 1}</td>
                                 <td className="px-2 py-1.5 font-medium text-slate-700">{UNIT_LABELS[price.unit]}</td>
                                 <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{formatCurrency(price.price)}</td>
                                 <td className="whitespace-nowrap px-2 py-1.5 text-slate-500">{formatCurrency(margin.unitCost)}</td>
