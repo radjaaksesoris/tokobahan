@@ -77,10 +77,23 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 
 function PageLoader() {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-primary lg:min-h-[40vh] lg:bg-transparent">
-      <LoadingDots className="text-white lg:text-primary" />
+    <div className="flex min-h-dvh items-center justify-center bg-canvas lg:min-h-[40vh]">
+      <LoadingDots className="text-primary" />
     </div>
   )
+}
+
+function preloadPageChunks() {
+  void Promise.all([
+    import('@/pages/Dashboard'),
+    import('@/pages/POS'),
+    import('@/pages/Products'),
+    import('@/pages/Reports'),
+    import('@/pages/TransactionHistory'),
+    import('@/pages/Settings'),
+  ]).catch((error) => {
+    console.warn('Gagal melakukan prefetch halaman:', error)
+  })
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -113,6 +126,22 @@ export default function App() {
     registerPushSubscription().catch((error) => {
       console.warn('Push subscription sync failed:', error)
     })
+  }, [authLoading, user])
+
+  useEffect(() => {
+    if (authLoading || !user) return
+
+    const idleCallback = 'requestIdleCallback' in window
+      ? window.requestIdleCallback(preloadPageChunks)
+      : window.setTimeout(preloadPageChunks, 200)
+
+    return () => {
+      if ('cancelIdleCallback' in window && typeof idleCallback === 'number') {
+        window.cancelIdleCallback(idleCallback)
+      } else {
+        window.clearTimeout(idleCallback)
+      }
+    }
   }, [authLoading, user])
 
   if (!isSupabaseConfigured) {
