@@ -21,6 +21,8 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
 
+type PaymentMethod = 'cash' | 'qris'
+
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
@@ -29,7 +31,7 @@ export default function POS() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<UnitType>('satuan')
   const [qty, setQty] = useState(1)
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'qris' | 'credit'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
@@ -553,8 +555,8 @@ function CartPanel({
 }: {
   items: ReturnType<typeof useCartStore.getState>['items']
   totals: ReturnType<typeof useCartStore.getState>['getTotals'] extends () => infer R ? R : never
-  paymentMethod: string
-  setPaymentMethod: (m: any) => void
+  paymentMethod: PaymentMethod
+  setPaymentMethod: (method: PaymentMethod) => void
   updateQuantity: (id: string, unit: UnitType, q: number) => void
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
@@ -626,7 +628,7 @@ function CartPanel({
         </div>
 
         <div className="flex gap-1.5">
-          {(['cash', 'transfer', 'qris', 'credit'] as const).map((m) => (
+          {(['cash', 'qris'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPaymentMethod(m)}
@@ -636,7 +638,7 @@ function CartPanel({
                   : 'border-white/15 text-stone-300 hover:border-white/30'
               }`}
             >
-              {m === 'cash' ? 'Tunai' : m === 'transfer' ? 'TF' : m === 'qris' ? 'QRIS' : 'Kredit'}
+              {m === 'cash' ? 'Tunai' : 'QRIS'}
             </button>
           ))}
         </div>
