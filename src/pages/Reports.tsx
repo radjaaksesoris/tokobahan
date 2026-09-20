@@ -7,6 +7,8 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
+  Percent,
+  Coins,
 } from 'lucide-react'
 import {
   BarChart,
@@ -156,32 +158,36 @@ export default function Reports() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Card>
-          <CardContent className="p-4">
+        <Card className="relative overflow-hidden">
+          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
+          <CardContent className="relative z-10 p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
               <DollarSign className="h-4 w-4" /> Pendapatan
             </div>
             <p className="text-xl font-bold text-slate-900">{formatCurrency(totalRevenue)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="relative overflow-hidden">
+          <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-red-600/[0.08]" />
+          <CardContent className="relative z-10 p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
               <TrendingDown className="h-4 w-4" /> HPP / Modal
             </div>
             <p className="text-xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="relative overflow-hidden">
+          <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-emerald-600/[0.09]" />
+          <CardContent className="relative z-10 p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
               <TrendingUp className="h-4 w-4" /> Laba Bersih
             </div>
             <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalProfit)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="relative overflow-hidden">
+          <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-teal-700/[0.08]" />
+          <CardContent className="relative z-10 p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
               <DollarSign className="h-4 w-4" /> Margin
             </div>
@@ -189,8 +195,9 @@ export default function Reports() {
             <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="relative overflow-hidden">
+          <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-amber-600/[0.09]" />
+          <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
               <DollarSign className="h-4 w-4" /> Zakat (2,5%)
             </div>

@@ -77,8 +77,8 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 
 function PageLoader() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center">
-      <LoadingDots className="text-primary" />
+    <div className="flex min-h-dvh items-center justify-center bg-primary lg:min-h-[40vh] lg:bg-transparent">
+      <LoadingDots className="text-white lg:text-primary" />
     </div>
   )
 }
@@ -88,8 +88,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas">
-        <LoadingDots dotClassName="h-2.5 w-2.5" />
+      <div className="flex min-h-dvh items-center justify-center bg-primary lg:bg-canvas">
+        <LoadingDots className="text-white lg:text-primary" dotClassName="h-2.5 w-2.5" />
       </div>
     )
   }
