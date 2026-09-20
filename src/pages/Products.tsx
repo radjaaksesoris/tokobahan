@@ -1,19 +1,34 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { UNIT_LABELS, UNIT_FACTORS } from '@/types'
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, formatNumber, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight, Boxes } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight, Boxes, History } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
+import { endOfDay, format, startOfDay } from 'date-fns'
+import { id as localeId } from 'date-fns/locale'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 const UNIT_OPTIONS = ALL_UNITS.map((unit) => ({ value: unit, label: UNIT_LABELS[unit] }))
+const STOCK_HISTORY_PAGE_SIZE = 20
+
+interface StockReceipt {
+  id: string
+  product_id: string
+  quantity_received: number
+  unit_cost: number
+  received_at: string
+  product: {
+    name: string
+    stock_unit: UnitType
+  } | null
+}
 
 function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
   const costPerBaseUnit = batchCost / (product.cost_conversion || 1)
@@ -49,6 +64,12 @@ export default function Products() {
   ))
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
+  const [stockHistory, setStockHistory] = useState<StockReceipt[]>([])
+  const [stockHistoryDate, setStockHistoryDate] = useState('')
+  const [stockHistoryPage, setStockHistoryPage] = useState(0)
+  const [stockHistoryHasNextPage, setStockHistoryHasNextPage] = useState(false)
+  const [stockHistoryLoading, setStockHistoryLoading] = useState(true)
+  const stockHistoryRequestId = useRef(0)
 
   // form
   const [name, setName] = useState('')
@@ -79,6 +100,11 @@ export default function Products() {
     return () => window.clearTimeout(timer)
   }, [search, page, pageSize])
 
+  useEffect(() => {
+    const timer = window.setTimeout(loadStockHistory, 200)
+    return () => window.clearTimeout(timer)
+  }, [stockHistoryDate, stockHistoryPage])
+
   async function load() {
     const requestId = ++loadRequestId.current
     if (!initialLoadComplete.current) setLoading(true)
@@ -108,6 +134,51 @@ export default function Products() {
     initialLoadComplete.current = true
     setLoading(false)
   }
+
+  async function loadStockHistory() {
+    const requestId = ++stockHistoryRequestId.current
+    setStockHistoryLoading(true)
+    let query = supabase
+      .from('product_stock_batches')
+      .select('id, product_id, quantity_received, unit_cost, received_at, product:products(name, stock_unit)')
+      .order('received_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(
+        stockHistoryPage * STOCK_HISTORY_PAGE_SIZE,
+        (stockHistoryPage + 1) * STOCK_HISTORY_PAGE_SIZE,
+      )
+
+    if (stockHistoryDate) {
+      const selectedDate = new Date(`${stockHistoryDate}T00:00:00`)
+      query = query
+        .gte('received_at', startOfDay(selectedDate).toISOString())
+        .lte('received_at', endOfDay(selectedDate).toISOString())
+    }
+
+    const { data, error } = await query
+    if (requestId !== stockHistoryRequestId.current) return
+    if (error) {
+      toast.error(`Gagal memuat riwayat stok: ${error.message}`)
+      setStockHistory([])
+      setStockHistoryHasNextPage(false)
+    } else {
+      const rows = (data || []) as unknown as StockReceipt[]
+      setStockHistoryHasNextPage(rows.length > STOCK_HISTORY_PAGE_SIZE)
+      setStockHistory(rows.slice(0, STOCK_HISTORY_PAGE_SIZE))
+    }
+    setStockHistoryLoading(false)
+  }
+
+  const stockHistorySummary = useMemo(
+    () => stockHistory.reduce(
+      (summary, receipt) => ({
+        quantity: summary.quantity + Number(receipt.quantity_received),
+        value: summary.value + Number(receipt.quantity_received) * Number(receipt.unit_cost),
+      }),
+      { quantity: 0, value: 0 },
+    ),
+    [stockHistory],
+  )
 
   function openCreate() {
     setEditing(null)
@@ -413,6 +484,137 @@ export default function Products() {
               </Button>
             </div>
           )}
+
+          <Card className="mt-6">
+            <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <History className="h-4 w-4 text-primary" />
+                  Riwayat Input Stok
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={stockHistoryDate}
+                  onChange={(event) => {
+                    setStockHistoryDate(event.target.value)
+                    setStockHistoryPage(0)
+                  }}
+                  aria-label="Filter tanggal input stok"
+                  className="h-10 sm:w-44"
+                />
+                {stockHistoryDate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockHistoryDate('')
+                      setStockHistoryPage(0)
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    aria-label="Hapus filter tanggal input stok"
+                    title="Hapus filter tanggal"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {stockHistoryLoading ? (
+                <div className="flex justify-center py-10">
+                  <LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" />
+                </div>
+              ) : stockHistory.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">
+                  Belum ada riwayat input stok pada tanggal tersebut.
+                </p>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[620px] text-sm">
+                      <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
+                        <tr>
+                          <th className="w-12 px-3 py-2 font-semibold">No.</th>
+                          <th className="px-3 py-2 text-left font-semibold">Tanggal</th>
+                          <th className="px-3 py-2 text-left font-semibold">Produk</th>
+                          <th className="px-3 py-2 font-semibold">Jumlah</th>
+                          <th className="px-3 py-2 font-semibold">HPP</th>
+                          <th className="px-3 py-2 font-semibold">Nilai stok</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {stockHistory.map((receipt, index) => (
+                          <tr key={receipt.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
+                            <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                              {stockHistoryPage * STOCK_HISTORY_PAGE_SIZE + index + 1}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-left text-xs text-muted-foreground">
+                              {format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}
+                            </td>
+                            <td className="px-3 py-2 text-left font-medium text-ink/90">
+                              {receipt.product?.name || 'Produk tidak ditemukan'}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-center text-muted-foreground">
+                              {formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right text-muted-foreground">
+                              {formatCurrency(Number(receipt.unit_cost))}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">
+                              {formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="border-t border-border bg-muted/50">
+                        <tr>
+                          <td colSpan={3} className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
+                            Total halaman
+                          </td>
+                          <td className="px-3 py-2 text-center text-xs font-semibold text-ink">
+                            {formatNumber(stockHistorySummary.quantity)}
+                          </td>
+                          <td />
+                          <td className="px-3 py-2 text-right text-xs font-semibold text-primary">
+                            {formatCurrency(stockHistorySummary.value)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                    <span className="text-xs text-muted-foreground">
+                      Halaman {formatNumber(stockHistoryPage + 1)}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStockHistoryPage((current) => Math.max(0, current - 1))}
+                        disabled={stockHistoryPage === 0 || stockHistoryLoading}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Sebelumnya
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStockHistoryPage((current) => current + 1)}
+                        disabled={!stockHistoryHasNextPage || stockHistoryLoading}
+                      >
+                        Berikutnya
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
           {stockProduct && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">

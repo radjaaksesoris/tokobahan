@@ -201,6 +201,38 @@ export interface Database {
         }
         Relationships: []
       }
+      product_stock_batches: {
+        Row: {
+          id: string
+          product_id: string
+          quantity_received: number
+          quantity_remaining: number
+          unit_cost: number
+          received_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          quantity_received: number
+          quantity_remaining: number
+          unit_cost: number
+          received_at?: string
+          created_at?: string
+        }
+        Update: {
+          quantity_remaining?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'product_stock_batches_product_id_fkey'
+            columns: ['product_id']
+            isOneToOne: false
+            referencedRelation: 'products'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {}
     Functions: {
