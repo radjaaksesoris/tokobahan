@@ -372,6 +372,7 @@ export default function Products() {
                       value={stockUnit}
                       options={UNIT_OPTIONS}
                       onChange={(value) => setStockUnit(value as UnitType)}
+                      native
                       aria-label="Satuan stok"
                     />
                   </div>
@@ -391,6 +392,7 @@ export default function Products() {
                       value={costUnit}
                       options={UNIT_OPTIONS}
                       onChange={(value) => setCostUnit(value as UnitType)}
+                      native
                       aria-label="Satuan harga modal"
                     />
                   </div>
@@ -420,6 +422,7 @@ export default function Products() {
                         value={pr.unit}
                         options={UNIT_OPTIONS}
                         onChange={(value) => updatePrice(idx, 'unit', value)}
+                        native
                         aria-label={`Satuan harga jual ${idx + 1}`}
                       />
                       <Input

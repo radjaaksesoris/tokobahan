@@ -13,6 +13,7 @@ interface SelectProps {
   onChange: (value: string) => void
   className?: string
   menuClassName?: string
+  native?: boolean
   'aria-label'?: string
 }
 
@@ -22,6 +23,7 @@ export function Select({
   onChange,
   className,
   menuClassName,
+  native = false,
   'aria-label': ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false)
@@ -43,6 +45,26 @@ export function Select({
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [])
+
+  if (native) {
+    return (
+      <div className={cn('relative', className)}>
+        <select
+          value={value}
+          aria-label={ariaLabel}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      </div>
+    )
+  }
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
