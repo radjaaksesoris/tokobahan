@@ -96,12 +96,12 @@ export default function Dashboard() {
     const todayStart = startOfDay(new Date()).toISOString()
     const todayEnd = endOfDay(new Date()).toISOString()
 
-    const [salesRes, productsRes, weekSales] = await Promise.all([
+    const [todaySummaryRes, productsRes, weekSales] = await Promise.all([
       supabase
-        .from('sales')
-        .select('total_amount, total_profit')
-        .gte('created_at', todayStart)
-        .lte('created_at', todayEnd),
+        .rpc('sales_summary', {
+          p_start: todayStart,
+          p_end: todayEnd,
+        }),
       supabase.from('products').select('id, name, stock, min_stock').eq('is_active', true),
       supabase.rpc('sales_daily_summary', {
         p_start: startOfDay(subDays(new Date(), 6)).toISOString(),
@@ -109,15 +109,16 @@ export default function Dashboard() {
       }),
     ])
 
-    const queryError = salesRes.error || productsRes.error || weekSales.error
+    const queryError = todaySummaryRes.error || productsRes.error || weekSales.error
     if (queryError) {
       setError(queryError.message)
       setLoading(false)
       return
     }
-    const todaySales = salesRes.data?.reduce((s, r) => s + Number(r.total_amount), 0) ?? 0
-    const todayProfit = salesRes.data?.reduce((s, r) => s + Number(r.total_profit), 0) ?? 0
-    const todayOrders = salesRes.data?.length ?? 0
+    const todaySummary = todaySummaryRes.data?.[0]
+    const todaySales = Number(todaySummary?.total_revenue ?? 0)
+    const todayProfit = Number(todaySummary?.total_profit ?? 0)
+    const todayOrders = Number(todaySummary?.transaction_count ?? 0)
     const totalProducts = productsRes.data?.length ?? 0
     const lowStockRows = (productsRes.data || []).filter((p) => p.stock <= p.min_stock) as LowStockProduct[]
     const lowStock = lowStockRows.length

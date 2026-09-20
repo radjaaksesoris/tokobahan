@@ -131,13 +131,17 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user) return
 
-    const idleCallback = 'requestIdleCallback' in window
-      ? window.requestIdleCallback(preloadPageChunks)
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const idleCallback = browserWindow.requestIdleCallback
+      ? browserWindow.requestIdleCallback(preloadPageChunks)
       : window.setTimeout(preloadPageChunks, 200)
 
     return () => {
-      if ('cancelIdleCallback' in window && typeof idleCallback === 'number') {
-        window.cancelIdleCallback(idleCallback)
+      if (browserWindow.cancelIdleCallback && browserWindow.requestIdleCallback) {
+        browserWindow.cancelIdleCallback(idleCallback)
       } else {
         window.clearTimeout(idleCallback)
       }
