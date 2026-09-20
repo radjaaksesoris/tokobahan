@@ -212,7 +212,7 @@ export default function POS() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-[1440px] flex-col gap-4 lg:flex-row">
+    <div className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-[1440px] flex-col gap-4 lg:h-[calc(100dvh-5rem)] lg:min-h-0 lg:flex-row">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -323,7 +323,7 @@ export default function POS() {
       </div>
 
       {/* Cart - desktop */}
-      <div className="hidden w-full max-w-sm flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:flex">
+      <div className="hidden w-full max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:flex">
         <CartPanel
           items={items}
           totals={totals}
@@ -563,13 +563,13 @@ function CartPanel({
   loading: boolean
 }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-white/10 px-4 py-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
         <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
         {items.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-400">Keranjang kosong</p>
         ) : (
