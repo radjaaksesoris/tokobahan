@@ -6,7 +6,7 @@ import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } 
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight, Boxes } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
@@ -22,6 +22,10 @@ export default function Products() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
+  const [stockProduct, setStockProduct] = useState<Product | null>(null)
+  const [stockQuantity, setStockQuantity] = useState(0)
+  const [stockCost, setStockCost] = useState(0)
+  const [stockSaving, setStockSaving] = useState(false)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -105,6 +109,34 @@ export default function Products() {
     setUnitBase(p.unit_base as 'pcs' | 'meter')
     setPrices(productPrices)
     setModal(true)
+  }
+
+  function openStock(p: Product) {
+    setStockProduct(p)
+    setStockQuantity(0)
+    setStockCost(p.cost_price)
+  }
+
+  async function handleStockReceipt() {
+    if (!stockProduct) return
+    if (stockQuantity <= 0 || stockCost < 0) {
+      toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
+      return
+    }
+    setStockSaving(true)
+    const { error } = await supabase.rpc('receive_stock_batch', {
+      p_product_id: stockProduct.id,
+      p_quantity: stockQuantity,
+      p_unit_cost: stockCost,
+    })
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success(`Stok ${stockProduct.name} berhasil ditambahkan`)
+      setStockProduct(null)
+      load()
+    }
+    setStockSaving(false)
   }
 
   function addPriceRow() {
@@ -293,6 +325,9 @@ export default function Products() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
+                          <Boxes className="h-3.5 w-3.5" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
                           <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         </Button>
@@ -312,6 +347,56 @@ export default function Products() {
               <Button variant="outline" disabled={!hasNextPage} onClick={() => setPage((current) => current + 1)}>
                 Berikutnya <ChevronRight className="h-4 w-4" />
               </Button>
+            </div>
+          )}
+
+          {stockProduct && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+              <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+                <CardHeader className="flex-row items-center justify-between border-b">
+                  <div>
+                    <CardTitle>Tambah Stok</CardTitle>
+                    <p className="mt-1 text-sm text-slate-500">{stockProduct.name}</p>
+                  </div>
+                  <button onClick={() => setStockProduct(null)} aria-label="Tutup tambah stok">
+                    <X className="h-5 w-5" />
+                  </button>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="rounded-lg bg-stone-50 p-3 text-sm text-slate-600">
+                    Stok saat ini: <strong>{stockProduct.stock} {UNIT_LABELS[(stockProduct.stock_unit || 'satuan') as UnitType]}</strong>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={stockQuantity}
+                      onChange={(event) => setStockQuantity(Number(event.target.value))}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">HPP batch baru</label>
+                    <Input
+                      inputMode="numeric"
+                      value={formatCurrencyInput(stockCost)}
+                      onChange={(event) => setStockCost(parseCurrencyInput(event.target.value))}
+                    />
+                    <p className="mt-1 text-xs text-slate-400">
+                      HPP ini hanya berlaku untuk stok baru. Stok lama tetap dihitung dengan HPP batch sebelumnya.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setStockProduct(null)}>
+                      Batal
+                    </Button>
+                    <Button className="flex-1" onClick={handleStockReceipt} disabled={stockSaving}>
+                      {stockSaving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan Stok'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
@@ -354,6 +439,7 @@ export default function Products() {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
+
                   </div>
                   {editing?.sku && !skuEditing && (
                     <p className="mt-1 text-[11px] text-slate-400">SKU dikunci saat mengubah stok atau harga.</p>
@@ -367,6 +453,8 @@ export default function Products() {
                       type="number"
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
+                      readOnly={Boolean(editing)}
+                      title={editing ? 'Gunakan Tambah Stok untuk menerima stok baru' : undefined}
                     />
                     <Select
                       className="w-32"
@@ -388,6 +476,8 @@ export default function Products() {
                       inputMode="numeric"
                       value={formatCurrencyInput(costPrice)}
                       onChange={(e) => setCostPrice(parseCurrencyInput(e.target.value))}
+                      readOnly={Boolean(editing)}
+                      title={editing ? 'Gunakan Tambah Stok untuk mengubah HPP batch baru' : undefined}
                     />
                     <Select
                       className="w-32"
@@ -398,6 +488,11 @@ export default function Products() {
                       aria-label="Satuan harga modal"
                     />
                   </div>
+                  {editing && (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Stok dan HPP produk lama dikunci. Gunakan tombol Tambah Stok untuk membuat batch FIFO baru.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium">Min. Stok</label>

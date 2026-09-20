@@ -249,6 +249,14 @@ export interface Database {
         Args: Record<string, never>
         Returns: undefined
       }
+      receive_stock_batch: {
+        Args: {
+          p_product_id: string
+          p_quantity: number
+          p_unit_cost: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {}
     CompositeTypes: {}

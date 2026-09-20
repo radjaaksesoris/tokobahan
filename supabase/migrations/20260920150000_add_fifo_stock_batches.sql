@@ -58,6 +58,40 @@ AFTER INSERT OR UPDATE OF stock ON public.products
 FOR EACH ROW
 EXECUTE FUNCTION public.record_stock_batch();
 
+CREATE OR REPLACE FUNCTION public.receive_stock_batch(
+  p_product_id UUID,
+  p_quantity NUMERIC,
+  p_unit_cost NUMERIC
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Sesi pengguna tidak valid';
+  END IF;
+  IF p_quantity IS NULL OR p_quantity <= 0 THEN
+    RAISE EXCEPTION 'Jumlah stok masuk harus lebih besar dari 0';
+  END IF;
+  IF p_unit_cost IS NULL OR p_unit_cost < 0 THEN
+    RAISE EXCEPTION 'HPP tidak boleh negatif';
+  END IF;
+
+  UPDATE public.products
+  SET stock = stock + p_quantity,
+      cost_price = p_unit_cost,
+      updated_at = now()
+  WHERE id = p_product_id
+    AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Produk tidak ditemukan atau sudah tidak aktif';
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.checkout_sale(
   p_invoice_no TEXT,
   p_total_amount NUMERIC,
@@ -211,6 +245,8 @@ $$;
 
 REVOKE ALL ON TABLE public.product_stock_batches FROM PUBLIC, authenticated;
 REVOKE ALL ON FUNCTION public.record_stock_batch() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.receive_stock_batch(UUID, NUMERIC, NUMERIC) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.receive_stock_batch(UUID, NUMERIC, NUMERIC) TO authenticated;
 REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) TO authenticated;
 
