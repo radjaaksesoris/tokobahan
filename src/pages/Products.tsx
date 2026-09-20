@@ -244,42 +244,67 @@ export default function Products() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {products.map((p) => (
-            <Card key={p.id}>
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary">
-                  {p.name.charAt(0)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{p.name}</p>
-                  <p className="text-xs text-slate-500">
-                    Stok: {Math.floor(p.stock / (p.stock_conversion || 1))} {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]} · Modal: {formatCurrency(p.cost_price)} / {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {p.prices?.map((pr) => (
-                      <span
-                        key={pr.unit}
-                        className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] text-slate-600"
-                      >
-                        {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => requestDelete(p)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b border-stone-200 bg-stone-50 text-left text-[11px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Produk</th>
+                  <th className="px-3 py-2 font-semibold">Stok</th>
+                  <th className="px-3 py-2 font-semibold">Modal</th>
+                  <th className="px-3 py-2 font-semibold">Harga jual</th>
+                  <th className="w-24 px-3 py-2 text-right font-semibold">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {products.map((p) => (
+                  <tr key={p.id} className="odd:bg-white even:bg-stone-50/70 hover:bg-teal-50/50">
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
+                          {p.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-800">{p.name}</p>
+                          {p.sku && <p className="truncate text-[11px] text-slate-400">SKU: {p.sku}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">
+                      <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
+                        {Math.floor(p.stock / (p.stock_conversion || 1))}
+                      </span>{' '}
+                      {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">
+                      {formatCurrency(p.cost_price)} <span className="text-slate-400">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {p.prices?.map((pr) => (
+                          <span key={pr.unit} className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                            {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {(page > 0 || hasNextPage) && (
-            <div className="flex items-center justify-between pt-3">
+            <div className="flex items-center justify-between border-t border-stone-200 px-3 py-2.5">
               <Button variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
                 <ChevronLeft className="h-4 w-4" /> Sebelumnya
               </Button>
