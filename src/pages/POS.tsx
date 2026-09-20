@@ -117,8 +117,11 @@ export default function POS() {
       setSelectedProduct(null)
       return
     }
-    if (qty > selectedProduct.stock) {
-      toast.error(`Stok ${selectedProduct.name} hanya tersisa ${selectedProduct.stock}`)
+    const existingQuantity = items.find(
+      (item) => item.product.id === selectedProduct.id && item.unit === selectedUnit
+    )?.quantity || 0
+    if (existingQuantity + qty > selectedProduct.stock) {
+      toast.error(`Stok ${selectedProduct.name} hanya tersisa ${Math.max(0, selectedProduct.stock - existingQuantity)}`)
       return
     }
     addItem(selectedProduct, selectedUnit, qty)
@@ -580,7 +583,7 @@ function CartPanel({
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <button
-                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white"
+                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white disabled:cursor-not-allowed disabled:opacity-40"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity - 1)}
                   >
                     <Minus className="h-3 w-3" />
@@ -589,6 +592,8 @@ function CartPanel({
                   <button
                     className="rounded-lg border border-white/10 bg-white/10 p-2 text-white"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity + 1)}
+                    disabled={item.quantity >= item.product.stock}
+                    title={item.quantity >= item.product.stock ? 'Jumlah sudah mencapai stok' : 'Tambah jumlah'}
                   >
                     <Plus className="h-3 w-3" />
                   </button>

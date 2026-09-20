@@ -37,7 +37,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         (i) => i.product.id === product.id && i.unit === unit
       )
       if (existing) {
-        const newQty = existing.quantity + quantity
+        const newQty = Math.min(existing.quantity + quantity, product.stock)
         return {
           items: state.items.map((i) =>
             i.product.id === product.id && i.unit === unit
@@ -80,12 +80,13 @@ export const useCartStore = create<CartState>((set, get) => ({
     set((state) => ({
       items: state.items.map((i) => {
         if (i.product.id === productId && i.unit === unit) {
+          const safeQuantity = Math.min(quantity, i.product.stock)
           return {
             ...i,
-            quantity,
-            line_total: quantity * i.unit_price,
-            line_cost: quantity * getCostForUnit(i.product),
-            line_profit: quantity * i.unit_price - quantity * getCostForUnit(i.product),
+            quantity: safeQuantity,
+            line_total: safeQuantity * i.unit_price,
+            line_cost: safeQuantity * getCostForUnit(i.product),
+            line_profit: safeQuantity * i.unit_price - safeQuantity * getCostForUnit(i.product),
           }
         }
         return i
