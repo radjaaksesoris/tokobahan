@@ -112,16 +112,16 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="border-b border-stone-300/80 pb-5">
+      <div className="border-b border-border pb-5">
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
         <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
-        <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
       </div>
 
       <Card>
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9 pr-10"
               placeholder="Cari nomor invoice atau metode pembayaran..."
@@ -133,14 +133,14 @@ export default function TransactionHistory() {
                 type="button"
                 aria-label="Reset pencarian"
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-stone-200 hover:text-slate-700"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
           <div className="relative sm:w-48">
-            <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
               type="date"
@@ -154,7 +154,7 @@ export default function TransactionHistory() {
           </div>
           {date && (
             <button
-              className="rounded-xl border border-stone-300 px-3 text-sm text-slate-600 hover:bg-stone-100"
+              className="rounded-xl border border-border px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() => {
                 setDate('')
                 setPage(0)
@@ -181,7 +181,7 @@ export default function TransactionHistory() {
               <LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" />
             </div>
           ) : filteredSales.length === 0 ? (
-            <p className="py-12 text-center text-slate-400">Belum ada transaksi yang cocok.</p>
+            <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
             <div className="overflow-x-hidden">
               <table className="w-full table-fixed text-sm">
@@ -204,17 +204,17 @@ export default function TransactionHistory() {
                     <tr
                       key={sale.id}
                       className={`border-b border-stone-100 transition-colors hover:bg-teal-50/60 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
+                        index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'
                       }`}
                     >
-                      <td className="px-1 py-2.5 text-center text-xs text-slate-500 lg:px-4">{page * PAGE_SIZE + index + 1}</td>
-                      <td className="truncate px-1 py-2.5 text-center text-xs font-medium text-slate-900 lg:px-4 lg:text-sm">{sale.invoice_no}</td>
-                      <td className="whitespace-nowrap px-1 py-2.5 text-center text-[11px] text-slate-500 lg:px-4 lg:text-xs">
+                      <td className="px-1 py-2.5 text-center text-xs text-muted-foreground lg:px-4">{page * PAGE_SIZE + index + 1}</td>
+                      <td className="truncate px-1 py-2.5 text-center text-xs font-medium text-ink lg:px-4 lg:text-sm">{sale.invoice_no}</td>
+                      <td className="whitespace-nowrap px-1 py-2.5 text-center text-[11px] text-muted-foreground lg:px-4 lg:text-xs">
                         <span className="lg:hidden">{format(new Date(sale.created_at), 'dd MMM yy', { locale: localeId })}</span>
                         <span className="hidden lg:inline">{format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}</span>
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-slate-600 lg:table-cell">{sale.payment_method}</td>
-                      <td className="truncate px-1 py-2.5 text-center text-xs font-semibold text-slate-900 lg:px-4 lg:text-sm">
+                      <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-muted-foreground lg:table-cell">{sale.payment_method}</td>
+                      <td className="truncate px-1 py-2.5 text-center text-xs font-semibold text-ink lg:px-4 lg:text-sm">
                         {formatCurrency(Number(sale.total_amount))}
                       </td>
                       <td className="truncate px-1 py-2.5 text-center text-[11px] font-medium text-emerald-600 lg:px-4 lg:text-xs">
@@ -222,7 +222,7 @@ export default function TransactionHistory() {
                       </td>
                       <td className="px-1 py-2 text-center lg:px-3">
                         <button
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-teal-100 hover:text-primary"
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-teal-100 hover:text-primary"
                           onClick={() => openDetails(sale)}
                           title={`Lihat ${sale.invoice_no}`}
                           aria-label={`Lihat detail ${sale.invoice_no}`}
@@ -245,7 +245,7 @@ export default function TransactionHistory() {
               >
                 <ChevronLeft className="h-4 w-4" /> Sebelumnya
               </button>
-              <span className="text-xs text-slate-500">Halaman {formatNumber(page + 1)}</span>
+              <span className="text-xs text-muted-foreground">Halaman {formatNumber(page + 1)}</span>
               <button
                 className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
                 disabled={!hasNextPage}
@@ -263,14 +263,14 @@ export default function TransactionHistory() {
           <Card className="max-h-[85vh] w-full max-w-lg overflow-auto" onClick={(event) => event.stopPropagation()}>
             <CardHeader className="flex-row items-start justify-between border-b border-stone-100">
               <div>
-                <p className="text-xs uppercase tracking-wider text-slate-400">Detail transaksi</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Detail transaksi</p>
                 <CardTitle className="mt-1">{selectedSale.invoice_no}</CardTitle>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {format(new Date(selectedSale.created_at), 'dd MMMM yyyy HH:mm', { locale: localeId })}
                 </p>
               </div>
               <button onClick={() => setSelectedSale(null)} aria-label="Tutup detail">
-                <X className="h-5 w-5 text-slate-500" />
+                <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
@@ -282,7 +282,7 @@ export default function TransactionHistory() {
                     <div key={item.id} className="flex justify-between gap-3 py-3 text-sm">
                       <div>
                         <p className="font-medium">{item.product_name}</p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-muted-foreground">
                           {item.quantity} {item.unit} × {formatCurrency(Number(item.unit_price))}
                         </p>
                       </div>

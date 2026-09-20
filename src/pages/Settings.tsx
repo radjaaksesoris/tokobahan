@@ -121,10 +121,10 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="border-b border-stone-300/80 pb-5">
+      <div className="border-b border-border pb-5">
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Kontrol administrator</p>
         <h2 className="text-3xl font-bold tracking-tight text-ink">Pengaturan</h2>
-        <p className="mt-1 text-sm text-slate-500">Pengaturan operasional khusus administrator.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Pengaturan operasional khusus administrator.</p>
       </div>
 
       <Card className="border-red-200">
@@ -184,17 +184,17 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-ink">
               {notificationPermission === 'granted'
                 ? 'Notifikasi stok sudah aktif'
                 : 'Aktifkan notifikasi stok menipis'}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Terima pemberitahuan saat stok produk berada di bawah atau sama dengan minimum stok.
             </p>
           </div>
           {notificationPermission === 'unsupported' ? (
-            <span className="text-xs text-slate-500">Browser tidak mendukung</span>
+            <span className="text-xs text-muted-foreground">Browser tidak mendukung</span>
           ) : notificationPermission === 'granted' ? (
             <div className="flex items-center gap-2">
               <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
@@ -227,10 +227,10 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-ink">
               {soundEnabled ? 'Suara stok menipis aktif' : 'Aktifkan suara stok menipis'}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Bunyi pendek akan diputar saat produk baru terdeteksi stoknya menipis.
             </p>
           </div>

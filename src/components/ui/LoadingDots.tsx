@@ -5,7 +5,7 @@ type LoadingDotsProps = {
 }
 
 export function LoadingDots({
-  className = 'text-teal-600',
+  className = 'text-primary',
   dotClassName = 'h-2 w-2',
   label = 'Memuat',
 }: LoadingDotsProps) {

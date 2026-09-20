@@ -130,13 +130,13 @@ export default function Reports() {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-7">
-      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Baca performa toko</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
-          <p className="mt-1 text-sm text-slate-500">Pendapatan, biaya, dan laba bersih.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Pendapatan, biaya, dan laba bersih.</p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-stone-300 bg-surface p-1">
+        <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
           {periods.map((p) => (
             <button
               key={p.key}
@@ -146,7 +146,7 @@ export default function Reports() {
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 period === p.key
                   ? 'bg-ink text-white'
-                  : 'text-slate-600 hover:bg-stone-100'
+                  : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               {p.label}
@@ -161,16 +161,16 @@ export default function Reports() {
         <Card className="relative overflow-hidden">
           <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
-            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <DollarSign className="h-4 w-4" /> Pendapatan
             </div>
-            <p className="text-xl font-bold text-slate-900">{formatCurrency(totalRevenue)}</p>
+            <p className="text-xl font-bold text-ink">{formatCurrency(totalRevenue)}</p>
           </CardContent>
         </Card>
         <Card className="relative overflow-hidden">
           <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-red-600/[0.08]" />
           <CardContent className="relative z-10 p-4">
-            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingDown className="h-4 w-4" /> HPP / Modal
             </div>
             <p className="text-xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
@@ -179,7 +179,7 @@ export default function Reports() {
         <Card className="relative overflow-hidden">
           <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-emerald-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
-            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingUp className="h-4 w-4" /> Laba Bersih
             </div>
             <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalProfit)}</p>
@@ -188,21 +188,21 @@ export default function Reports() {
         <Card className="relative overflow-hidden">
           <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
-            <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <DollarSign className="h-4 w-4" /> Margin
             </div>
             <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
-            <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
+            <p className="text-xs text-muted-foreground">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
         <Card className="relative col-span-2 overflow-hidden lg:col-span-1">
           <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-amber-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <DollarSign className="h-4 w-4" /> Zakat (2,5%)
             </div>
             <p className="text-xl font-bold text-amber-600">{formatCurrency(zakatAmount)}</p>
-            <p className="text-xs text-slate-400">Dari laba bersih</p>
+            <p className="text-xs text-muted-foreground">Dari laba bersih</p>
           </CardContent>
         </Card>
       </div>

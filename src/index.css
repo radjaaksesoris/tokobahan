@@ -71,11 +71,14 @@ input, select, textarea {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f2f0e9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #a7aaa0;
+  background: #b8b5aa;
   border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8f9a94;
 }
 
 @media (prefers-reduced-motion: reduce) {

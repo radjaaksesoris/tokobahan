@@ -52,9 +52,9 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
 
     return (
       <div className="flex min-h-[40vh] items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Halaman tidak dapat ditampilkan</h2>
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-surface p-6 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-ink">Halaman tidak dapat ditampilkan</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             Terjadi kendala saat membuka tab ini. Coba muat ulang halaman.
           </p>
           <button
@@ -150,10 +150,10 @@ export default function App() {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="w-full max-w-lg rounded-xl border border-amber-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-xl font-bold text-slate-900">Konfigurasi aplikasi belum lengkap</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+        <div className="w-full max-w-lg rounded-2xl border border-amber-200 bg-surface p-6 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-ink">Konfigurasi aplikasi belum lengkap</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Periksa secrets <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code>
             di GitHub Repository Settings, lalu jalankan deploy ulang. URL harus berbentuk
             <code>https://project-id.supabase.co</code>.

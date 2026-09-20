@@ -37,12 +37,12 @@ export default function Login() {
             <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
           </div>
           <CardTitle className="text-2xl tracking-tight text-ink">RADJA AKSESORIS</CardTitle>
-          <p className="text-sm text-slate-500">Aksesoris Konveksi</p>
+          <p className="text-sm text-muted-foreground">Aksesoris Konveksi</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Username atau email</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink/85">Username atau email</label>
               <Input
                 type="text"
                 placeholder="voltker1"
@@ -53,7 +53,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink/85">Password</label>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -67,7 +67,7 @@ export default function Login() {
               {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk'}
             </Button>
           </form>
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Aplikasi single-device POS · Multi-monitor dashboard
           </p>
         </CardContent>

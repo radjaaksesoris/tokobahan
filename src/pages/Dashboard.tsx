@@ -248,11 +248,11 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-7">
-      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ringkasan operasional</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
-          <p className="mt-1 max-w-[42rem] text-sm text-slate-500">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
+          <p className="mt-1 max-w-[42rem] text-sm text-muted-foreground">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
         <div className="mx-auto flex w-full max-w-md justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none">
           <div className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left">
@@ -320,8 +320,8 @@ export default function Dashboard() {
                 <c.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-slate-500 truncate">{c.title}</p>
-                <p className="text-lg font-bold text-slate-900 truncate">
+                <p className="truncate text-xs text-muted-foreground">{c.title}</p>
+                <p className="truncate text-lg font-bold text-ink">
                   {loading ? '...' : c.value}
                 </p>
               </div>
@@ -368,7 +368,7 @@ export default function Dashboard() {
             <div className="flex shrink-0 items-center gap-2">
               {notificationPermission === 'default' && (
                 <button
-                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                  className="rounded-xl border border-amber-300 bg-surface px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
                   onClick={enableStockNotifications}
                 >
                   Aktifkan notifikasi
@@ -458,13 +458,13 @@ export default function Dashboard() {
             <CardHeader className="flex-row items-center justify-between border-b">
               <div>
                 <CardTitle id="low-stock-modal-title">Stok Menipis</CardTitle>
-                <p className="mt-1 text-sm text-slate-500">{lowStockProducts.length} produk perlu segera direstock.</p>
+                <p className="mt-1 text-sm text-muted-foreground">{lowStockProducts.length} produk perlu segera direstock.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowLowStockModal(false)}
                 aria-label="Tutup daftar stok menipis"
-                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-lg p-2 text-muted-foreground hover:bg-slate-100 hover:text-ink"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -473,10 +473,10 @@ export default function Dashboard() {
               <ul className="divide-y divide-stone-200">
                 {lowStockProducts.map((product) => (
                   <li key={product.id} className="flex items-center justify-between gap-4 px-6 py-4">
-                    <span className="min-w-0 truncate font-medium text-slate-800">{product.name}</span>
+                    <span className="min-w-0 truncate font-medium text-ink/90">{product.name}</span>
                     <span className="shrink-0 text-right text-sm">
                       <strong className="text-amber-700">{formatNumber(product.stock)}</strong>
-                      <span className="text-slate-500"> / min. {formatNumber(product.min_stock)}</span>
+                      <span className="text-muted-foreground"> / min. {formatNumber(product.min_stock)}</span>
                     </span>
                   </li>
                 ))}

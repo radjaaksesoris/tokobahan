@@ -70,7 +70,7 @@ export function AppLayout() {
                   item.className,
                   'lg:px-3',
                   isActive
-                    ? 'bg-white text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)]'
+                    ? 'bg-surface text-ink shadow-[0_8px_20px_rgba(32,42,46,0.12)]'
                     : 'text-stone-300 hover:bg-white/10 hover:text-white'
                 )
               }
@@ -121,7 +121,7 @@ export function AppLayout() {
       </div>
       {!sidebarOpen && (
         <button
-          className="fixed bottom-4 left-4 z-50 hidden rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:block"
+          className="fixed bottom-4 left-4 z-50 hidden rounded-xl border border-border bg-surface p-2 text-muted-foreground shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:block"
           onClick={() => setSidebarOpen(true)}
           aria-label="Tampilkan navbar"
           title="Tampilkan navbar"

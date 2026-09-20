@@ -281,15 +281,15 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Katalog inventori</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
-          <p className="mt-1 text-sm text-slate-500">Kelola katalog dan harga multi-satuan.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <div className="relative sm:w-72">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9 pr-10"
               placeholder="Cari nama, SKU, atau barcode..."
@@ -307,7 +307,7 @@ export default function Products() {
                   setSearch('')
                   setPage(0)
                 }}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-stone-200 hover:text-slate-700"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -326,7 +326,7 @@ export default function Products() {
         </div>
       ) : products.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center py-16 text-slate-400">
+          <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
             <Package className="mb-3 h-12 w-12" />
             <p>Belum ada produk</p>
             <Button className="mt-4" onClick={openCreate}>
@@ -350,32 +350,32 @@ export default function Products() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {products.map((p, index) => (
-                  <tr key={p.id} className="odd:bg-white even:bg-stone-50/70 hover:bg-teal-50/50">
-                    <td className="px-3 py-2 text-center text-xs text-slate-500">{page * pageSize + index + 1}</td>
+                  <tr key={p.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
+                    <td className="px-3 py-2 text-center text-xs text-muted-foreground">{page * pageSize + index + 1}</td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
                           {p.name.charAt(0)}
                         </div>
                         <div className="min-w-0 text-center">
-                          <p className="truncate font-medium text-slate-800">{p.name}</p>
-                          {p.sku && <p className="truncate text-[11px] text-slate-400">SKU: {p.sku}</p>}
+                          <p className="truncate font-medium text-ink/90">{p.name}</p>
+                          {p.sku && <p className="truncate text-[11px] text-muted-foreground">SKU: {p.sku}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-muted-foreground">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
                         {Math.floor(p.stock / (p.stock_conversion || 1))}
                       </span>{' '}
                       {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-slate-600">
-                      {formatCurrency(p.cost_price)} <span className="text-slate-400">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
+                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-muted-foreground">
+                      {formatCurrency(p.cost_price)} <span className="text-muted-foreground">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
                     </td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex flex-wrap justify-center gap-1">
                         {p.prices?.map((pr) => (
-                          <span key={pr.unit} className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                          <span key={pr.unit} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                             {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
                           </span>
                         ))}
@@ -404,7 +404,7 @@ export default function Products() {
               <Button variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
                 <ChevronLeft className="h-4 w-4" /> Sebelumnya
               </Button>
-              <span className="text-xs text-slate-500">Halaman {page + 1}</span>
+              <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
               <Button variant="outline" disabled={!hasNextPage} onClick={() => setPage((current) => current + 1)}>
                 Berikutnya <ChevronRight className="h-4 w-4" />
               </Button>
@@ -417,14 +417,14 @@ export default function Products() {
                 <CardHeader className="flex-row items-center justify-between border-b">
                   <div>
                     <CardTitle>Tambah Stok</CardTitle>
-                    <p className="mt-1 text-sm text-slate-500">{stockProduct.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{stockProduct.name}</p>
                   </div>
                   <button onClick={() => setStockProduct(null)} aria-label="Tutup tambah stok">
                     <X className="h-5 w-5" />
                   </button>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
-                  <div className="rounded-lg bg-stone-50 p-3 text-sm text-slate-600">
+                  <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                     Stok saat ini: <strong>{stockProduct.stock} {UNIT_LABELS[(stockProduct.stock_unit || 'satuan') as UnitType]}</strong>
                   </div>
                   <div>
@@ -447,18 +447,18 @@ export default function Products() {
                       value={formatCurrencyInput(stockCost)}
                       onChange={(event) => setStockCost(parseCurrencyInput(event.target.value))}
                     />
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       HPP ini hanya berlaku untuk stok baru. Stok lama tetap dihitung dengan HPP batch sebelumnya.
                     </p>
                   </div>
                   <div className="rounded-lg border border-stone-200">
-                    <div className="border-b border-stone-200 bg-stone-50 px-3 py-2">
+                    <div className="border-b border-stone-200 bg-muted/50 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Simulasi margin stok baru
                           </p>
-                          <p className="mt-0.5 text-[11px] text-slate-400">
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
                             Harga jual aktif dibandingkan dengan HPP yang dimasukkan.
                           </p>
                         </div>
@@ -493,10 +493,10 @@ export default function Products() {
                             const profitable = margin.margin > 0
                             return (
                               <tr key={price.unit} className="text-center">
-                                <td className="px-2 py-1.5 text-slate-500">{index + 1}</td>
-                                <td className="px-2 py-1.5 font-medium text-slate-700">{UNIT_LABELS[price.unit]}</td>
-                                <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{formatCurrency(price.price)}</td>
-                                <td className="whitespace-nowrap px-2 py-1.5 text-slate-500">{formatCurrency(margin.unitCost)}</td>
+                                <td className="px-2 py-1.5 text-muted-foreground">{index + 1}</td>
+                                <td className="px-2 py-1.5 font-medium text-ink/85">{UNIT_LABELS[price.unit]}</td>
+                                <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{formatCurrency(price.price)}</td>
+                                <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{formatCurrency(margin.unitCost)}</td>
                                 <td className={`whitespace-nowrap px-2 py-1.5 font-semibold ${profitable ? 'text-emerald-600' : 'text-red-600'}`}>
                                   {formatCurrency(margin.margin)} ({margin.marginPercent.toFixed(1)}%)
                                 </td>
@@ -555,7 +555,7 @@ export default function Products() {
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
                       readOnly={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing)}
-                      className={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-stone-100 text-slate-500' : undefined}
+                      className={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-muted text-muted-foreground' : undefined}
                     />
                     {editing?.sku && (
                       <Button
@@ -573,7 +573,7 @@ export default function Products() {
 
                   </div>
                   {editing?.sku && !skuEditing && (
-                    <p className="mt-1 text-[11px] text-slate-400">SKU dikunci saat mengubah stok atau harga.</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
                   )}
                 </div>
                 <div>
@@ -622,7 +622,7 @@ export default function Products() {
                     />
                   </div>
                   {editing && (
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-muted-foreground">
                       Stok dan HPP produk lama dikunci. Gunakan tombol Tambah Stok untuk membuat batch FIFO baru.
                     </p>
                   )}
@@ -684,10 +684,10 @@ export default function Products() {
                               </button>
                             </CardHeader>
                             <CardContent className="space-y-4 pt-4">
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-muted-foreground">
                                 Produk akan disembunyikan dari kasir. Riwayat transaksi tetap tersimpan.
                               </p>
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-muted-foreground">
                                 Ketik <strong>{deleteTarget.name}</strong> untuk melanjutkan.
                               </p>
                               <Input
@@ -720,7 +720,7 @@ export default function Products() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Kolom ketiga = jumlah unit dasar (pcs/meter) per satuan jual
                 </p>
               </div>

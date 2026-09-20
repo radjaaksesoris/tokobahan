@@ -225,14 +225,14 @@ export default function POS() {
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
             <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
           </div>
-          <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
+          <div className="hidden rounded-xl border border-border bg-surface px-3 py-2 text-right sm:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Item dipilih</p>
             <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
           </div>
         </div>
         <div className="mb-3 flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
@@ -249,7 +249,7 @@ export default function POS() {
                 type="button"
                 aria-label="Reset pencarian"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-stone-200 hover:text-slate-700"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-stone-200 hover:text-ink/85"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -275,7 +275,7 @@ export default function POS() {
               <LoadingDots dotClassName="h-2 w-2" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="py-12 text-center text-slate-400">Produk tidak ditemukan</p>
+            <p className="py-12 text-center text-muted-foreground">Produk tidak ditemukan</p>
           ) : (
             <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
               {filtered.map((p, index) => (
@@ -295,20 +295,20 @@ export default function POS() {
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg font-bold transition-colors ${
                     activeProductIndex === index
                       ? 'bg-primary text-white'
-                      : 'bg-stone-100 text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
+                      : 'bg-muted text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
                   }`}>
                     {p.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-sm font-medium ${
-                      activeProductIndex === index ? 'text-teal-900' : 'text-slate-800'
+                      activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
                     <p className={`mt-0.5 text-xs ${
                       p.stock <= 0
                         ? 'font-semibold text-red-500'
                         : activeProductIndex === index
                           ? 'text-teal-700'
-                          : 'text-slate-400'
+                          : 'text-muted-foreground'
                     }`}>
                       {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
                     </p>
@@ -369,7 +369,7 @@ export default function POS() {
           <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
             <CardContent className="p-5">
               <h3 className="mb-1 text-lg font-semibold">{selectedProduct.name}</h3>
-              <p className="mb-4 text-sm text-slate-500">Pilih satuan & jumlah</p>
+              <p className="mb-4 text-sm text-muted-foreground">Pilih satuan & jumlah</p>
 
               <div className="mb-4 grid grid-cols-3 gap-2">
                 {(selectedProduct.stock_unit
@@ -422,7 +422,7 @@ export default function POS() {
               </div>
 
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
-                <p className="text-xs text-slate-500">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-teal-700">
                   {formatCurrency(
                     (selectedProduct.prices?.find((p) => p.unit === selectedUnit)?.price ||
@@ -460,21 +460,21 @@ export default function POS() {
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Pembayaran tunai</p>
                 <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
               </div>
-              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/70">
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-muted/50">
                 <div className="flex items-center justify-between border-b border-stone-200 bg-teal-50 px-4 py-3">
-                  <span className="text-sm font-medium text-slate-600">Total transaksi</span>
+                  <span className="text-sm font-medium text-muted-foreground">Total transaksi</span>
                   <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
-                  <span className="text-sm font-medium text-slate-600">Uang diterima</span>
+                  <span className="text-sm font-medium text-muted-foreground">Uang diterima</span>
                   <span className="text-xl font-bold text-ink">{formatCurrency(Number(cashReceived) || 0)}</span>
                 </div>
                 <div className={`flex items-center justify-between px-4 py-3 ${
                   Number(cashReceived) >= totals.subtotal ? 'bg-emerald-50' : 'bg-white'
                 }`}>
-                  <span className="text-sm font-medium text-slate-600">Kembalian</span>
+                  <span className="text-sm font-medium text-muted-foreground">Kembalian</span>
                   <span className={`text-xl font-bold ${
-                    Number(cashReceived) >= totals.subtotal ? 'text-emerald-700' : 'text-slate-400'
+                    Number(cashReceived) >= totals.subtotal ? 'text-emerald-700' : 'text-muted-foreground'
                   }`}>
                     {formatCurrency(Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
                   </span>
@@ -527,7 +527,7 @@ function NumericKeypad({
   return (
     <div className="mt-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-500">{title}</p>
+        <p className="text-xs font-medium text-muted-foreground">{title}</p>
         <button type="button" className="text-xs font-medium text-teal-700" onClick={onClose}>
           Selesai
         </button>
@@ -538,7 +538,7 @@ function NumericKeypad({
             key={key}
             type="button"
             onClick={() => key === '⌫' ? onChange(value.slice(0, -1)) : append(key)}
-            className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-700 transition-colors hover:bg-slate-100 active:bg-slate-200"
+            className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-ink/85 transition-colors hover:bg-slate-100 active:bg-slate-200"
           >
             {key}
           </button>
@@ -576,7 +576,7 @@ function CartPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
         {items.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-400">Keranjang kosong</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Keranjang kosong</p>
         ) : (
           items.map((item) => (
             <div

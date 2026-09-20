@@ -56,7 +56,7 @@ export function Select({
           disabled={disabled}
           aria-label={ariaLabel}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-10 w-full appearance-none rounded-xl border border-border bg-surface px-3 pr-9 text-sm text-ink outline-none transition-[border-color,box-shadow] hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -64,7 +64,7 @@ export function Select({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       </div>
     )
   }
@@ -77,7 +77,7 @@ export function Select({
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 transition-colors hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 text-left text-sm text-ink transition-[border-color,box-shadow] hover:border-primary/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && open) {
@@ -101,14 +101,14 @@ export function Select({
         }}
       >
         <span className="truncate">{selected?.label || 'Pilih...'}</span>
-        <ChevronDown className={cn('h-4 w-4 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div
           role="listbox"
           aria-label={ariaLabel}
           className={cn(
-            'absolute left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg',
+            'absolute left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-[0_12px_28px_rgba(32,42,46,0.12)]',
             menuClassName,
           )}
         >
@@ -123,8 +123,8 @@ export function Select({
               role="option"
               aria-selected={option.value === value}
               className={cn(
-                'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-700',
-                option.value === value && 'bg-teal-50 font-medium text-teal-700',
+                'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                option.value === value && 'bg-primary/10 font-medium text-primary',
               )}
               onClick={() => {
                 onChange(option.value)
