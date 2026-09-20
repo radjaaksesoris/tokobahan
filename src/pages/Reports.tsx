@@ -2,14 +2,11 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
 import {
   TrendingUp,
   TrendingDown,
-  Receipt,
   DollarSign,
-  Calendar,
 } from 'lucide-react'
 import {
   BarChart,
@@ -24,16 +21,6 @@ import {
 
 type Period = 'today' | 'week' | 'month' | 'year'
 
-interface SaleRow {
-  id: string
-  invoice_no: string
-  total_amount: number
-  total_cost: number
-  total_profit: number
-  payment_method: string
-  created_at: string
-}
-
 interface DailySummaryRow {
   sale_date: string
   total_revenue: number
@@ -44,7 +31,6 @@ interface DailySummaryRow {
 
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
-  const [sales, setSales] = useState<SaleRow[]>([])
   const [dailySummary, setDailySummary] = useState<DailySummaryRow[]>([])
   const [summary, setSummary] = useState({
     total_revenue: 0,
@@ -52,14 +38,11 @@ export default function Reports() {
     total_profit: 0,
     transaction_count: 0,
   })
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
-  const pageSize = 100
 
   useEffect(() => {
     load()
-  }, [period, page])
+  }, [period])
 
   function getRange() {
     const now = new Date()
@@ -76,17 +59,9 @@ export default function Reports() {
   }
 
   async function load() {
-    setLoading(true)
     setError(null)
     const { start, end } = getRange()
-    const [{ data, error: queryError }, { data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
-      supabase
-      .from('sales')
-      .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
-      .order('created_at', { ascending: false })
-      .range(page * pageSize, (page + 1) * pageSize - 1),
+    const [{ data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
       supabase.rpc('sales_summary', {
         p_start: start.toISOString(),
         p_end: end.toISOString(),
@@ -97,14 +72,6 @@ export default function Reports() {
       }),
     ])
 
-    if (queryError) {
-      setError(queryError.message || 'Gagal memuat transaksi')
-      setSales([])
-      setLoading(false)
-      return
-    }
-
-    setSales((data as SaleRow[]) || [])
     if (dailyError) {
       setDailySummary([])
     } else {
@@ -127,7 +94,6 @@ export default function Reports() {
         transaction_count: 0,
       })
     }
-    setLoading(false)
   }
 
   const totalRevenue = Number(summary.total_revenue)
@@ -149,7 +115,7 @@ export default function Reports() {
   const chartData = Object.entries(dailyMap)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, v]) => ({
-      date: format(new Date(date), 'dd MMM', { locale: localeId }),
+      date,
       ...v,
     }))
 
@@ -174,7 +140,6 @@ export default function Reports() {
               key={p.key}
               onClick={() => {
                 setPeriod(p.key)
-                setPage(0)
               }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 period === p.key
@@ -187,6 +152,7 @@ export default function Reports() {
           ))}
         </div>
       </div>
+      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -217,7 +183,7 @@ export default function Reports() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-              <Receipt className="h-4 w-4" /> Margin
+              <DollarSign className="h-4 w-4" /> Margin
             </div>
             <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
             <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
@@ -262,64 +228,6 @@ export default function Reports() {
       )}
 
       {/* Transaction list */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Riwayat Transaksi
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <p className="py-8 text-center text-slate-400">Memuat...</p>
-          ) : error ? (
-            <p className="py-8 text-center text-red-600">{error}</p>
-          ) : sales.length === 0 ? (
-            <p className="py-8 text-center text-slate-400">Belum ada transaksi</p>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {sales.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{s.invoice_no}</p>
-                    <p className="text-xs text-slate-400">
-                      {format(new Date(s.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })} ·{' '}
-                      {s.payment_method}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold">{formatCurrency(s.total_amount)}</p>
-                    <p className="text-xs text-emerald-600">
-                      +{formatCurrency(s.total_profit)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {!loading && !error && sales.length === pageSize && (
-            <div className="flex items-center justify-between border-t p-4">
-              <button
-                className="rounded border px-3 py-1 text-sm disabled:opacity-40"
-                disabled={page === 0}
-                onClick={() => setPage((current) => current - 1)}
-              >
-                Sebelumnya
-              </button>
-              <span className="text-xs text-slate-500">Halaman {page + 1}</span>
-              <button
-                className="rounded border px-3 py-1 text-sm"
-                onClick={() => setPage((current) => current + 1)}
-              >
-                Berikutnya
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }
