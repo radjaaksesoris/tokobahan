@@ -18,6 +18,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 type Period = 'today' | 'week' | 'month' | 'year'
 
@@ -134,8 +135,10 @@ export default function Reports() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
           <p className="mt-1 text-sm text-slate-500">Pendapatan, biaya, dan laba bersih.</p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-stone-300 bg-surface p-1">
-          {periods.map((p) => (
+        <div className="flex items-start gap-4">
+          <CurrentDate />
+          <div className="flex gap-1 rounded-xl border border-stone-300 bg-surface p-1">
+            {periods.map((p) => (
             <button
               key={p.key}
               onClick={() => {
@@ -149,7 +152,8 @@ export default function Reports() {
             >
               {p.label}
             </button>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

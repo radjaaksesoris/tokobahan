@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 export default function Settings() {
   const { user, isRole } = useAuthStore()
@@ -120,10 +121,13 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="border-b border-stone-300/80 pb-5">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Kontrol administrator</p>
-        <h2 className="text-3xl font-bold tracking-tight text-ink">Pengaturan</h2>
-        <p className="mt-1 text-sm text-slate-500">Pengaturan operasional khusus administrator.</p>
+      <div className="flex items-start justify-between gap-4 border-b border-stone-300/80 pb-5">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Kontrol administrator</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink">Pengaturan</h2>
+          <p className="mt-1 text-sm text-slate-500">Pengaturan operasional khusus administrator.</p>
+        </div>
+        <CurrentDate />
       </div>
 
       <Card className="border-red-200">

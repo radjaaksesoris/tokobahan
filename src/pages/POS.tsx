@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([])
@@ -210,14 +211,17 @@ export default function POS() {
     <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-[1440px] flex-col gap-4 lg:flex-row">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="mb-4 flex items-end justify-between gap-3">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
             <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
           </div>
-          <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
-            <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
+          <div className="flex items-start gap-3">
+            <CurrentDate />
+            <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
+              <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
+            </div>
           </div>
         </div>
         <div className="mb-3 flex gap-2">

@@ -7,6 +7,7 @@ import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, Eye, History, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 interface SaleRow {
   id: string
@@ -115,14 +116,7 @@ export default function TransactionHistory() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
         </div>
-        <p className="shrink-0 pt-1 text-right text-xs font-medium text-slate-500">
-          {new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })}
-        </p>
+        <CurrentDate />
       </div>
 
       <Card>

@@ -25,6 +25,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { playLowStockSound } from '@/lib/notifications'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 interface Stats {
   todaySales: number
@@ -239,9 +240,12 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
           <p className="mt-1 max-w-[42rem] text-sm text-slate-500">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
-        <div className="self-start rounded-2xl bg-ink px-4 py-3 text-white sm:self-auto">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
-          <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Operasional aktif</p>
+        <div className="flex items-start gap-4">
+          <CurrentDate />
+          <div className="self-start rounded-2xl bg-ink px-4 py-3 text-white sm:self-auto">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Operasional aktif</p>
+          </div>
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
