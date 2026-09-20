@@ -44,7 +44,9 @@ export default function Products() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
-  const pageSize = 100
+  const [pageSize, setPageSize] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 15 : 100
+  ))
   const initialLoadComplete = useRef(false)
 
   // form
@@ -62,9 +64,19 @@ export default function Products() {
   ])
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 639px)')
+    const updatePageSize = (event: MediaQueryListEvent) => {
+      setPageSize(event.matches ? 15 : 100)
+      setPage(0)
+    }
+    mediaQuery.addEventListener('change', updatePageSize)
+    return () => mediaQuery.removeEventListener('change', updatePageSize)
+  }, [])
+
+  useEffect(() => {
     const timer = window.setTimeout(load, 250)
     return () => window.clearTimeout(timer)
-  }, [search, page])
+  }, [search, page, pageSize])
 
   async function load() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -301,7 +313,7 @@ export default function Products() {
               </button>
             )}
           </div>
-          <Button onClick={openCreate}>
+          <Button className="hidden sm:inline-flex" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
