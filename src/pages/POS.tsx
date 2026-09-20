@@ -289,25 +289,27 @@ export default function POS() {
           ) : filtered.length === 0 ? (
             <p className="py-12 text-center text-slate-400">Produk tidak ditemukan</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
               {filtered.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className={`group flex flex-col rounded-2xl border border-stone-200/80 bg-surface p-3 text-left transition-all duration-200 ${
+                  className={`group flex min-h-16 items-center gap-3 rounded-xl border border-stone-200/80 bg-surface p-2.5 text-left transition-all duration-200 ${
                     p.stock <= 0
                       ? 'cursor-not-allowed opacity-60'
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className="mb-2 flex h-16 items-center justify-center rounded-xl bg-stone-100 text-2xl font-bold text-stone-300 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-lg font-bold text-stone-300 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                     {p.name.charAt(0)}
                   </div>
-                  <p className="line-clamp-2 text-sm font-medium text-slate-800">{p.name}</p>
-                  <p className={`mt-1 text-xs ${p.stock <= 0 ? 'font-semibold text-red-500' : 'text-slate-400'}`}>
-                    {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
-                  </p>
-                  <p className="mt-0.5 text-sm font-semibold text-teal-700">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
+                    <p className={`mt-0.5 text-xs ${p.stock <= 0 ? 'font-semibold text-red-500' : 'text-slate-400'}`}>
+                      {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-sm font-semibold text-teal-700">
                     {formatCurrency(
                       p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
                     )}
