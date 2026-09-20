@@ -48,7 +48,7 @@ export function Select({
 
   if (native) {
     return (
-      <div className={cn('relative', className)}>
+      <div className={cn('relative min-w-28 shrink-0', className)}>
         <select
           value={value}
           aria-label={ariaLabel}

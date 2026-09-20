@@ -363,6 +363,7 @@ export default function Products() {
                   <label className="mb-1 block text-sm font-medium">Stok</label>
                   <div className="flex gap-2">
                     <Input
+                      className="min-w-0"
                       type="number"
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
@@ -383,6 +384,7 @@ export default function Products() {
                   <label className="mb-1 block text-sm font-medium">Harga Modal</label>
                   <div className="flex gap-2">
                     <Input
+                      className="min-w-0"
                       inputMode="numeric"
                       value={formatCurrencyInput(costPrice)}
                       onChange={(e) => setCostPrice(parseCurrencyInput(e.target.value))}
