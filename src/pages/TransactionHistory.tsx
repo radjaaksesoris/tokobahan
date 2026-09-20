@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, Eye, History, Loader2, Search, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Eye, History, Search, X } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 
 interface SaleRow {
@@ -165,7 +166,7 @@ export default function TransactionHistory() {
         <CardContent className="p-0">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" />
             </div>
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-slate-400">Belum ada transaksi yang cocok.</p>
@@ -256,7 +257,7 @@ export default function TransactionHistory() {
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               {itemsLoading ? (
-                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                <div className="flex justify-center py-6"><LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" /></div>
               ) : (
                 <div className="divide-y divide-stone-100">
                   {items.map((item) => (

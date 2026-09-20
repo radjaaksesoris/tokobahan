@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, Database, Loader2 } from 'lucide-react'
+import { AlertTriangle, Bell, Database } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import {
@@ -168,7 +169,7 @@ export default function Settings() {
             disabled={resetting || !password || confirmation !== 'RESET SEMUA'}
             onClick={resetDatabase}
           >
-            {resetting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {resetting && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
         </CardContent>

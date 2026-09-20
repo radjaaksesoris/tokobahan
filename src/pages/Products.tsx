@@ -6,7 +6,8 @@ import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } 
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Plus, Pencil, Trash2, Loader2, X, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
@@ -230,7 +231,7 @@ export default function Products() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+          <LoadingDots dotClassName="h-2 w-2" />
         </div>
       ) : products.length === 0 ? (
         <Card>
@@ -465,7 +466,7 @@ export default function Products() {
                 Batal
               </Button>
               <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Simpan'}
+                {saving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan'}
               </Button>
             </div>
           </Card>

@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { Loader2 } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 
 const Login = lazy(() => import('@/pages/Login'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
@@ -19,7 +19,7 @@ const NotFound = lazy(() => import('@/pages/NotFound'))
 function PageLoader() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <Loader2 className="h-7 w-7 animate-spin text-primary" aria-label="Memuat halaman" />
+      <LoadingDots className="text-primary" />
     </div>
   )
 }
@@ -30,7 +30,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-canvas">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+        <LoadingDots dotClassName="h-2.5 w-2.5" />
       </div>
     )
   }

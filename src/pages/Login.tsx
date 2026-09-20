@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -64,7 +64,7 @@ export default function Login() {
               />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Masuk'}
+              {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk'}
             </Button>
           </form>
           <p className="mt-6 text-center text-xs text-slate-400">

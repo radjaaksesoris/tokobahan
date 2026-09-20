@@ -15,9 +15,9 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
-  Loader2,
   X,
 } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
 
@@ -265,7 +265,7 @@ export default function POS() {
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex h-40 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+              <LoadingDots dotClassName="h-2 w-2" />
             </div>
           ) : filtered.length === 0 ? (
             <p className="py-12 text-center text-slate-400">Produk tidak ditemukan</p>
@@ -488,7 +488,7 @@ export default function POS() {
                   disabled={Number(cashReceived) < totals.subtotal || checkoutLoading}
                   onClick={processCheckout}
                 >
-                  {checkoutLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Selesaikan'}
+                  {checkoutLoading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Selesaikan'}
                 </Button>
               </div>
             </CardContent>
@@ -648,7 +648,7 @@ function CartPanel({
           onClick={onCheckout}
         >
           {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
           ) : (
             <>
               <CheckCircle2 className="h-5 w-5" />
