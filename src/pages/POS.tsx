@@ -212,7 +212,7 @@ export default function POS() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-[1440px] flex-col gap-4 lg:flex-row">
+    <div className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-[1440px] flex-col gap-4 lg:flex-row">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="mb-4 flex items-start justify-between gap-3">
