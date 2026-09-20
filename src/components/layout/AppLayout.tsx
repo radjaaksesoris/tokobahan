@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { CurrentDate } from '@/components/layout/CurrentDate'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier', 'monitor'] },
@@ -89,6 +90,10 @@ export function AppLayout() {
         </nav>
 
         <div className="border-t border-white/10 p-4">
+          <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
+            <CurrentDate className="text-left text-stone-300" />
+          </div>
           <div className="mb-3 text-sm">
             <p className="font-medium">{profile?.full_name || 'User'}</p>
             <p className="text-xs capitalize text-accent">{profile?.role}</p>

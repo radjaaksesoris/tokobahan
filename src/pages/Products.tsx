@@ -10,7 +10,6 @@ import { Plus, Pencil, Trash2, Loader2, X, Package, Search, ChevronLeft, Chevron
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
-import { CurrentDate } from '@/components/layout/CurrentDate'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 const UNIT_OPTIONS = ALL_UNITS.map((unit) => ({ value: unit, label: UNIT_LABELS[unit] }))
@@ -209,10 +208,8 @@ export default function Products() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-slate-500">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <div className="flex w-full items-start gap-4 sm:w-auto sm:flex-row">
-          <CurrentDate />
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row">
-            <div className="relative sm:w-72">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="relative sm:w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               className="pl-9"
@@ -223,12 +220,11 @@ export default function Products() {
                 setPage(0)
               }}
             />
-            </div>
-            <Button onClick={openCreate}>
-              <Plus className="h-4 w-4" />
-              Tambah
-            </Button>
           </div>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Tambah
+          </Button>
         </div>
       </div>
 

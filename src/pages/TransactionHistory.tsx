@@ -7,7 +7,6 @@ import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, Eye, History, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { CurrentDate } from '@/components/layout/CurrentDate'
 
 interface SaleRow {
   id: string
@@ -110,13 +109,10 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex items-start justify-between gap-4 border-b border-stone-300/80 pb-5">
-        <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
-          <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
-          <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
-        </div>
-        <CurrentDate />
+      <div className="border-b border-stone-300/80 pb-5">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
+        <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
+        <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
       </div>
 
       <Card>

@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
-import { CurrentDate } from '@/components/layout/CurrentDate'
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([])
@@ -216,12 +215,9 @@ export default function POS() {
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
             <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
           </div>
-          <div className="flex items-start gap-3">
-            <CurrentDate />
-            <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
-              <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
-            </div>
+          <div className="hidden rounded-xl border border-stone-300 bg-surface px-3 py-2 text-right sm:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Item dipilih</p>
+            <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
           </div>
         </div>
         <div className="mb-3 flex gap-2">
