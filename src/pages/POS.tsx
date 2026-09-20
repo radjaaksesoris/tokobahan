@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -32,6 +32,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'qris' | 'credit'>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
+  const [activeProductIndex, setActiveProductIndex] = useState(-1)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -76,6 +77,24 @@ export default function POS() {
         p.barcode?.toLowerCase().includes(q)
     )
   }, [products, search])
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (filtered.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveProductIndex((current) => (current + 1) % filtered.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveProductIndex((current) => (current <= 0 ? filtered.length - 1 : current - 1))
+    } else if (event.key === 'Enter' && activeProductIndex >= 0) {
+      event.preventDefault()
+      const selectedProduct = filtered[activeProductIndex]
+      if (selectedProduct) openAdd(selectedProduct)
+    } else if (event.key === 'Escape') {
+      setActiveProductIndex(-1)
+    }
+  }
 
   function openAdd(product: Product) {
     if (product.stock <= 0) {
@@ -194,7 +213,11 @@ export default function POS() {
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setActiveProductIndex(-1)
+              }}
+              onKeyDown={handleSearchKeyDown}
               autoFocus
             />
             {search && (
@@ -231,11 +254,15 @@ export default function POS() {
             <p className="py-12 text-center text-slate-400">Produk tidak ditemukan</p>
           ) : (
             <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-              {filtered.map((p) => (
+              {filtered.map((p, index) => (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className={`group flex min-h-16 items-center gap-3 rounded-xl border border-stone-200/80 bg-surface p-2.5 text-left transition-all duration-200 ${
+                  className={`group flex min-h-16 items-center gap-3 rounded-xl border bg-surface p-2.5 text-left transition-all duration-200 ${
+                    activeProductIndex === index
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-stone-200/80'
+                  } ${
                     p.stock <= 0
                       ? 'cursor-not-allowed opacity-60'
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
