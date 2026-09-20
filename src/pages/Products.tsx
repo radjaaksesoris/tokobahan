@@ -259,28 +259,28 @@ export default function Products() {
               <tbody className="divide-y divide-stone-100">
                 {products.map((p) => (
                   <tr key={p.id} className="odd:bg-white even:bg-stone-50/70 hover:bg-teal-50/50">
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2.5">
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex items-center justify-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
                           {p.name.charAt(0)}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 text-center">
                           <p className="truncate font-medium text-slate-800">{p.name}</p>
                           {p.sku && <p className="truncate text-[11px] text-slate-400">SKU: {p.sku}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-slate-600">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
                         {Math.floor(p.stock / (p.stock_conversion || 1))}
                       </span>{' '}
                       {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-slate-600">
                       {formatCurrency(p.cost_price)} <span className="text-slate-400">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex flex-wrap justify-center gap-1">
                         {p.prices?.map((pr) => (
                           <span key={pr.unit} className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-slate-600">
                             {UNIT_LABELS[pr.unit] || pr.unit}: {formatCurrency(pr.price)}
@@ -288,8 +288,8 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex justify-end gap-0.5">
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex justify-center gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>

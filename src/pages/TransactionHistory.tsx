@@ -191,18 +191,18 @@ export default function TransactionHistory() {
                         index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
                       }`}
                     >
-                      <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900">{sale.invoice_no}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-xs text-slate-500">
+                      <td className="whitespace-nowrap px-4 py-2.5 text-center font-medium text-slate-900">{sale.invoice_no}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs text-slate-500">
                         {format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-xs capitalize text-slate-600">{sale.payment_method}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-slate-900">
+                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-slate-600">{sale.payment_method}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-center font-semibold text-slate-900">
                         {formatCurrency(Number(sale.total_amount))}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-medium text-emerald-600">
+                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs font-medium text-emerald-600">
                         {formatCurrency(Number(sale.total_profit))}
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-center">
                         <button
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-teal-100 hover:text-primary"
                           onClick={() => openDetails(sale)}
