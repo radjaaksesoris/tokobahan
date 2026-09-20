@@ -3,19 +3,19 @@
 @theme {
   --font-heading: 'Rubik', 'Nunito Sans', system-ui, sans-serif;
   --color-primary: #216c68;
-  --color-primary-foreground: #f5f1e8;
+  --color-primary-foreground: #fbfaf5;
   --color-secondary: #d97706;
   --color-secondary-foreground: #201b16;
   --color-accent: #e4a853;
   --color-ink: #202a2e;
-  --color-canvas: #f5f1e8;
+  --color-canvas: #fbfaf5;
   --color-surface: #fffdf8;
-  --color-muted: #ebe8df;
+  --color-muted: #f2f0e9;
   --color-muted-foreground: #667174;
   --color-destructive: #ef4444;
   --color-success: #22c55e;
   --color-card: #fffdf8;
-  --color-border: #dedbd1;
+  --color-border: #e7e4dc;
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
@@ -37,11 +37,11 @@ html {
 
 body {
   font-family: 'Nunito Sans', system-ui, sans-serif;
-  background-color: #f5f1e8;
+  background-color: #fbfaf5;
   color: #202a2e;
   user-select: none;
   -webkit-font-smoothing: antialiased;
-  background-image: radial-gradient(rgba(32, 42, 46, 0.055) 0.7px, transparent 0.7px);
+  background-image: radial-gradient(rgba(32, 42, 46, 0.025) 0.7px, transparent 0.7px);
   background-size: 14px 14px;
 }
 
