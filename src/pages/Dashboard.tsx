@@ -8,6 +8,7 @@ import {
   Package,
   DollarSign,
   AlertTriangle,
+  X,
 } from 'lucide-react'
 import {
   BarChart,
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
+  const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -266,18 +268,24 @@ export default function Dashboard() {
       {stats.lowStock > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <AlertTriangle className="h-5 w-5 shrink-0" />
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-            <span>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              className="text-left underline-offset-2 hover:underline"
+              onClick={() => setShowLowStockModal(true)}
+            >
               <strong>{stats.lowStock}</strong> produk stok menipis. Segera restock!
-            </span>
-            {notificationPermission === 'default' && (
-              <button
-                className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
-                onClick={enableStockNotifications}
-              >
-                Aktifkan notifikasi
-              </button>
-            )}
+            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {notificationPermission === 'default' && (
+                <button
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                  onClick={enableStockNotifications}
+                >
+                  Aktifkan notifikasi
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -334,6 +342,50 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {showLowStockModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+          role="presentation"
+          onClick={() => setShowLowStockModal(false)}
+        >
+          <Card
+            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl sm:rounded-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="low-stock-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <CardHeader className="flex-row items-center justify-between border-b">
+              <div>
+                <CardTitle id="low-stock-modal-title">Stok Menipis</CardTitle>
+                <p className="mt-1 text-sm text-slate-500">{lowStockProducts.length} produk perlu segera direstock.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLowStockModal(false)}
+                aria-label="Tutup daftar stok menipis"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="overflow-y-auto p-0">
+              <ul className="divide-y divide-stone-200">
+                {lowStockProducts.map((product) => (
+                  <li key={product.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                    <span className="min-w-0 truncate font-medium text-slate-800">{product.name}</span>
+                    <span className="shrink-0 text-right text-sm">
+                      <strong className="text-amber-700">{formatNumber(product.stock)}</strong>
+                      <span className="text-slate-500"> / min. {formatNumber(product.min_stock)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
