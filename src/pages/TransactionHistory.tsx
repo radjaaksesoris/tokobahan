@@ -173,7 +173,7 @@ export default function TransactionHistory() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-sm">
-                <thead className="border-b border-stone-200 bg-stone-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <thead className="border-b border-primary/80 bg-primary text-left text-xs uppercase tracking-wide text-white">
                   <tr>
                     <th className="px-4 py-2.5 font-semibold">Invoice</th>
                     <th className="px-4 py-2.5 font-semibold">Tanggal & waktu</th>

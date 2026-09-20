@@ -247,7 +247,7 @@ export default function Products() {
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-primary/80 bg-primary text-left text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Produk</th>
                   <th className="px-3 py-2 font-semibold">Stok</th>
