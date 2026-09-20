@@ -13,6 +13,13 @@ interface AuthState {
   isRole: (...roles: UserRole[]) => boolean
 }
 
+function normalizeLoginIdentifier(identifier: string) {
+  const normalizedIdentifier = identifier.trim().toLowerCase()
+  return normalizedIdentifier.includes('@')
+    ? normalizedIdentifier
+    : `${normalizedIdentifier}@outlook.com`
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
@@ -57,7 +64,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalizeLoginIdentifier(email),
+      password,
+    })
     if (error) return { error: error.message }
     return { error: null }
   },
