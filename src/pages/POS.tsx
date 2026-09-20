@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, type KeyboardEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -31,6 +31,7 @@ export default function POS() {
   const [qty, setQty] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'qris' | 'credit'>('cash')
   const [showCart, setShowCart] = useState(false)
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -74,6 +75,24 @@ export default function POS() {
         p.barcode?.toLowerCase().includes(q)
     )
   }, [products, search])
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (!search.trim() || filtered.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveSuggestionIndex((current) => (current + 1) % filtered.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveSuggestionIndex((current) => (current <= 0 ? filtered.length - 1 : current - 1))
+    } else if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+      event.preventDefault()
+      const selectedSuggestion = filtered[activeSuggestionIndex]
+      if (selectedSuggestion) openAdd(selectedSuggestion)
+    } else if (event.key === 'Escape') {
+      setActiveSuggestionIndex(-1)
+    }
+  }
 
   function openAdd(product: Product) {
     if (product.stock <= 0) {
@@ -192,9 +211,51 @@ export default function POS() {
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="pos-product-suggestions"
+              aria-expanded={Boolean(search.trim() && filtered.length > 0)}
+              aria-activedescendant={
+                activeSuggestionIndex >= 0
+                  ? `pos-product-suggestion-${filtered[activeSuggestionIndex]?.id}`
+                  : undefined
+              }
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setActiveSuggestionIndex(-1)
+              }}
+              onKeyDown={handleSearchKeyDown}
               autoFocus
             />
+            {search.trim() && filtered.length > 0 && (
+              <div
+                id="pos-product-suggestions"
+                role="listbox"
+                className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-stone-200 bg-surface p-1 shadow-lg"
+              >
+                {filtered.map((product, index) => (
+                  <button
+                    key={product.id}
+                    id={`pos-product-suggestion-${product.id}`}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeSuggestionIndex}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => openAdd(product)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      index === activeSuggestionIndex
+                        ? 'bg-teal-50 text-teal-800'
+                        : 'text-slate-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="truncate font-medium">{product.name}</span>
+                    <span className="ml-3 shrink-0 text-xs text-slate-400">
+                      {product.stock <= 0 ? 'Habis' : `Stok: ${product.stock}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <Button
             variant="secondary"
