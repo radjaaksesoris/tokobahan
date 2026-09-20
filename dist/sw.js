@@ -1,4 +1,4 @@
-const CACHE_NAME = 'konveksipos-v1'
+const CACHE_NAME = 'konveksipos-v2'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -7,6 +7,7 @@ const APP_SHELL = [
   `${BASE_PATH}favicon.png`,
   `${BASE_PATH}icon-192.png`,
   `${BASE_PATH}icon-512.png`,
+  `${BASE_PATH}login-background.jpg`,
 ]
 
 self.addEventListener('install', (event) => {

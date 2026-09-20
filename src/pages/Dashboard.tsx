@@ -68,6 +68,8 @@ export default function Dashboard() {
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
   const [lowStockSwipeOffset, setLowStockSwipeOffset] = useState(0)
   const lowStockTouchStart = useRef<number | null>(null)
+  const statsRequestId = useRef(0)
+  const initialLoadComplete = useRef(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -91,7 +93,8 @@ export default function Dashboard() {
   }, [])
 
   async function loadStats() {
-    setLoading(true)
+    const requestId = ++statsRequestId.current
+    if (!initialLoadComplete.current) setLoading(true)
     setError(null)
     const todayStart = startOfDay(new Date()).toISOString()
     const todayEnd = endOfDay(new Date()).toISOString()
@@ -110,9 +113,11 @@ export default function Dashboard() {
     ])
 
     const queryError = todaySummaryRes.error || productsRes.error || weekSales.error
+    if (requestId !== statsRequestId.current) return
     if (queryError) {
       setError(queryError.message)
       setLoading(false)
+      initialLoadComplete.current = true
       return
     }
     const todaySummary = todaySummaryRes.data?.[0]
@@ -148,6 +153,7 @@ export default function Dashboard() {
 
     setStats({ todaySales, todayProfit, todayOrders, totalProducts, lowStock, weekData })
     setLoading(false)
+    initialLoadComplete.current = true
   }
 
   function notifyLowStock(products: LowStockProduct[]) {

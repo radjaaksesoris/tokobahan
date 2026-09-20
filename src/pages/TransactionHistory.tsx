@@ -42,6 +42,7 @@ export default function TransactionHistory() {
   const [items, setItems] = useState<SaleItemRow[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
   const initialLoadComplete = useRef(false)
+  const loadRequestId = useRef(0)
 
   useEffect(() => {
     const timer = window.setTimeout(loadSales, 250)
@@ -49,6 +50,7 @@ export default function TransactionHistory() {
   }, [date, page, search])
 
   async function loadSales() {
+    const requestId = ++loadRequestId.current
     if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('sales')
@@ -69,6 +71,7 @@ export default function TransactionHistory() {
     }
 
     const { data, error } = await query
+    if (requestId !== loadRequestId.current) return
     if (error) {
       toast.error(error.message)
       setSales([])

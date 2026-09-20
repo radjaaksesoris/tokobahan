@@ -48,6 +48,7 @@ export default function Products() {
     typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 15 : 20
   ))
   const initialLoadComplete = useRef(false)
+  const loadRequestId = useRef(0)
 
   // form
   const [name, setName] = useState('')
@@ -79,6 +80,7 @@ export default function Products() {
   }, [search, page, pageSize])
 
   async function load() {
+    const requestId = ++loadRequestId.current
     if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('products')
@@ -89,6 +91,7 @@ export default function Products() {
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
     const { data, error } = await query
+    if (requestId !== loadRequestId.current) return
     if (error) {
       toast.error(error.message)
       setProducts([])

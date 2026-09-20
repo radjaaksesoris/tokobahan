@@ -86,11 +86,7 @@ function PageLoader() {
 function preloadPageChunks() {
   void Promise.all([
     import('@/pages/Dashboard'),
-    import('@/pages/POS'),
     import('@/pages/Products'),
-    import('@/pages/Reports'),
-    import('@/pages/TransactionHistory'),
-    import('@/pages/Settings'),
   ]).catch((error) => {
     console.warn('Gagal melakukan prefetch halaman:', error)
   })
