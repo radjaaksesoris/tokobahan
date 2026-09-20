@@ -33,6 +33,7 @@ export default function Products() {
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [editingPricesOnly, setEditingPricesOnly] = useState(false)
+  const [returnToStockProduct, setReturnToStockProduct] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
@@ -93,6 +94,7 @@ export default function Products() {
   function openCreate() {
     setEditing(null)
     setEditingPricesOnly(false)
+    setReturnToStockProduct(null)
     setName('')
     setSku('')
     setSkuEditing(true)
@@ -107,6 +109,7 @@ export default function Products() {
   }
 
   function openEdit(p: Product, pricesOnly = false) {
+    if (!pricesOnly) setReturnToStockProduct(null)
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
@@ -211,6 +214,18 @@ export default function Products() {
       else {
         toast.success('Produk diperbarui')
         setModal(false)
+        if (editingPricesOnly && returnToStockProduct) {
+          setStockProduct({
+            ...returnToStockProduct,
+            name: name.trim(),
+            sku: sku || null,
+            prices: prices.map((price) => ({ ...price })),
+          })
+          setStockQuantity('0')
+          setReturnToStockProduct(null)
+        }
+        setEditing(null)
+        setEditingPricesOnly(false)
         load()
       }
     } else {
@@ -423,6 +438,7 @@ export default function Products() {
                           onClick={() => {
                             const product = stockProduct
                             setStockProduct(null)
+                            setReturnToStockProduct(product)
                             openEdit(product, true)
                           }}
                         >
