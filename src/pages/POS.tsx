@@ -227,7 +227,6 @@ export default function POS() {
               onKeyDown={handleSearchKeyDown}
               autoFocus
             />
-<<<<<<< HEAD
             {search && (
               <button
                 type="button"
@@ -237,7 +236,7 @@ export default function POS() {
               >
                 <X className="h-4 w-4" />
               </button>
-=======
+            )}
             {search.trim() && filtered.length > 0 && (
               <div
                 id="pos-product-suggestions"
@@ -266,7 +265,6 @@ export default function POS() {
                   </button>
                 ))}
               </div>
->>>>>>> 3fbf4541fd6f0e88dc1f352ae4a24ddea0403779
             )}
           </div>
           <Button
