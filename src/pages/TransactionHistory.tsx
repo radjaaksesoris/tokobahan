@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -41,6 +41,7 @@ export default function TransactionHistory() {
   const [selectedSale, setSelectedSale] = useState<SaleRow | null>(null)
   const [items, setItems] = useState<SaleItemRow[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
+  const initialLoadComplete = useRef(false)
 
   useEffect(() => {
     const timer = window.setTimeout(loadSales, 250)
@@ -48,7 +49,7 @@ export default function TransactionHistory() {
   }, [date, page, search])
 
   async function loadSales() {
-    setLoading(true)
+    if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('sales')
       .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
@@ -77,6 +78,7 @@ export default function TransactionHistory() {
       setHasNextPage(rows.length > PAGE_SIZE)
       setSales(rows)
     }
+    initialLoadComplete.current = true
     setLoading(false)
   }
 

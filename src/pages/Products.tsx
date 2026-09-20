@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { UNIT_LABELS, UNIT_FACTORS } from '@/types'
@@ -45,6 +45,7 @@ export default function Products() {
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const pageSize = 100
+  const initialLoadComplete = useRef(false)
 
   // form
   const [name, setName] = useState('')
@@ -66,7 +67,7 @@ export default function Products() {
   }, [search, page])
 
   async function load() {
-    if (products.length === 0) setLoading(true)
+    if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
@@ -80,6 +81,7 @@ export default function Products() {
       toast.error(error.message)
       setProducts([])
       setHasNextPage(false)
+      initialLoadComplete.current = true
       setLoading(false)
       return
     }
@@ -88,6 +90,7 @@ export default function Products() {
     setProducts(
       rows.slice(0, pageSize).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
     )
+    initialLoadComplete.current = true
     setLoading(false)
   }
 
