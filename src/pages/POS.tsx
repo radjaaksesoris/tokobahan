@@ -274,7 +274,7 @@ export default function POS() {
                   onClick={() => openAdd(p)}
                   className={`group flex min-h-16 items-center gap-3 rounded-xl border bg-surface p-2.5 text-left transition-all duration-200 ${
                     activeProductIndex === index
-                      ? 'border-primary ring-2 ring-primary/20'
+                      ? 'border-primary bg-teal-50 ring-2 ring-primary/20'
                       : 'border-stone-200/80'
                   } ${
                     p.stock <= 0
@@ -282,16 +282,30 @@ export default function POS() {
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-lg font-bold text-stone-300 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg font-bold transition-colors ${
+                    activeProductIndex === index
+                      ? 'bg-primary text-white'
+                      : 'bg-stone-100 text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
+                  }`}>
                     {p.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-                    <p className={`mt-0.5 text-xs ${p.stock <= 0 ? 'font-semibold text-red-500' : 'text-slate-400'}`}>
+                    <p className={`truncate text-sm font-medium ${
+                      activeProductIndex === index ? 'text-teal-900' : 'text-slate-800'
+                    }`}>{p.name}</p>
+                    <p className={`mt-0.5 text-xs ${
+                      p.stock <= 0
+                        ? 'font-semibold text-red-500'
+                        : activeProductIndex === index
+                          ? 'text-teal-700'
+                          : 'text-slate-400'
+                    }`}>
                       {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
                     </p>
                   </div>
-                  <p className="shrink-0 text-sm font-semibold text-teal-700">
+                  <p className={`shrink-0 text-sm font-semibold ${
+                    activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
+                  }`}>
                     {formatCurrency(
                       p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
                     )}
