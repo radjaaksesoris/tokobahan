@@ -449,20 +449,30 @@ export default function POS() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
           <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
             <CardContent className="p-5">
-              <h3 className="text-lg font-semibold">Pembayaran tunai</h3>
-              <p className="mt-1 text-sm text-slate-500">Total transaksi</p>
-              <p className="text-2xl font-bold text-teal-700">{formatCurrency(totals.subtotal)}</p>
-              <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3 text-right">
-                <p className="text-xs text-slate-500">Uang diterima</p>
-                <p className="text-2xl font-bold text-ink">
-                  {formatCurrency(Number(cashReceived) || 0)}
-                </p>
+              <div className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Pembayaran tunai</p>
+                <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
               </div>
-              <p className={`mt-2 text-right text-sm font-medium ${
-                Number(cashReceived) >= totals.subtotal ? 'text-teal-700' : 'text-slate-500'
-              }`}>
-                Kembalian: {formatCurrency(Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
-              </p>
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50/70">
+                <div className="flex items-center justify-between border-b border-stone-200 bg-teal-50 px-4 py-3">
+                  <span className="text-sm font-medium text-slate-600">Total transaksi</span>
+                  <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
+                  <span className="text-sm font-medium text-slate-600">Uang diterima</span>
+                  <span className="text-xl font-bold text-ink">{formatCurrency(Number(cashReceived) || 0)}</span>
+                </div>
+                <div className={`flex items-center justify-between px-4 py-3 ${
+                  Number(cashReceived) >= totals.subtotal ? 'bg-emerald-50' : 'bg-white'
+                }`}>
+                  <span className="text-sm font-medium text-slate-600">Kembalian</span>
+                  <span className={`text-xl font-bold ${
+                    Number(cashReceived) >= totals.subtotal ? 'text-emerald-700' : 'text-slate-400'
+                  }`}>
+                    {formatCurrency(Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
+                  </span>
+                </div>
+              </div>
               <NumericKeypad
                 value={cashReceived}
                 title="Nominal pembayaran"
