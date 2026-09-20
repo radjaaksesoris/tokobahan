@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
@@ -65,6 +65,9 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
+  const [lowStockDismissed, setLowStockDismissed] = useState(false)
+  const [lowStockSwipeOffset, setLowStockSwipeOffset] = useState(0)
+  const lowStockTouchStart = useRef<number | null>(null)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -119,6 +122,7 @@ export default function Dashboard() {
     const lowStockRows = (productsRes.data || []).filter((p) => p.stock <= p.min_stock) as LowStockProduct[]
     const lowStock = lowStockRows.length
     setLowStockProducts(lowStockRows)
+    if (lowStock === 0) setLowStockDismissed(false)
     notifyLowStock(lowStockRows)
 
     // Aggregate week
@@ -186,6 +190,11 @@ export default function Dashboard() {
       setNotificationPermission('unsupported')
       toast.error('Browser ini tidak mendukung notifikasi')
       return
+    }
+
+    function dismissLowStockAlert(direction: 1 | -1 = 1) {
+      setLowStockSwipeOffset(direction * 120)
+      window.setTimeout(() => setLowStockDismissed(true), 180)
     }
     const permission = await Notification.requestPermission()
     setNotificationPermission(permission)
@@ -273,8 +282,32 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {stats.lowStock > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      {stats.lowStock > 0 && !lowStockDismissed && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex touch-pan-y items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 transition-[transform,opacity] duration-200 ease-out"
+          style={{
+            opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
+            transform: `translateX(${lowStockSwipeOffset}px)`,
+          }}
+          onTouchStart={(event) => {
+            lowStockTouchStart.current = event.touches[0]?.clientX ?? null
+          }}
+          onTouchMove={(event) => {
+            if (lowStockTouchStart.current === null) return
+            setLowStockSwipeOffset(event.touches[0].clientX - lowStockTouchStart.current)
+          }}
+          onTouchEnd={() => {
+            const offset = lowStockSwipeOffset
+            lowStockTouchStart.current = null
+            if (Math.abs(offset) >= 80) {
+              dismissLowStockAlert(offset > 0 ? 1 : -1)
+            } else {
+              setLowStockSwipeOffset(0)
+            }
+          }}
+        >
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
             <button
@@ -295,6 +328,14 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+          <button
+            type="button"
+            aria-label="Tutup notifikasi stok menipis"
+            className="shrink-0 rounded-md p-1 text-amber-700 hover:bg-amber-100"
+            onClick={() => dismissLowStockAlert()}
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
