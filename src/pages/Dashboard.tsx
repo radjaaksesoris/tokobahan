@@ -192,10 +192,6 @@ export default function Dashboard() {
       return
     }
 
-    function dismissLowStockAlert(direction: 1 | -1 = 1) {
-      setLowStockSwipeOffset(direction * 120)
-      window.setTimeout(() => setLowStockDismissed(true), 180)
-    }
     const permission = await Notification.requestPermission()
     setNotificationPermission(permission)
     if (permission === 'granted') {
@@ -211,6 +207,11 @@ export default function Dashboard() {
     } else {
       toast.error('Izin notifikasi stok ditolak')
     }
+  }
+
+  function dismissLowStockAlert(direction: 1 | -1 = 1) {
+    setLowStockSwipeOffset(direction * 120)
+    window.setTimeout(() => setLowStockDismissed(true), 180)
   }
 
   const cards = [
