@@ -279,7 +279,7 @@ export default function Products() {
           <div className="relative sm:w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
-              className="pl-9"
+              className="pl-9 pr-10"
               placeholder="Cari nama, SKU, atau barcode..."
               value={search}
               onChange={(event) => {
@@ -287,6 +287,19 @@ export default function Products() {
                 setPage(0)
               }}
             />
+            {search && (
+              <button
+                type="button"
+                aria-label="Reset pencarian"
+                onClick={() => {
+                  setSearch('')
+                  setPage(0)
+                }}
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-stone-200 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
