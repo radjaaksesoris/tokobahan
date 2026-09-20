@@ -401,12 +401,27 @@ export default function Products() {
                   </div>
                   <div className="rounded-lg border border-stone-200">
                     <div className="border-b border-stone-200 bg-stone-50 px-3 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        Simulasi margin stok baru
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
-                        Harga jual aktif dibandingkan dengan HPP yang dimasukkan.
-                      </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                            Simulasi margin stok baru
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-400">
+                            Harga jual aktif dibandingkan dengan HPP yang dimasukkan.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                          onClick={() => {
+                            const product = stockProduct
+                            setStockProduct(null)
+                            openEdit(product)
+                          }}
+                        >
+                          Ubah harga jual
+                        </button>
+                      </div>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[430px] text-xs">
