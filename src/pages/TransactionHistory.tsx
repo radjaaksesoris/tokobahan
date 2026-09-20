@@ -173,13 +173,13 @@ export default function TransactionHistory() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-sm">
-                <thead className="border-b border-primary/80 bg-primary text-left text-xs uppercase tracking-wide text-white">
+                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
                   <tr>
                     <th className="px-4 py-2.5 font-semibold">Invoice</th>
                     <th className="px-4 py-2.5 font-semibold">Tanggal & waktu</th>
                     <th className="px-4 py-2.5 font-semibold">Pembayaran</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Total</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Laba</th>
+                    <th className="px-4 py-2.5 font-semibold">Total</th>
+                    <th className="px-4 py-2.5 font-semibold">Laba</th>
                     <th className="w-12 px-3 py-2.5"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
