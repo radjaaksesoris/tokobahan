@@ -64,14 +64,6 @@ export function AppLayout() {
             <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
             <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.12em] text-accent">Aksesoris konveksi</p>
           </div>
-          <button
-            className="ml-auto rounded-lg p-1.5 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Sembunyikan navbar"
-            title="Sembunyikan navbar"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
         </div>
 
         <nav className="flex-1 space-y-1.5 p-3">
@@ -113,6 +105,14 @@ export function AppLayout() {
             <LogOut className="h-4 w-4" />
             <span>Keluar</span>
           </Button>
+          <button
+            className="mt-2 flex w-full items-center justify-center rounded-lg border border-white/20 p-2 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Sembunyikan navbar"
+            title="Sembunyikan navbar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
       </aside>
 
@@ -124,7 +124,7 @@ export function AppLayout() {
       </div>
       {!sidebarOpen && (
         <button
-          className="fixed left-4 top-4 z-50 rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
+          className="fixed bottom-4 left-4 z-50 rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
           onClick={() => setSidebarOpen(true)}
           aria-label="Tampilkan navbar"
           title="Tampilkan navbar"
