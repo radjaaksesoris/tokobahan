@@ -16,12 +16,12 @@ import { Button } from '@/components/ui/Button'
 import { CurrentDate } from '@/components/layout/CurrentDate'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier', 'monitor'] },
-  { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'] },
-  { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'] },
-  { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'] },
-  { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'] },
-  { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'] },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier', 'monitor'], className: '' },
+  { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'], className: 'hidden lg:flex' },
+  { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
+  { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'], className: '' },
+  { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'], className: '' },
+  { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'], className: '' },
 ]
 
 export function AppLayout() {
@@ -76,6 +76,7 @@ export function AppLayout() {
               className={({ isActive }) =>
                 cn(
                   'group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all duration-200',
+                  item.className,
                   'gap-3 px-3',
                   isActive
                     ? 'bg-white text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)]'
