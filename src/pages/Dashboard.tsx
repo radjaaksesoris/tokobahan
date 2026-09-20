@@ -253,9 +253,55 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
           <p className="mt-1 max-w-[42rem] text-sm text-slate-500">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
-        <div className="self-start rounded-2xl bg-ink px-4 py-3 text-white sm:self-auto">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
-          <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Operasional aktif</p>
+        <div className="mx-auto flex w-full max-w-md justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none">
+          <div className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
+            <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Operasional aktif</p>
+          </div>
+          {stats.lowStock > 0 && !lowStockDismissed && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="relative min-w-0 flex-1 touch-pan-y rounded-2xl bg-ink px-3 py-3 text-white transition-[transform,opacity] duration-200 ease-out lg:hidden"
+              style={{
+                opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
+                transform: `translateX(${lowStockSwipeOffset}px)`,
+              }}
+              onTouchStart={(event) => {
+                lowStockTouchStart.current = event.touches[0]?.clientX ?? null
+              }}
+              onTouchMove={(event) => {
+                if (lowStockTouchStart.current === null) return
+                setLowStockSwipeOffset(event.touches[0].clientX - lowStockTouchStart.current)
+              }}
+              onTouchEnd={() => {
+                const offset = lowStockSwipeOffset
+                lowStockTouchStart.current = null
+                if (Math.abs(offset) >= 80) {
+                  dismissLowStockAlert(offset > 0 ? 1 : -1)
+                } else {
+                  setLowStockSwipeOffset(0)
+                }
+              }}
+            >
+              <button
+                type="button"
+                className="block w-full pr-5 text-center lg:text-left"
+                onClick={() => setShowLowStockModal(true)}
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</p>
+                <p className="mt-1 text-sm font-semibold">{stats.lowStock} produk</p>
+              </button>
+              <button
+                type="button"
+                aria-label="Tutup notifikasi stok menipis"
+                className="absolute right-2 top-2 rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white"
+                onClick={() => dismissLowStockAlert()}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
@@ -287,7 +333,7 @@ export default function Dashboard() {
         <div
           role="alert"
           aria-live="polite"
-          className="flex touch-pan-y items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 transition-[transform,opacity] duration-200 ease-out"
+          className="hidden touch-pan-y items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 transition-[transform,opacity] duration-200 ease-out lg:flex"
           style={{
             opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
             transform: `translateX(${lowStockSwipeOffset}px)`,
