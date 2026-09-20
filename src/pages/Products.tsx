@@ -36,7 +36,7 @@ export default function Products() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
-  const [stockQuantity, setStockQuantity] = useState(0)
+  const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
   const [stockSaving, setStockSaving] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -128,20 +128,21 @@ export default function Products() {
 
   function openStock(p: Product) {
     setStockProduct(p)
-    setStockQuantity(0)
+    setStockQuantity('0')
     setStockCost(p.cost_price)
   }
 
   async function handleStockReceipt() {
     if (!stockProduct) return
-    if (stockQuantity <= 0 || stockCost < 0) {
+    const quantity = Number(stockQuantity)
+    if (quantity <= 0 || stockCost < 0) {
       toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
       return
     }
     setStockSaving(true)
     const { error } = await supabase.rpc('receive_stock_batch', {
       p_product_id: stockProduct.id,
-      p_quantity: stockQuantity,
+      p_quantity: quantity,
       p_unit_cost: stockCost,
     })
     if (error) {
@@ -387,7 +388,10 @@ export default function Products() {
                       type="number"
                       min="0"
                       value={stockQuantity}
-                      onChange={(event) => setStockQuantity(Number(event.target.value))}
+                      onFocus={() => {
+                        if (stockQuantity === '0') setStockQuantity('')
+                      }}
+                      onChange={(event) => setStockQuantity(event.target.value)}
                       autoFocus
                     />
                   </div>
