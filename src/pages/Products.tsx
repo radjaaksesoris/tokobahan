@@ -66,7 +66,7 @@ export default function Products() {
   }, [search, page])
 
   async function load() {
-    setLoading(true)
+    if (products.length === 0) setLoading(true)
     let query = supabase
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
