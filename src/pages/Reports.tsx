@@ -195,7 +195,7 @@ export default function Reports() {
             <p className="text-xs text-slate-400">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative col-span-2 overflow-hidden lg:col-span-1">
           <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-amber-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
@@ -214,7 +214,7 @@ export default function Reports() {
             <CardTitle className="text-base">Grafik Pendapatan vs Laba</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-80 lg:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
