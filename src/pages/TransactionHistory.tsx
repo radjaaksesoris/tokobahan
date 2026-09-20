@@ -183,17 +183,20 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-slate-400">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm">
+            <div className="overflow-x-hidden">
+              <table className="w-full table-fixed text-sm">
                 <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
                   <tr>
-                    <th className="w-12 px-4 py-2.5 font-semibold">No.</th>
-                    <th className="px-4 py-2.5 font-semibold">Invoice</th>
-                    <th className="px-4 py-2.5 font-semibold">Tanggal & waktu</th>
-                    <th className="px-4 py-2.5 font-semibold">Pembayaran</th>
-                    <th className="px-4 py-2.5 font-semibold">Total</th>
-                    <th className="px-4 py-2.5 font-semibold">Laba</th>
-                    <th className="w-12 px-3 py-2.5"><span className="sr-only">Aksi</span></th>
+                    <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">
+                      <span className="lg:hidden">Tanggal</span>
+                      <span className="hidden lg:inline">Tanggal & waktu</span>
+                    </th>
+                    <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Total</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Laba</th>
+                    <th className="w-9 px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,19 +207,20 @@ export default function TransactionHistory() {
                         index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
                       }`}
                     >
-                      <td className="px-4 py-2.5 text-center text-xs text-slate-500">{page * PAGE_SIZE + index + 1}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-center font-medium text-slate-900">{sale.invoice_no}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs text-slate-500">
-                        {format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}
+                      <td className="px-1 py-2.5 text-center text-xs text-slate-500 lg:px-4">{page * PAGE_SIZE + index + 1}</td>
+                      <td className="truncate px-1 py-2.5 text-center text-xs font-medium text-slate-900 lg:px-4 lg:text-sm">{sale.invoice_no}</td>
+                      <td className="whitespace-nowrap px-1 py-2.5 text-center text-[11px] text-slate-500 lg:px-4 lg:text-xs">
+                        <span className="lg:hidden">{format(new Date(sale.created_at), 'dd MMM yy', { locale: localeId })}</span>
+                        <span className="hidden lg:inline">{format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}</span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-slate-600">{sale.payment_method}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-center font-semibold text-slate-900">
+                      <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-slate-600 lg:table-cell">{sale.payment_method}</td>
+                      <td className="truncate px-1 py-2.5 text-center text-xs font-semibold text-slate-900 lg:px-4 lg:text-sm">
                         {formatCurrency(Number(sale.total_amount))}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-center text-xs font-medium text-emerald-600">
+                      <td className="truncate px-1 py-2.5 text-center text-[11px] font-medium text-emerald-600 lg:px-4 lg:text-xs">
                         {formatCurrency(Number(sale.total_profit))}
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-1 py-2 text-center lg:px-3">
                         <button
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-teal-100 hover:text-primary"
                           onClick={() => openDetails(sale)}
