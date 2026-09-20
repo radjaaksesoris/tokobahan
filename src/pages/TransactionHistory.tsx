@@ -170,30 +170,51 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-slate-400">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="divide-y divide-stone-100">
-              {filteredSales.map((sale) => (
-                <div key={sale.id} className="flex items-center gap-3 px-4 py-4 hover:bg-stone-50">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-900">{sale.invoice_no}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })} ·{' '}
-                      <span className="capitalize">{sale.payment_method}</span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-slate-900">{formatCurrency(Number(sale.total_amount))}</p>
-                    <p className="text-xs text-emerald-600">Laba {formatCurrency(Number(sale.total_profit))}</p>
-                  </div>
-                  <button
-                    className="rounded-lg p-2 text-slate-400 hover:bg-teal-50 hover:text-primary"
-                    onClick={() => openDetails(sale)}
-                    title={`Lihat ${sale.invoice_no}`}
-                    aria-label={`Lihat detail ${sale.invoice_no}`}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead className="border-b border-stone-200 bg-stone-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-2.5 font-semibold">Invoice</th>
+                    <th className="px-4 py-2.5 font-semibold">Tanggal & waktu</th>
+                    <th className="px-4 py-2.5 font-semibold">Pembayaran</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">Total</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">Laba</th>
+                    <th className="w-12 px-3 py-2.5"><span className="sr-only">Aksi</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSales.map((sale, index) => (
+                    <tr
+                      key={sale.id}
+                      className={`border-b border-stone-100 transition-colors hover:bg-teal-50/60 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
+                      }`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900">{sale.invoice_no}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-xs text-slate-500">
+                        {format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-xs capitalize text-slate-600">{sale.payment_method}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-slate-900">
+                        {formatCurrency(Number(sale.total_amount))}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-medium text-emerald-600">
+                        {formatCurrency(Number(sale.total_profit))}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-teal-100 hover:text-primary"
+                          onClick={() => openDetails(sale)}
+                          title={`Lihat ${sale.invoice_no}`}
+                          aria-label={`Lihat detail ${sale.invoice_no}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
           {!loading && (page > 0 || hasNextPage) && (
