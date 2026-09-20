@@ -80,7 +80,6 @@ export function AppLayout() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 cn(
                   'group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all duration-200',
