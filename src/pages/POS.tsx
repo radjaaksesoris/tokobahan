@@ -182,7 +182,7 @@ export default function POS() {
       return
     }
 
-    toast.success(`Transaksi ${invoiceNo} berhasil! Laba: ${formatCurrency(totals.totalProfit)}`)
+    toast.success(`Transaksi ${invoiceNo} berhasil!`)
     clearCart()
     setShowCart(false)
     loadProducts()
@@ -486,10 +486,6 @@ function CartPanel({
           <div className="flex justify-between">
             <span className="text-stone-400">Subtotal</span>
             <span className="font-medium text-white">{formatCurrency(totals.subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-emerald-600">
-            <span>Estimasi Laba</span>
-            <span className="font-medium">{formatCurrency(totals.totalProfit)}</span>
           </div>
         </div>
 
