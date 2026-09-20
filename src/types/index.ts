@@ -2,9 +2,9 @@ export type UnitType = 'satuan' | 'lusin' | 'kodi' | 'gross' | 'meter' | 'pack'
 
 export const UNIT_LABELS: Record<UnitType, string> = {
   satuan: 'Satuan',
-  lusin: 'Lusin (12)',
-  kodi: 'Kodi (20)',
-  gross: 'Gross (144)',
+  lusin: 'Lusin',
+  kodi: 'Kodi',
+  gross: 'Gross',
   meter: 'Meter',
   pack: 'Pack',
 }
