@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -26,6 +26,7 @@ const navItems = [
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { profile, signOut, isRole } = useAuthStore()
+  const location = useLocation()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -119,14 +120,16 @@ export function AppLayout() {
       {/* Main */}
       <div className="flex flex-1 flex-col min-w-0">
         <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-5 lg:p-8">
-          <div className="mb-2 text-right text-xs font-medium text-slate-500">
-            {new Date().toLocaleDateString('id-ID', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </div>
+          {location.pathname !== '/transactions' && (
+            <div className="mb-2 text-right text-xs font-medium text-slate-500">
+              {new Date().toLocaleDateString('id-ID', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

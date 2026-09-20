@@ -109,10 +109,20 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="border-b border-stone-300/80 pb-5">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
-        <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
-        <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
+      <div className="flex items-start justify-between gap-4 border-b border-stone-300/80 pb-5">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
+          <p className="mt-1 text-sm text-slate-500">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
+        </div>
+        <p className="shrink-0 pt-1 text-right text-xs font-medium text-slate-500">
+          {new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
+        </p>
       </div>
 
       <Card>
