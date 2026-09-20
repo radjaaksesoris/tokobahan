@@ -45,7 +45,7 @@ export default function Products() {
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [pageSize, setPageSize] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 15 : 100
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 15 : 20
   ))
   const initialLoadComplete = useRef(false)
 
@@ -66,7 +66,7 @@ export default function Products() {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 639px)')
     const updatePageSize = (event: MediaQueryListEvent) => {
-      setPageSize(event.matches ? 15 : 100)
+      setPageSize(event.matches ? 15 : 20)
       setPage(0)
     }
     mediaQuery.addEventListener('change', updatePageSize)
