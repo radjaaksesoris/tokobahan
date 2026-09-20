@@ -33,6 +33,9 @@ export default function POS() {
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [cashReceived, setCashReceived] = useState('')
+  const [showQtyKeypad, setShowQtyKeypad] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -123,7 +126,16 @@ export default function POS() {
     setSelectedProduct(null)
   }
 
-  async function handleCheckout() {
+  function handleCheckout() {
+    if (paymentMethod === 'cash') {
+      setCashReceived('')
+      setShowPaymentModal(true)
+      return
+    }
+    processCheckout()
+  }
+
+  async function processCheckout() {
     if (items.length === 0) return
     setCheckoutLoading(true)
 
@@ -184,6 +196,8 @@ export default function POS() {
 
     toast.success(`Transaksi ${invoiceNo} berhasil!`)
     clearCart()
+    setShowPaymentModal(false)
+    setCashReceived('')
     setShowCart(false)
     loadProducts()
     notifyLowStockPush().catch((error) => {
@@ -367,6 +381,8 @@ export default function POS() {
                   min={1}
                   max={selectedProduct.stock}
                   value={qty}
+                  readOnly
+                  onClick={() => setShowQtyKeypad(true)}
                   onChange={(e) =>
                     setQty(Math.min(
                       selectedProduct.stock,
@@ -401,8 +417,99 @@ export default function POS() {
               </div>
             </CardContent>
           </Card>
+          {showQtyKeypad && (
+            <NumericKeypad
+              value={String(qty)}
+              title="Jumlah produk"
+              max={selectedProduct.stock}
+              onChange={(value) => setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value) || 1)))}
+              onClose={() => setShowQtyKeypad(false)}
+            />
+          )}
         </div>
       )}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+          <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+            <CardContent className="p-5">
+              <h3 className="text-lg font-semibold">Pembayaran tunai</h3>
+              <p className="mt-1 text-sm text-slate-500">Total transaksi</p>
+              <p className="text-2xl font-bold text-teal-700">{formatCurrency(totals.subtotal)}</p>
+              <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3 text-right">
+                <p className="text-xs text-slate-500">Uang diterima</p>
+                <p className="text-2xl font-bold text-ink">
+                  {formatCurrency(Number(cashReceived) || 0)}
+                </p>
+              </div>
+              <p className={`mt-2 text-right text-sm font-medium ${
+                Number(cashReceived) >= totals.subtotal ? 'text-teal-700' : 'text-slate-500'
+              }`}>
+                Kembalian: {formatCurrency(Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
+              </p>
+              <NumericKeypad
+                value={cashReceived}
+                title="Nominal pembayaran"
+                onChange={setCashReceived}
+                onClose={() => setShowPaymentModal(false)}
+              />
+              <div className="mt-3 flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowPaymentModal(false)}>
+                  Batal
+                </Button>
+                <Button
+                  className="flex-1"
+                  disabled={Number(cashReceived) < totals.subtotal || checkoutLoading}
+                  onClick={processCheckout}
+                >
+                  {checkoutLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Selesaikan'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NumericKeypad({
+  value,
+  title,
+  max,
+  onChange,
+  onClose,
+}: {
+  value: string
+  title: string
+  max?: number
+  onChange: (value: string) => void
+  onClose: () => void
+}) {
+  function append(digit: string) {
+    const next = `${value}${digit}`.replace(/^0+(?=\d)/, '')
+    if (!max || Number(next) <= max) onChange(next)
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-500">{title}</p>
+        <button type="button" className="text-xs font-medium text-teal-700" onClick={onClose}>
+          Selesai
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫'].map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => key === '⌫' ? onChange(value.slice(0, -1)) : append(key)}
+            className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-700 transition-colors hover:bg-slate-100 active:bg-slate-200"
+          >
+            {key}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
