@@ -39,6 +39,7 @@ body {
   font-family: 'Nunito Sans', system-ui, sans-serif;
   background-color: #f5f1e8;
   color: #202a2e;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   background-image: radial-gradient(rgba(32, 42, 46, 0.055) 0.7px, transparent 0.7px);
   background-size: 14px 14px;
@@ -60,6 +61,8 @@ button, a, input, select, textarea {
 /* Mobile first - prevent zoom on inputs */
 input, select, textarea {
   font-size: 16px;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Custom scrollbar */
