@@ -32,6 +32,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
+  const [editingPricesOnly, setEditingPricesOnly] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
@@ -91,6 +92,7 @@ export default function Products() {
 
   function openCreate() {
     setEditing(null)
+    setEditingPricesOnly(false)
     setName('')
     setSku('')
     setSkuEditing(true)
@@ -104,8 +106,9 @@ export default function Products() {
     setModal(true)
   }
 
-  function openEdit(p: Product) {
+  function openEdit(p: Product, pricesOnly = false) {
     setEditing(p)
+    setEditingPricesOnly(pricesOnly)
     setName(p.name)
     setSku(p.sku || '')
     setSkuEditing(!p.sku)
@@ -416,7 +419,7 @@ export default function Products() {
                           onClick={() => {
                             const product = stockProduct
                             setStockProduct(null)
-                            openEdit(product)
+                            openEdit(product, true)
                           }}
                         >
                           Ubah harga jual
@@ -477,7 +480,7 @@ export default function Products() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center p-0 sm:p-4">
           <Card className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl sm:rounded-2xl">
             <CardHeader className="flex-row items-center justify-between border-b">
-              <CardTitle>{editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
+              <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
               <button onClick={() => setModal(false)}>
                 <X className="h-5 w-5" />
               </button>
@@ -485,7 +488,12 @@ export default function Products() {
             <CardContent className="flex-1 overflow-y-auto space-y-4 pt-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
-                <Input value={name} onChange={(e) => setName(toTitleCase(e.target.value))} placeholder="Jarum Jahit No.14" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(toTitleCase(e.target.value))}
+                  placeholder="Jarum Jahit No.14"
+                  readOnly={editingPricesOnly}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -494,14 +502,15 @@ export default function Products() {
                     <Input
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
-                      readOnly={Boolean(editing?.sku) && !skuEditing}
-                      className={Boolean(editing?.sku) && !skuEditing ? 'bg-stone-100 text-slate-500' : undefined}
+                      readOnly={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing)}
+                      className={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-stone-100 text-slate-500' : undefined}
                     />
                     {editing?.sku && (
                       <Button
                         type="button"
                         variant={skuEditing ? 'secondary' : 'outline'}
                         size="icon"
+                        disabled={editingPricesOnly}
                         onClick={() => setSkuEditing((current) => !current)}
                         aria-label={skuEditing ? 'Kunci SKU' : 'Edit SKU'}
                         title={skuEditing ? 'Kunci SKU' : 'Edit SKU'}
@@ -532,6 +541,7 @@ export default function Products() {
                       options={UNIT_OPTIONS}
                       onChange={(value) => setStockUnit(value as UnitType)}
                       native
+                      disabled={Boolean(editing)}
                       aria-label="Satuan stok"
                     />
                   </div>
@@ -555,6 +565,7 @@ export default function Products() {
                       options={UNIT_OPTIONS}
                       onChange={(value) => setCostUnit(value as UnitType)}
                       native
+                      disabled={Boolean(editing)}
                       aria-label="Satuan harga modal"
                     />
                   </div>
@@ -570,6 +581,7 @@ export default function Products() {
                     type="number"
                     value={minStock}
                     onChange={(e) => setMinStock(Number(e.target.value))}
+                    readOnly={editingPricesOnly}
                   />
                 </div>
               </div>
@@ -577,7 +589,7 @@ export default function Products() {
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="text-sm font-medium">Harga Jual per Unit</label>
-                  <Button variant="outline" size="sm" onClick={addPriceRow}>
+                  <Button variant="outline" size="sm" onClick={addPriceRow} disabled={editingPricesOnly}>
                     <Plus className="h-3 w-3" /> Tambah
                   </Button>
                 </div>
@@ -590,6 +602,7 @@ export default function Products() {
                         options={UNIT_OPTIONS}
                         onChange={(value) => updatePrice(idx, 'unit', value)}
                         native
+                        disabled={editingPricesOnly}
                         aria-label={`Satuan harga jual ${idx + 1}`}
                       />
                       <Input
@@ -600,7 +613,11 @@ export default function Products() {
                         onChange={(e) => updatePrice(idx, 'price', parseCurrencyInput(e.target.value))}
                       />
                       {prices.length > 1 && (
-                        <button onClick={() => removePrice(idx)} className="text-red-400">
+                        <button
+                          onClick={() => removePrice(idx)}
+                          className="text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={editingPricesOnly}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}

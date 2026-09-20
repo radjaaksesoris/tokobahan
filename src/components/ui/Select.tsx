@@ -14,6 +14,7 @@ interface SelectProps {
   className?: string
   menuClassName?: string
   native?: boolean
+  disabled?: boolean
   'aria-label'?: string
 }
 
@@ -24,6 +25,7 @@ export function Select({
   className,
   menuClassName,
   native = false,
+  disabled = false,
   'aria-label': ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false)
@@ -51,9 +53,10 @@ export function Select({
       <div className={cn('relative min-w-28 shrink-0', className)}>
         <select
           value={value}
+          disabled={disabled}
           aria-label={ariaLabel}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+          className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -73,6 +76,7 @@ export function Select({
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
+        disabled={disabled}
         className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 transition-colors hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
