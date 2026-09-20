@@ -67,6 +67,7 @@ export default function Products() {
   const [stockHistory, setStockHistory] = useState<StockReceipt[]>([])
   const [stockHistoryDate, setStockHistoryDate] = useState('')
   const [stockHistoryPage, setStockHistoryPage] = useState(0)
+  const [showStockHistory, setShowStockHistory] = useState(false)
   const [stockHistoryHasNextPage, setStockHistoryHasNextPage] = useState(false)
   const [stockHistoryLoading, setStockHistoryLoading] = useState(true)
   const stockHistoryRequestId = useRef(0)
@@ -387,10 +388,16 @@ export default function Products() {
               </button>
             )}
           </div>
-          <Button className="hidden sm:inline-flex" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Tambah
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowStockHistory(true)}>
+              <History className="h-4 w-4" />
+              Riwayat Input
+            </Button>
+            <Button className="hidden sm:inline-flex" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Tambah
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -485,7 +492,14 @@ export default function Products() {
             </div>
           )}
 
-          <Card className="mt-6">
+          {showStockHistory && (
+            <div
+              className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setShowStockHistory(false)
+              }}
+            >
+          <Card className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-t-2xl sm:rounded-2xl">
             <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -522,6 +536,14 @@ export default function Products() {
                   </button>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => setShowStockHistory(false)}
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                aria-label="Tutup riwayat input stok"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </CardHeader>
             <CardContent className="p-0">
               {stockHistoryLoading ? (
@@ -615,6 +637,8 @@ export default function Products() {
               )}
             </CardContent>
           </Card>
+            </div>
+          )}
 
           {stockProduct && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
