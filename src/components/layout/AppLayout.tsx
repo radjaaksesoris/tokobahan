@@ -41,23 +41,14 @@ export function AppLayout() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
         Lewati ke konten utama
       </a>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col bg-ink text-white transition-all duration-300 lg:static lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0 lg:w-64' : '-translate-x-full lg:w-0 lg:overflow-hidden',
-          'w-64'
+          'fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col border-t border-white/10 bg-ink text-white transition-all duration-300 lg:static lg:inset-y-0 lg:left-0 lg:right-auto lg:h-auto lg:w-64 lg:translate-x-0 lg:border-t-0',
+          sidebarOpen ? 'translate-x-0' : 'translate-x-0 lg:-translate-x-full lg:w-0 lg:overflow-hidden'
         )}
       >
-        <div className="flex h-[4.5rem] items-center gap-3 border-b border-white/10 px-4">
+        <div className="hidden h-[4.5rem] items-center gap-3 border-b border-white/10 px-4 lg:flex">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink shadow-[0_0_0_4px_rgba(228,168,83,0.14)]">
             <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
           </div>
@@ -67,7 +58,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1.5 p-3">
+        <nav className="flex flex-1 overflow-x-auto p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
           {filteredNav.map((item) => (
             <NavLink
               key={item.to}
@@ -75,9 +66,9 @@ export function AppLayout() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all duration-200',
+                  'group relative flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.68rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
                   item.className,
-                  'gap-3 px-3',
+                  'lg:px-3',
                   isActive
                     ? 'bg-white text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)]'
                     : 'text-stone-300 hover:bg-white/10 hover:text-white'
@@ -90,7 +81,7 @@ export function AppLayout() {
           ))}
         </nav>
 
-        <div className="border-t border-white/10 p-4">
+        <div className="hidden border-t border-white/10 p-4 lg:block">
           <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
             <CurrentDate className="text-left text-stone-300" />
@@ -124,13 +115,13 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex flex-1 flex-col min-w-0">
-        <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-5 lg:p-8">
+        <main id="main-content" className="flex-1 overflow-auto p-4 pb-24 sm:p-5 sm:pb-24 lg:p-8 lg:pb-8">
           <Outlet />
         </main>
       </div>
       {!sidebarOpen && (
         <button
-          className="fixed bottom-4 left-4 z-50 rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95"
+          className="fixed bottom-4 left-4 z-50 hidden rounded-xl border border-stone-300 bg-surface p-2 text-slate-600 shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:block"
           onClick={() => setSidebarOpen(true)}
           aria-label="Tampilkan navbar"
           title="Tampilkan navbar"
