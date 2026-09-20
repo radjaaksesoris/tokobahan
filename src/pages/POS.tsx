@@ -279,7 +279,7 @@ export default function POS() {
                   onClick={() => openAdd(p)}
                   className={`group flex min-h-16 items-center gap-3 rounded-xl border bg-surface p-2.5 text-left transition-all duration-200 ${
                     activeProductIndex === index
-                      ? 'border-primary bg-teal-50 ring-2 ring-primary/20'
+                      ? 'border-primary bg-teal-100 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(33,108,104,0.18)]'
                       : 'border-stone-200/80'
                   } ${
                     p.stock <= 0
