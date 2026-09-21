@@ -29,17 +29,30 @@ export default function Login() {
     return () => viewport.removeEventListener('resize', updateKeyboardState)
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async (value: string) => {
+    if (loading || value.length !== 6) return
     setLoading(true)
-    const { error } = await signIn('voltker1', password)
+    const { error } = await signIn('voltker1', value)
     setLoading(false)
     if (error) {
       toast.error(error)
+      setPassword('')
     } else {
       toast.success('Berhasil masuk')
       navigate('/')
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await handleLogin(password)
+  }
+
+  const handlePinDigit = (digit: string) => {
+    if (loading || password.length >= 6) return
+    const nextPassword = `${password}${digit}`
+    setPassword(nextPassword)
+    if (nextPassword.length === 6) void handleLogin(nextPassword)
   }
 
   return (
@@ -114,7 +127,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-3' : 'space-y-5'}>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
-                <div className="relative">
+                <div className="relative hidden lg:block">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Masukkan password"
@@ -129,8 +142,64 @@ export default function Login() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <div className="lg:hidden">
+                  <div
+                    className="flex h-12 items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 shadow-sm"
+                    aria-label={`PIN ${password.length} dari 6 digit`}
+                    role="status"
+                  >
+                    {Array.from({ length: 6 }, (_, index) => (
+                      <span
+                        key={index}
+                        className={`h-3 w-3 rounded-full border-2 ${index < password.length ? 'border-primary bg-primary' : 'border-muted-foreground/40 bg-transparent'}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">Masukkan 6 digit password</p>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                      <button
+                        key={digit}
+                        type="button"
+                        onClick={() => handlePinDigit(digit)}
+                        disabled={loading}
+                        className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-ink transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
+                        aria-label={`Angka ${digit}`}
+                      >
+                        {digit}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setPassword('')}
+                      disabled={loading || password.length === 0}
+                      className="h-11 rounded-xl border border-border bg-muted/50 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
+                      aria-label="Hapus semua angka"
+                    >
+                      Hapus
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePinDigit('0')}
+                      disabled={loading}
+                      className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-ink transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
+                      aria-label="Angka 0"
+                    >
+                      0
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPassword((value) => value.slice(0, -1))}
+                      disabled={loading || password.length === 0}
+                      className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-muted-foreground transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
+                      aria-label="Hapus angka terakhir"
+                    >
+                      ←
+                    </button>
+                  </div>
+                </div>
               </div>
-              <Button type="submit" className="w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)]" size="lg" disabled={loading}>
+              <Button type="submit" className="hidden w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)] lg:flex" size="lg" disabled={loading}>
                 {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk ke dashboard'}
               </Button>
             </form>
