@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { toast } from 'sonner'
+import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const signIn = useAuthStore((s) => s.signIn)
   const navigate = useNavigate()
@@ -28,59 +30,80 @@ export default function Login() {
   }
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink p-4">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink p-4 sm:p-6 lg:p-10">
       <img
         src={`${import.meta.env.BASE_URL}login-background.jpg`}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover opacity-75"
       />
-      <div
-        className="absolute inset-0 bg-[linear-gradient(90deg,rgba(32,42,46,0.94)_0%,rgba(32,42,46,0.62)_45%,rgba(32,42,46,0.86)_100%)]"
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,253,248,0.1),transparent_48%)]" aria-hidden="true" />
-      <Card className="relative w-full max-w-md border-white/35 bg-surface/90 shadow-[0_24px_80px_rgba(20,27,30,0.32)] backdrop-blur-md">
-        <CardHeader className="items-center text-center pb-2">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-ink shadow-[0_0_0_6px_rgba(228,168,83,0.14)]">
-            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
+      <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,31,34,0.97)_0%,rgba(21,31,34,0.72)_42%,rgba(21,31,34,0.82)_100%)]" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(228,168,83,0.22),transparent_24%),radial-gradient(circle_at_86%_72%,rgba(36,126,121,0.22),transparent_30%)]" aria-hidden="true" />
+      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden min-h-[560px] flex-col justify-between overflow-hidden p-10 text-white lg:flex">
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-accent/30" aria-hidden="true" />
+          <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full border-[18px] border-primary/20" aria-hidden="true" />
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-12 w-12 rounded-2xl object-cover ring-4 ring-accent/20" />
+              <div>
+                <p className="text-sm font-semibold tracking-[0.18em] text-accent">RADJA</p>
+                <p className="text-xs text-white/60">Aksesoris Konveksi</p>
+              </div>
+            </div>
+            <div className="mt-24 max-w-sm">
+              <p className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                <Sparkles className="h-4 w-4" /> Ruang kendali toko
+              </p>
+              <h1 className="text-5xl font-bold leading-[0.98] tracking-[-0.05em]">
+                Semua stok,
+                <span className="block text-primary-foreground">satu kendali.</span>
+              </h1>
+              <p className="mt-6 max-w-xs text-sm leading-6 text-white/65">
+                Kelola katalog, kasir, dan laporan penjualan dari satu tempat yang ringkas.
+              </p>
+            </div>
           </div>
-          <CardTitle className="text-2xl tracking-tight text-ink">RADJA AKSESORIS</CardTitle>
-          <p className="text-sm text-muted-foreground">Aksesoris Konveksi</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink/85">Username atau email</label>
-              <Input
-                type="text"
-                placeholder="voltker1"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="username"
-              />
+          <div className="relative flex items-center justify-between text-xs text-white/50">
+            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /> Akses aman untuk tim toko</span>
+            <ArrowUpRight className="h-5 w-5 text-accent" />
+          </div>
+        </section>
+
+        <Card className="relative rounded-none border-0 bg-surface/95 shadow-none sm:rounded-none">
+          <CardHeader className="items-center pb-2 text-center lg:items-start lg:text-left">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent shadow-[0_0_0_6px_rgba(228,168,83,0.14)] lg:hidden">
+              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink/85">Password</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk'}
-            </Button>
-          </form>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Aplikasi single-device POS · Multi-monitor dashboard
-          </p>
-        </CardContent>
-      </Card>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
+            <CardTitle className="text-3xl tracking-tight text-ink">Masuk ke Radja</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-ink/85">Username atau email</label>
+                <Input type="text" placeholder="voltker1" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
+                <div className="relative">
+                  <Input type={showPassword ? 'text' : 'password'} placeholder="Masukkan password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className="pr-11" />
+                  <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)]" size="lg" disabled={loading}>
+                {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk ke dashboard'}
+              </Button>
+            </form>
+            <p className="mt-7 border-t border-border pt-5 text-center text-xs text-muted-foreground">
+              Single-device POS <span className="mx-1 text-primary">•</span> Multi-monitor dashboard
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
