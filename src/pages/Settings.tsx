@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, Database } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -21,6 +21,7 @@ export default function Settings() {
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [resetting, setResetting] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -129,12 +130,24 @@ export default function Settings() {
 
       <Card className="border-red-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-700">
-            <Database className="h-5 w-5" />
-            Reset Database Operasional
-          </CardTitle>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={resetOpen}
+            aria-controls="reset-database-content"
+            onClick={() => setResetOpen((open) => !open)}
+          >
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <Database className="h-5 w-5" />
+              Reset Database Operasional
+            </CardTitle>
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-red-700 transition-transform ${resetOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {resetOpen && <CardContent id="reset-database-content" className="space-y-4">
           <div className="flex gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <p>
@@ -172,7 +185,7 @@ export default function Settings() {
             {resetting && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       <Card>
