@@ -25,6 +25,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { playLowStockSound } from '@/lib/notifications'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface Stats {
   todaySales: number
@@ -53,6 +54,7 @@ function attachNotificationClick(notification: Notification) {
 }
 
 export default function Dashboard() {
+  const signOut = useAuthStore((state) => state.signOut)
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
     todayProfit: 0,
@@ -73,6 +75,11 @@ export default function Dashboard() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
+
+  async function handleMobileStatusLogout() {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    await signOut()
+  }
 
   useEffect(() => {
     loadStats()
@@ -261,10 +268,15 @@ export default function Dashboard() {
           <p className="mt-1 max-w-[42rem] text-sm text-muted-foreground">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
         <div className="mx-auto flex w-full max-w-md justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none">
-          <div className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left">
+          <button
+            type="button"
+            onClick={handleMobileStatusLogout}
+            className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white transition-transform active:scale-[0.98] lg:pointer-events-none lg:flex-none lg:px-4 lg:text-left"
+            aria-label="Keluar dari aplikasi"
+          >
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
             <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Operasional aktif</p>
-          </div>
+          </button>
           {stats.lowStock > 0 && !lowStockDismissed && (
             <div
               role="alert"
