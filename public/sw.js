@@ -27,15 +27,21 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('push', (event) => {
   if (!event.data) return
-  const data = event.data.json()
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Stok menipis', {
-      body: data.body || 'Ada produk yang perlu direstock.',
-      icon: `${BASE_PATH}icon-192.png`,
-      badge: `${BASE_PATH}favicon.png`,
-      tag: data.tag || 'low-stock',
-      data: { url: data.url || BASE_PATH },
-    }),
+    (async () => {
+      try {
+        const data = event.data.json()
+        await self.registration.showNotification(data.title || 'Stok menipis', {
+          body: data.body || 'Ada produk yang perlu direstock.',
+          icon: `${BASE_PATH}icon-192.png`,
+          badge: `${BASE_PATH}favicon.png`,
+          tag: data.tag || 'low-stock',
+          data: { url: data.url || BASE_PATH },
+        })
+      } catch (error) {
+        console.error('Push notification payload tidak valid:', error)
+      }
+    })(),
   )
 })
 

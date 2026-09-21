@@ -41,6 +41,16 @@ Deno.serve(async (request) => {
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) return jsonResponse({ error: 'Unauthorized' }, 401)
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (profileError) return jsonResponse({ error: profileError.message }, 500)
+    if (!profile || !['admin', 'cashier'].includes(profile.role)) {
+      return jsonResponse({ error: 'Role tidak diizinkan mengirim notifikasi stok' }, 403)
+    }
   } catch (error) {
     console.error('User verification failed:', error)
     return jsonResponse({ error: 'Unauthorized' }, 401)
@@ -87,6 +97,7 @@ Deno.serve(async (request) => {
         if (error instanceof webpush.WebPushError && [404, 410].includes(error.statusCode)) {
           await supabase.from('push_subscriptions').delete().eq('id', subscription.id)
           removed += 1
+          break
         } else {
           console.error('Push delivery failed:', error)
         }
