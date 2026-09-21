@@ -9,7 +9,6 @@ import { toast } from 'sonner'
 import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -19,7 +18,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await signIn(email, password)
+    const { error } = await signIn('voltker1', password)
     setLoading(false)
     if (error) {
       toast.error(error)
@@ -94,19 +93,24 @@ export default function Login() {
         <Card className="relative rounded-none border-0 bg-surface/95 shadow-none lg:rounded-none">
           <CardHeader className="items-center pb-2 text-center lg:items-start lg:text-left">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
-            <CardTitle className="text-3xl tracking-tight text-ink">Masuk ke Radja</CardTitle>
+            <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
           </CardHeader>
           <CardContent className="pt-5">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-ink/85">Username atau email</label>
-                <Input type="text" placeholder="voltker1" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
-              </div>
-              <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} placeholder="Masukkan password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className="pr-11" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Masukkan password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    inputMode="numeric"
+                    className="pr-11"
+                  />
                   <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
