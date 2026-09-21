@@ -142,10 +142,13 @@ export default function TransactionHistory() {
               </button>
             )}
           </div>
-          <div className="relative w-[38%] shrink-0 sm:w-48">
+          <div className="relative h-10 w-[38%] min-w-[7.5rem] shrink-0 rounded-xl border border-border bg-surface sm:w-48">
             <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <span className="pointer-events-none flex h-full items-center pl-9 pr-3 text-sm text-muted-foreground">
+              {date ? format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId }) : 'Tanggal'}
+            </span>
             <Input
-              className="pl-9"
+              className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
               type="date"
               value={date}
               onChange={(event) => {

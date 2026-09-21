@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
+import { id as localeId } from 'date-fns/locale'
 import {
   TrendingUp,
   TrendingDown,
@@ -163,8 +164,11 @@ export default function Reports() {
               {p.label}
             </button>
           ))}
-          <div className="relative ml-1 flex items-center">
+          <div className="relative ml-1 flex h-9 min-w-[7.5rem] items-center rounded-md border border-border bg-surface">
             <Calendar className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
+            <span className="pointer-events-none pl-8 pr-7 text-sm text-muted-foreground">
+              {selectedDate ? format(new Date(`${selectedDate}T00:00:00`), 'dd MMM yyyy', { locale: localeId }) : 'Tanggal'}
+            </span>
             <input
               type="date"
               value={selectedDate}
@@ -173,7 +177,7 @@ export default function Reports() {
                 if (event.target.value) setPeriod('custom')
               }}
               aria-label="Pilih tanggal laporan"
-              className="h-9 w-10 cursor-pointer rounded-md border-0 bg-transparent pl-8 pr-1 text-sm text-transparent outline-none transition-colors hover:bg-muted focus:text-ink sm:w-40 sm:pr-2 sm:text-muted-foreground"
+              className="absolute inset-0 h-full w-full cursor-pointer rounded-md border-0 bg-transparent text-transparent opacity-0 outline-none"
               title="Pilih tanggal laporan"
             />
             {selectedDate && (
