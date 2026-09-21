@@ -79,7 +79,7 @@ export default function TransactionHistory() {
     } else {
       const rows = (data || []) as SaleRow[]
       setHasNextPage(rows.length > PAGE_SIZE)
-      setSales(rows)
+      setSales(rows.slice(0, PAGE_SIZE))
     }
     initialLoadComplete.current = true
     setLoading(false)
