@@ -117,13 +117,18 @@ export default function Login() {
           </div>
         </section>
 
-        <Card className="relative rounded-none border-0 bg-[rgba(251,250,245,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_-12px_32px_rgba(32,42,46,0.1)] backdrop-blur-xl lg:rounded-none lg:bg-surface lg:shadow-none lg:backdrop-blur-none">
-          <CardHeader className={`items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-4' : 'pb-2'}`}>
+        <Card className="relative overflow-hidden rounded-none border-0 bg-[rgba(251,250,245,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_-12px_32px_rgba(32,42,46,0.1)] backdrop-blur-xl lg:rounded-none lg:bg-surface lg:shadow-none lg:backdrop-blur-none">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 overflow-hidden opacity-80" aria-hidden="true">
+            <div className="absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-primary/15 blur-2xl" />
+            <div className="absolute -bottom-32 -left-20 h-56 w-56 rounded-full border-[18px] border-accent/15" />
+            <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(rgba(33,108,104,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(33,108,104,0.06)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+          </div>
+          <CardHeader className={`relative z-10 items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-4' : 'pb-2'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
           </CardHeader>
-          <CardContent className={keyboardVisible ? 'pt-3' : 'pt-5'}>
+          <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-3' : 'pt-5'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-3' : 'space-y-5'}>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
