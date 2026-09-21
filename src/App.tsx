@@ -84,6 +84,10 @@ function PageLoader() {
   )
 }
 
+function PageSuspense({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
+
 function preloadPageChunks() {
   void Promise.all([
     import('@/pages/Dashboard'),
@@ -164,27 +168,25 @@ export default function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Toaster position="top-center" richColors closeButton />
       <RouteErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="pos" element={<POS />} />
-              <Route path="products" element={<Products />} />
-              <Route path="products/history" element={<StockHistory />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="transactions" element={<TransactionHistory />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <Routes>
+          <Route path="/login" element={<PageSuspense><Login /></PageSuspense>} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PageSuspense><Dashboard /></PageSuspense>} />
+            <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
+            <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
+            <Route path="products/history" element={<PageSuspense><StockHistory /></PageSuspense>} />
+            <Route path="reports" element={<PageSuspense><Reports /></PageSuspense>} />
+            <Route path="transactions" element={<PageSuspense><TransactionHistory /></PageSuspense>} />
+            <Route path="settings" element={<PageSuspense><SettingsPage /></PageSuspense>} />
+          </Route>
+          <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
+        </Routes>
       </RouteErrorBoundary>
     </BrowserRouter>
   )
