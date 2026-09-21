@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
-import { UNIT_LABELS, UNIT_FACTORS } from '@/types'
+import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -104,7 +104,22 @@ export default function Products() {
     const rows = data || []
     setHasNextPage(rows.length > pageSize)
     setProducts(
-      rows.slice(0, pageSize).map((p) => ({ ...p, prices: (p.prices as any) || [] })) as Product[]
+      rows.slice(0, pageSize).map((p) => ({
+        ...p,
+        prices: Array.isArray(p.prices)
+          ? p.prices.filter((price): price is ProductPrice => (
+            typeof price === 'object' &&
+            price !== null &&
+            'unit' in price &&
+            typeof price.unit === 'string' &&
+            isUnitType(price.unit) &&
+            'price' in price &&
+            typeof price.price === 'number' &&
+            'conversion' in price &&
+            typeof price.conversion === 'number'
+          ))
+          : [],
+      })) as Product[]
     )
     initialLoadComplete.current = true
     setLoading(false)
@@ -185,7 +200,7 @@ export default function Products() {
     }
   }
 
-  function updatePrice(idx: number, field: keyof ProductPrice, value: any) {
+  function updatePrice(idx: number, field: keyof ProductPrice, value: ProductPrice[keyof ProductPrice]) {
     setPrices((prev) =>
       prev.map((p, i) => {
         if (i !== idx) return p

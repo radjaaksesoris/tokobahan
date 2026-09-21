@@ -1,4 +1,9 @@
 export type UnitType = 'satuan' | 'lusin' | 'kodi' | 'gross' | 'meter' | 'pack'
+export const UNIT_TYPES: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
+
+export function isUnitType(value: string): value is UnitType {
+  return UNIT_TYPES.includes(value as UnitType)
+}
 
 export const UNIT_LABELS: Record<UnitType, string> = {
   satuan: 'Satuan',

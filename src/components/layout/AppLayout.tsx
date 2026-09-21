@@ -14,8 +14,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { CurrentDate } from '@/components/layout/CurrentDate'
+import type { UserRole } from '@/types'
 
-const navItems = [
+const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles: UserRole[]; className: string }[] = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier', 'monitor'], className: '' },
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'], className: 'hidden lg:flex' },
   { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
@@ -34,7 +35,7 @@ export function AppLayout() {
     navigate('/login')
   }
 
-  const filteredNav = navItems.filter((item) => isRole(...(item.roles as any)))
+  const filteredNav = navItems.filter((item) => isRole(...item.roles))
 
   return (
     <div className="mobile-page-background flex h-full min-h-screen bg-canvas">
