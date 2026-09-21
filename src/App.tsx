@@ -105,7 +105,6 @@ function preloadPageChunks() {
     import('@/pages/POS'),
     import('@/pages/Products'),
     import('@/pages/StockHistory'),
-    import('@/pages/Reports'),
     import('@/pages/TransactionHistory'),
     import('@/pages/Settings'),
   ]).catch((error) => {

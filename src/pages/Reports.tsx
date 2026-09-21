@@ -20,7 +20,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 
 type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
