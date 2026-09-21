@@ -233,45 +233,45 @@ export default function Dashboard() {
       title: 'Penjualan Hari Ini',
       value: formatCurrency(stats.todaySales),
       icon: ShoppingBag,
-      color: 'bg-teal-50 text-teal-700 ring-1 ring-teal-100',
+      color: 'bg-teal-100 text-teal-700',
       watermark: 'text-teal-700/[0.08]',
     },
     {
       title: 'Laba Bersih Hari Ini',
       value: formatCurrency(stats.todayProfit),
       icon: TrendingUp,
-      color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
+      color: 'bg-emerald-100 text-emerald-700',
       watermark: 'text-emerald-600/[0.09]',
     },
     {
       title: 'Transaksi Hari Ini',
       value: formatNumber(stats.todayOrders),
       icon: DollarSign,
-      color: 'bg-lime-50 text-lime-700 ring-1 ring-lime-100',
+      color: 'bg-amber-100 text-amber-700',
       watermark: 'text-amber-600/[0.09]',
     },
     {
       title: 'Produk Aktif',
       value: formatNumber(stats.totalProducts),
       icon: Package,
-      color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200',
+      color: 'bg-blue-100 text-blue-700',
       watermark: 'text-blue-600/[0.08]',
     },
   ]
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-7">
-      <div className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary"><span className="h-2 w-2 rounded-full bg-accent ring-4 ring-accent/20" /> Ringkasan operasional</p>
-          <h2 className="text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">Selamat datang kembali.</h2>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ringkasan operasional</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
           <p className="mt-1 max-w-[42rem] text-sm text-muted-foreground">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
         <div className="mx-auto flex w-full max-w-md justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none">
           <button
             type="button"
             onClick={handleMobileStatusLogout}
-            className="min-w-0 flex-1 rounded-[1rem] bg-ink px-3 py-3 text-center text-white transition-transform active:scale-[0.98] lg:pointer-events-none lg:flex-none lg:px-4 lg:text-left"
+            className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white transition-transform active:scale-[0.98] lg:pointer-events-none lg:flex-none lg:px-4 lg:text-left"
             aria-label="Keluar dari aplikasi"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
@@ -328,7 +328,7 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.title} className="group relative overflow-hidden border-0 transition-transform duration-200 hover:-translate-y-0.5">
+          <Card key={c.title} className="relative overflow-hidden border-0">
                 <c.icon
                   aria-hidden="true"
                   className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 ${c.watermark}`}
@@ -339,7 +339,7 @@ export default function Dashboard() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs text-muted-foreground">{c.title}</p>
-                <p className="truncate text-lg font-bold tabular-nums text-ink">
+                <p className="truncate text-lg font-bold text-ink">
                   {loading ? '...' : c.value}
                 </p>
               </div>
