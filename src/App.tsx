@@ -31,6 +31,7 @@ const Login = lazyWithRecovery(() => import('@/pages/Login'), 'login')
 const Dashboard = lazyWithRecovery(() => import('@/pages/Dashboard'), 'dashboard')
 const POS = lazyWithRecovery(() => import('@/pages/POS'), 'pos')
 const Products = lazyWithRecovery(() => import('@/pages/Products'), 'products')
+const StockHistory = lazyWithRecovery(() => import('@/pages/StockHistory'), 'stock-history')
 const Reports = lazyWithRecovery(() => import('@/pages/Reports'), 'reports')
 const TransactionHistory = lazyWithRecovery(() => import('@/pages/TransactionHistory'), 'transactions')
 const SettingsPage = lazyWithRecovery(() => import('@/pages/Settings'), 'settings')
@@ -176,6 +177,7 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="pos" element={<POS />} />
               <Route path="products" element={<Products />} />
+              <Route path="products/history" element={<StockHistory />} />
               <Route path="reports" element={<Reports />} />
               <Route path="transactions" element={<TransactionHistory />} />
               <Route path="settings" element={<SettingsPage />} />
