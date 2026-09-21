@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -11,9 +11,23 @@ import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [loading, setLoading] = useState(false)
   const signIn = useAuthStore((s) => s.signIn)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const updateKeyboardState = () => {
+      setKeyboardVisible(window.innerHeight - viewport.height > 120)
+    }
+
+    updateKeyboardState()
+    viewport.addEventListener('resize', updateKeyboardState)
+    return () => viewport.removeEventListener('resize', updateKeyboardState)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +43,7 @@ export default function Login() {
   }
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink p-4 sm:p-6 lg:p-10">
+    <div className={`relative flex min-h-dvh justify-center overflow-y-auto bg-ink p-4 sm:p-6 lg:items-center lg:overflow-hidden lg:p-10 ${keyboardVisible ? 'items-start py-2' : 'items-center'}`}>
       <img
         src={`${import.meta.env.BASE_URL}login-background.jpg`}
         alt=""
@@ -69,7 +83,7 @@ export default function Login() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-ink px-6 py-7 text-white lg:hidden">
+        <section className={`relative overflow-hidden bg-ink px-6 text-white lg:hidden ${keyboardVisible ? 'py-3' : 'py-7'}`}>
           <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-accent/30" aria-hidden="true" />
           <div className="absolute -bottom-20 -left-10 h-36 w-36 rounded-full border-[12px] border-primary/20" aria-hidden="true" />
           <div className="relative">
@@ -80,10 +94,10 @@ export default function Login() {
                 <p className="text-xs text-white/60">Aksesoris Konveksi</p>
               </div>
             </div>
-            <p className="mt-7 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+            <p className={`${keyboardVisible ? 'mt-3' : 'mt-7'} flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent`}>
               <Sparkles className="h-3.5 w-3.5" /> Ruang kendali toko
             </p>
-            <h1 className="mt-2 max-w-xs text-3xl font-bold leading-none tracking-[-0.04em]">
+            <h1 className={`${keyboardVisible ? 'text-2xl' : 'text-3xl'} mt-2 max-w-xs font-bold leading-none tracking-[-0.04em]`}>
               Semua stok,
               <span className="block text-primary-foreground">satu kendali.</span>
             </h1>
@@ -91,13 +105,13 @@ export default function Login() {
         </section>
 
         <Card className="relative rounded-none border-0 bg-surface/95 shadow-none lg:rounded-none">
-          <CardHeader className="items-center pb-2 text-center lg:items-start lg:text-left">
+          <CardHeader className={`items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-4' : 'pb-2'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
           </CardHeader>
-          <CardContent className="pt-5">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <CardContent className={keyboardVisible ? 'pt-3' : 'pt-5'}>
+            <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-3' : 'space-y-5'}>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
                 <div className="relative">
