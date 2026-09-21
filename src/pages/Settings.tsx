@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -22,6 +22,7 @@ export default function Settings() {
   const [confirmation, setConfirmation] = useState('')
   const [resetting, setResetting] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
+  const [backupLoading, setBackupLoading] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -93,6 +94,41 @@ export default function Settings() {
     } else if (permission === 'denied') {
       toast.error('Izin notifikasi ditolak oleh browser')
     }
+  }
+
+  async function createBackup() {
+    setBackupLoading(true)
+    const { data, error } = await supabase.rpc('create_operational_backup')
+    if (error) {
+      toast.error(`Backup gagal: ${error.message}`)
+      setBackupLoading(false)
+      return
+    }
+
+    const result = data as {
+      id: string
+      created_at: string
+      payload: Record<string, unknown>
+      counts: Record<string, number>
+    } | null
+    if (!result?.payload || !result.id) {
+      toast.error('Backup gagal: respons backup tidak valid')
+      setBackupLoading(false)
+      return
+    }
+
+    const filenameDate = new Date(result.created_at).toISOString().replace(/[:.]/g, '-')
+    const blob = new Blob([JSON.stringify(result.payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tokobahan-backup-${filenameDate}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    const totalRecords = Object.values(result.counts).reduce((total, count) => total + Number(count || 0), 0)
+    toast.success(`Backup berhasil diunduh (${totalRecords} data, ID ${result.id.slice(0, 8)})`)
+    setBackupLoading(false)
   }
 
   async function syncNotifications() {
@@ -186,6 +222,39 @@ export default function Settings() {
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
         </CardContent>}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Backup Data Operasional
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">
+            <p className="font-semibold text-ink">Backup lengkap dan aman</p>
+            <p className="mt-1">
+              Mencadangkan profil non-sensitif, kategori, produk, transaksi, detail transaksi,
+              dan batch stok ke Supabase lalu mengunduh salinan JSON ke perangkat ini.
+              Password, token, dan data autentikasi tidak pernah ikut dicadangkan.
+            </p>
+          </div>
+          <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+            <p><strong className="text-ink">Format:</strong> JSON terstruktur</p>
+            <p><strong className="text-ink">Akses:</strong> Admin saja</p>
+            <p><strong className="text-ink">Penyimpanan:</strong> Supabase + perangkat</p>
+            <p><strong className="text-ink">Identitas:</strong> ID backup tercatat</p>
+          </div>
+          <Button className="w-full sm:w-auto" onClick={createBackup} disabled={backupLoading}>
+            {backupLoading ? (
+              <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {backupLoading ? 'Membuat backup...' : 'Buat & Unduh Backup'}
+          </Button>
+        </CardContent>
       </Card>
 
       <Card>

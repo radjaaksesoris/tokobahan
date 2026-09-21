@@ -187,6 +187,9 @@ supabase/
 - Jalankan migration `20260921140000_production_rls_hardening.sql` sebelum production.
   Migration ini membatasi perubahan produk/kategori ke admin/cashier dan mencegah
   cashier/monitor mengubah role pengguna melalui API.
+- Jalankan migration `20260921150000_operational_backups.sql` untuk mengaktifkan
+  backup admin. Tombol backup menyimpan snapshot operasional di Supabase dan
+  mengunduh file JSON ke perangkat; password dan token tidak ikut dicadangkan.
 
 ---
 

@@ -233,6 +233,23 @@ export interface Database {
           },
         ]
       }
+      operational_backups: {
+        Row: {
+          id: string
+          created_by: string
+          created_at: string
+          backup_version: string
+          payload: Json
+          product_count: number
+          category_count: number
+          sale_count: number
+          sale_item_count: number
+          stock_batch_count: number
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
     }
     Views: {}
     Functions: {
@@ -288,6 +305,10 @@ export interface Database {
           p_unit_cost: number
         }
         Returns: undefined
+      }
+      create_operational_backup: {
+        Args: Record<string, never>
+        Returns: Json
       }
     }
     Enums: {}

@@ -19,6 +19,10 @@ REVOKE ALL ON FUNCTION public.current_user_has_role(TEXT[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.current_user_has_role(TEXT[]) TO authenticated;
 
 DROP POLICY IF EXISTS "Products full access for authenticated" ON public.products;
+DROP POLICY IF EXISTS "Products viewable by authenticated" ON public.products;
+DROP POLICY IF EXISTS "Products writable by admin or cashier" ON public.products;
+DROP POLICY IF EXISTS "Products editable by admin or cashier" ON public.products;
+DROP POLICY IF EXISTS "Products removable by admin or cashier" ON public.products;
 CREATE POLICY "Products viewable by authenticated"
   ON public.products FOR SELECT TO authenticated USING (true);
 
@@ -36,6 +40,10 @@ CREATE POLICY "Products removable by admin or cashier"
   USING (public.current_user_has_role(ARRAY['admin', 'cashier']));
 
 DROP POLICY IF EXISTS "Categories full access" ON public.categories;
+DROP POLICY IF EXISTS "Categories viewable by authenticated" ON public.categories;
+DROP POLICY IF EXISTS "Categories writable by admin or cashier" ON public.categories;
+DROP POLICY IF EXISTS "Categories editable by admin or cashier" ON public.categories;
+DROP POLICY IF EXISTS "Categories removable by admin or cashier" ON public.categories;
 CREATE POLICY "Categories viewable by authenticated"
   ON public.categories FOR SELECT TO authenticated USING (true);
 
@@ -76,8 +84,16 @@ CREATE TRIGGER profiles_prevent_non_admin_role_change
 
 REVOKE ALL ON FUNCTION public.prevent_non_admin_role_change() FROM PUBLIC;
 
-ALTER FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB)
-  RENAME TO checkout_sale_internal;
+DO $$
+BEGIN
+  IF to_regprocedure('public.checkout_sale_internal(text,numeric,numeric,numeric,text,uuid,jsonb)') IS NULL
+     AND to_regprocedure('public.checkout_sale(text,numeric,numeric,numeric,text,uuid,jsonb)') IS NOT NULL
+  THEN
+    ALTER FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB)
+      RENAME TO checkout_sale_internal;
+  END IF;
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION public.checkout_sale(
   p_invoice_no TEXT,
@@ -110,8 +126,16 @@ GRANT EXECUTE ON FUNCTION public.checkout_sale_internal(TEXT, NUMERIC, NUMERIC, 
 REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) TO authenticated;
 
-ALTER FUNCTION public.receive_stock_batch(UUID, NUMERIC, NUMERIC)
-  RENAME TO receive_stock_batch_internal;
+DO $$
+BEGIN
+  IF to_regprocedure('public.receive_stock_batch_internal(uuid,numeric,numeric)') IS NULL
+     AND to_regprocedure('public.receive_stock_batch(uuid,numeric,numeric)') IS NOT NULL
+  THEN
+    ALTER FUNCTION public.receive_stock_batch(UUID, NUMERIC, NUMERIC)
+      RENAME TO receive_stock_batch_internal;
+  END IF;
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION public.receive_stock_batch(
   p_product_id UUID,
