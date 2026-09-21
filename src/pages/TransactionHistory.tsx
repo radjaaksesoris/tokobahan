@@ -122,8 +122,8 @@ export default function TransactionHistory() {
       </div>
 
       <Card>
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row">
-          <div className="relative flex-1">
+        <CardContent className="flex flex-row items-center gap-2 p-4 sm:gap-3">
+          <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9 pr-10"
@@ -142,7 +142,7 @@ export default function TransactionHistory() {
               </button>
             )}
           </div>
-          <div className="relative sm:w-48">
+          <div className="relative w-[38%] shrink-0 sm:w-48">
             <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
@@ -157,7 +157,7 @@ export default function TransactionHistory() {
           </div>
           {date && (
             <button
-              className="rounded-xl border border-border px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() => {
                 setDate('')
                 setPage(0)
