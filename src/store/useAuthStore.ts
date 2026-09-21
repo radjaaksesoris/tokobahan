@@ -21,6 +21,21 @@ function normalizeLoginIdentifier(identifier: string) {
 }
 
 let authInitialized = false
+let authInitializationPromise: Promise<void> | null = null
+
+async function loadProfile(user: User) {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role, avatar_url, created_at')
+    .eq('id', user.id)
+    .single()
+
+  if (error) {
+    console.error('Failed to load user profile:', error)
+  }
+
+  return profile as Profile | null
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -29,43 +44,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     if (authInitialized) return
-    authInitialized = true
+    if (authInitializationPromise) return authInitializationPromise
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, avatar_url, created_at')
-          .eq('id', session.user.id)
-          .single()
-        if (profileError) {
-          console.error('Failed to load user profile:', profileError)
+    authInitializationPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          set({ user: session.user, profile: await loadProfile(session.user), loading: false })
+        } else {
+          set({ user: null, profile: null, loading: false })
         }
-        set({ user: session.user, profile: profile as Profile | null, loading: false })
-      } else {
-        set({ user: null, profile: null, loading: false })
-      }
-    } catch (error) {
-      console.error('Failed to initialize authentication:', error)
-      set({ loading: false })
-    }
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, avatar_url, created_at')
-          .eq('id', session.user.id)
-          .single()
-        if (profileError) {
-          console.error('Failed to load user profile after auth change:', profileError)
-        }
-        set({ user: session.user, profile: profile as Profile | null })
-      } else {
-        set({ user: null, profile: null })
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (!session?.user) {
+            set({ user: null, profile: null })
+            return
+          }
+
+          set({ user: session.user })
+          if (event !== 'INITIAL_SESSION') {
+            void loadProfile(session.user).then((profile) => set({ profile }))
+          }
+        })
+        authInitialized = true
+      } catch (error) {
+        console.error('Failed to initialize authentication:', error)
+        set({ loading: false })
+      } finally {
+        authInitializationPromise = null
       }
-    })
+    })()
+
+    return authInitializationPromise
   },
 
   signIn: async (email, password) => {

@@ -87,6 +87,7 @@ export default function Reports() {
 
     if (dailyError) {
       setDailySummary([])
+      setError(dailyError.message || 'Gagal memuat grafik laporan')
     } else {
       setDailySummary((dailyData || []) as DailySummaryRow[])
     }

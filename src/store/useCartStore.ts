@@ -11,7 +11,7 @@ interface CartState {
   getTotals: () => { subtotal: number; totalCost: number; totalProfit: number; itemCount: number }
 }
 
-function getPriceForUnit(product: Product, unit: UnitType): { price: number; conversion: number } {
+export function getPriceForUnit(product: Product, unit: UnitType): { price: number; conversion: number } {
   const found = product.prices?.find((p) => p.unit === unit)
   if (found) {
     return { price: found.price, conversion: found.conversion || UNIT_FACTORS[unit] || 1 }

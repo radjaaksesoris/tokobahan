@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useCartStore } from '@/store/useCartStore'
+import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
 import { parseProductPrices, UNIT_LABELS } from '@/types'
@@ -424,10 +424,7 @@ export default function POS() {
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-teal-700">
-                  {formatCurrency(
-                    (selectedProduct.prices?.find((p) => p.unit === selectedUnit)?.price ||
-                      0) * qty
-                  )}
+                  {formatCurrency(getPriceForUnit(selectedProduct, selectedUnit).price * qty)}
                 </p>
               </div>
 
