@@ -78,8 +78,19 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 
 function PageLoader() {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-canvas lg:min-h-[40vh]">
-      <LoadingDots className="text-primary" />
+    <div className="min-h-[40vh] animate-pulse space-y-6" aria-label="Memuat halaman" role="status">
+      <div className="space-y-3 border-b border-border pb-5">
+        <div className="h-3 w-32 rounded-full bg-muted" />
+        <div className="h-9 w-56 rounded-lg bg-muted" />
+        <div className="h-4 w-72 max-w-full rounded-full bg-muted" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className="h-24 rounded-2xl border border-border/60 bg-surface" />
+        ))}
+      </div>
+      <div className="h-64 rounded-2xl border border-border/60 bg-surface" />
+      <span className="sr-only">Memuat halaman...</span>
     </div>
   )
 }
