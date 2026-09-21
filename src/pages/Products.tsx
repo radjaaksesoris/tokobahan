@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
-import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
+import { parseProductPrices, isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -106,19 +106,7 @@ export default function Products() {
     setProducts(
       rows.slice(0, pageSize).map((p) => ({
         ...p,
-        prices: Array.isArray(p.prices)
-          ? p.prices.filter((price): price is ProductPrice => (
-            typeof price === 'object' &&
-            price !== null &&
-            'unit' in price &&
-            typeof price.unit === 'string' &&
-            isUnitType(price.unit) &&
-            'price' in price &&
-            typeof price.price === 'number' &&
-            'conversion' in price &&
-            typeof price.conversion === 'number'
-          ))
-          : [],
+        prices: parseProductPrices(p.prices),
       })) as Product[]
     )
     initialLoadComplete.current = true
@@ -200,13 +188,15 @@ export default function Products() {
     }
   }
 
-  function updatePrice(idx: number, field: keyof ProductPrice, value: ProductPrice[keyof ProductPrice]) {
+  function updatePrice(idx: number, field: keyof ProductPrice, value: string | number) {
     setPrices((prev) =>
       prev.map((p, i) => {
         if (i !== idx) return p
         if (field === 'unit') {
-          return { ...p, unit: value, conversion: UNIT_FACTORS[value as UnitType] || 1 }
+          if (typeof value !== 'string' || !isUnitType(value)) return p
+          return { ...p, unit: value, conversion: UNIT_FACTORS[value] || 1 }
         }
+        if (typeof value !== 'number') return p
         return { ...p, [field]: value }
       })
     )

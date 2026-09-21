@@ -1,3 +1,5 @@
+import type { Json } from './database'
+
 export type UnitType = 'satuan' | 'lusin' | 'kodi' | 'gross' | 'meter' | 'pack'
 export const UNIT_TYPES: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -27,6 +29,24 @@ export interface ProductPrice {
   unit: UnitType
   price: number
   conversion: number // how many base units (pcs) in this unit
+}
+
+export function parseProductPrices(value: Json): ProductPrice[] {
+  if (!Array.isArray(value)) return []
+
+  return value.flatMap((entry) => {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return []
+    const unit = entry.unit
+    const price = entry.price
+    const conversion = entry.conversion
+    if (
+      typeof unit !== 'string' ||
+      !isUnitType(unit) ||
+      typeof price !== 'number' ||
+      typeof conversion !== 'number'
+    ) return []
+    return [{ unit, price, conversion }]
+  })
 }
 
 export interface Product {

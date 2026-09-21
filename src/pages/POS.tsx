@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import type { Product, ProductPrice, UnitType } from '@/types'
-import { isUnitType, UNIT_LABELS } from '@/types'
+import type { Product, UnitType } from '@/types'
+import { parseProductPrices, UNIT_LABELS } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -64,19 +64,7 @@ export default function POS() {
       setProducts(
         (data || []).map((p) => ({
           ...p,
-          prices: Array.isArray(p.prices)
-            ? p.prices.filter((price): price is ProductPrice => (
-              typeof price === 'object' &&
-              price !== null &&
-              'unit' in price &&
-              typeof price.unit === 'string' &&
-              isUnitType(price.unit) &&
-              'price' in price &&
-              typeof price.price === 'number' &&
-              'conversion' in price &&
-              typeof price.conversion === 'number'
-            ))
-            : [],
+          prices: parseProductPrices(p.prices),
         })) as Product[]
       )
     }
