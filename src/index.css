@@ -47,13 +47,13 @@ body {
 
 .mobile-page-background {
   background:
-    radial-gradient(ellipse 48% 36% at 4% 10%, rgba(33, 108, 104, 0.18), transparent 72%),
-    radial-gradient(ellipse 44% 38% at 98% 38%, rgba(228, 168, 83, 0.23), transparent 72%),
-    radial-gradient(ellipse 52% 40% at 18% 98%, rgba(228, 168, 83, 0.14), transparent 72%),
-    radial-gradient(circle, rgba(33, 108, 104, 0.2) 1.5px, transparent 2px),
-    linear-gradient(45deg, transparent 44%, rgba(228, 168, 83, 0.15) 46%, transparent 50%),
-    linear-gradient(-45deg, transparent 44%, rgba(33, 108, 104, 0.12) 46%, transparent 50%);
-  background-size: auto, auto, auto, 34px 34px, 68px 68px, 68px 68px;
+    radial-gradient(ellipse 44% 32% at 4% 10%, rgba(33, 108, 104, 0.12), transparent 72%),
+    radial-gradient(ellipse 40% 34% at 98% 38%, rgba(228, 168, 83, 0.16), transparent 72%),
+    radial-gradient(ellipse 48% 36% at 18% 98%, rgba(228, 168, 83, 0.1), transparent 72%),
+    radial-gradient(circle, rgba(33, 108, 104, 0.14) 1.25px, transparent 1.75px),
+    linear-gradient(45deg, transparent 45%, rgba(228, 168, 83, 0.1) 47%, transparent 50%),
+    linear-gradient(-45deg, transparent 45%, rgba(33, 108, 104, 0.08) 47%, transparent 50%);
+  background-size: auto, auto, auto, 32px 32px, 64px 64px, 64px 64px;
   background-color: #fbfaf5;
   color: #202a2e;
 }
