@@ -360,7 +360,7 @@ export default function Products() {
                   <th className="w-[14%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Stok</th>
                   <th className="w-[18%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
                   <th className="w-[21%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Harga jual</th>
-                  <th className="w-[12%] px-1 py-2 font-semibold sm:w-24 sm:px-3">Aksi</th>
+                  <th className="hidden w-[12%] px-1 py-2 font-semibold sm:table-cell sm:w-24 sm:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -396,7 +396,7 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-1 py-2 text-center sm:px-3">
+                    <td className="hidden px-1 py-2 text-center sm:table-cell sm:px-3">
                       <div className="flex justify-center gap-0 sm:gap-0.5">
                         <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
