@@ -184,6 +184,9 @@ supabase/
 - Untuk production: aktifkan RLS lebih ketat jika perlu multi-toko.
 - Setelah migration Supabase dijalankan, uji alur tambah stok dan checkout dari aplikasi
   menggunakan akun cashier sebelum digunakan pada transaksi nyata.
+- Jalankan migration `20260921140000_production_rls_hardening.sql` sebelum production.
+  Migration ini membatasi perubahan produk/kategori ke admin/cashier dan mencegah
+  cashier/monitor mengubah role pengguna melalui API.
 
 ---
 
