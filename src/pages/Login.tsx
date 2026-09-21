@@ -70,11 +70,29 @@ export default function Login() {
           </div>
         </section>
 
-        <Card className="relative rounded-none border-0 bg-surface/95 shadow-none sm:rounded-none">
-          <CardHeader className="items-center pb-2 text-center lg:items-start lg:text-left">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent shadow-[0_0_0_6px_rgba(228,168,83,0.14)] lg:hidden">
-              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-14 w-14 rounded-2xl object-cover" />
+        <section className="relative overflow-hidden bg-ink px-6 py-7 text-white lg:hidden">
+          <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-accent/30" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 h-36 w-36 rounded-full border-[12px] border-primary/20" aria-hidden="true" />
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-11 w-11 rounded-2xl object-cover ring-4 ring-accent/20" />
+              <div>
+                <p className="text-sm font-semibold tracking-[0.18em] text-accent">RADJA</p>
+                <p className="text-xs text-white/60">Aksesoris Konveksi</p>
+              </div>
             </div>
+            <p className="mt-7 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              <Sparkles className="h-3.5 w-3.5" /> Ruang kendali toko
+            </p>
+            <h1 className="mt-2 max-w-xs text-3xl font-bold leading-none tracking-[-0.04em]">
+              Semua stok,
+              <span className="block text-primary-foreground">satu kendali.</span>
+            </h1>
+          </div>
+        </section>
+
+        <Card className="relative rounded-none border-0 bg-surface/95 shadow-none lg:rounded-none">
+          <CardHeader className="items-center pb-2 text-center lg:items-start lg:text-left">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">Masuk ke Radja</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
