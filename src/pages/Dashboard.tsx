@@ -24,7 +24,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { playLowStockSound } from '@/lib/notifications'
+import { playLowStockSound, registerPushSubscription } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 
 interface Stats {
@@ -209,15 +209,20 @@ export default function Dashboard() {
     const permission = await Notification.requestPermission()
     setNotificationPermission(permission)
     if (permission === 'granted') {
-      toast.success('Notifikasi stok diaktifkan')
-      lowStockProducts.forEach((product) => {
-        const notification = new Notification(`Stok menipis: ${product.name}`, {
-          body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
-          icon: `${import.meta.env.BASE_URL}icon-192.png`,
-          tag: `low-stock-${product.id}`,
+      try {
+        await registerPushSubscription()
+        toast.success('Notifikasi stok diaktifkan')
+        lowStockProducts.forEach((product) => {
+          const notification = new Notification(`Stok menipis: ${product.name}`, {
+            body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+            icon: `${import.meta.env.BASE_URL}icon-192.png`,
+            tag: `low-stock-${product.id}`,
+          })
+          attachNotificationClick(notification)
         })
-        attachNotificationClick(notification)
-      })
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Gagal mendaftarkan push notification')
+      }
     } else {
       toast.error('Izin notifikasi stok ditolak')
     }
