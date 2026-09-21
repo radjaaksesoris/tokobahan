@@ -81,14 +81,14 @@ export default function StockHistory() {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <button type="button" onClick={() => navigate('/products')} className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-            <ChevronLeft className="h-4 w-4" /> Produk
-          </button>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Produk / Sub-menu</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat input stok</h2>
           <p className="mt-1 text-sm text-muted-foreground">Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/products')}>
+            Produk
+          </Button>
           <Input type="date" value={date} onChange={(event) => { setDate(event.target.value); setPage(0) }} aria-label="Filter tanggal input stok" className="h-10 sm:w-44" />
           {date && (
             <button type="button" onClick={() => { setDate(''); setPage(0) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
