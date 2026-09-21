@@ -117,7 +117,7 @@ export default function Login() {
           </div>
         </section>
 
-        <Card className="relative rounded-none border-0 bg-surface/95 shadow-none lg:rounded-none">
+        <Card className="relative rounded-none border-0 bg-[rgba(251,250,245,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_-12px_32px_rgba(32,42,46,0.1)] backdrop-blur-xl lg:rounded-none lg:bg-surface lg:shadow-none lg:backdrop-blur-none">
           <CardHeader className={`items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-4' : 'pb-2'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
