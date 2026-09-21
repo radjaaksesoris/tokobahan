@@ -291,42 +291,42 @@ export default function Products() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <div className="relative sm:w-72">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9 pr-10"
-              placeholder="Cari nama, SKU, atau barcode..."
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value)
-                setPage(0)
-              }}
-            />
-            {search && (
-              <button
-                type="button"
-                aria-label="Reset pencarian"
-                onClick={() => {
-                  setSearch('')
-                  setPage(0)
-                }}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/products/history')}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Button variant="outline" className="shrink-0 px-3" onClick={() => navigate('/products/history')}>
               <History className="h-4 w-4" />
               Riwayat Input
             </Button>
-            <Button className="hidden sm:inline-flex" onClick={openCreate}>
-              <Plus className="h-4 w-4" />
-              Tambah
-            </Button>
+            <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9 pr-10"
+                placeholder="Cari nama, SKU, atau barcode..."
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value)
+                  setPage(0)
+                }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Reset pencarian"
+                  onClick={() => {
+                    setSearch('')
+                    setPage(0)
+                  }}
+                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
+          <Button className="hidden sm:inline-flex" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Tambah
+          </Button>
         </div>
       </div>
 
