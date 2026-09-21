@@ -114,8 +114,8 @@ export default function StockHistory() {
                   <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
-                      <th className="w-[19%] px-1 py-2 text-left sm:w-auto sm:px-3">Tanggal</th>
-                      <th className="w-[22%] px-1 py-2 text-left sm:w-auto sm:px-3">Produk</th>
+                      <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Tanggal</th>
+                      <th className="w-[22%] px-1 py-2 sm:w-auto sm:px-3">Produk</th>
                       <th className="w-[16%] px-1 py-2 sm:w-auto sm:px-3">Jumlah</th>
                       <th className="w-[17%] px-1 py-2 sm:w-auto sm:px-3">HPP</th>
                       <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Nilai stok</th>
@@ -125,18 +125,18 @@ export default function StockHistory() {
                     {history.map((receipt, index) => (
                       <tr key={receipt.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
                         <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * PAGE_SIZE + index + 1}</td>
-                        <td className="whitespace-nowrap px-1 py-2 text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
+                        <td className="whitespace-nowrap px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
                           <span className="sm:hidden">{format(new Date(receipt.received_at), 'dd MMM yy', { locale: localeId })}</span>
                           <span className="hidden sm:inline">{format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}</span>
                         </td>
-                        <td className="truncate px-1 py-2 font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
+                        <td className="truncate px-1 py-2 text-center font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
-                        <td className="whitespace-nowrap px-1 py-2 text-right text-muted-foreground sm:px-3">{formatCurrency(Number(receipt.unit_cost))}</td>
-                        <td className="whitespace-nowrap px-1 py-2 text-right font-semibold text-ink sm:px-3">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatCurrency(Number(receipt.unit_cost))}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-center font-semibold text-ink sm:px-3">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={3} className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td className="px-3 py-2 text-right text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
+                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
                 </table>
               </div>
               <div className="flex items-center justify-between border-t border-border px-4 py-3">
