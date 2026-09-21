@@ -49,6 +49,19 @@ export default function Reports() {
 
   useEffect(() => {
     load()
+
+    const channel = supabase
+      .channel('reports-sales')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sales' },
+        () => load(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [period, selectedDate])
 
   function getRange() {
