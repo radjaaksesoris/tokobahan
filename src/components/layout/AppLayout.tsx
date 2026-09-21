@@ -76,7 +76,10 @@ export function AppLayout() {
               }
             >
               <item.icon className="h-[1.15rem] w-[1.15rem] shrink-0 transition-transform duration-200 group-hover:scale-105" />
-              <span>{item.label}</span>
+              <span className={item.label === 'Riwayat Transaksi' ? 'lg:hidden' : undefined}>
+                {item.label === 'Riwayat Transaksi' ? 'Riwayat' : item.label}
+              </span>
+              {item.label === 'Riwayat Transaksi' && <span className="hidden lg:inline">Riwayat Transaksi</span>}
             </NavLink>
           ))}
         </nav>
