@@ -109,20 +109,30 @@ export default function StockHistory() {
             <p className="py-10 text-center text-sm text-muted-foreground">Belum ada riwayat input stok pada tanggal tersebut.</p>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-sm">
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed text-[11px] sm:table-auto sm:text-sm">
                   <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
-                    <tr><th className="w-12 px-3 py-2">No.</th><th className="px-3 py-2 text-left">Tanggal</th><th className="px-3 py-2 text-left">Produk</th><th className="px-3 py-2">Jumlah</th><th className="px-3 py-2">HPP</th><th className="px-3 py-2">Nilai stok</th></tr>
+                    <tr>
+                      <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
+                      <th className="w-[19%] px-1 py-2 text-left sm:w-auto sm:px-3">Tanggal</th>
+                      <th className="w-[22%] px-1 py-2 text-left sm:w-auto sm:px-3">Produk</th>
+                      <th className="w-[16%] px-1 py-2 sm:w-auto sm:px-3">Jumlah</th>
+                      <th className="w-[17%] px-1 py-2 sm:w-auto sm:px-3">HPP</th>
+                      <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Nilai stok</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {history.map((receipt, index) => (
                       <tr key={receipt.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
-                        <td className="px-3 py-2 text-center text-xs text-muted-foreground">{page * PAGE_SIZE + index + 1}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}</td>
-                        <td className="px-3 py-2 font-medium text-ink/90">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-center text-muted-foreground">{formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-muted-foreground">{formatCurrency(Number(receipt.unit_cost))}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
+                        <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * PAGE_SIZE + index + 1}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
+                          <span className="sm:hidden">{format(new Date(receipt.received_at), 'dd MMM yy', { locale: localeId })}</span>
+                          <span className="hidden sm:inline">{format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}</span>
+                        </td>
+                        <td className="truncate px-1 py-2 font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-right text-muted-foreground sm:px-3">{formatCurrency(Number(receipt.unit_cost))}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-right font-semibold text-ink sm:px-3">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
                       </tr>
                     ))}
                   </tbody>
