@@ -9,6 +9,8 @@ import {
   DollarSign,
   Percent,
   Coins,
+  Calendar,
+  X,
 } from 'lucide-react'
 import {
   BarChart,
@@ -21,7 +23,7 @@ import {
   Legend,
 } from 'recharts'
 
-type Period = 'today' | 'week' | 'month' | 'year'
+type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
 
 interface DailySummaryRow {
   sale_date: string
@@ -33,6 +35,7 @@ interface DailySummaryRow {
 
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
+  const [selectedDate, setSelectedDate] = useState('')
   const [dailySummary, setDailySummary] = useState<DailySummaryRow[]>([])
   const [summary, setSummary] = useState({
     total_revenue: 0,
@@ -44,10 +47,14 @@ export default function Reports() {
 
   useEffect(() => {
     load()
-  }, [period])
+  }, [period, selectedDate])
 
   function getRange() {
     const now = new Date()
+    if (period === 'custom' && selectedDate) {
+      const selected = new Date(`${selectedDate}T00:00:00`)
+      return { start: startOfDay(selected), end: endOfDay(selected) }
+    }
     if (period === 'today') {
       return { start: startOfDay(now), end: endOfDay(now) }
     }
@@ -142,6 +149,7 @@ export default function Reports() {
               key={p.key}
               onClick={() => {
                 setPeriod(p.key)
+                setSelectedDate('')
               }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 period === p.key
@@ -152,6 +160,33 @@ export default function Reports() {
               {p.label}
             </button>
           ))}
+          <div className="relative ml-1 flex items-center">
+            <Calendar className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(event) => {
+                setSelectedDate(event.target.value)
+                if (event.target.value) setPeriod('custom')
+              }}
+              aria-label="Pilih tanggal laporan"
+              className="h-9 w-10 cursor-pointer rounded-md border-0 bg-transparent pl-8 pr-1 text-sm text-transparent outline-none transition-colors hover:bg-muted focus:text-ink sm:w-40 sm:pr-2 sm:text-muted-foreground"
+              title="Pilih tanggal laporan"
+            />
+            {selectedDate && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDate('')
+                  setPeriod('today')
+                }}
+                className="absolute right-1.5 rounded p-1 text-muted-foreground hover:bg-muted hover:text-ink"
+                aria-label="Hapus filter tanggal"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
