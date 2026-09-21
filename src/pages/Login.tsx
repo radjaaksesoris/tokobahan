@@ -39,7 +39,7 @@ export default function Login() {
       />
       <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,31,34,0.97)_0%,rgba(21,31,34,0.72)_42%,rgba(21,31,34,0.82)_100%)]" aria-hidden="true" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(228,168,83,0.22),transparent_24%),radial-gradient(circle_at_86%_72%,rgba(36,126,121,0.22),transparent_30%)]" aria-hidden="true" />
-      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative grid w-[calc(100%-1rem)] max-w-5xl overflow-hidden rounded-[2rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm sm:w-full lg:grid-cols-[1.05fr_0.95fr]">
         <section className="relative hidden min-h-[560px] flex-col justify-between overflow-hidden p-10 text-white lg:flex">
           <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-accent/30" aria-hidden="true" />
           <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full border-[18px] border-primary/20" aria-hidden="true" />
