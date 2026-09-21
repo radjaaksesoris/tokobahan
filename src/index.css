@@ -1,24 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-heading: 'Rubik', 'Nunito Sans', system-ui, sans-serif;
-  --color-primary: #216c68;
-  --color-primary-foreground: #fbfaf5;
-  --color-secondary: #d97706;
-  --color-secondary-foreground: #201b16;
-  --color-accent: #e4a853;
-  --color-ink: #202a2e;
-  --color-canvas: #fbfaf5;
-  --color-surface: #fffdf8;
-  --color-muted: #f2f0e9;
-  --color-muted-foreground: #667174;
-  --color-destructive: #ef4444;
-  --color-success: #22c55e;
-  --color-card: #fffdf8;
-  --color-border: #e7e4dc;
-  --radius-lg: 1rem;
-  --radius-md: 0.75rem;
-  --radius-sm: 0.5rem;
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --color-primary: #0f766e;
+  --color-primary-foreground: #f0fdfa;
+  --color-secondary: #334155;
+  --color-secondary-foreground: #f8fafc;
+  --color-accent: #b8f36b;
+  --color-ink: #17212b;
+  --color-canvas: #f4f7f5;
+  --color-surface: #ffffff;
+  --color-muted: #e9efec;
+  --color-muted-foreground: #647179;
+  --color-destructive: #dc2626;
+  --color-success: #16a34a;
+  --color-card: #ffffff;
+  --color-border: #dce6e1;
+  --radius-lg: 1.25rem;
+  --radius-md: 0.875rem;
+  --radius-sm: 0.625rem;
 }
 
 * {
@@ -36,13 +39,13 @@ html {
 }
 
 body {
-  font-family: 'Nunito Sans', system-ui, sans-serif;
-  background-color: #fbfaf5;
-  color: #202a2e;
+  font-family: 'Manrope', system-ui, sans-serif;
+  background-color: #f4f7f5;
+  color: #17212b;
   user-select: none;
   -webkit-font-smoothing: antialiased;
-  background-image: radial-gradient(rgba(32, 42, 46, 0.025) 0.7px, transparent 0.7px);
-  background-size: 14px 14px;
+  background-image: radial-gradient(rgba(15, 118, 110, 0.045) 0.7px, transparent 0.7px);
+  background-size: 18px 18px;
 }
 
 .mobile-page-background {
@@ -51,8 +54,8 @@ body {
     radial-gradient(circle at 92% 42%, rgba(228, 168, 83, 0.08), transparent 22%),
     radial-gradient(rgba(32, 42, 46, 0.04) 0.7px, transparent 0.7px);
   background-size: auto, auto, 18px 18px;
-  background-color: #fbfaf5;
-  color: #202a2e;
+  background-color: #f4f7f5;
+  color: #17212b;
 }
 
 @media (min-width: 640px) {
@@ -62,8 +65,14 @@ body {
 }
 
 h1, h2, h3, h4, button {
-  font-family: 'Rubik', 'Nunito Sans', system-ui, sans-serif;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
 }
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+button, a { cursor: pointer; }
+
+::placeholder { color: #8a9898; }
 
 button, a, input, select, textarea {
   touch-action: manipulation;

@@ -45,21 +45,22 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col border-t border-white/10 bg-ink text-white transition-all duration-300 lg:static lg:inset-y-0 lg:left-0 lg:right-auto lg:h-auto lg:w-64 lg:translate-x-0 lg:border-t-0',
+          'fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col border-t border-white/10 bg-[#17212b] text-white transition-all duration-300 lg:static lg:inset-y-0 lg:left-0 lg:right-auto lg:h-auto lg:w-[17rem] lg:translate-x-0 lg:border-t-0',
           sidebarOpen ? 'translate-x-0' : 'translate-x-0 lg:-translate-x-full lg:w-0 lg:overflow-hidden'
         )}
       >
-        <div className="hidden h-[4.5rem] items-center gap-3 border-b border-white/10 px-4 lg:flex">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink shadow-[0_0_0_4px_rgba(228,168,83,0.14)]">
-            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
+        <div className="hidden h-[5.25rem] items-center gap-3 border-b border-white/10 px-5 lg:flex">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-[0.9rem] bg-accent text-ink shadow-[0_0_0_4px_rgba(184,243,107,0.1)]">
+            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-10 w-10 rounded-[0.9rem] object-cover" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
-            <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.12em] text-accent">Aksesoris konveksi</p>
+            <h1 className="truncate whitespace-nowrap text-[0.82rem] font-bold tracking-[0.08em]">RADJA AKSESORIS</h1>
+            <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.16em] text-accent">Control desk</p>
           </div>
         </div>
 
-        <nav className="flex flex-1 overflow-x-auto p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
+        <div className="hidden px-5 pb-2 pt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 lg:block">Workspace</div>
+        <nav className="flex flex-1 overflow-x-auto p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:px-3 lg:pb-4 lg:pt-1">
           {filteredNav.map((item) => (
             <NavLink
               key={item.to}
@@ -67,12 +68,12 @@ export function AppLayout() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'group relative flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.68rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
+                  'group relative flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-[0.9rem] px-1 py-2 text-[0.68rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
                   item.className,
                   'lg:px-3',
                   isActive
-                    ? 'bg-surface text-ink shadow-[0_8px_20px_rgba(32,42,46,0.12)]'
-                    : 'text-stone-300 hover:bg-white/10 hover:text-white'
+                    ? 'bg-accent text-ink shadow-[0_8px_20px_rgba(0,0,0,0.14)]'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 )
               }
             >
@@ -86,19 +87,19 @@ export function AppLayout() {
         </nav>
 
         <div className="hidden border-t border-white/10 p-4 lg:block">
-          <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
+          <div className="mb-4 rounded-[0.9rem] border border-white/10 bg-white/5 px-3 py-3">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
-            <CurrentDate className="text-left text-stone-300" />
+            <CurrentDate className="text-left text-slate-300" />
           </div>
           <div className="mb-3 text-sm">
             <p className="font-medium">{profile?.full_name || 'User'}</p>
-            <p className="text-xs capitalize text-accent">{profile?.role}</p>
+            <p className="text-xs capitalize text-accent">{profile?.role} · online</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             className={cn(
-              'border-white/20 bg-transparent text-stone-300 transition-colors hover:bg-white/10 hover:text-white',
+              'border-white/20 bg-transparent text-slate-300 transition-colors hover:bg-white/10 hover:text-white',
               'w-full'
             )}
             onClick={handleLogout}
