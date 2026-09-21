@@ -91,7 +91,12 @@ function PageSuspense({ children }: { children: ReactNode }) {
 function preloadPageChunks() {
   void Promise.all([
     import('@/pages/Dashboard'),
+    import('@/pages/POS'),
     import('@/pages/Products'),
+    import('@/pages/StockHistory'),
+    import('@/pages/Reports'),
+    import('@/pages/TransactionHistory'),
+    import('@/pages/Settings'),
   ]).catch((error) => {
     console.warn('Gagal melakukan prefetch halaman:', error)
   })
@@ -132,21 +137,7 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user) return
 
-    const browserWindow = window as Window & {
-      requestIdleCallback?: (callback: () => void) => number
-      cancelIdleCallback?: (handle: number) => void
-    }
-    const idleCallback = browserWindow.requestIdleCallback
-      ? browserWindow.requestIdleCallback(preloadPageChunks)
-      : window.setTimeout(preloadPageChunks, 200)
-
-    return () => {
-      if (browserWindow.cancelIdleCallback && browserWindow.requestIdleCallback) {
-        browserWindow.cancelIdleCallback(idleCallback)
-      } else {
-        window.clearTimeout(idleCallback)
-      }
-    }
+    preloadPageChunks()
   }, [authLoading, user])
 
   if (!isSupabaseConfigured) {
