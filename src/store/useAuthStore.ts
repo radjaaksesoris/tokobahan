@@ -20,12 +20,17 @@ function normalizeLoginIdentifier(identifier: string) {
     : `${normalizedIdentifier}@outlook.com`
 }
 
+let authInitialized = false
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
   loading: true,
 
   initialize: async () => {
+    if (authInitialized) return
+    authInitialized = true
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {

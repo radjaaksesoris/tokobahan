@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
@@ -44,6 +44,7 @@ export default function Reports() {
     transaction_count: 0,
   })
   const [error, setError] = useState<string | null>(null)
+  const requestId = useRef(0)
 
   useEffect(() => {
     load()
@@ -68,6 +69,7 @@ export default function Reports() {
   }
 
   async function load() {
+    const currentRequest = ++requestId.current
     setError(null)
     const { start, end } = getRange()
     const [{ data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
@@ -80,6 +82,7 @@ export default function Reports() {
         p_end: end.toISOString(),
       }),
     ])
+    if (currentRequest !== requestId.current) return
 
     if (dailyError) {
       setDailySummary([])

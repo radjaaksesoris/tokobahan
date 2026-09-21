@@ -51,7 +51,6 @@ body {
     radial-gradient(circle at 92% 42%, rgba(228, 168, 83, 0.08), transparent 22%),
     radial-gradient(rgba(32, 42, 46, 0.04) 0.7px, transparent 0.7px);
   background-size: auto, auto, 18px 18px;
-  background-attachment: fixed;
 }
 
 @media (min-width: 640px) {
