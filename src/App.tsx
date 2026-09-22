@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
+import { applyScreenOrientation, getScreenOrientationPreference } from '@/lib/orientation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -149,6 +150,15 @@ export default function App() {
 
     preloadPageChunks()
   }, [authLoading, user])
+
+  useEffect(() => {
+    const preference = getScreenOrientationPreference()
+    if (preference === 'any') return
+
+    applyScreenOrientation(preference).catch((error) => {
+      console.warn('Gagal menerapkan orientasi layar:', error)
+    })
+  }, [])
 
   if (!isSupabaseConfigured) {
     return (

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database, Download, RotateCw, ShieldCheck } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -15,6 +15,15 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import {
+  applyScreenOrientation,
+  getScreenOrientationPreference,
+  isScreenOrientationPreference,
+  screenOrientationOptions,
+  setScreenOrientationPreference,
+  type ScreenOrientationPreference,
+} from '@/lib/orientation'
 
 export default function Settings() {
   const { user, isRole } = useAuthStore()
@@ -27,6 +36,9 @@ export default function Settings() {
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
   const [soundEnabled, setSoundEnabled] = useState(isStockSoundEnabled)
+  const [screenOrientation, setScreenOrientation] = useState<ScreenOrientationPreference>(
+    getScreenOrientationPreference(),
+  )
 
   if (!isRole('admin')) return <Navigate to="/" replace />
 
@@ -154,6 +166,22 @@ export default function Settings() {
       playLowStockSound()
       toast.success('Suara notifikasi stok diaktifkan')
     }
+
+    async function changeScreenOrientation(preference: ScreenOrientationPreference) {
+      try {
+        await applyScreenOrientation(preference)
+        setScreenOrientationPreference(preference)
+        setScreenOrientation(preference)
+        toast.success(
+          preference === 'any'
+            ? 'Auto rotate diaktifkan'
+            : `Orientasi ${preference === 'portrait' ? 'portrait' : 'landscape'} diterapkan`,
+        )
+      } catch (error) {
+        setScreenOrientation(getScreenOrientationPreference())
+        toast.error(error instanceof Error ? error.message : 'Gagal mengubah orientasi layar')
+      }
+    }
   }
 
   return (
@@ -222,6 +250,34 @@ export default function Settings() {
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
         </CardContent>}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <RotateCw className="h-5 w-5 text-primary" />
+            Orientasi Tablet
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-ink">Putar layar otomatis</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Pilih Auto rotate agar tampilan mengikuti posisi tablet. Mode portrait atau landscape
+              memerlukan dukungan browser dan biasanya hanya berfungsi di aplikasi PWA terpasang.
+            </p>
+          </div>
+          <Select
+            value={screenOrientation}
+            options={screenOrientationOptions}
+            onChange={(value) => {
+              if (isScreenOrientationPreference(value)) void changeScreenOrientation(value)
+            }}
+            native
+            className="w-full sm:w-44"
+            aria-label="Orientasi layar tablet"
+          />
+        </CardContent>
       </Card>
 
       <Card>
