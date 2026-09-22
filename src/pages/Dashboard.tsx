@@ -405,7 +405,7 @@ export default function Dashboard() {
             <CardTitle className="text-base">Penjualan 7 Hari</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-44 sm:h-56">
+            <div className="h-44 sm:h-56 lg:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.weekData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -434,7 +434,7 @@ export default function Dashboard() {
             <CardTitle className="text-base">Laba 7 Hari</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-44 sm:h-56">
+            <div className="h-44 sm:h-56 lg:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.weekData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
