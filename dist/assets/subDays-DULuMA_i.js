@@ -1,1 +1,0 @@
-import{t as s,c}from"./startOfYear-B1ylcA4f.js";function u(e,r,t){const a=s(e,t==null?void 0:t.in);return isNaN(r)?c(e,NaN):(r&&a.setDate(a.getDate()+r),a)}function n(e,r,t){return u(e,-r,t)}export{n as s};
