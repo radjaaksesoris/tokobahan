@@ -7,6 +7,7 @@ import { applyScreenOrientation, getScreenOrientationPreference } from '@/lib/or
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
+import Login from '@/pages/Login'
 
 function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   importer: () => Promise<{ default: T }>,
@@ -28,7 +29,6 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   })
 }
 
-const Login = lazyWithRecovery(() => import('@/pages/Login'), 'login')
 const Dashboard = lazyWithRecovery(() => import('@/pages/Dashboard'), 'dashboard')
 const POS = lazyWithRecovery(() => import('@/pages/POS'), 'pos')
 const Products = lazyWithRecovery(() => import('@/pages/Products'), 'products')

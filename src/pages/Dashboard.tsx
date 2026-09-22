@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
@@ -55,6 +56,7 @@ function attachNotificationClick(notification: Notification) {
 
 export default function Dashboard() {
   const signOut = useAuthStore((state) => state.signOut)
+  const navigate = useNavigate()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
     todayProfit: 0,
@@ -79,6 +81,7 @@ export default function Dashboard() {
   async function handleMobileStatusLogout() {
     if (!window.matchMedia('(max-width: 1023px)').matches) return
     await signOut()
+    navigate('/login', { replace: true })
   }
 
   useEffect(() => {
