@@ -302,7 +302,7 @@ export default function Products() {
               <History className="h-4 w-4" />
               Riwayat Input
             </Button>
-            <div className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+            <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9 pr-10"
