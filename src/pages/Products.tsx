@@ -748,7 +748,15 @@ export default function Products() {
                       className="min-w-0"
                       value={costUnit}
                       options={UNIT_OPTIONS}
-                      onChange={(value) => setCostUnit(value as UnitType)}
+                      onChange={(value) => {
+                        const nextUnit = value as UnitType
+                        setCostUnit(nextUnit)
+                        setPrices((current) => current.map((price, index) => (
+                          index === 0
+                            ? { ...price, unit: nextUnit, conversion: UNIT_FACTORS[nextUnit] || 1 }
+                            : price
+                        )))
+                      }}
                       native
                       disabled={Boolean(editing)}
                       aria-label="Satuan harga modal"
