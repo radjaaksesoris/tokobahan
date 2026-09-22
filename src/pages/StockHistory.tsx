@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { endOfDay, format, startOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, History, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, History, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { UNIT_LABELS, type UnitType } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
@@ -89,7 +89,19 @@ export default function StockHistory() {
           <Button variant="outline" onClick={() => navigate('/products')}>
             Produk
           </Button>
-          <Input type="date" value={date} onChange={(event) => { setDate(event.target.value); setPage(0) }} aria-label="Filter tanggal input stok" className="h-10 sm:w-44" />
+          <div className="relative h-10 w-36 shrink-0 rounded-xl border border-border bg-surface sm:w-44">
+            <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <span className="pointer-events-none flex h-full items-center pl-9 pr-3 text-sm text-muted-foreground">
+              {date ? format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId }) : 'Tanggal'}
+            </span>
+            <Input
+              type="date"
+              value={date}
+              onChange={(event) => { setDate(event.target.value); setPage(0) }}
+              aria-label="Filter tanggal input stok"
+              className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
+            />
+          </div>
           {date && (
             <button type="button" onClick={() => { setDate(''); setPage(0) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
               <X className="h-4 w-4" />
