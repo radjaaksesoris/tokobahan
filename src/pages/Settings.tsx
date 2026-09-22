@@ -166,21 +166,21 @@ export default function Settings() {
       playLowStockSound()
       toast.success('Suara notifikasi stok diaktifkan')
     }
+  }
 
-    async function changeScreenOrientation(preference: ScreenOrientationPreference) {
-      try {
-        await applyScreenOrientation(preference)
-        setScreenOrientationPreference(preference)
-        setScreenOrientation(preference)
-        toast.success(
-          preference === 'any'
-            ? 'Auto rotate diaktifkan'
-            : `Orientasi ${preference === 'portrait' ? 'portrait' : 'landscape'} diterapkan`,
-        )
-      } catch (error) {
-        setScreenOrientation(getScreenOrientationPreference())
-        toast.error(error instanceof Error ? error.message : 'Gagal mengubah orientasi layar')
-      }
+  async function changeScreenOrientation(preference: ScreenOrientationPreference) {
+    try {
+      await applyScreenOrientation(preference)
+      setScreenOrientationPreference(preference)
+      setScreenOrientation(preference)
+      toast.success(
+        preference === 'any'
+          ? 'Auto rotate diaktifkan'
+          : `Orientasi ${preference === 'portrait' ? 'portrait' : 'landscape'} diterapkan`,
+      )
+    } catch (error) {
+      setScreenOrientation(getScreenOrientationPreference())
+      toast.error(error instanceof Error ? error.message : 'Gagal mengubah orientasi layar')
     }
   }
 
