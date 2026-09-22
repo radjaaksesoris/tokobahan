@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import type { Product, UnitType, ProductPrice } from '@/types'
+import type { Product, UnitType, ProductPrice, CustomUnit } from '@/types'
 import { parseProductPrices, isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -14,7 +14,6 @@ import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
-const UNIT_OPTIONS = ALL_UNITS.map((unit) => ({ value: unit, label: UNIT_LABELS[unit] }))
 function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
   const costPerBaseUnit = batchCost / (product.cost_conversion || 1)
   const priceConversion = price.conversion || UNIT_FACTORS[price.unit] || 1
@@ -41,6 +40,7 @@ export default function Products() {
   const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
+  const [customUnits, setCustomUnits] = useState<CustomUnit[]>([])
   const [stockVendorId, setStockVendorId] = useState('')
   const [stockPaymentStatus, setStockPaymentStatus] = useState<'lunas' | 'kredit'>('lunas')
   const [stockDueDate, setStockDueDate] = useState('')
@@ -78,6 +78,23 @@ export default function Products() {
     mediaQuery.addEventListener('change', updatePageSize)
     return () => mediaQuery.removeEventListener('change', updatePageSize)
   }, [])
+
+  useEffect(() => {
+    supabase.from('custom_units').select('id, name, factor, created_at').order('name').then(({ data, error }) => {
+      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+      else setCustomUnits(data || [])
+    })
+  }, [])
+
+  const allUnits = [...ALL_UNITS, ...customUnits.map((unit) => unit.name as UnitType)]
+  const unitOptions = allUnits.map((unit) => ({
+    value: unit,
+    label: UNIT_LABELS[unit] || unit,
+  }))
+  const unitFactors = customUnits.reduce<Record<string, number>>(
+    (result, unit) => ({ ...result, [unit.name]: Number(unit.factor) }),
+    { ...UNIT_FACTORS },
+  )
 
   useEffect(() => {
     supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
@@ -210,9 +227,9 @@ export default function Products() {
 
   function addPriceRow() {
     const used = prices.map((p) => p.unit)
-    const next = ALL_UNITS.find((u) => !used.includes(u))
+    const next = allUnits.find((u) => !used.includes(u))
     if (next) {
-      setPrices([...prices, { unit: next, price: 0, conversion: UNIT_FACTORS[next] }])
+      setPrices([...prices, { unit: next, price: 0, conversion: unitFactors[next] || 1 }])
     }
   }
 
@@ -222,7 +239,7 @@ export default function Products() {
         if (i !== idx) return p
         if (field === 'unit') {
           if (typeof value !== 'string' || !isUnitType(value)) return p
-          return { ...p, unit: value, conversion: UNIT_FACTORS[value] || 1 }
+          return { ...p, unit: value, conversion: unitFactors[value] || 1 }
         }
         if (typeof value !== 'number') return p
         return { ...p, [field]: value }
@@ -258,7 +275,7 @@ export default function Products() {
       sku: sku || null,
       cost_price: costPrice,
       cost_unit: costUnit,
-      cost_conversion: UNIT_FACTORS[costUnit] || 1,
+      cost_conversion: unitFactors[costUnit] || 1,
       stock: editing ? stock : 0,
       stock_unit: stockUnit,
       stock_conversion: 1,
@@ -689,7 +706,7 @@ export default function Products() {
                     <Select
                       className="min-w-0 w-full"
                       value={stockUnit}
-                      options={UNIT_OPTIONS}
+                      options={unitOptions}
                       onChange={(value) => setStockUnit(value as UnitType)}
                       native
                       disabled={Boolean(editing)}
@@ -747,13 +764,13 @@ export default function Products() {
                     <Select
                       className="min-w-0"
                       value={costUnit}
-                      options={UNIT_OPTIONS}
+                      options={unitOptions}
                       onChange={(value) => {
                         const nextUnit = value as UnitType
                         setCostUnit(nextUnit)
                         setPrices((current) => current.map((price, index) => (
                           index === 0
-                            ? { ...price, unit: nextUnit, conversion: UNIT_FACTORS[nextUnit] || 1 }
+                            ? { ...price, unit: nextUnit, conversion: unitFactors[nextUnit] || 1 }
                             : price
                         )))
                       }}
@@ -792,7 +809,7 @@ export default function Products() {
                       <Select
                         className="min-w-0"
                         value={pr.unit}
-                        options={UNIT_OPTIONS}
+                        options={unitOptions}
                         onChange={(value) => updatePrice(idx, 'unit', value)}
                         native
                         disabled={editingPricesOnly}

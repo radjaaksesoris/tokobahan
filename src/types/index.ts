@@ -1,13 +1,13 @@
 import type { Json } from './database'
 
-export type UnitType = 'satuan' | 'lusin' | 'kodi' | 'gross' | 'meter' | 'pack'
+export type UnitType = string
 export const UNIT_TYPES: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
 export function isUnitType(value: string): value is UnitType {
-  return UNIT_TYPES.includes(value as UnitType)
+  return value.trim().length > 0
 }
 
-export const UNIT_LABELS: Record<UnitType, string> = {
+export const UNIT_LABELS: Record<string, string> = {
   satuan: 'Satuan',
   lusin: 'Lusin',
   kodi: 'Kodi',
@@ -16,7 +16,7 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   pack: 'Pack',
 }
 
-export const UNIT_FACTORS: Record<UnitType, number> = {
+export const UNIT_FACTORS: Record<string, number> = {
   satuan: 1,
   lusin: 12,
   kodi: 20,
@@ -29,6 +29,13 @@ export interface ProductPrice {
   unit: UnitType
   price: number
   conversion: number // how many base units (pcs) in this unit
+}
+
+export interface CustomUnit {
+  id: string
+  name: string
+  factor: number
+  created_at: string
 }
 
 export function parseProductPrices(value: Json): ProductPrice[] {

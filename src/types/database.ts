@@ -61,6 +61,12 @@ export interface Database {
         }
         Relationships: []
       }
+      custom_units: {
+        Row: { id: string; name: string; factor: number; created_at: string }
+        Insert: { id?: string; name: string; factor: number; created_at?: string }
+        Update: { name?: string; factor?: number }
+        Relationships: []
+      }
       products: {
         Row: {
           id: string

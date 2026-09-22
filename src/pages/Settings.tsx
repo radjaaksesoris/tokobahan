@@ -30,6 +30,10 @@ export default function Settings() {
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [vendorName, setVendorName] = useState('')
   const [vendorLoading, setVendorLoading] = useState(false)
+  const [units, setUnits] = useState<{ id: string; name: string; factor: number }[]>([])
+  const [unitName, setUnitName] = useState('')
+  const [unitFactor, setUnitFactor] = useState('1')
+  const [unitLoading, setUnitLoading] = useState(false)
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -39,7 +43,42 @@ export default function Settings() {
 
   useEffect(() => {
     void loadVendors()
+    void loadUnits()
   }, [])
+
+  async function loadUnits() {
+    const { data, error } = await supabase.from('custom_units').select('id, name, factor').order('name')
+    if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+    else setUnits(data || [])
+  }
+
+  async function addUnit() {
+    const name = unitName.trim()
+    const factor = Number(unitFactor)
+    if (!name || !Number.isFinite(factor) || factor <= 0) {
+      toast.error('Nama dan konversi satuan harus diisi dengan benar')
+      return
+    }
+    setUnitLoading(true)
+    const { error } = await supabase.from('custom_units').insert({ name, factor })
+    if (error) toast.error(`Gagal menambah satuan: ${error.message}`)
+    else {
+      toast.success('Satuan ditambahkan')
+      setUnitName('')
+      setUnitFactor('1')
+      await loadUnits()
+    }
+    setUnitLoading(false)
+  }
+
+  async function removeUnit(id: string) {
+    const { error } = await supabase.from('custom_units').delete().eq('id', id)
+    if (error) toast.error(`Gagal menghapus satuan: ${error.message}`)
+    else {
+      toast.success('Satuan dihapus')
+      await loadUnits()
+    }
+  }
 
   async function addVendor() {
     const name = vendorName.trim()
@@ -290,6 +329,27 @@ export default function Settings() {
             </ul>
           )}
         </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Master Satuan</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+              <Input value={unitName} onChange={(event) => setUnitName(event.target.value)} placeholder="Nama satuan, contoh: Box" />
+              <Input type="number" min="0.001" step="0.001" value={unitFactor} onChange={(event) => setUnitFactor(event.target.value)} placeholder="Konversi pcs" />
+              <Button onClick={() => void addUnit()} disabled={unitLoading || !unitName.trim()}>Tambah</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Konversi adalah jumlah satuan dasar (pcs) dalam satu satuan baru.</p>
+            {units.length > 0 && (
+              <ul className="max-h-48 divide-y divide-border overflow-y-auto rounded-xl border border-border">
+                {units.map((unit) => (
+                  <li key={unit.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                    <span>{unit.name} <span className="text-muted-foreground">({unit.factor} pcs)</span></span>
+                    <button type="button" onClick={() => void removeUnit(unit.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600" aria-label={`Hapus satuan ${unit.name}`}><Trash2 className="h-4 w-4" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
         </Card>
       </div>
 
