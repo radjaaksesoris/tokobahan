@@ -37,7 +37,7 @@ export async function applyScreenOrientation(preference: ScreenOrientationPrefer
   }
 
   if (preference === 'any') {
-    orientation.unlock()
+    if (typeof orientation.unlock === 'function') orientation.unlock()
     return
   }
 
@@ -45,5 +45,13 @@ export async function applyScreenOrientation(preference: ScreenOrientationPrefer
     throw new Error('Penguncian orientasi tidak didukung oleh browser tablet ini')
   }
 
-  await orientation.lock(preference)
+  if (!document.fullscreenElement) {
+    throw new Error('Mode Portrait/Landscape membutuhkan aplikasi fullscreen. Gunakan Auto rotate untuk mengikuti putaran tablet.')
+  }
+
+  try {
+    await orientation.lock(preference)
+  } catch {
+    throw new Error('Browser menolak penguncian orientasi. Gunakan Auto rotate atau buka aplikasi dalam mode fullscreen.')
+  }
 }

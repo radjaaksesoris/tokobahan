@@ -264,7 +264,7 @@ export default function Settings() {
             <p className="text-sm font-medium text-ink">Putar layar otomatis</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Pilih Auto rotate agar tampilan mengikuti posisi tablet. Mode portrait atau landscape
-              memerlukan dukungan browser dan biasanya hanya berfungsi di aplikasi PWA terpasang.
+              hanya tersedia saat aplikasi dibuka dalam mode fullscreen.
             </p>
           </div>
           <Select
