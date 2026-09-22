@@ -640,7 +640,7 @@ export default function Products() {
                   readOnly={editingPricesOnly}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium">SKU</label>
                   <div className="flex gap-2">
@@ -665,38 +665,6 @@ export default function Products() {
                     )}
 
                   </div>
-                  {!editing && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-sm font-medium">Vendor stok awal</label>
-                        <Select
-                          value={stockVendorId}
-                          onChange={setStockVendorId}
-                          options={[
-                            { value: '', label: stock > 0 ? 'Pilih vendor' : 'Tidak ada stok awal' },
-                            ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
-                          ]}
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-sm font-medium">Status pembayaran awal</label>
-                        <Select
-                          value={stockPaymentStatus}
-                          onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
-                          options={[
-                            { value: 'lunas', label: 'Lunas' },
-                            { value: 'kredit', label: 'Kredit' },
-                          ]}
-                        />
-                      </div>
-                      {stockPaymentStatus === 'kredit' && stock > 0 && (
-                        <div className="sm:col-span-2">
-                          <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
-                          <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
-                        </div>
-                      )}
-                    </div>
-                  )}
                   {editing?.sku && !skuEditing && (
                     <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
                   )}
@@ -713,7 +681,7 @@ export default function Products() {
                       title={editing ? 'Gunakan Tambah Stok untuk menerima stok baru' : undefined}
                     />
                     <Select
-                      className="w-32"
+                      className="min-w-0 flex-1"
                       value={stockUnit}
                       options={UNIT_OPTIONS}
                       onChange={(value) => setStockUnit(value as UnitType)}
@@ -724,10 +692,44 @@ export default function Products() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              {!editing && (
+                <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <label className="mb-1 block text-sm font-medium">Vendor stok awal</label>
+                    <Select
+                      value={stockVendorId}
+                      onChange={setStockVendorId}
+                      className="w-full"
+                      options={[
+                        { value: '', label: stock > 0 ? 'Pilih vendor' : 'Tidak ada stok awal' },
+                        ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
+                      ]}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="mb-1 block text-sm font-medium">Status pembayaran awal</label>
+                    <Select
+                      value={stockPaymentStatus}
+                      onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
+                      className="w-full"
+                      options={[
+                        { value: 'lunas', label: 'Lunas' },
+                        { value: 'kredit', label: 'Kredit' },
+                      ]}
+                    />
+                  </div>
+                  {stockPaymentStatus === 'kredit' && stock > 0 && (
+                    <div className="min-w-0 sm:col-span-2">
+                      <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
+                      <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium">Harga Modal</label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
                     <Input
                       className="min-w-0"
                       inputMode="numeric"
@@ -737,7 +739,7 @@ export default function Products() {
                       title={editing ? 'Gunakan Tambah Stok untuk mengubah HPP batch baru' : undefined}
                     />
                     <Select
-                      className="w-32"
+                      className="min-w-0"
                       value={costUnit}
                       options={UNIT_OPTIONS}
                       onChange={(value) => setCostUnit(value as UnitType)}
@@ -772,9 +774,9 @@ export default function Products() {
                 </div>
                 <div className="space-y-2">
                   {prices.map((pr, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1fr)_auto] items-center gap-2">
                       <Select
-                        className="w-32 shrink-0"
+                        className="min-w-0"
                         value={pr.unit}
                         options={UNIT_OPTIONS}
                         onChange={(value) => updatePrice(idx, 'unit', value)}
