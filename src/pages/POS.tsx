@@ -441,7 +441,11 @@ export default function POS() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  onClick={() => {
+                    const nextQty = Math.max(1, qty - 1)
+                    setQty(nextQty)
+                    setQtyInput(String(nextQty))
+                  }}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -456,10 +460,22 @@ export default function POS() {
                     setQtyInput('')
                     setShowQtyKeypad(true)
                   }}
+                  onFocus={() => {
+                    setQtyInput('')
+                    setShowQtyKeypad(true)
+                  }}
                   className="w-20 text-center text-lg font-bold"
                 />
-                <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
-                disabled={qty >= selectedProduct.stock}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const nextQty = Math.min(selectedProduct.stock, qty + 1)
+                    setQty(nextQty)
+                    setQtyInput(String(nextQty))
+                  }}
+                  disabled={qty >= selectedProduct.stock}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -500,9 +516,9 @@ export default function POS() {
         </div>
       )}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-          <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
-            <CardContent className="p-5">
+        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-2 sm:items-center sm:p-4">
+          <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col rounded-2xl">
+            <CardContent className="min-h-0 flex-1 overflow-y-auto p-5">
               <div className="mb-4">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Pembayaran tunai</p>
                 <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
