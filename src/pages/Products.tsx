@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import type { Product, UnitType, ProductPrice, CustomUnit } from '@/types'
+import type { Product, UnitType, ProductPrice } from '@/types'
 import { parseProductPrices, isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -40,7 +40,6 @@ export default function Products() {
   const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
-  const [customUnits, setCustomUnits] = useState<CustomUnit[]>([])
   const [stockVendorId, setStockVendorId] = useState('')
   const [stockPaymentStatus, setStockPaymentStatus] = useState<'lunas' | 'kredit'>('lunas')
   const [stockDueDate, setStockDueDate] = useState('')
@@ -79,22 +78,12 @@ export default function Products() {
     return () => mediaQuery.removeEventListener('change', updatePageSize)
   }, [])
 
-  useEffect(() => {
-    supabase.from('custom_units').select('id, name, factor, created_at').order('name').then(({ data, error }) => {
-      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
-      else setCustomUnits(data || [])
-    })
-  }, [])
-
-  const allUnits = [...ALL_UNITS, ...customUnits.map((unit) => unit.name as UnitType)]
+  const allUnits = ALL_UNITS
   const unitOptions = allUnits.map((unit) => ({
     value: unit,
     label: UNIT_LABELS[unit] || unit,
   }))
-  const unitFactors = customUnits.reduce<Record<string, number>>(
-    (result, unit) => ({ ...result, [unit.name]: Number(unit.factor) }),
-    { ...UNIT_FACTORS },
-  )
+  const unitFactors = UNIT_FACTORS
 
   useEffect(() => {
     supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
