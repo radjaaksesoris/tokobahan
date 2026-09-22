@@ -243,13 +243,11 @@ export default function POS() {
               readOnly
               inputMode="none"
               onClick={() => setShowKeypadPanel(true)}
-              onFocus={() => setShowKeypadPanel(true)}
               onChange={(e) => {
                 setSearch(e.target.value)
                 setActiveProductIndex(-1)
               }}
               onKeyDown={handleSearchKeyDown}
-              autoFocus
             />
             {search && (
               <button
