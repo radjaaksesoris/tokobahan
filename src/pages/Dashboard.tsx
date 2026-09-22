@@ -10,6 +10,8 @@ import {
   DollarSign,
   AlertTriangle,
   X,
+  LoaderCircle,
+  RefreshCw,
 } from 'lucide-react'
 import {
   BarChart,
@@ -66,6 +68,7 @@ export default function Dashboard() {
     weekData: [],
   })
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
@@ -82,6 +85,15 @@ export default function Dashboard() {
     if (!window.matchMedia('(max-width: 1023px)').matches) return
     await signOut()
     navigate('/login', { replace: true })
+  }
+
+  async function refreshDashboard() {
+    setRefreshing(true)
+    try {
+      await loadStats()
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => {
@@ -130,6 +142,7 @@ export default function Dashboard() {
       initialLoadComplete.current = true
       return
     }
+
     const todaySummary = todaySummaryRes.data?.[0]
     const todaySales = Number(todaySummary?.total_revenue ?? 0)
     const todayProfit = Number(todaySummary?.total_profit ?? 0)
@@ -284,6 +297,20 @@ export default function Dashboard() {
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
             <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Operasional aktif</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => void refreshDashboard()}
+            disabled={loading || refreshing}
+            className="inline-flex min-w-12 items-center justify-center rounded-2xl border border-border bg-surface px-3 py-3 text-primary shadow-sm transition-colors hover:bg-primary/5 disabled:cursor-wait disabled:opacity-70 lg:hidden"
+            aria-label={loading || refreshing ? 'Menyinkronkan data' : 'Sinkronkan data sekarang'}
+            title={loading || refreshing ? 'Menyinkronkan data' : 'Sinkronkan data sekarang'}
+          >
+            {loading || refreshing ? (
+              <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+            ) : (
+              <RefreshCw className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
           {stats.lowStock > 0 && !lowStockDismissed && (
             <div

@@ -150,6 +150,16 @@ export default function App() {
     preloadPageChunks()
   }, [authLoading, user])
 
+  useEffect(() => {
+    if (authLoading || !user || !window.matchMedia('(max-width: 1023px)').matches) return
+
+    const timeout = window.setTimeout(() => {
+      void useAuthStore.getState().signOut()
+    }, 10 * 60 * 1000)
+
+    return () => window.clearTimeout(timeout)
+  }, [authLoading, user])
+
   if (!isSupabaseConfigured) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas p-6">

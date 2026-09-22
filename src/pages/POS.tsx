@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   X,
   Delete,
+  LoaderCircle,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
@@ -58,6 +59,7 @@ export default function POS() {
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -69,9 +71,18 @@ export default function POS() {
   }
 
   useEffect(() => {
-    const sync = () => {
+    const sync = async () => {
       setIsOnline(navigator.onLine)
-      if (navigator.onLine) syncQueuedTransactions().then(refreshQueue).catch(console.error)
+      if (!navigator.onLine) return
+      setIsSyncing(true)
+      try {
+        await syncQueuedTransactions()
+        await refreshQueue()
+      } catch (error) {
+        console.error('Offline transaction sync failed:', error)
+      } finally {
+        setIsSyncing(false)
+      }
     }
     refreshQueue().catch(console.error)
     window.addEventListener('online', sync)
@@ -316,8 +327,15 @@ export default function POS() {
   }
 
   async function retryOfflineTransactions() {
-    await retryFailedTransactions()
-    await refreshQueue()
+    setIsSyncing(true)
+    try {
+      await retryFailedTransactions()
+      await refreshQueue()
+    } catch (error) {
+      console.error('Retry offline transaction sync failed:', error)
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   return (
@@ -333,21 +351,27 @@ export default function POS() {
             />
             <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RADJA AKSESORIS</h2>
           </div>
-          {(queuedTransactions.length > 0 || !isOnline) && (
+          {(queuedTransactions.length > 0 || !isOnline || isSyncing) && (
             <button
               type="button"
-              onClick={queuedTransactions.some((transaction) => transaction.status === 'failed') ? retryOfflineTransactions : undefined}
+              onClick={isSyncing ? undefined : queuedTransactions.some((transaction) => transaction.status === 'failed') ? retryOfflineTransactions : undefined}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                !isOnline
+                isSyncing
+                  ? 'border-blue-200 bg-blue-50 text-blue-800'
+                  : !isOnline
                   ? 'border-amber-300 bg-amber-50 text-amber-800'
                   : queuedTransactions.some((transaction) => transaction.status === 'failed')
                     ? 'border-red-200 bg-red-50 text-red-700'
                     : 'border-teal-200 bg-teal-50 text-teal-800'
               }`}
-              title={!isOnline ? 'Offline' : 'Klik untuk mencoba ulang transaksi gagal'}
+              title={isSyncing ? 'Sinkronisasi transaksi sedang berjalan' : !isOnline ? 'Offline' : 'Klik untuk mencoba ulang transaksi gagal'}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : queuedTransactions.some((transaction) => transaction.status === 'failed') ? 'bg-red-500' : 'bg-teal-500'}`} />
-              {!isOnline ? 'Offline' : failedQueueCount > 0 ? `${failedQueueCount} gagal` : `${queuedTransactions.length} tersimpan`}
+              {isSyncing ? (
+                <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <span className={`h-1.5 w-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : queuedTransactions.some((transaction) => transaction.status === 'failed') ? 'bg-red-500' : 'bg-teal-500'}`} />
+              )}
+              {isSyncing ? 'Menyinkronkan...' : !isOnline ? 'Offline' : failedQueueCount > 0 ? `${failedQueueCount} gagal` : `${queuedTransactions.length} tersimpan`}
             </button>
           )}
           <button
