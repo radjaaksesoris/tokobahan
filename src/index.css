@@ -108,6 +108,14 @@ input, select, textarea {
     display: none;
   }
 
+  .tablet-landscape-toaster[data-sonner-toaster] {
+    top: 50%;
+    left: 50%;
+    width: min(80dvh, 26rem);
+    transform: translate(-50%, -50%) rotate(-90deg) !important;
+    transform-origin: center;
+  }
+
   .pos-landscape-content {
     position: fixed;
     z-index: 60;

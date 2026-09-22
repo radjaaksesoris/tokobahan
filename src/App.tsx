@@ -177,7 +177,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Toaster position="top-center" richColors closeButton />
+      <Toaster position="top-center" richColors closeButton className="tablet-landscape-toaster" />
       <RouteErrorBoundary>
         <Routes>
           <Route path="/login" element={<PageSuspense><Login /></PageSuspense>} />
