@@ -604,10 +604,6 @@ function KeypadPanel({
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">Cari SKU / barcode</p>
-          <p className="mt-1 min-h-7 break-all text-lg font-semibold text-white">{value || 'Masukkan angka'}</p>
-        </div>
         <div className="mt-4">
           <TextKeypad
             value={value}
@@ -638,21 +634,34 @@ function TextKeypad({
 
   return (
     <div className="mt-4 space-y-2">
-      <p className="text-xs font-medium text-stone-400">Ketik nama produk, SKU, atau barcode</p>
-      {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex justify-center gap-1.5">
-          {row.map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange(`${value}${key}`)}
-              className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/10 px-1 text-sm font-semibold text-white transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
-            >
-              {key}
-            </button>
-          ))}
-        </div>
-      ))}
+      <div className="flex justify-center gap-1.5">
+        {rows[0].map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(`${value}${key}`)}
+            className="min-h-10 min-w-0 flex-1 rounded-lg border border-accent/30 bg-accent/15 px-1 text-sm font-bold text-accent transition-colors hover:bg-accent/25 active:bg-accent active:text-ink"
+          >
+            {key}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2 border-t border-white/10 pt-3">
+        {rows.slice(1).map((row, rowIndex) => (
+          <div key={rowIndex} className="flex justify-center gap-1.5">
+            {row.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onChange(`${value}${key}`)}
+                className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/10 px-1 text-sm font-semibold text-white transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
       <div className="flex gap-1.5 pt-1">
         <button
           type="button"
