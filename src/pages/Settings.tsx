@@ -193,7 +193,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="border-b border-border pb-5">
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Kontrol administrator</p>
         <h2 className="text-3xl font-bold tracking-tight text-ink">Pengaturan</h2>
