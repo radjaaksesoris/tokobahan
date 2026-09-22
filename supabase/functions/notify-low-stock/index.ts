@@ -1,5 +1,18 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
-import webpush from 'npm:web-push@3'
+import { createClient } from '@supabase/supabase-js'
+import webpush from 'web-push'
+
+interface LowStockProduct {
+  id: string
+  name: string
+  stock: number
+  min_stock: number
+}
+
+function isExpiredPushError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('statusCode' in error)) return false
+  const statusCode = error.statusCode
+  return typeof statusCode === 'number' && [404, 410].includes(statusCode)
+}
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')?.trim() || ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim() || ''
@@ -70,7 +83,12 @@ Deno.serve(async (request) => {
 
   if (productsError) return jsonResponse({ error: productsError.message }, 500)
 
-  const lowStock = (products || []).filter((product) => Number(product.stock) <= Number(product.min_stock))
+  const lowStock = (products || []).map((product): LowStockProduct => ({
+    id: product.id,
+    name: product.name,
+    stock: Number(product.stock),
+    min_stock: Number(product.min_stock),
+  })).filter((product) => product.stock <= product.min_stock)
   if (lowStock.length === 0) return jsonResponse({ sent: 0 })
 
   const { data: subscriptions, error: subscriptionsError } = await supabase
@@ -94,7 +112,7 @@ Deno.serve(async (request) => {
         }))
         sent += 1
       } catch (error) {
-        if (error instanceof webpush.WebPushError && [404, 410].includes(error.statusCode)) {
+        if (isExpiredPushError(error)) {
           await supabase.from('push_subscriptions').delete().eq('id', subscription.id)
           removed += 1
           break
