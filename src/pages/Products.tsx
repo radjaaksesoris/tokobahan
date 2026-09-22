@@ -810,7 +810,14 @@ export default function Products() {
                 </div>
                 <div className="space-y-2">
                   {prices.map((pr, idx) => (
-                    <div key={idx} className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1fr)_auto] items-center gap-2">
+                    <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_auto] items-center gap-2">
+                      <Input
+                        className="flex-1"
+                        placeholder="Harga"
+                        inputMode="numeric"
+                        value={formatCurrencyInput(pr.price)}
+                        onChange={(e) => updatePrice(idx, 'price', parseCurrencyInput(e.target.value))}
+                      />
                       <Select
                         className="min-w-0"
                         value={pr.unit}
@@ -819,13 +826,6 @@ export default function Products() {
                         native
                         disabled={editingPricesOnly}
                         aria-label={`Satuan harga jual ${idx + 1}`}
-                      />
-                      <Input
-                        className="flex-1"
-                        placeholder="Harga"
-                        inputMode="numeric"
-                        value={formatCurrencyInput(pr.price)}
-                        onChange={(e) => updatePrice(idx, 'price', parseCurrencyInput(e.target.value))}
                       />
                       {prices.length > 1 && (
                         <button
