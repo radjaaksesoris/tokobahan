@@ -171,7 +171,7 @@ export default function StockHistory() {
                         <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * PAGE_SIZE + index + 1}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
                           <span className="sm:hidden">{format(new Date(receipt.received_at), 'dd MMM yy', { locale: localeId })}</span>
-                          <span className="hidden sm:inline">{format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}</span>
+                          <span className="hidden sm:inline">{format(new Date(receipt.received_at), 'dd MMM yy', { locale: localeId })}</span>
                         </td>
                         <td className="truncate px-1 py-2 text-center font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
                         <td className="truncate px-1 py-2 text-center text-muted-foreground sm:px-3">{receipt.vendor?.name || '-'}</td>
