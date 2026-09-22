@@ -139,12 +139,8 @@ export default function StockHistory() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loading ? <div className="flex justify-center py-10"><LoadingDots className="text-primary" /></div> : history.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">Belum ada riwayat input stok pada tanggal tersebut.</p>
-          ) : (
-            <>
-              <div className="overflow-hidden">
-                <table className="w-full table-fixed text-[11px] sm:table-auto sm:text-sm">
+          <div className="overflow-hidden">
+            <table className="w-full table-fixed text-[11px] sm:table-auto sm:text-sm">
                   <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
@@ -158,7 +154,19 @@ export default function StockHistory() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {history.map((receipt, index) => (
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="h-24 text-center">
+                          <LoadingDots className="text-primary" />
+                        </td>
+                      </tr>
+                    ) : history.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="h-24 text-center text-sm text-muted-foreground">
+                          Belum ada riwayat input stok pada tanggal tersebut.
+                        </td>
+                      </tr>
+                    ) : history.map((receipt, index) => (
                       <tr key={receipt.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
                         <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * PAGE_SIZE + index + 1}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
@@ -179,17 +187,15 @@ export default function StockHistory() {
                     ))}
                   </tbody>
                   <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={4} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
-                </table>
+            </table>
+          </div>
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || loading}><ChevronLeft className="h-4 w-4" /> Sebelumnya</Button>
+              <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>Berikutnya <ChevronRight className="h-4 w-4" /></Button>
               </div>
-              <div className="flex items-center justify-between border-t border-border px-4 py-3">
-                <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || loading}><ChevronLeft className="h-4 w-4" /> Sebelumnya</Button>
-                  <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>Berikutnya <ChevronRight className="h-4 w-4" /></Button>
-                </div>
-              </div>
-            </>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
