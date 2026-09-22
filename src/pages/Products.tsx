@@ -241,6 +241,13 @@ export default function Products() {
     setPrices(prices.filter((_, i) => i !== idx))
   }
 
+  function handleStockUnitChange(value: string) {
+    if (!isUnitType(value)) return
+    const nextUnit = value as UnitType
+    setStockUnit(nextUnit)
+    setCostUnit(nextUnit)
+  }
+
   async function handleSave() {
     if (!name.trim()) {
       toast.error('Nama produk wajib diisi')
@@ -696,7 +703,7 @@ export default function Products() {
                       className="min-w-0 w-full"
                       value={stockUnit}
                       options={unitOptions}
-                      onChange={(value) => setStockUnit(value as UnitType)}
+                      onChange={handleStockUnitChange}
                       native
                       disabled={Boolean(editing)}
                       aria-label="Satuan stok"
