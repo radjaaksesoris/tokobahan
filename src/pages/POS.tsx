@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import {
   Search,
+  ArrowLeft,
   Plus,
   Minus,
   Trash2,
@@ -25,6 +27,7 @@ import { notifyLowStockPush } from '@/lib/notifications'
 type PaymentMethod = 'cash' | 'qris'
 
 export default function POS() {
+  const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -246,6 +249,16 @@ export default function POS() {
             />
             <h2 className="text-3xl font-bold tracking-tight text-ink">RADJA AKSESORIS</h2>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Kembali ke Dashboard"
+            title="Kembali ke Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </button>
         </div>
         <div className="mb-3 flex gap-2">
           <div ref={searchFilterRef} className="relative flex-1">
