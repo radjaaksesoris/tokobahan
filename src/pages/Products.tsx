@@ -352,22 +352,22 @@ export default function Products() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs sm:min-w-[720px] sm:table-auto sm:text-sm">
+            <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-[7%] px-0.5 py-2 font-semibold sm:w-12 sm:px-3">No.</th>
-                  <th className="w-[27%] px-0.5 py-2 font-semibold sm:w-auto sm:px-3">Produk</th>
-                  <th className="w-[14%] px-0.5 py-2 font-semibold sm:w-auto sm:px-3">Stok</th>
-                  <th className="w-[18%] px-0.5 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
-                  <th className="w-[20%] px-0.5 py-2 font-semibold sm:w-auto sm:px-3">Harga jual</th>
-                  <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold sm:w-28 sm:px-3">Aksi</th>
+                  <th className="w-[7%] px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
+                  <th className="w-[27%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
+                  <th className="w-[14%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
+                  <th className="w-[18%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
+                  <th className="w-[20%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
+                  <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {products.map((p, index) => (
                   <tr key={p.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
-                    <td className="px-0.5 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * pageSize + index + 1}</td>
-                    <td className="min-w-0 px-0.5 py-2 text-center sm:px-3">
+                    <td className="px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">{page * pageSize + index + 1}</td>
+                    <td className="min-w-0 px-0.5 py-2 text-center lg:px-3">
                       <div className="flex min-w-0 items-center justify-center">
                         <div className="min-w-0 text-center">
                           <p className="truncate font-medium text-ink/90">{p.name}</p>
@@ -375,33 +375,33 @@ export default function Products() {
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
+                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
                         {Math.floor(p.stock / (p.stock_conversion || 1))}
                       </span>{' '}
                       {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">
-                      {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground sm:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
+                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">
+                      {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
                     </td>
-                    <td className="min-w-0 px-0.5 py-2 text-center sm:px-3">
+                    <td className="min-w-0 px-0.5 py-2 text-center lg:px-3">
                       <div className="flex flex-wrap justify-center gap-1">
                         {p.prices?.map((pr) => (
                           <span key={pr.unit} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                            <span className="hidden sm:inline">{UNIT_LABELS[pr.unit] || pr.unit}: </span>{formatCurrency(pr.price)}
+                            <span className="hidden lg:inline">{UNIT_LABELS[pr.unit] || pr.unit}: </span>{formatCurrency(pr.price)}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center sm:px-3">
-                      <div className="flex justify-center gap-0 sm:gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
+                    <td className="whitespace-nowrap px-0.5 py-2 text-center lg:px-3">
+                      <div className="flex justify-center gap-0 lg:gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 lg:h-7 lg:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary sm:h-7 sm:w-7" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary lg:h-7 lg:w-7" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
                           <Boxes className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 lg:h-7 lg:w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
                           <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         </Button>
                       </div>
