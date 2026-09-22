@@ -23,6 +23,17 @@ import {
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
+import {
+  createOfflineInvoice,
+  enqueueTransaction,
+  getQueuedTransactions,
+  isOfflineError,
+  removeQueuedTransaction,
+  retryFailedTransactions,
+  subscribeOfflineTransactions,
+  syncQueuedTransactions,
+  type QueuedTransaction,
+} from '@/lib/offlineTransactions'
 
 type PaymentMethod = 'cash' | 'qris'
 
@@ -35,7 +46,6 @@ export default function POS() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<UnitType>('satuan')
   const [qty, setQty] = useState(1)
-  const [qtyInput, setQtyInput] = useState('1')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
@@ -46,10 +56,36 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState('')
   const [showQtyKeypad, setShowQtyKeypad] = useState(false)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
+  const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
+  const failedQueueCount = queuedTransactions.filter((transaction) => transaction.status === 'failed').length
+
+  async function refreshQueue() {
+    setQueuedTransactions(await getQueuedTransactions())
+  }
+
+  useEffect(() => {
+    const sync = () => {
+      setIsOnline(navigator.onLine)
+      if (navigator.onLine) syncQueuedTransactions().then(refreshQueue).catch(console.error)
+    }
+    refreshQueue().catch(console.error)
+    window.addEventListener('online', sync)
+    window.addEventListener('offline', sync)
+    const interval = window.setInterval(sync, 30_000)
+    const unsubscribe = subscribeOfflineTransactions(() => refreshQueue().catch(console.error))
+    sync()
+    return () => {
+      window.removeEventListener('online', sync)
+      window.removeEventListener('offline', sync)
+      window.clearInterval(interval)
+      unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(loadProducts, 250)
@@ -137,8 +173,6 @@ export default function POS() {
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
-    setQtyInput('')
-    setShowQtyKeypad(true)
   }
 
   function confirmAdd() {
@@ -183,13 +217,6 @@ export default function POS() {
       return
     }
 
-    const { data: invoiceNo, error: invoiceError } = await supabase.rpc('next_invoice_number')
-    if (invoiceError || !invoiceNo) {
-      toast.error(invoiceError?.message || 'Gagal membuat nomor transaksi')
-      setCheckoutLoading(false)
-      return
-    }
-
     const saleItems = items.map((i) => ({
       product_id: i.product.id,
       product_name: i.product.name,
@@ -202,16 +229,64 @@ export default function POS() {
       line_profit: i.line_profit,
     }))
 
+    let invoiceNo: string | null = null
+    if (isOnline) {
+      const { data, error: invoiceError } = await supabase.rpc('next_invoice_number')
+      if (!invoiceError && data) invoiceNo = data
+      else if (!isOfflineError(invoiceError)) {
+        toast.error(invoiceError?.message || 'Gagal membuat nomor transaksi')
+        setCheckoutLoading(false)
+        return
+      }
+    }
+    invoiceNo ||= createOfflineInvoice()
+
+    let queuedTransaction: QueuedTransaction
+    try {
+      queuedTransaction = await enqueueTransaction({
+        invoiceNo,
+        totalAmount: totals.subtotal,
+        totalCost: totals.totalCost,
+        totalProfit: totals.totalProfit,
+        paymentMethod,
+        cashierId: profile?.id || null,
+        items: saleItems,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal menyimpan transaksi lokal')
+      setCheckoutLoading(false)
+      return
+    }
+    if (!isOnline) {
+      toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+      clearCart()
+      setShowPaymentModal(false)
+      setCashReceived('')
+      setShowCart(false)
+      setCheckoutLoading(false)
+      return
+    }
+
     const { error: checkoutError } = await supabase.rpc('checkout_sale', {
-      p_invoice_no: invoiceNo,
-      p_total_amount: totals.subtotal,
-      p_total_cost: totals.totalCost,
-      p_total_profit: totals.totalProfit,
-      p_payment_method: paymentMethod,
-      p_cashier_id: profile?.id || null,
-      p_items: saleItems,
+          p_invoice_no: invoiceNo,
+          p_total_amount: totals.subtotal,
+          p_total_cost: totals.totalCost,
+          p_total_profit: totals.totalProfit,
+          p_payment_method: paymentMethod,
+          p_cashier_id: profile?.id || null,
+          p_items: saleItems,
     })
     if (checkoutError) {
+      if (isOfflineError(checkoutError)) {
+        toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+        clearCart()
+        setShowPaymentModal(false)
+        setCashReceived('')
+        setShowCart(false)
+        setCheckoutLoading(false)
+        return
+      }
+      await removeQueuedTransaction(queuedTransaction.id)
       const isMissingCheckoutFunction =
         checkoutError.code === 'PGRST202' ||
         checkoutError.message.includes('Could not find the function public.checkout_sale')
@@ -227,6 +302,7 @@ export default function POS() {
       return
     }
 
+    await removeQueuedTransaction(queuedTransaction.id)
     toast.success(`Transaksi ${invoiceNo} berhasil!`)
     clearCart()
     setShowPaymentModal(false)
@@ -237,6 +313,11 @@ export default function POS() {
       console.error('Failed to send low-stock push notifications:', error)
     })
     setCheckoutLoading(false)
+  }
+
+  async function retryOfflineTransactions() {
+    await retryFailedTransactions()
+    await refreshQueue()
   }
 
   return (
@@ -252,6 +333,23 @@ export default function POS() {
             />
             <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RADJA AKSESORIS</h2>
           </div>
+          {(queuedTransactions.length > 0 || !isOnline) && (
+            <button
+              type="button"
+              onClick={queuedTransactions.some((transaction) => transaction.status === 'failed') ? retryOfflineTransactions : undefined}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                !isOnline
+                  ? 'border-amber-300 bg-amber-50 text-amber-800'
+                  : queuedTransactions.some((transaction) => transaction.status === 'failed')
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : 'border-teal-200 bg-teal-50 text-teal-800'
+              }`}
+              title={!isOnline ? 'Offline' : 'Klik untuk mencoba ulang transaksi gagal'}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : queuedTransactions.some((transaction) => transaction.status === 'failed') ? 'bg-red-500' : 'bg-teal-500'}`} />
+              {!isOnline ? 'Offline' : failedQueueCount > 0 ? `${failedQueueCount} gagal` : `${queuedTransactions.length} tersimpan`}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigate('/')}
@@ -442,11 +540,7 @@ export default function POS() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
-                    const nextQty = Math.max(1, qty - 1)
-                    setQty(nextQty)
-                    setQtyInput(String(nextQty))
-                  }}
+                  onClick={() => setQty(Math.max(1, qty - 1))}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -454,51 +548,23 @@ export default function POS() {
                   type="number"
                   min={1}
                   max={selectedProduct.stock}
-                  value={qtyInput}
+                  value={qty}
                   readOnly
                   inputMode="none"
-                  onClick={() => {
-                    if (!showQtyKeypad) {
-                      setQtyInput('')
-                      setShowQtyKeypad(true)
-                    }
-                  }}
-                  placeholder="0"
+                  onClick={() => setShowQtyKeypad(true)}
+                  onChange={(e) =>
+                    setQty(Math.min(
+                      selectedProduct.stock,
+                      Math.max(1, parseInt(e.target.value) || 1)
+                    ))
+                  }
                   className="w-20 text-center text-lg font-bold"
                 />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const nextQty = Math.min(selectedProduct.stock, qty + 1)
-                    setQty(nextQty)
-                    setQtyInput(String(nextQty))
-                  }}
-                  disabled={qty >= selectedProduct.stock}
-                >
+                <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
+                disabled={qty >= selectedProduct.stock}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-
-              {showQtyKeypad && (
-                <NumericKeypad
-                  value={qtyInput}
-                  title="Masukkan jumlah"
-                  max={selectedProduct.stock}
-                  onChange={(value) => {
-                    setQtyInput(value)
-                    if (value) {
-                      setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value))))
-                    }
-                  }}
-                  onClose={() => {
-                    const nextQty = qtyInput ? Number(qtyInput) : 1
-                    setQty(Math.max(1, Math.min(selectedProduct.stock, nextQty)))
-                    setQtyInput(String(Math.max(1, Math.min(selectedProduct.stock, nextQty))))
-                    setShowQtyKeypad(false)
-                  }}
-                />
-              )}
 
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
@@ -517,12 +583,21 @@ export default function POS() {
               </div>
             </CardContent>
           </Card>
+          {showQtyKeypad && (
+            <NumericKeypad
+              value={String(qty)}
+              title="Jumlah produk"
+              max={selectedProduct.stock}
+              onChange={(value) => setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value) || 1)))}
+              onClose={() => setShowQtyKeypad(false)}
+            />
+          )}
         </div>
       )}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-2 sm:items-center sm:p-4">
-          <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col rounded-2xl">
-            <CardContent className="min-h-0 flex-1 overflow-y-auto p-5">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+          <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+            <CardContent className="p-5">
               <div className="mb-4">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Pembayaran tunai</p>
                 <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
@@ -587,17 +662,15 @@ function NumericKeypad({
   onClose: () => void
 }) {
   function append(digit: string) {
-    const next = `${value}${digit}`.replace(/^0+(?=\d)/, '') || '0'
-    if (!max || Number(next) <= max) {
-      onChange(next)
-    }
+    const next = `${value}${digit}`.replace(/^0+(?=\d)/, '')
+    if (!max || Number(next) <= max) onChange(next)
   }
 
   return (
-    <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{title}</p>
-        <button type="button" className="rounded-lg px-2 py-1 text-xs font-semibold text-teal-700 hover:bg-white" onClick={onClose}>
+    <div className="mt-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">{title}</p>
+        <button type="button" className="text-xs font-medium text-teal-700" onClick={onClose}>
           Selesai
         </button>
       </div>
@@ -607,11 +680,7 @@ function NumericKeypad({
             key={key}
             type="button"
             onClick={() => key === '⌫' ? onChange(value.slice(0, -1)) : append(key)}
-            className={`h-12 rounded-xl border text-lg font-semibold shadow-sm transition-colors active:scale-[0.98] ${
-              key === '⌫'
-                ? 'border-teal-200 bg-white text-teal-800 hover:bg-teal-100'
-                : 'border-white bg-white text-ink hover:border-teal-200 hover:bg-teal-100'
-            }`}
+            className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-ink/85 transition-colors hover:bg-slate-100 active:bg-slate-200"
           >
             {key}
           </button>

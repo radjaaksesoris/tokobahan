@@ -40,6 +40,9 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 - **Icons**: Lucide React
 - **Routing**: React Router 7
 - **PWA**: Installable di HP/desktop, offline app shell, dan service worker untuk caching aset
+- **Offline checkout**: Transaksi kasir disimpan lebih dulu di IndexedDB dan dikirim ulang
+  otomatis saat online (maksimal 5 transaksi per batch). Status pending/gagal terlihat di POS;
+  transaksi gagal dapat dicoba ulang dari indikator status.
 
 ## Setup Lokal
 
@@ -112,6 +115,9 @@ Buka http://localhost:5173
 ### PWA
 
 Build production (`npm run build`) sudah menghasilkan aplikasi yang bisa dipasang dari browser melalui opsi **Install app / Add to Home Screen**. Service worker melakukan cache app shell dan menampilkan shell terakhir saat koneksi terputus. Untuk menguji mode offline, gunakan `npm run preview` lalu buka melalui HTTPS atau `localhost`.
+Checkout offline membutuhkan browser dengan IndexedDB dan sesi kasir yang masih valid. Nomor
+invoice offline memakai prefix `OFF-`; RPC `checkout_sale` tetap menjadi satu-satunya jalur
+penyimpanan server dan validasi stok.
 
 ## Deploy ke GitHub + Vercel (Recommended)
 
