@@ -35,6 +35,7 @@ export default function POS() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<UnitType>('satuan')
   const [qty, setQty] = useState(1)
+  const [qtyInput, setQtyInput] = useState('1')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
@@ -136,6 +137,7 @@ export default function POS() {
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
+    setQtyInput('1')
   }
 
   function confirmAdd() {
@@ -447,16 +449,13 @@ export default function POS() {
                   type="number"
                   min={1}
                   max={selectedProduct.stock}
-                  value={qty}
+                  value={qtyInput || '1'}
                   readOnly
                   inputMode="none"
-                  onClick={() => setShowQtyKeypad(true)}
-                  onChange={(e) =>
-                    setQty(Math.min(
-                      selectedProduct.stock,
-                      Math.max(1, parseInt(e.target.value) || 1)
-                    ))
-                  }
+                  onClick={() => {
+                    setQtyInput('')
+                    setShowQtyKeypad(true)
+                  }}
                   className="w-20 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
@@ -464,6 +463,22 @@ export default function POS() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+
+              {showQtyKeypad && (
+                <NumericKeypad
+                  value={qtyInput}
+                  title="Masukkan jumlah"
+                  max={selectedProduct.stock}
+                  onChange={(value) => {
+                    setQtyInput(value)
+                    if (value) setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value))))
+                  }}
+                  onClose={() => {
+                    setQtyInput(String(qty))
+                    setShowQtyKeypad(false)
+                  }}
+                />
+              )}
 
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
@@ -482,15 +497,6 @@ export default function POS() {
               </div>
             </CardContent>
           </Card>
-          {showQtyKeypad && (
-            <NumericKeypad
-              value={String(qty)}
-              title="Jumlah produk"
-              max={selectedProduct.stock}
-              onChange={(value) => setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value) || 1)))}
-              onClose={() => setShowQtyKeypad(false)}
-            />
-          )}
         </div>
       )}
       {showPaymentModal && (
@@ -566,10 +572,10 @@ function NumericKeypad({
   }
 
   return (
-    <div className="mt-4">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">{title}</p>
-        <button type="button" className="text-xs font-medium text-teal-700" onClick={onClose}>
+    <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{title}</p>
+        <button type="button" className="rounded-lg px-2 py-1 text-xs font-semibold text-teal-700 hover:bg-white" onClick={onClose}>
           Selesai
         </button>
       </div>
@@ -579,7 +585,11 @@ function NumericKeypad({
             key={key}
             type="button"
             onClick={() => key === '⌫' ? onChange(value.slice(0, -1)) : append(key)}
-            className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-ink/85 transition-colors hover:bg-slate-100 active:bg-slate-200"
+            className={`h-12 rounded-xl border text-lg font-semibold shadow-sm transition-colors active:scale-[0.98] ${
+              key === '⌫'
+                ? 'border-teal-200 bg-white text-teal-800 hover:bg-teal-100'
+                : 'border-white bg-white text-ink hover:border-teal-200 hover:bg-teal-100'
+            }`}
           >
             {key}
           </button>
