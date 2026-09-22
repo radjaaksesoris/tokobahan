@@ -16,7 +16,7 @@ import {
   ShoppingCart,
   CheckCircle2,
   X,
-  Calculator,
+  Delete,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
@@ -114,6 +114,7 @@ export default function POS() {
       return
     }
     setSelectedProduct(product)
+    setShowKeypadPanel(false)
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
@@ -353,7 +354,6 @@ export default function POS() {
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
-            onToggleKeypad={() => setShowKeypadPanel(true)}
             loading={checkoutLoading}
           />
         )}
@@ -376,7 +376,6 @@ export default function POS() {
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
-            onToggleKeypad={() => setShowKeypadPanel(true)}
             loading={checkoutLoading}
           />
         </div>
@@ -597,13 +596,80 @@ function KeypadPanel({
           <p className="mt-1 min-h-7 break-all text-lg font-semibold text-white">{value || 'Masukkan angka'}</p>
         </div>
         <div className="mt-4">
-          <NumericKeypad
+          <TextKeypad
             value={value}
-            title="Gunakan keypad di bawah"
             onChange={onChange}
             onClose={onClose}
           />
         </div>
+      </div>
+    </div>
+  )
+}
+
+function TextKeypad({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onClose: () => void
+}) {
+  const rows = [
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ]
+
+  return (
+    <div className="mt-4 space-y-2">
+      <p className="text-xs font-medium text-stone-400">Ketik nama produk, SKU, atau barcode</p>
+      {rows.map((row, rowIndex) => (
+        <div key={rowIndex} className="flex justify-center gap-1.5">
+          {row.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange(`${value}${key}`)}
+              className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/10 px-1 text-sm font-semibold text-white transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+      ))}
+      <div className="flex gap-1.5 pt-1">
+        <button
+          type="button"
+          onClick={() => onChange(value.slice(0, -1))}
+          className="inline-flex min-h-11 w-16 items-center justify-center rounded-lg border border-white/10 bg-white/10 text-stone-200 transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
+          aria-label="Hapus karakter terakhir"
+        >
+          <Delete className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(`${value} `)}
+          className="min-h-11 flex-1 rounded-lg border border-white/10 bg-white/10 text-xs font-semibold text-stone-200 transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
+        >
+          Spasi
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="min-h-11 w-16 rounded-lg border border-white/10 bg-white/10 text-xs font-semibold text-stone-200 transition-colors hover:bg-white/20 active:bg-accent active:text-ink"
+        >
+          Bersihkan
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="min-h-11 w-16 rounded-lg bg-accent text-xs font-bold text-ink transition-colors hover:bg-amber-300"
+        >
+          Selesai
+        </button>
       </div>
     </div>
   )
@@ -617,7 +683,6 @@ function CartPanel({
   updateQuantity,
   removeItem,
   onCheckout,
-  onToggleKeypad,
   loading,
 }: {
   items: ReturnType<typeof useCartStore.getState>['items']
@@ -627,25 +692,13 @@ function CartPanel({
   updateQuantity: (id: string, unit: UnitType, q: number) => void
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
-  onToggleKeypad: () => void
   loading: boolean
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
-          <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
-        </div>
-        <button
-          type="button"
-          onClick={onToggleKeypad}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/40 bg-accent px-3 text-xs font-bold text-ink transition-colors hover:bg-amber-300"
-          aria-label="Buka keypad kasir"
-        >
-          <Calculator className="h-4 w-4" aria-hidden="true" />
-          Keypad
-        </button>
+      <div className="border-b border-white/10 px-4 py-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
+        <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
