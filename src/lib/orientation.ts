@@ -32,13 +32,14 @@ export function setScreenOrientationPreference(preference: ScreenOrientationPref
 
 export async function applyScreenOrientation(preference: ScreenOrientationPreference) {
   const orientation = typeof screen !== 'undefined' ? screen.orientation as ScreenOrientationWithLock : undefined
-  if (!orientation) {
-    throw new Error('Browser tablet tidak mendukung pengaturan orientasi layar')
-  }
 
   if (preference === 'any') {
-    if (typeof orientation.unlock === 'function') orientation.unlock()
+    if (orientation && typeof orientation.unlock === 'function') orientation.unlock()
     return
+  }
+
+  if (!orientation) {
+    throw new Error('Browser tablet tidak mendukung pengaturan orientasi layar')
   }
 
   if (typeof orientation.lock !== 'function') {

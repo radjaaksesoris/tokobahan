@@ -169,6 +169,14 @@ export default function Settings() {
   }
 
   async function changeScreenOrientation(preference: ScreenOrientationPreference) {
+    if (preference === 'any') {
+      setScreenOrientationPreference(preference)
+      setScreenOrientation(preference)
+      await applyScreenOrientation(preference)
+      toast.success('Auto rotate dipilih. Aktifkan Rotasi otomatis di pengaturan tablet.')
+      return
+    }
+
     try {
       await applyScreenOrientation(preference)
       setScreenOrientationPreference(preference)
@@ -263,8 +271,8 @@ export default function Settings() {
           <div>
             <p className="text-sm font-medium text-ink">Putar layar otomatis</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Pilih Auto rotate agar tampilan mengikuti posisi tablet. Mode portrait atau landscape
-              hanya tersedia saat aplikasi dibuka dalam mode fullscreen.
+              Auto rotate mengikuti pengaturan rotasi tablet, bukan dikendalikan browser. Aktifkan
+              <strong> Rotasi otomatis</strong> di panel cepat/pengaturan layar tablet.
             </p>
           </div>
           <Select
