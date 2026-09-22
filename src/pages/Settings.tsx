@@ -30,6 +30,7 @@ export default function Settings() {
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [vendorName, setVendorName] = useState('')
   const [vendorLoading, setVendorLoading] = useState(false)
+  const [vendorsOpen, setVendorsOpen] = useState(false)
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -262,9 +263,21 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Daftar Vendor</CardTitle>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={vendorsOpen}
+            aria-controls="vendors-content"
+            onClick={() => setVendorsOpen((open) => !open)}
+          >
+            <CardTitle className="text-base">Daftar Vendor</CardTitle>
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${vendorsOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {vendorsOpen && <CardContent id="vendors-content" className="space-y-4">
           <div className="flex gap-2">
             <Input
               value={vendorName}
@@ -277,7 +290,7 @@ export default function Settings() {
           {vendors.length === 0 ? (
             <p className="text-sm text-muted-foreground">Belum ada vendor tersimpan.</p>
           ) : (
-            <ul className="divide-y divide-border rounded-xl border border-border">
+            <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border">
               {vendors.map((vendor) => (
                 <li key={vendor.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                   <span>{vendor.name}</span>
@@ -288,7 +301,7 @@ export default function Settings() {
               ))}
             </ul>
           )}
-        </CardContent>
+        </CardContent>}
       </Card>
 
       <Card>
