@@ -3,7 +3,7 @@ export type ScreenOrientationPreference = 'any' | 'portrait' | 'landscape'
 const SCREEN_ORIENTATION_KEY = 'screen-orientation-preference'
 
 type ScreenOrientationWithLock = ScreenOrientation & {
-  lock?: (orientation: OrientationLockType) => Promise<void>
+  lock?: (orientation: 'portrait' | 'landscape') => Promise<void>
 }
 
 export const screenOrientationOptions: Array<{
