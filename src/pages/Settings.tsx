@@ -181,11 +181,7 @@ export default function Settings() {
       await applyScreenOrientation(preference)
       setScreenOrientationPreference(preference)
       setScreenOrientation(preference)
-      toast.success(
-        preference === 'any'
-          ? 'Auto rotate diaktifkan'
-          : `Orientasi ${preference === 'portrait' ? 'portrait' : 'landscape'} diterapkan`,
-      )
+      toast.success(`Orientasi ${preference === 'portrait' ? 'portrait' : 'landscape'} diterapkan`)
     } catch (error) {
       setScreenOrientation(getScreenOrientationPreference())
       toast.error(error instanceof Error ? error.message : 'Gagal mengubah orientasi layar')
