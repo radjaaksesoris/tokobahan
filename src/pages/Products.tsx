@@ -369,9 +369,6 @@ export default function Products() {
                     <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * pageSize + index + 1}</td>
                     <td className="min-w-0 px-1 py-2 text-center sm:px-3">
                       <div className="flex min-w-0 items-center justify-center gap-2.5">
-                        <div className="max-sm:hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary sm:flex">
-                          {p.name.charAt(0)}
-                        </div>
                         <div className="min-w-0 text-center">
                           <p className="truncate font-medium text-ink/90">{p.name}</p>
                           {p.sku && <p className="truncate text-[11px] text-muted-foreground">SKU: {p.sku}</p>}
