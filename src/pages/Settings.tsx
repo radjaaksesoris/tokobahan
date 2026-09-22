@@ -30,7 +30,6 @@ export default function Settings() {
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [vendorName, setVendorName] = useState('')
   const [vendorLoading, setVendorLoading] = useState(false)
-  const [vendorsOpen, setVendorsOpen] = useState(false)
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -201,83 +200,72 @@ export default function Settings() {
         <p className="mt-1 text-sm text-muted-foreground">Pengaturan operasional khusus administrator.</p>
       </div>
 
-      <Card className="border-red-200">
-        <CardHeader>
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-3 text-left"
-            aria-expanded={resetOpen}
-            aria-controls="reset-database-content"
-            onClick={() => setResetOpen((open) => !open)}
-          >
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <Database className="h-5 w-5" />
-              Reset Database Operasional
-            </CardTitle>
-            <ChevronDown
-              className={`h-5 w-5 shrink-0 text-red-700 transition-transform ${resetOpen ? 'rotate-180' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
-        </CardHeader>
-        {resetOpen && <CardContent id="reset-database-content" className="space-y-4">
-          <div className="flex gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
-            <p>
-              Tindakan ini menghapus semua produk, kategori, transaksi, dan detail transaksi.
-              Akun login dan profil admin tidak ikut dihapus. Tindakan ini tidak dapat dibatalkan.
-            </p>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Password admin</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Masukkan password akun Anda"
-              autoComplete="current-password"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              Ketik <strong>RESET SEMUA</strong>
-            </label>
-            <Input
-              value={confirmation}
-              onChange={(event) => setConfirmation(event.target.value)}
-              placeholder="RESET SEMUA"
-              autoComplete="off"
-            />
-          </div>
-          <Button
-            variant="destructive"
-            className="w-full"
-            disabled={resetting || !password || confirmation !== 'RESET SEMUA'}
-            onClick={resetDatabase}
-          >
-            {resetting && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
-            {resetting ? 'Mereset database...' : 'Reset Semua Data'}
-          </Button>
-        </CardContent>}
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-red-200">
+          <CardHeader>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 text-left"
+              aria-expanded={resetOpen}
+              aria-controls="reset-database-content"
+              onClick={() => setResetOpen((open) => !open)}
+            >
+              <CardTitle className="flex items-center gap-2 text-red-700">
+                <Database className="h-5 w-5" />
+                Reset Database Operasional
+              </CardTitle>
+              <ChevronDown
+                className={`h-5 w-5 shrink-0 text-red-700 transition-transform ${resetOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+          </CardHeader>
+          {resetOpen && <CardContent id="reset-database-content" className="space-y-4">
+            <div className="flex gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <p>
+                Tindakan ini menghapus semua produk, kategori, transaksi, dan detail transaksi.
+                Akun login dan profil admin tidak ikut dihapus. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Password admin</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Masukkan password akun Anda"
+                autoComplete="current-password"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Ketik <strong>RESET SEMUA</strong>
+              </label>
+              <Input
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                placeholder="RESET SEMUA"
+                autoComplete="off"
+              />
+            </div>
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={resetting || !password || confirmation !== 'RESET SEMUA'}
+              onClick={resetDatabase}
+            >
+              {resetting && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
+              {resetting ? 'Mereset database...' : 'Reset Semua Data'}
+            </Button>
+          </CardContent>}
+        </Card>
 
-      <Card>
+        <Card>
         <CardHeader>
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-3 text-left"
-            aria-expanded={vendorsOpen}
-            aria-controls="vendors-content"
-            onClick={() => setVendorsOpen((open) => !open)}
-          >
-            <CardTitle className="text-base">Daftar Vendor</CardTitle>
-            <ChevronDown
-              className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${vendorsOpen ? 'rotate-180' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
+          <CardTitle className="text-base">Daftar Vendor</CardTitle>
         </CardHeader>
-        {vendorsOpen && <CardContent id="vendors-content" className="space-y-4">
+        <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
               value={vendorName}
@@ -301,8 +289,9 @@ export default function Settings() {
               ))}
             </ul>
           )}
-        </CardContent>}
-      </Card>
+        </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
