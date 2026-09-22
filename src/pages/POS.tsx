@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   CheckCircle2,
   X,
+  Calculator,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
@@ -38,6 +39,7 @@ export default function POS() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
   const [showQtyKeypad, setShowQtyKeypad] = useState(false)
+  const [showKeypadPanel, setShowKeypadPanel] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -237,6 +239,10 @@ export default function POS() {
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
               value={search}
+              readOnly
+              inputMode="none"
+              onClick={() => setShowKeypadPanel(true)}
+              onFocus={() => setShowKeypadPanel(true)}
               onChange={(e) => {
                 setSearch(e.target.value)
                 setActiveProductIndex(-1)
@@ -329,16 +335,28 @@ export default function POS() {
 
       {/* Cart - desktop */}
       <div className="pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)]">
-        <CartPanel
-          items={items}
-          totals={totals}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          updateQuantity={updateQuantity}
-          removeItem={removeItem}
-          onCheckout={handleCheckout}
-          loading={checkoutLoading}
-        />
+        {showKeypadPanel ? (
+          <KeypadPanel
+            value={search}
+            onChange={(value) => {
+              setSearch(value)
+              setActiveProductIndex(-1)
+            }}
+            onClose={() => setShowKeypadPanel(false)}
+          />
+        ) : (
+          <CartPanel
+            items={items}
+            totals={totals}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            updateQuantity={updateQuantity}
+            removeItem={removeItem}
+            onCheckout={handleCheckout}
+            onToggleKeypad={() => setShowKeypadPanel(true)}
+            loading={checkoutLoading}
+          />
+        )}
       </div>
 
       {/* Cart - mobile sheet */}
@@ -358,6 +376,7 @@ export default function POS() {
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
+            onToggleKeypad={() => setShowKeypadPanel(true)}
             loading={checkoutLoading}
           />
         </div>
@@ -406,6 +425,7 @@ export default function POS() {
                   max={selectedProduct.stock}
                   value={qty}
                   readOnly
+                  inputMode="none"
                   onClick={() => setShowQtyKeypad(true)}
                   onChange={(e) =>
                     setQty(Math.min(
@@ -545,6 +565,50 @@ function NumericKeypad({
   )
 }
 
+function KeypadPanel({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="keypad-panel flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Input manual</p>
+          <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keypad Kasir</h3>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 px-3 text-xs font-semibold text-stone-200 transition-colors hover:bg-white/10"
+          aria-label="Kembali ke transaksi"
+        >
+          <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+          Transaksi
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/10 px-3 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">Cari SKU / barcode</p>
+          <p className="mt-1 min-h-7 break-all text-lg font-semibold text-white">{value || 'Masukkan angka'}</p>
+        </div>
+        <div className="mt-4">
+          <NumericKeypad
+            value={value}
+            title="Gunakan keypad di bawah"
+            onChange={onChange}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function CartPanel({
   items,
   totals,
@@ -553,6 +617,7 @@ function CartPanel({
   updateQuantity,
   removeItem,
   onCheckout,
+  onToggleKeypad,
   loading,
 }: {
   items: ReturnType<typeof useCartStore.getState>['items']
@@ -562,13 +627,25 @@ function CartPanel({
   updateQuantity: (id: string, unit: UnitType, q: number) => void
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
+  onToggleKeypad: () => void
   loading: boolean
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-white/10 px-4 py-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
-        <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Pesanan berjalan</p>
+          <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
+        </div>
+        <button
+          type="button"
+          onClick={onToggleKeypad}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/40 bg-accent px-3 text-xs font-bold text-ink transition-colors hover:bg-amber-300"
+          aria-label="Buka keypad kasir"
+        >
+          <Calculator className="h-4 w-4" aria-hidden="true" />
+          Keypad
+        </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
