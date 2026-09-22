@@ -150,7 +150,6 @@ export default function POS() {
       return
     }
     addItem(selectedProduct, selectedUnit, qty)
-    toast.success(`${selectedProduct.name} ditambahkan`)
     setSelectedProduct(null)
   }
 
@@ -242,10 +241,6 @@ export default function POS() {
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
             <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
-          </div>
-          <div className="hidden rounded-xl border border-border bg-surface px-3 py-2 text-right sm:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Item dipilih</p>
-            <p className="text-lg font-bold tabular-nums text-ink">{items.length}</p>
           </div>
         </div>
         <div className="mb-3 flex gap-2">
