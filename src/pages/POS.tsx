@@ -35,6 +35,8 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
+  const searchFilterRef = useRef<HTMLDivElement>(null)
+  const keypadPanelRef = useRef<HTMLDivElement>(null)
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
@@ -49,6 +51,19 @@ export default function POS() {
     const timer = window.setTimeout(loadProducts, 250)
     return () => window.clearTimeout(timer)
   }, [search])
+
+  useEffect(() => {
+    if (!showKeypadPanel) return
+
+    function closeKeypadOnOutsideClick(event: PointerEvent) {
+      const target = event.target as Node
+      if (searchFilterRef.current?.contains(target) || keypadPanelRef.current?.contains(target)) return
+      setShowKeypadPanel(false)
+    }
+
+    document.addEventListener('pointerdown', closeKeypadOnOutsideClick)
+    return () => document.removeEventListener('pointerdown', closeKeypadOnOutsideClick)
+  }, [showKeypadPanel])
 
   async function loadProducts() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -234,7 +249,7 @@ export default function POS() {
           </div>
         </div>
         <div className="mb-3 flex gap-2">
-          <div className="relative flex-1">
+          <div ref={searchFilterRef} className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Cari produk / SKU / barcode..."
@@ -333,7 +348,7 @@ export default function POS() {
       </div>
 
       {/* Cart - desktop */}
-      <div className="pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)]">
+      <div ref={keypadPanelRef} className="pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)]">
         {showKeypadPanel ? (
           <KeypadPanel
             value={search}
