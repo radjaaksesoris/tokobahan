@@ -8,6 +8,7 @@ import { UNIT_LABELS, type UnitType } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
@@ -115,15 +116,16 @@ export default function StockHistory() {
               className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
             />
           </div>
-          <select
+          <Select
             value={vendorId}
-            onChange={(event) => { setVendorId(event.target.value); setPage(0) }}
-            className="h-10 w-36 rounded-xl border border-border bg-surface px-3 text-sm text-ink sm:w-44"
+            onChange={(value) => { setVendorId(value); setPage(0) }}
+            options={[
+              { value: '', label: 'Semua vendor' },
+              ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
+            ]}
+            className="w-36 sm:w-44"
             aria-label="Filter vendor"
-          >
-            <option value="">Semua vendor</option>
-            {vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}
-          </select>
+          />
           {date && (
             <button type="button" onClick={() => { setDate(''); setPage(0) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
               <X className="h-4 w-4" />
