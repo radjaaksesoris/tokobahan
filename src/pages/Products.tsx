@@ -558,7 +558,7 @@ export default function Products() {
                 <Input
                   value={name}
                   onChange={(e) => setName(toTitleCase(e.target.value))}
-                  placeholder="Jarum Jahit No.14"
+                  placeholder="Nama item"
                   readOnly={editingPricesOnly}
                 />
               </div>
