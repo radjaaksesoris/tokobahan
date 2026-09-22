@@ -328,7 +328,7 @@ export default function Products() {
               )}
             </div>
           </div>
-          <Button className="hidden sm:inline-flex" onClick={openCreate}>
+          <Button className="w-full justify-center sm:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
@@ -360,7 +360,7 @@ export default function Products() {
                   <th className="w-[14%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Stok</th>
                   <th className="w-[18%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
                   <th className="w-[21%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Harga jual</th>
-                  <th className="hidden w-[12%] px-1 py-2 font-semibold sm:table-cell sm:w-24 sm:px-3">Aksi</th>
+                  <th className="w-[12%] px-1 py-2 font-semibold sm:w-24 sm:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -396,15 +396,15 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="hidden px-1 py-2 text-center sm:table-cell sm:px-3">
+                    <td className="px-1 py-2 text-center sm:px-3">
                       <div className="flex justify-center gap-0 sm:gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary sm:h-7 sm:w-7" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-primary sm:h-7 sm:w-7" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
                           <Boxes className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-7 sm:w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
                           <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         </Button>
                       </div>
