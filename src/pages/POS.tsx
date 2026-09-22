@@ -240,19 +240,19 @@ export default function POS() {
     <div className="pos-landscape-content mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:gap-4">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-2 flex items-start justify-between gap-2 lg:mb-4 lg:gap-3">
           <div className="flex items-center gap-3">
             <img
               src={`${import.meta.env.BASE_URL}icon-192.png`}
               alt="Radja Aksesoris"
-              className="h-10 w-10 rounded-xl object-cover shadow-sm"
+              className="h-8 w-8 rounded-lg object-cover shadow-sm lg:h-10 lg:w-10 lg:rounded-xl"
             />
-            <h2 className="text-3xl font-bold tracking-tight text-ink">RADJA AKSESORIS</h2>
+            <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RADJA AKSESORIS</h2>
           </div>
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
             aria-label="Kembali ke Dashboard"
             title="Kembali ke Dashboard"
           >
@@ -260,7 +260,7 @@ export default function POS() {
             <span className="hidden sm:inline">Dashboard</span>
           </button>
         </div>
-        <div className="mb-3 flex gap-2">
+        <div className="mb-2 flex gap-2 lg:mb-3">
           <div ref={searchFilterRef} className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -309,12 +309,12 @@ export default function POS() {
           ) : filtered.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Produk tidak ditemukan</p>
           ) : (
-            <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-1 xl:grid-cols-2 xl:gap-1.5">
               {filtered.map((p, index) => (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className={`group flex min-h-14 items-center gap-2 rounded-xl border bg-surface p-2 text-left transition-all duration-200 ${
+                  className={`group flex min-h-12 items-center gap-1.5 rounded-xl border bg-surface p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
                     activeProductIndex === index
                       ? 'border-primary bg-teal-100 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(33,108,104,0.18)]'
                       : 'border-stone-200/80'
@@ -324,7 +324,7 @@ export default function POS() {
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base font-bold transition-colors ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors lg:h-9 lg:w-9 lg:text-base ${
                     activeProductIndex === index
                       ? 'bg-primary text-white'
                       : 'bg-muted text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
@@ -332,10 +332,10 @@ export default function POS() {
                     {p.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate text-[13px] font-medium ${
+                    <p className={`truncate text-xs font-medium lg:text-[13px] ${
                       activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
-                    <p className={`mt-0.5 text-[11px] ${
+                    <p className={`mt-0.5 text-[10px] ${
                       p.stock <= 0
                         ? 'font-semibold text-red-500'
                         : activeProductIndex === index
@@ -345,7 +345,7 @@ export default function POS() {
                       {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
                     </p>
                   </div>
-                  <p className={`shrink-0 text-xs font-semibold ${
+                  <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${
                     activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
                   }`}>
                     {formatCurrency(
