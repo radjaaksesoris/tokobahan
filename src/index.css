@@ -107,6 +107,19 @@ input, select, textarea {
     opacity: 0;
     transform: translateX(18px);
   }
+
+  @keyframes product-drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .product-drawer {
+    animation: product-drawer-in 220ms ease-out both;
+  }
   to {
     opacity: 1;
     transform: translateX(0);

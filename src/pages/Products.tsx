@@ -622,15 +622,21 @@ export default function Products() {
 
       {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4">
-          <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col rounded-t-2xl sm:max-h-[90vh] sm:rounded-2xl">
-            <CardHeader className="flex-row items-center justify-between border-b">
+        <div className="fixed inset-0 z-50 bg-black/40">
+          <button
+            type="button"
+            aria-label="Tutup panel produk"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setModal(false)}
+          />
+          <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
+            <CardHeader className="relative z-10 flex-row items-center justify-between border-b bg-surface px-5 py-4">
               <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
-              <button onClick={() => setModal(false)}>
+              <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
-            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
+            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
