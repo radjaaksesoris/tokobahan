@@ -290,19 +290,19 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Katalog inventori</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <div className="flex w-full items-center gap-2 sm:w-auto">
+        <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
+          <div className="flex w-full items-center gap-2 lg:w-auto">
             <Button variant="outline" className="shrink-0 px-3" onClick={() => navigate('/products/history')}>
               <History className="h-4 w-4" />
               Riwayat Input
             </Button>
-            <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-72">
+            <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9 pr-10"
@@ -328,7 +328,7 @@ export default function Products() {
               )}
             </div>
           </div>
-          <Button className="w-full justify-center sm:w-auto" onClick={openCreate}>
+          <Button className="w-full justify-center lg:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
@@ -356,11 +356,11 @@ export default function Products() {
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   <th className="w-[8%] px-1 py-2 font-semibold sm:w-12 sm:px-3">No.</th>
-                  <th className="w-[27%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Produk</th>
+                  <th className="w-[24%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Produk</th>
                   <th className="w-[14%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Stok</th>
-                  <th className="w-[18%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
+                  <th className="w-[17%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
                   <th className="w-[21%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Harga jual</th>
-                  <th className="w-[12%] px-1 py-2 font-semibold sm:w-24 sm:px-3">Aksi</th>
+                  <th className="w-[16%] whitespace-nowrap px-1 py-2 font-semibold sm:w-28 sm:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -396,7 +396,7 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-1 py-2 text-center sm:px-3">
+                    <td className="whitespace-nowrap px-1 py-2 text-center sm:px-3">
                       <div className="flex justify-center gap-0 sm:gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
