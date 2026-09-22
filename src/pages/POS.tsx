@@ -137,7 +137,8 @@ export default function POS() {
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
-    setQtyInput('1')
+    setQtyInput('')
+    setShowQtyKeypad(true)
   }
 
   function confirmAdd() {
@@ -487,7 +488,9 @@ export default function POS() {
                   max={selectedProduct.stock}
                   onChange={(value) => {
                     setQtyInput(value)
-                    if (value) setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value))))
+                    if (value) {
+                      setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value))))
+                    }
                   }}
                   onClose={() => {
                     setQtyInput(String(qty))
@@ -583,8 +586,10 @@ function NumericKeypad({
   onClose: () => void
 }) {
   function append(digit: string) {
-    const next = `${value}${digit}`.replace(/^0+(?=\d)/, '')
-    if (!max || Number(next) <= max) onChange(next)
+    const next = `${value}${digit}`.replace(/^0+(?=\d)/, '') || '0'
+    if (!max || Number(next) <= max) {
+      onChange(next)
+    }
   }
 
   return (
