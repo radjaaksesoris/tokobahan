@@ -297,12 +297,12 @@ export default function POS() {
           ) : filtered.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Produk tidak ditemukan</p>
           ) : (
-            <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
               {filtered.map((p, index) => (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className={`group flex min-h-16 items-center gap-3 rounded-xl border bg-surface p-2.5 text-left transition-all duration-200 ${
+                  className={`group flex min-h-14 items-center gap-2 rounded-xl border bg-surface p-2 text-left transition-all duration-200 ${
                     activeProductIndex === index
                       ? 'border-primary bg-teal-100 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(33,108,104,0.18)]'
                       : 'border-stone-200/80'
@@ -312,7 +312,7 @@ export default function POS() {
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg font-bold transition-colors ${
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base font-bold transition-colors ${
                     activeProductIndex === index
                       ? 'bg-primary text-white'
                       : 'bg-muted text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
@@ -320,10 +320,10 @@ export default function POS() {
                     {p.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate text-sm font-medium ${
+                    <p className={`truncate text-[13px] font-medium ${
                       activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
-                    <p className={`mt-0.5 text-xs ${
+                    <p className={`mt-0.5 text-[11px] ${
                       p.stock <= 0
                         ? 'font-semibold text-red-500'
                         : activeProductIndex === index
@@ -333,7 +333,7 @@ export default function POS() {
                       {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
                     </p>
                   </div>
-                  <p className={`shrink-0 text-sm font-semibold ${
+                  <p className={`shrink-0 text-xs font-semibold ${
                     activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
                   }`}>
                     {formatCurrency(
