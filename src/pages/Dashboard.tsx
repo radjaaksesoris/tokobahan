@@ -288,7 +288,7 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Dashboard</h2>
           <p className="mt-1 max-w-[42rem] text-sm text-muted-foreground">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
-        <div className="mx-auto flex w-full max-w-md justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none">
+        <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button
             type="button"
             onClick={handleMobileStatusLogout}
@@ -316,7 +316,7 @@ export default function Dashboard() {
             <div
               role="alert"
               aria-live="polite"
-              className="relative min-w-0 flex-1 touch-pan-y rounded-2xl bg-ink px-3 py-3 text-white transition-[transform,opacity] duration-200 ease-out lg:hidden"
+              className="relative min-w-0 flex-1 touch-pan-y rounded-2xl bg-ink px-3 py-3 text-white transition-[transform,opacity] duration-200 ease-out sm:min-w-[9.5rem] lg:flex-none"
               style={{
                 opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
                 transform: `translateX(${lowStockSwipeOffset}px)`,
@@ -340,12 +340,26 @@ export default function Dashboard() {
             >
               <button
                 type="button"
-                className="block w-full pr-5 text-center lg:text-left"
+                className="flex w-full items-center gap-2 pr-5 text-left"
                 onClick={() => setShowLowStockModal(true)}
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</p>
-                <p className="mt-1 text-sm font-semibold">{stats.lowStock} produk</p>
+                <span className="rounded-lg bg-amber-400/15 p-1.5 text-amber-300">
+                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
+                  <span className="mt-1 block truncate text-sm font-semibold">{stats.lowStock} produk</span>
+                </span>
               </button>
+              {notificationPermission === 'default' && (
+                <button
+                  type="button"
+                  className="mt-2 text-left text-[10px] font-semibold text-accent underline-offset-2 hover:underline"
+                  onClick={enableStockNotifications}
+                >
+                  Aktifkan notifikasi
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Tutup notifikasi stok menipis"
@@ -382,63 +396,6 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
-
-      {stats.lowStock > 0 && !lowStockDismissed && (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="hidden touch-pan-y items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 transition-[transform,opacity] duration-200 ease-out lg:flex"
-          style={{
-            opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
-            transform: `translateX(${lowStockSwipeOffset}px)`,
-          }}
-          onTouchStart={(event) => {
-            lowStockTouchStart.current = event.touches[0]?.clientX ?? null
-          }}
-          onTouchMove={(event) => {
-            if (lowStockTouchStart.current === null) return
-            setLowStockSwipeOffset(event.touches[0].clientX - lowStockTouchStart.current)
-          }}
-          onTouchEnd={() => {
-            const offset = lowStockSwipeOffset
-            lowStockTouchStart.current = null
-            if (Math.abs(offset) >= 80) {
-              dismissLowStockAlert(offset > 0 ? 1 : -1)
-            } else {
-              setLowStockSwipeOffset(0)
-            }
-          }}
-        >
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              className="text-left underline-offset-2 hover:underline"
-              onClick={() => setShowLowStockModal(true)}
-            >
-              <strong>{stats.lowStock}</strong> produk stok menipis. Segera restock!
-            </button>
-            <div className="flex shrink-0 items-center gap-2">
-              {notificationPermission === 'default' && (
-                <button
-                  className="rounded-xl border border-amber-300 bg-surface px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-                  onClick={enableStockNotifications}
-                >
-                  Aktifkan notifikasi
-                </button>
-              )}
-            </div>
-          </div>
-          <button
-            type="button"
-            aria-label="Tutup notifikasi stok menipis"
-            className="shrink-0 rounded-md p-1 text-amber-700 hover:bg-amber-100"
-            onClick={() => dismissLowStockAlert()}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
