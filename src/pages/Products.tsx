@@ -636,7 +636,7 @@ export default function Products() {
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
-            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
+            <CardContent className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
@@ -646,15 +646,15 @@ export default function Products() {
                   readOnly={editingPricesOnly}
                 />
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0">
                   <label className="mb-1 block text-sm font-medium">SKU</label>
-                  <div className="flex gap-2">
+                  <div className="flex min-w-0 gap-2">
                     <Input
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
                       readOnly={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing)}
-                      className={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-muted text-muted-foreground' : undefined}
+                      className={`min-w-0 w-full ${editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-muted text-muted-foreground' : ''}`}
                     />
                     {editing?.sku && (
                       <Button
@@ -675,11 +675,11 @@ export default function Products() {
                     <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="mb-1 block text-sm font-medium">Stok</label>
-                  <div className="flex gap-2">
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,6.5rem)] gap-2">
                     <Input
-                      className="min-w-0"
+                      className="min-w-0 w-full"
                       type="number"
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
@@ -687,7 +687,7 @@ export default function Products() {
                       title={editing ? 'Gunakan Tambah Stok untuk menerima stok baru' : undefined}
                     />
                     <Select
-                      className="min-w-0 flex-1"
+                      className="min-w-0 w-full"
                       value={stockUnit}
                       options={UNIT_OPTIONS}
                       onChange={(value) => setStockUnit(value as UnitType)}
