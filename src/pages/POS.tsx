@@ -454,17 +454,16 @@ export default function POS() {
                   type="number"
                   min={1}
                   max={selectedProduct.stock}
-                  value={qtyInput || '1'}
+                  value={qtyInput}
                   readOnly
                   inputMode="none"
                   onClick={() => {
-                    setQtyInput('')
-                    setShowQtyKeypad(true)
+                    if (!showQtyKeypad) {
+                      setQtyInput('')
+                      setShowQtyKeypad(true)
+                    }
                   }}
-                  onFocus={() => {
-                    setQtyInput('')
-                    setShowQtyKeypad(true)
-                  }}
+                  placeholder="0"
                   className="w-20 text-center text-lg font-bold"
                 />
                 <Button
@@ -493,7 +492,9 @@ export default function POS() {
                     }
                   }}
                   onClose={() => {
-                    setQtyInput(String(qty))
+                    const nextQty = qtyInput ? Number(qtyInput) : 1
+                    setQty(Math.max(1, Math.min(selectedProduct.stock, nextQty)))
+                    setQtyInput(String(Math.max(1, Math.min(selectedProduct.stock, nextQty))))
                     setShowQtyKeypad(false)
                   }}
                 />
