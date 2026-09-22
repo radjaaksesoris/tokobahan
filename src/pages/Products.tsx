@@ -296,8 +296,8 @@ export default function Products() {
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
-          <div className="flex w-full items-center gap-2 lg:w-auto">
+        <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+          <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
             <Button variant="outline" className="shrink-0 px-3" onClick={() => navigate('/products/history')}>
               <History className="h-4 w-4" />
               Riwayat Input
@@ -328,7 +328,7 @@ export default function Products() {
               )}
             </div>
           </div>
-          <Button className="w-full justify-center lg:w-auto" onClick={openCreate}>
+          <Button className="relative z-10 w-full shrink-0 justify-center lg:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
@@ -351,8 +351,8 @@ export default function Products() {
         </Card>
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
-          <div className="overflow-hidden">
-            <table className="w-full table-fixed text-xs sm:min-w-[720px] sm:table-auto sm:text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] table-fixed text-xs sm:min-w-[720px] sm:table-auto sm:text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   <th className="w-[8%] px-1 py-2 font-semibold sm:w-12 sm:px-3">No.</th>
