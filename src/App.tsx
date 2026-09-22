@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
-import { applyScreenOrientation, getScreenOrientationPreference } from '@/lib/orientation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -151,15 +150,6 @@ export default function App() {
     preloadPageChunks()
   }, [authLoading, user])
 
-  useEffect(() => {
-    const preference = getScreenOrientationPreference()
-    if (preference === 'any') return
-
-    applyScreenOrientation(preference).catch((error) => {
-      console.warn('Gagal menerapkan orientasi layar:', error)
-    })
-  }, [])
-
   if (!isSupabaseConfigured) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
@@ -177,7 +167,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Toaster position="top-center" richColors closeButton className="tablet-landscape-toaster" />
+      <Toaster position="top-center" richColors closeButton />
       <RouteErrorBoundary>
         <Routes>
           <Route path="/login" element={<PageSuspense><Login /></PageSuspense>} />

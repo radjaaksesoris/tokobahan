@@ -102,44 +102,6 @@ input, select, textarea {
   }
 }
 
-/* The POS workflow uses a manual landscape canvas on phones and tablets. */
-@media (orientation: portrait) and (max-width: 1023px) {
-  .pos-mobile-nav.is-pos-route {
-    display: none;
-  }
-
-  .tablet-landscape-toaster[data-sonner-toaster] {
-    top: 50%;
-    left: 50%;
-    width: min(80dvh, 26rem);
-    transform: translate(-50%, -50%) rotate(-90deg) !important;
-    transform-origin: center;
-  }
-
-  .pos-landscape-content {
-    position: fixed;
-    z-index: 60;
-    top: 50%;
-    left: 50%;
-    width: 100dvh;
-    height: 100dvw;
-    min-height: 0;
-    max-width: none;
-    padding: 0.5rem;
-    overflow: hidden;
-    transform: translate(-50%, -50%) rotate(90deg);
-    transform-origin: center;
-  }
-
-  .pos-landscape-content .pos-cart-panel {
-    width: 38%;
-  }
-
-  .pos-landscape-content .flex-1 {
-    min-width: 0;
-  }
-}
-
 @keyframes keypad-panel-in {
   from {
     opacity: 0;
