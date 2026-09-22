@@ -78,6 +78,12 @@ input, select, textarea {
   -webkit-user-select: text;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: #9aa19d;
+  opacity: 0.72;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
