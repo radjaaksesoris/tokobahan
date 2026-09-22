@@ -424,8 +424,8 @@ export default function Products() {
           )}
 
           {stockProduct && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-              <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+            <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4">
+              <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col rounded-t-2xl sm:max-h-[90vh] sm:rounded-2xl">
                 <CardHeader className="flex-row items-center justify-between border-b">
                   <div>
                     <CardTitle>Tambah Stok</CardTitle>
@@ -435,7 +435,7 @@ export default function Products() {
                     <X className="h-5 w-5" />
                   </button>
                 </CardHeader>
-                <CardContent className="space-y-4 pt-4">
+                <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                     Stok saat ini: <strong>{stockProduct.stock} {UNIT_LABELS[(stockProduct.stock_unit || 'satuan') as UnitType]}</strong>
                   </div>
@@ -541,15 +541,15 @@ export default function Products() {
 
       {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center p-0 sm:p-4">
-          <Card className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl sm:rounded-2xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4">
+          <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col rounded-t-2xl sm:max-h-[90vh] sm:rounded-2xl">
             <CardHeader className="flex-row items-center justify-between border-b">
               <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
               <button onClick={() => setModal(false)}>
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto space-y-4 pt-4">
+            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
