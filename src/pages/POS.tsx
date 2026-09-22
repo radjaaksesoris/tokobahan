@@ -16,10 +16,12 @@ import {
   ShoppingCart,
   CheckCircle2,
   X,
+  RotateCw,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
+import { applyScreenOrientation } from '@/lib/orientation'
 
 type PaymentMethod = 'cash' | 'qris'
 
@@ -42,6 +44,13 @@ export default function POS() {
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
+
+  useEffect(() => {
+    // Landscape is the most usable layout for the cashier flow. Browsers may
+    // reject the lock outside an installed/fullscreen PWA, so the CSS layout
+    // and portrait guidance remain the reliable fallback.
+    applyScreenOrientation('landscape').catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(loadProducts, 250)
@@ -217,7 +226,18 @@ export default function POS() {
   }
 
   return (
-    <div className="hidden lg:mx-auto lg:flex lg:min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] lg:max-w-[1440px] lg:flex-row lg:gap-4 lg:pt-2">
+    <>
+      <div className="pos-portrait-notice mx-auto hidden min-h-[calc(100dvh-9rem)] max-w-md flex-col items-center justify-center rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <RotateCw className="h-7 w-7" aria-hidden="true" />
+        </div>
+        <h2 className="text-xl font-bold text-ink">Putar perangkat ke landscape</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Mode KASIR dirancang mendatar agar daftar produk dan keranjang pembayaran bisa terlihat bersamaan.
+        </p>
+      </div>
+
+      <div className="pos-landscape-content mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-col gap-3 pt-2 min-[480px]:flex-row min-[480px]:gap-3 lg:gap-4">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -328,7 +348,7 @@ export default function POS() {
       </div>
 
       {/* Cart - desktop */}
-      <div className="hidden w-full max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:flex">
+      <div className="hidden w-full min-[480px]:max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] min-[480px]:flex lg:max-w-sm">
         <CartPanel
           items={items}
           totals={totals}
@@ -499,7 +519,8 @@ export default function POS() {
           </Card>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 

@@ -101,3 +101,14 @@ input, select, textarea {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* The POS workflow is intentionally landscape-first on phones and tablets. */
+@media (orientation: portrait) and (max-width: 1023px) {
+  .pos-portrait-notice {
+    display: flex;
+  }
+
+  .pos-landscape-content {
+    display: none;
+  }
+}
