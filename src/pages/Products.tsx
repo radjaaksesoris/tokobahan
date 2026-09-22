@@ -360,7 +360,7 @@ export default function Products() {
                   <th className="w-[14%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Stok</th>
                   <th className="w-[17%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Modal</th>
                   <th className="w-[21%] px-1 py-2 font-semibold sm:w-auto sm:px-3">Harga jual</th>
-                  <th className="w-[16%] whitespace-nowrap px-1 py-2 font-semibold sm:w-28 sm:px-3">Aksi</th>
+                  <th className="sticky right-0 z-10 w-[16%] whitespace-nowrap bg-primary px-1 py-2 font-semibold sm:static sm:w-28 sm:bg-transparent sm:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -369,7 +369,7 @@ export default function Products() {
                     <td className="px-1 py-2 text-center text-[11px] text-muted-foreground sm:px-3 sm:text-xs">{page * pageSize + index + 1}</td>
                     <td className="min-w-0 px-1 py-2 text-center sm:px-3">
                       <div className="flex min-w-0 items-center justify-center gap-2.5">
-                        <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary sm:flex">
+                        <div className="max-sm:hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary sm:flex">
                           {p.name.charAt(0)}
                         </div>
                         <div className="min-w-0 text-center">
@@ -396,7 +396,7 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-1 py-2 text-center sm:px-3">
+                    <td className="sticky right-0 z-[1] whitespace-nowrap bg-surface px-1 py-2 text-center sm:static sm:bg-transparent sm:px-3">
                       <div className="flex justify-center gap-0 sm:gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-7 sm:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
