@@ -238,9 +238,13 @@ export default function POS() {
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ruang kasir</p>
-            <h2 className="text-3xl font-bold tracking-tight text-ink">Transaksi baru</h2>
+          <div className="flex items-center gap-3">
+            <img
+              src={`${import.meta.env.BASE_URL}icon-192.png`}
+              alt="Radja Aksesoris"
+              className="h-10 w-10 rounded-xl object-cover shadow-sm"
+            />
+            <h2 className="text-3xl font-bold tracking-tight text-ink">RADJA AKSESORIS</h2>
           </div>
         </div>
         <div className="mb-3 flex gap-2">
