@@ -40,6 +40,10 @@ export default function Products() {
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
   const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
+  const [stockVendorId, setStockVendorId] = useState('')
+  const [stockPaymentStatus, setStockPaymentStatus] = useState<'lunas' | 'kredit'>('lunas')
+  const [stockDueDate, setStockDueDate] = useState('')
   const [stockSaving, setStockSaving] = useState(false)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
@@ -73,6 +77,13 @@ export default function Products() {
     }
     mediaQuery.addEventListener('change', updatePageSize)
     return () => mediaQuery.removeEventListener('change', updatePageSize)
+  }, [])
+
+  useEffect(() => {
+    supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
+      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
+      else setVendors(data || [])
+    })
   }, [])
 
   useEffect(() => {
@@ -124,6 +135,9 @@ export default function Products() {
     setCostUnit('satuan')
     setStock(0)
     setStockUnit('satuan')
+    setStockVendorId('')
+    setStockPaymentStatus('lunas')
+    setStockDueDate('')
     setMinStock(10)
     setUnitBase('pcs')
     setPrices([{ unit: 'satuan', price: 0, conversion: 1 }])
@@ -155,6 +169,9 @@ export default function Products() {
     setStockProduct(p)
     setStockQuantity('0')
     setStockCost(p.cost_price)
+    setStockVendorId('')
+    setStockPaymentStatus('lunas')
+    setStockDueDate('')
   }
 
   async function handleStockReceipt() {
@@ -165,10 +182,21 @@ export default function Products() {
       return
     }
     setStockSaving(true)
+    if (!stockVendorId) {
+      toast.error('Pilih vendor terlebih dahulu')
+      return
+    }
+    if (stockPaymentStatus === 'kredit' && !stockDueDate) {
+      toast.error('Tanggal jatuh tempo wajib diisi untuk status kredit')
+      return
+    }
     const { error } = await supabase.rpc('receive_stock_batch', {
       p_product_id: stockProduct.id,
       p_quantity: quantity,
       p_unit_cost: stockCost,
+      p_vendor_id: stockVendorId,
+      p_payment_status: stockPaymentStatus,
+      p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
     })
     if (error) {
       toast.error(error.message)
@@ -216,6 +244,14 @@ export default function Products() {
       toast.error('Stok, harga modal, harga jual, dan stok minimum tidak boleh negatif')
       return
     }
+    if (!editing && stock > 0 && !stockVendorId) {
+      toast.error('Pilih vendor untuk stok awal produk')
+      return
+    }
+    if (!editing && stock > 0 && stockPaymentStatus === 'kredit' && !stockDueDate) {
+      toast.error('Tanggal jatuh tempo wajib diisi untuk stok awal kredit')
+      return
+    }
     setSaving(true)
     const payload = {
       name: name.trim(),
@@ -223,7 +259,7 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: UNIT_FACTORS[costUnit] || 1,
-      stock,
+      stock: editing ? stock : 0,
       stock_unit: stockUnit,
       stock_conversion: 1,
       min_stock: minStock,
@@ -253,9 +289,26 @@ export default function Products() {
         load()
       }
     } else {
-      const { error } = await supabase.from('products').insert(payload)
+      const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
       if (error) toast.error(error.message)
       else {
+        if (stock > 0) {
+          const { error: receiptError } = await supabase.rpc('receive_stock_batch', {
+            p_product_id: createdProduct.id,
+            p_quantity: stock,
+            p_unit_cost: costPrice,
+            p_vendor_id: stockVendorId,
+            p_payment_status: stockPaymentStatus,
+            p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
+          })
+          if (receiptError) {
+            toast.error(`Produk dibuat, tetapi stok awal gagal disimpan: ${receiptError.message}`)
+            setModal(false)
+            load()
+            setSaving(false)
+            return
+          }
+        }
         toast.success('Produk ditambahkan')
         setModal(false)
         load()
@@ -463,6 +516,34 @@ export default function Products() {
                       HPP ini hanya berlaku untuk stok baru. Stok lama tetap dihitung dengan HPP batch sebelumnya.
                     </p>
                   </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Vendor</label>
+                    <Select
+                      value={stockVendorId}
+                      onChange={setStockVendorId}
+                      options={[
+                        { value: '', label: 'Pilih vendor' },
+                        ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Status pembayaran</label>
+                    <Select
+                      value={stockPaymentStatus}
+                      onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
+                      options={[
+                        { value: 'lunas', label: 'Lunas' },
+                        { value: 'kredit', label: 'Kredit' },
+                      ]}
+                    />
+                  </div>
+                  {stockPaymentStatus === 'kredit' && (
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo</label>
+                      <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                    </div>
+                  )}
                   <div className="rounded-lg border border-stone-200">
                     <div className="border-b border-stone-200 bg-muted/50 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
@@ -584,6 +665,38 @@ export default function Products() {
                     )}
 
                   </div>
+                  {!editing && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Vendor stok awal</label>
+                        <Select
+                          value={stockVendorId}
+                          onChange={setStockVendorId}
+                          options={[
+                            { value: '', label: stock > 0 ? 'Pilih vendor' : 'Tidak ada stok awal' },
+                            ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Status pembayaran awal</label>
+                        <Select
+                          value={stockPaymentStatus}
+                          onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
+                          options={[
+                            { value: 'lunas', label: 'Lunas' },
+                            { value: 'kredit', label: 'Kredit' },
+                          ]}
+                        />
+                      </div>
+                      {stockPaymentStatus === 'kredit' && stock > 0 && (
+                        <div className="sm:col-span-2">
+                          <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
+                          <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {editing?.sku && !skuEditing && (
                     <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
                   )}

@@ -45,6 +45,22 @@ export interface Database {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          name?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           id: string
@@ -208,6 +224,9 @@ export interface Database {
           quantity_received: number
           quantity_remaining: number
           unit_cost: number
+          vendor_id: string | null
+          payment_status: 'kredit' | 'lunas'
+          due_date: string | null
           received_at: string
           created_at: string
         }
@@ -217,6 +236,9 @@ export interface Database {
           quantity_received: number
           quantity_remaining: number
           unit_cost: number
+          vendor_id?: string | null
+          payment_status?: 'kredit' | 'lunas'
+          due_date?: string | null
           received_at?: string
           created_at?: string
         }
@@ -303,6 +325,9 @@ export interface Database {
           p_product_id: string
           p_quantity: number
           p_unit_cost: number
+          p_vendor_id?: string | null
+          p_payment_status?: 'kredit' | 'lunas'
+          p_due_date?: string | null
         }
         Returns: undefined
       }

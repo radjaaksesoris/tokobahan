@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck, Trash2 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -27,6 +27,42 @@ export default function Settings() {
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
   const [soundEnabled, setSoundEnabled] = useState(isStockSoundEnabled)
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
+  const [vendorName, setVendorName] = useState('')
+  const [vendorLoading, setVendorLoading] = useState(false)
+
+  async function loadVendors() {
+    const { data, error } = await supabase.from('vendors').select('id, name').order('name')
+    if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
+    else setVendors(data || [])
+  }
+
+  useEffect(() => {
+    void loadVendors()
+  }, [])
+
+  async function addVendor() {
+    const name = vendorName.trim()
+    if (!name) return
+    setVendorLoading(true)
+    const { error } = await supabase.from('vendors').insert({ name })
+    if (error) toast.error(`Gagal menambah vendor: ${error.message}`)
+    else {
+      toast.success('Vendor ditambahkan')
+      setVendorName('')
+      await loadVendors()
+    }
+    setVendorLoading(false)
+  }
+
+  async function removeVendor(id: string) {
+    const { error } = await supabase.from('vendors').delete().eq('id', id)
+    if (error) toast.error(`Gagal menghapus vendor: ${error.message}`)
+    else {
+      toast.success('Vendor dihapus')
+      await loadVendors()
+    }
+  }
 
   if (!isRole('admin')) return <Navigate to="/" replace />
 
@@ -222,6 +258,37 @@ export default function Settings() {
             {resetting ? 'Mereset database...' : 'Reset Semua Data'}
           </Button>
         </CardContent>}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Daftar Vendor</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={vendorName}
+              onChange={(event) => setVendorName(event.target.value)}
+              placeholder="Nama vendor baru"
+              onKeyDown={(event) => { if (event.key === 'Enter') void addVendor() }}
+            />
+            <Button onClick={() => void addVendor()} disabled={vendorLoading || !vendorName.trim()}>Tambah</Button>
+          </div>
+          {vendors.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Belum ada vendor tersimpan.</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {vendors.map((vendor) => (
+                <li key={vendor.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                  <span>{vendor.name}</span>
+                  <button type="button" onClick={() => void removeVendor(vendor.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600" aria-label={`Hapus vendor ${vendor.name}`}>
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
       </Card>
 
       <Card>

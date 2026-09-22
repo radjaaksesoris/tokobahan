@@ -19,6 +19,9 @@ interface StockReceipt {
   quantity_received: number
   unit_cost: number
   received_at: string
+  vendor: { name: string } | null
+  payment_status: 'kredit' | 'lunas'
+  due_date: string | null
   product: { name: string; stock_unit: UnitType } | null
 }
 
@@ -26,10 +29,19 @@ export default function StockHistory() {
   const navigate = useNavigate()
   const [history, setHistory] = useState<StockReceipt[]>([])
   const [date, setDate] = useState('')
+  const [vendorId, setVendorId] = useState('')
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [loading, setLoading] = useState(true)
   const requestId = useRef(0)
+
+  useEffect(() => {
+    supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
+      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
+      else setVendors(data || [])
+    })
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -37,7 +49,7 @@ export default function StockHistory() {
       setLoading(true)
       let query = supabase
         .from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, received_at, product:products(name, stock_unit)')
+        .select('id, quantity_received, unit_cost, received_at, payment_status, due_date, vendor:vendors(name), product:products(name, stock_unit)')
         .order('received_at', { ascending: false })
         .order('id', { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -48,6 +60,7 @@ export default function StockHistory() {
           .gte('received_at', startOfDay(selectedDate).toISOString())
           .lte('received_at', endOfDay(selectedDate).toISOString())
       }
+      if (vendorId) query = query.eq('vendor_id', vendorId)
 
       const { data, error } = await query
       if (currentRequest !== requestId.current) return
@@ -64,7 +77,7 @@ export default function StockHistory() {
     }, 200)
 
     return () => window.clearTimeout(timer)
-  }, [date, page])
+  }, [date, page, vendorId])
 
   const summary = useMemo(
     () => history.reduce(
@@ -102,6 +115,15 @@ export default function StockHistory() {
               className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
             />
           </div>
+          <select
+            value={vendorId}
+            onChange={(event) => { setVendorId(event.target.value); setPage(0) }}
+            className="h-10 w-36 rounded-xl border border-border bg-surface px-3 text-sm text-ink sm:w-44"
+            aria-label="Filter vendor"
+          >
+            <option value="">Semua vendor</option>
+            {vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}
+          </select>
           {date && (
             <button type="button" onClick={() => { setDate(''); setPage(0) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
               <X className="h-4 w-4" />
@@ -127,10 +149,12 @@ export default function StockHistory() {
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
                       <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Tanggal</th>
-                      <th className="w-[22%] px-1 py-2 sm:w-auto sm:px-3">Produk</th>
+                      <th className="w-[20%] px-1 py-2 sm:w-auto sm:px-3">Produk</th>
+                      <th className="w-[17%] px-1 py-2 sm:w-auto sm:px-3">Vendor</th>
                       <th className="w-[16%] px-1 py-2 sm:w-auto sm:px-3">Jumlah</th>
                       <th className="w-[17%] px-1 py-2 sm:w-auto sm:px-3">HPP</th>
-                      <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Nilai stok</th>
+                      <th className="w-[15%] px-1 py-2 sm:w-auto sm:px-3">Status</th>
+                      <th className="w-[15%] px-1 py-2 sm:w-auto sm:px-3">Nilai stok</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -142,13 +166,19 @@ export default function StockHistory() {
                           <span className="hidden sm:inline">{format(new Date(receipt.received_at), 'dd MMM yy HH:mm', { locale: localeId })}</span>
                         </td>
                         <td className="truncate px-1 py-2 text-center font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
+                        <td className="truncate px-1 py-2 text-center text-muted-foreground sm:px-3">{receipt.vendor?.name || '-'}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatCurrency(Number(receipt.unit_cost))}</td>
+                        <td className="px-1 py-2 text-center sm:px-3">
+                          <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${receipt.payment_status === 'kredit' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                            {receipt.payment_status === 'kredit' ? `Kredit${receipt.due_date ? ` · ${format(new Date(`${receipt.due_date}T00:00:00`), 'dd/MM/yy')}` : ''}` : 'Lunas'}
+                          </span>
+                        </td>
                         <td className="whitespace-nowrap px-1 py-2 text-center font-semibold text-ink sm:px-3">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
+                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={4} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
                 </table>
               </div>
               <div className="flex items-center justify-between border-t border-border px-4 py-3">
