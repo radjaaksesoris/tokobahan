@@ -626,28 +626,35 @@ function TextKeypad({
   onClose: () => void
 }) {
   const rows = [
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
   ]
+  const numberRows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']]
 
   return (
     <div className="mt-4 space-y-2">
-      <div className="flex justify-center gap-1.5">
-        {rows[0].map((key) => (
+      <div className="mx-auto grid max-w-[15rem] grid-cols-3 gap-1.5">
+        {numberRows.flat().map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => onChange(`${value}${key}`)}
-            className="min-h-10 min-w-0 flex-1 rounded-lg border border-accent/30 bg-accent/15 px-1 text-sm font-bold text-accent transition-colors hover:bg-accent/25 active:bg-accent active:text-ink"
+            className="min-h-10 rounded-lg border border-accent/30 bg-accent/15 px-1 text-sm font-bold text-accent transition-colors hover:bg-accent/25 active:bg-accent active:text-ink"
           >
             {key}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => onChange(`${value}0`)}
+          className="col-start-2 min-h-10 rounded-lg border border-accent/30 bg-accent/15 px-1 text-sm font-bold text-accent transition-colors hover:bg-accent/25 active:bg-accent active:text-ink"
+        >
+          0
+        </button>
       </div>
       <div className="space-y-2 border-t border-white/10 pt-3">
-        {rows.slice(1).map((row, rowIndex) => (
+        {rows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex justify-center gap-1.5">
             {row.map((key) => (
               <button
