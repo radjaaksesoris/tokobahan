@@ -158,11 +158,15 @@ export default function Products() {
     setSku(p.sku || '')
     setSkuEditing(!p.sku)
     setCostPrice(p.cost_price)
-    setCostUnit((p.cost_unit || 'satuan') as UnitType)
-    const productPrices: ProductPrice[] = p.prices?.length
-      ? p.prices
-      : [{ unit: 'satuan', price: 0, conversion: 1 }]
     const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
+    setCostUnit(savedStockUnit)
+    const productPrices: ProductPrice[] = p.prices?.length
+      ? p.prices.map((price, index) => (
+        index === 0
+          ? { ...price, unit: savedStockUnit, conversion: unitFactors[savedStockUnit] || 1 }
+          : price
+      ))
+      : [{ unit: savedStockUnit, price: 0, conversion: unitFactors[savedStockUnit] || 1 }]
     setStock(p.stock)
     setStockUnit(savedStockUnit)
     setMinStock(p.min_stock)
@@ -246,6 +250,11 @@ export default function Products() {
     const nextUnit = value as UnitType
     setStockUnit(nextUnit)
     setCostUnit(nextUnit)
+    setPrices((current) => current.map((price, index) => (
+      index === 0
+        ? { ...price, unit: nextUnit, conversion: unitFactors[nextUnit] || 1 }
+        : price
+    )))
   }
 
   async function handleSave() {
