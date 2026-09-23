@@ -164,7 +164,7 @@ export default function Products() {
     setSkuEditing(!p.sku)
     setCostPrice(p.cost_price)
     const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
-    setCostUnit(savedStockUnit)
+    setCostUnit((p.cost_unit || savedStockUnit) as UnitType)
     const productPrices: ProductPrice[] = p.prices?.length
       ? p.prices.map((price, index) => (
         index === 0

@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, type ErrorInfo, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useState, type ErrorInfo, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import Login from '@/pages/Login'
+import type { UserRole } from '@/types'
 
 function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   importer: () => Promise<{ default: T }>,
@@ -115,8 +116,24 @@ function preloadPageChunks() {
   })
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuthStore()
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+  ))
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)')
+    const update = () => setIsMobile(mediaQuery.matches)
+    update()
+    mediaQuery.addEventListener('change', update)
+    return () => mediaQuery.removeEventListener('change', update)
+  }, [])
+
+  return isMobile
+}
+
+function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: UserRole[] }) {
+  const { user, profile, loading } = useAuthStore()
 
   if (loading) {
     return (
@@ -127,7 +144,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />
+  if (roles && (!profile || !roles.includes(profile.role))) return <Navigate to="/" replace />
   return <>{children}</>
+}
+
+function RoleGate({ children, roles, monitoring = false }: { children: React.ReactNode; roles: UserRole[]; monitoring?: boolean }) {
+  const isMobile = useIsMobile()
+  if (isMobile && !monitoring) return <Navigate to="/" replace />
+  return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>
 }
 
 export default function App() {
@@ -192,14 +216,14 @@ export default function App() {
             }
           >
             <Route index element={<PageSuspense><Dashboard /></PageSuspense>} />
-            <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
-            <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
-            <Route path="products/history" element={<PageSuspense><StockHistory /></PageSuspense>} />
-            <Route path="products/stock-opname" element={<PageSuspense><StockOpname /></PageSuspense>} />
-            <Route path="reports" element={<PageSuspense><Reports /></PageSuspense>} />
-            <Route path="transactions" element={<PageSuspense><TransactionHistory /></PageSuspense>} />
-            <Route path="settings" element={<PageSuspense><SettingsPage /></PageSuspense>} />
-            <Route path="settlements" element={<PageSuspense><Settlements /></PageSuspense>} />
+            <Route path="pos" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><POS /></PageSuspense></RoleGate>} />
+            <Route path="products" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><Products /></PageSuspense></RoleGate>} />
+            <Route path="products/history" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><StockHistory /></PageSuspense></RoleGate>} />
+            <Route path="products/stock-opname" element={<RoleGate roles={['admin']}><PageSuspense><StockOpname /></PageSuspense></RoleGate>} />
+            <Route path="reports" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><Reports /></PageSuspense></RoleGate>} />
+            <Route path="transactions" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><TransactionHistory /></PageSuspense></RoleGate>} />
+            <Route path="settings" element={<RoleGate roles={['admin']}><PageSuspense><SettingsPage /></PageSuspense></RoleGate>} />
+            <Route path="settlements" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><Settlements /></PageSuspense></RoleGate>} />
           </Route>
           <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
         </Routes>

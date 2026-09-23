@@ -11,7 +11,7 @@ import {
   WalletCards,
   ClipboardCheck,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -31,17 +31,30 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 1023px)').matches)
   const { profile, signOut, isRole } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const isPosRoute = location.pathname.endsWith('/pos')
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)')
+    const update = () => setIsMobile(mediaQuery.matches)
+    update()
+    mediaQuery.addEventListener('change', update)
+    return () => mediaQuery.removeEventListener('change', update)
+  }, [])
 
   const handleLogout = async () => {
     await signOut()
     navigate('/login')
   }
 
-  const filteredNav = navItems.filter((item) => isRole(...item.roles))
+  const filteredNav = navItems.filter((item) => {
+    if (!isRole(...item.roles)) return false
+    if (isMobile) return item.to === '/' || item.to === '/transactions' || item.to === '/reports'
+    return true
+  })
 
   return (
     <div className="mobile-page-background flex h-full min-h-screen bg-canvas">
