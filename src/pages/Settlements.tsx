@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { WalletCards } from 'lucide-react'
 
 type Tab = 'vendor' | 'customer'
+type VendorPaymentMode = 'nominal' | 'item'
 type DebtPayment = { amount: number; paid_at: string }
 type DebtItem = { batchId?: string; name: string; quantity: number; unit: string; unitPrice: number; subtotal: number; paid: number }
 type Debt = {
@@ -46,6 +47,7 @@ export default function Settlements() {
   const [payment, setPayment] = useState<Record<string, string>>({})
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
   const [selectedItems, setSelectedItems] = useState<Record<string, string[]>>({})
+  const [vendorPaymentModes, setVendorPaymentModes] = useState<Record<string, VendorPaymentMode>>({})
   const [customerSearch, setCustomerSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -133,14 +135,15 @@ export default function Settlements() {
   async function settle(debt: Debt) {
     const enteredPayment = payment[debt.id]?.trim() || ''
     const hasNominal = enteredPayment !== ''
-    const selectedBatchIds = tab === 'vendor' && !hasNominal ? (selectedItems[debt.id] || []) : debt.batchIds
+    const paymentMode = tab === 'vendor' ? vendorPaymentModes[debt.id] : 'nominal'
+    const selectedBatchIds = tab === 'vendor' && paymentMode === 'item' ? (selectedItems[debt.id] || []) : debt.batchIds
     const selectedOutstanding = debt.items
       .filter((item) => item.batchId && selectedBatchIds.includes(item.batchId))
       .reduce((sum, item) => sum + item.subtotal - item.paid, 0)
-    const outstanding = tab === 'vendor' && !hasNominal ? selectedOutstanding : debt.total - debt.paid
-    const amount = hasNominal ? Number(enteredPayment) : outstanding
+    const outstanding = tab === 'vendor' && paymentMode === 'item' ? selectedOutstanding : debt.total - debt.paid
+    const amount = paymentMode === 'item' ? outstanding : Number(enteredPayment)
     if (tab === 'customer' && !hasNominal) { toast.error('Masukkan nominal pembayaran'); return }
-    if (tab === 'vendor' && !hasNominal && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
+    if (tab === 'vendor' && paymentMode === 'item' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
     let error: { message: string } | null = null
     if (tab === 'vendor') {
@@ -211,7 +214,13 @@ export default function Settlements() {
             <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
           <div className="flex w-full gap-1.5 sm:w-auto">
-            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} onChange={(event) => setPayment((current) => ({ ...current, [debt.id]: event.target.value }))} placeholder="Nominal" className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none" />
+            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} disabled={tab === 'vendor' && vendorPaymentModes[debt.id] === 'item'} onChange={(event) => {
+              const value = event.target.value
+              if (tab === 'vendor' && value.trim() && !vendorPaymentModes[debt.id]) {
+                setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'nominal' }))
+              }
+              setPayment((current) => ({ ...current, [debt.id]: value }))
+            }} placeholder="Nominal" className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none" />
             <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
@@ -246,13 +255,18 @@ export default function Settlements() {
                               type="checkbox"
                               className="mr-2 accent-primary"
                               checked={(selectedItems[debt.id] || []).includes(item.batchId)}
-                              disabled={Boolean(payment[debt.id]?.trim())}
+                              disabled={vendorPaymentModes[debt.id] === 'nominal'}
                               onChange={(event) => setSelectedItems((current) => ({
                                 ...current,
                                 [debt.id]: event.target.checked
                                   ? [...(current[debt.id] || []), item.batchId as string]
                                   : (current[debt.id] || []).filter((id) => id !== item.batchId),
                               }))}
+                              onClick={() => {
+                                if (!vendorPaymentModes[debt.id]) {
+                                  setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'item' }))
+                                }
+                              }}
                               aria-label={`Pilih ${item.name} untuk dibayar`}
                             />
                           )}
