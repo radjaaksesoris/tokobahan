@@ -12,6 +12,7 @@ import {
   Coins,
   Calendar,
   X,
+  WalletCards,
 } from 'lucide-react'
 import {
   BarChart,
@@ -33,11 +34,16 @@ interface DailySummaryRow {
   total_profit: number
   transaction_count: number
 }
+interface VendorPaymentRow {
+  amount: number
+  paid_at: string
+}
 
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
   const [selectedDate, setSelectedDate] = useState('')
   const [dailySummary, setDailySummary] = useState<DailySummaryRow[]>([])
+  const [vendorPayments, setVendorPayments] = useState<VendorPaymentRow[]>([])
   const [summary, setSummary] = useState({
     total_revenue: 0,
     total_cost: 0,
@@ -86,7 +92,11 @@ export default function Reports() {
     const currentRequest = ++requestId.current
     setError(null)
     const { start, end } = getRange()
-    const [{ data: summaryData, error: summaryError }, { data: dailyData, error: dailyError }] = await Promise.all([
+    const [
+      { data: summaryData, error: summaryError },
+      { data: dailyData, error: dailyError },
+      { data: vendorPaymentData, error: vendorPaymentError },
+    ] = await Promise.all([
       supabase.rpc('sales_summary', {
         p_start: start.toISOString(),
         p_end: end.toISOString(),
@@ -95,6 +105,11 @@ export default function Reports() {
         p_start: start.toISOString(),
         p_end: end.toISOString(),
       }),
+      supabase
+        .from('vendor_debt_payments')
+        .select('amount, paid_at')
+        .gte('paid_at', start.toISOString())
+        .lte('paid_at', end.toISOString()),
     ])
     if (currentRequest !== requestId.current) return
 
@@ -121,6 +136,12 @@ export default function Reports() {
         transaction_count: 0,
       })
     }
+    if (vendorPaymentError) {
+      setVendorPayments([])
+      setError(vendorPaymentError.message || 'Gagal memuat pembayaran vendor')
+    } else {
+      setVendorPayments((vendorPaymentData || []) as VendorPaymentRow[])
+    }
   }
 
   const totalRevenue = Number(summary.total_revenue)
@@ -128,16 +149,24 @@ export default function Reports() {
   const totalProfit = Number(summary.total_profit)
   const zakatAmount = Math.max(0, totalProfit) * 0.025
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+  const totalVendorPayments = vendorPayments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+  const netCash = totalRevenue - totalVendorPayments
 
   // daily breakdown for chart
-  const dailyMap: Record<string, { revenue: number; cost: number; profit: number }> = {}
+  const dailyMap: Record<string, { revenue: number; cost: number; profit: number; vendorPayments: number }> = {}
   dailySummary.forEach((s) => {
     const d = s.sale_date
     dailyMap[d] = {
       revenue: Number(s.total_revenue),
       cost: Number(s.total_cost),
       profit: Number(s.total_profit),
+      vendorPayments: 0,
     }
+  })
+  vendorPayments.forEach((payment) => {
+    const date = payment.paid_at.slice(0, 10)
+    if (!dailyMap[date]) dailyMap[date] = { revenue: 0, cost: 0, profit: 0, vendorPayments: 0 }
+    dailyMap[date].vendorPayments += Number(payment.amount)
   })
   const chartData = Object.entries(dailyMap)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -213,7 +242,7 @@ export default function Reports() {
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         <Card className="relative overflow-hidden">
           <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
@@ -221,6 +250,26 @@ export default function Reports() {
               <DollarSign className="h-4 w-4" /> Uang Masuk
             </div>
             <p className="text-xl font-bold text-ink">{formatCurrency(totalRevenue)}</p>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden">
+          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-orange-600/[0.09]" />
+          <CardContent className="relative z-10 p-4">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <WalletCards className="h-4 w-4" /> Bayar Vendor
+            </div>
+            <p className="text-xl font-bold text-orange-600">{formatCurrency(totalVendorPayments)}</p>
+            <p className="text-xs text-muted-foreground">Uang keluar</p>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden">
+          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-blue-600/[0.08]" />
+          <CardContent className="relative z-10 p-4">
+            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <DollarSign className="h-4 w-4" /> Kas Bersih
+            </div>
+            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{formatCurrency(netCash)}</p>
+            <p className="text-xs text-muted-foreground">Uang masuk - vendor</p>
           </CardContent>
         </Card>
         <Card className="relative overflow-hidden">
@@ -267,7 +316,7 @@ export default function Reports() {
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Grafik Uang Masuk vs Laba</CardTitle>
+            <CardTitle className="text-base">Arus Kas dan Laba</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80 lg:h-64">
@@ -283,6 +332,7 @@ export default function Reports() {
                   <Legend />
                   <Bar dataKey="revenue" name="Uang Masuk" fill="#0f766e" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="profit" name="Laba" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="vendorPayments" name="Bayar Vendor" fill="#ea580c" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
