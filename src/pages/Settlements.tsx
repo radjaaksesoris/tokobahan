@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards } from 'lucide-react'
+import { LoadingDots } from '@/components/ui/LoadingDots'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -63,6 +64,7 @@ export default function Settlements() {
   const [historyDate, setHistoryDate] = useState('')
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
+  const [settlingDebtId, setSettlingDebtId] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -165,6 +167,7 @@ export default function Settlements() {
     })
   }, [historyDate, historySearch, vendorPaymentHistory])
   async function settle(debt: Debt) {
+    if (settlingDebtId) return
     const enteredPayment = payment[debt.id]?.trim() || ''
     const hasNominal = enteredPayment !== ''
     const paymentMode = tab === 'vendor' ? vendorPaymentModes[debt.id] : 'nominal'
@@ -177,8 +180,10 @@ export default function Settlements() {
     if (tab === 'customer' && !hasNominal) { toast.error('Masukkan nominal pembayaran'); return }
     if (tab === 'vendor' && paymentMode === 'item' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
+    setSettlingDebtId(debt.id)
     let error: { message: string } | null = null
-    if (tab === 'vendor') {
+    try {
+      if (tab === 'vendor') {
       let remaining = amount
       const allocations: { stock_batch_id: string; amount: number }[] = []
       for (const batchId of selectedBatchIds) {
@@ -206,13 +211,16 @@ export default function Settlements() {
         const result = await supabase.rpc('pay_vendor_debt', { p_allocations: allocations })
         error = result.error
       }
-    } else {
-      const result = await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
-      error = result.error
-    }
-    if (error) toast.error(error.message)
-    else {
-      toast.success('Pembayaran berhasil dicatat'); setPayment((current) => ({ ...current, [debt.id]: '' })); void load()
+      } else {
+        const result = await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
+        error = result.error
+      }
+      if (error) toast.error(error.message)
+      else {
+        toast.success('Pembayaran berhasil dicatat'); setPayment((current) => ({ ...current, [debt.id]: '' })); void load()
+      }
+    } finally {
+      setSettlingDebtId(null)
     }
   }
   return <div className="space-y-6">
@@ -257,7 +265,12 @@ export default function Settlements() {
         aria-label="Cari nama pelanggan"
       />
     )}
-    {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
+    {loading ? (
+      <div className="flex items-center justify-center gap-3 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
+        <LoadingDots label="Memuat data hutang" />
+        Memuat data...
+      </div>
+    ) : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card><CardContent className="p-3">
           <div className="overflow-x-auto">
@@ -305,7 +318,9 @@ export default function Settlements() {
             <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
-            <Button className="h-9 px-3" onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+            <Button className="h-9 px-3" onClick={() => void settle(debt)} disabled={settlingDebtId !== null}>
+              {settlingDebtId === debt.id ? <><LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" label="Mencatat pembayaran" /> Memproses...</> : <><WalletCards className="h-4 w-4" /> Bayar</>}
+            </Button>
           </div>
         </div>
         {expandedDebtId === debt.id && (
