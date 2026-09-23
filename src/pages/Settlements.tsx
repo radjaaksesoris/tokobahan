@@ -115,15 +115,21 @@ export default function Settlements() {
       />
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : openDebts.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
-      {openDebts.map((debt) => <Card key={debt.id}><CardContent className="space-y-3 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="font-semibold text-ink">{debt.name}</p><p className="text-xs text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p><p className="mt-1 text-sm">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p></div>
-          <div className="flex flex-wrap gap-2">
-            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} onChange={(event) => setPayment((current) => ({ ...current, [debt.id]: event.target.value }))} placeholder="Nominal" className="w-32" />
-            <Button variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+      {openDebts.map((debt) => <Card key={debt.id}><CardContent className="space-y-2 p-2.5 sm:p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
+              <p className="text-[11px] text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+          </div>
+          <div className="flex w-full gap-1.5 sm:w-auto">
+            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} onChange={(event) => setPayment((current) => ({ ...current, [debt.id]: event.target.value }))} placeholder="Nominal" className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none" />
+            <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
-            <Button onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+            <Button className="h-9 px-3" onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
           </div>
         </div>
         {expandedDebtId === debt.id && (
