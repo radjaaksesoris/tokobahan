@@ -13,6 +13,7 @@ type DebtPayment = { amount: number; paid_at: string }
 type DebtItem = { name: string; quantity: number; unit: string; unitPrice: number; subtotal: number }
 type Debt = {
   id: string
+  batchIds: string[]
   name: string
   reference: string
   total: number
@@ -34,30 +35,51 @@ export default function Settlements() {
     setLoading(true)
     if (tab === 'vendor') {
       const { data, error } = await supabase.from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, due_date, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
+        .select('id, quantity_received, unit_cost, received_at, due_date, vendor_id, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
         .eq('payment_status', 'kredit').order('due_date')
       if (error) toast.error(error.message)
-      setDebts((data || []).map((row: any) => ({
-        id: row.id, name: row.vendor?.name || 'Vendor', reference: 'Stok masuk',
-        total: Number(row.quantity_received) * Number(row.unit_cost),
-        paid: (row.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
-        due: row.due_date,
-        payments: (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
-        items: [{
+      const grouped = new Map<string, Debt>()
+      for (const row of data || []) {
+        const receivedDate = row.received_at.slice(0, 10)
+        const key = `${row.vendor_id || 'unknown'}:${receivedDate}`
+        const existing = grouped.get(key)
+        const total = Number(row.quantity_received) * Number(row.unit_cost)
+        const payments = (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at }))
+        const item = {
           name: row.product?.name || 'Produk tidak ditemukan',
           quantity: Number(row.quantity_received),
           unit: row.product?.stock_unit || 'satuan',
           unitPrice: Number(row.unit_cost),
-          subtotal: Number(row.quantity_received) * Number(row.unit_cost),
-        }],
-      })))
+          subtotal: total,
+        }
+        if (existing) {
+          existing.batchIds.push(row.id)
+          existing.total += total
+          existing.paid += payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0)
+          existing.payments.push(...payments)
+          existing.items.push(item)
+          continue
+        }
+        grouped.set(key, {
+          id: key,
+          batchIds: [row.id],
+          name: row.vendor?.name || 'Vendor',
+          reference: `Stok masuk · ${receivedDate}`,
+          total,
+          paid: payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0),
+          due: row.due_date,
+          payments,
+          items: [item],
+        })
+      }
+      setDebts(Array.from(grouped.values()))
     } else {
       const { data, error } = await supabase.from('sales')
         .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
         .eq('payment_method', 'credit').order('created_at', { ascending: true })
       if (error) toast.error(error.message)
       setDebts((data || []).map((row: any) => ({
-        id: row.id, name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
+        id: row.id, batchIds: [row.id], name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
         total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
         due: null,
         payments: (row.customer_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
@@ -88,15 +110,46 @@ export default function Settlements() {
     const amount = Number(payment[debt.id])
     const outstanding = debt.total - debt.paid
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
-    const result = tab === 'vendor'
-      ? await supabase.from('vendor_debt_payments').insert({ stock_batch_id: debt.id, amount })
-      : await supabase.from('customer_debt_payments').insert({ sale_id: debt.id, amount })
-    const { error } = result
+    let error: { message: string } | null = null
+    if (tab === 'vendor') {
+      let remaining = amount
+      for (const batchId of debt.batchIds) {
+        if (remaining <= 0.009) break
+        const { data: batch, error: batchError } = await supabase
+          .from('product_stock_batches')
+          .select('id, quantity_received, unit_cost, vendor_debt_payments(amount)')
+          .eq('id', batchId)
+          .single()
+        if (batchError) {
+          error = batchError
+          break
+        }
+        const batchTotal = Number(batch.quantity_received) * Number(batch.unit_cost)
+        const batchPaid = (batch.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0)
+        const batchOutstanding = Math.max(0, batchTotal - batchPaid)
+        const batchAmount = Math.min(remaining, batchOutstanding)
+        if (batchAmount > 0.009) {
+          const { error: paymentError } = await supabase.from('vendor_debt_payments').insert({ stock_batch_id: batchId, amount: batchAmount })
+          if (paymentError) {
+            error = paymentError
+            break
+          }
+          if (batchAmount >= batchOutstanding - 0.009) {
+            const { error: statusError } = await supabase.from('product_stock_batches').update({ payment_status: 'lunas' }).eq('id', batchId)
+            if (statusError) {
+              error = statusError
+              break
+            }
+          }
+          remaining -= batchAmount
+        }
+      }
+    } else {
+      const result = await supabase.from('customer_debt_payments').insert({ sale_id: debt.id, amount })
+      error = result.error
+    }
     if (error) toast.error(error.message)
     else {
-      if (tab === 'vendor' && amount >= outstanding - 0.009) {
-        await supabase.from('product_stock_batches').update({ payment_status: 'lunas' }).eq('id', debt.id)
-      }
       toast.success('Pembayaran berhasil dicatat'); setPayment((current) => ({ ...current, [debt.id]: '' })); void load()
     }
   }
