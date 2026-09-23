@@ -244,19 +244,25 @@ export default function Settings() {
   }
 
   async function uploadBackupObject(backupId: string, payload: Json) {
-    const objectPath = `${user?.id}/${backupId}.json`
+    if (!user?.id) throw new Error('Sesi admin tidak ditemukan')
+    const objectPath = `${user.id}/${backupId}.json`
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const { error: uploadError } = await supabase.storage
       .from(BACKUP_BUCKET)
-      .upload(objectPath, blob, { contentType: 'application/json', upsert: false })
-    if (uploadError) throw uploadError
+      .upload(objectPath, blob, { contentType: 'application/json', cacheControl: '3600', upsert: false })
+    if (uploadError) {
+      throw new Error(`Upload ke Storage gagal: ${uploadError.message}`)
+    }
     const { error: metadataError } = await supabase.rpc('finalize_operational_backup_storage', {
       p_backup_id: backupId,
       p_storage_object_path: objectPath,
       p_storage_size_bytes: blob.size,
       p_storage_content_type: 'application/json',
     })
-    if (metadataError) throw metadataError
+    if (metadataError) {
+      await supabase.storage.from(BACKUP_BUCKET).remove([objectPath])
+      throw new Error(`Finalisasi metadata backup gagal: ${metadataError.message}`)
+    }
   }
 
   async function readCloudBackup(backup: typeof cloudBackups[number]) {
