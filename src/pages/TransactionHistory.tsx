@@ -25,8 +25,14 @@ interface SaleItemRow {
   product_name: string
   unit: string
   quantity: number
+  returned_quantity: number
+  returned_amount: number
   unit_price: number
   line_total: number
+}
+
+interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity' | 'returned_amount'> {
+  sale_returns: Array<{ quantity: number; refund_amount: number }> | null
 }
 
 const PAGE_SIZE = 20
@@ -111,7 +117,7 @@ export default function TransactionHistory() {
     setItemsLoading(true)
     const { data, error } = await supabase
       .from('sale_items')
-      .select('id, product_name, unit, quantity, unit_price, line_total')
+      .select('id, product_name, unit, quantity, unit_price, line_total, sale_returns(quantity, refund_amount)')
       .eq('sale_id', sale.id)
       .order('id')
 
@@ -119,7 +125,19 @@ export default function TransactionHistory() {
       toast.error(error.message)
       setItems([])
     } else {
-      setItems((data || []) as SaleItemRow[])
+      setItems((data || []).map((row) => {
+        const item = row as unknown as SaleItemWithReturns
+        return {
+          id: item.id,
+          product_name: item.product_name,
+          unit: item.unit,
+          quantity: Number(item.quantity),
+          returned_quantity: (item.sale_returns || []).reduce((sum, returned) => sum + Number(returned.quantity), 0),
+          returned_amount: (item.sale_returns || []).reduce((sum, returned) => sum + Number(returned.refund_amount), 0),
+          unit_price: Number(item.unit_price),
+          line_total: Number(item.line_total),
+        }
+      }))
     }
     setItemsLoading(false)
   }
@@ -341,14 +359,20 @@ export default function TransactionHistory() {
                       <div>
                         <p className="font-medium">{item.product_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.quantity} {item.unit} × {formatCurrency(Number(item.unit_price))}
+                          {item.quantity - item.returned_quantity} {item.unit} tersisa
+                          {' · '}
+                          {formatCurrency(Number(item.unit_price))}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">{formatCurrency(Number(item.line_total))}</p>
-                        <button type="button" className="mt-1 text-xs font-semibold text-primary hover:underline" onClick={() => { setReturningItem(item); setReturnQuantity(String(item.quantity)); setReturnReason('') }}>
-                          Retur
-                        </button>
+                        <p className="font-semibold">{formatCurrency(Math.max(0, Number(item.line_total) - item.returned_amount))}</p>
+                        {item.returned_quantity >= item.quantity ? (
+                          <span className="mt-1 inline-block text-xs font-semibold text-muted-foreground">Sudah diretur</span>
+                        ) : (
+                          <button type="button" className="mt-1 text-xs font-semibold text-primary hover:underline" onClick={() => { setReturningItem(item); setReturnQuantity(String(item.quantity - item.returned_quantity)); setReturnReason('') }}>
+                            Retur
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
