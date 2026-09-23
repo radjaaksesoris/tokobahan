@@ -27,6 +27,7 @@ export default function Settlements() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [payment, setPayment] = useState<Record<string, string>>({})
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
+  const [customerSearch, setCustomerSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   async function load() {
@@ -71,8 +72,18 @@ export default function Settlements() {
     }
     setLoading(false)
   }
-  useEffect(() => { void load() }, [tab])
-  const openDebts = useMemo(() => debts.filter((debt) => debt.total - debt.paid > 0.009), [debts])
+  useEffect(() => {
+    setCustomerSearch('')
+    setExpandedDebtId(null)
+    void load()
+  }, [tab])
+  const openDebts = useMemo(() => {
+    const search = customerSearch.trim().toLowerCase()
+    return debts.filter((debt) => (
+      debt.total - debt.paid > 0.009
+      && (tab === 'vendor' || !search || debt.name.toLowerCase().includes(search))
+    ))
+  }, [debts, customerSearch, tab])
   async function settle(debt: Debt) {
     const amount = Number(payment[debt.id])
     const outstanding = debt.total - debt.paid
@@ -95,6 +106,14 @@ export default function Settlements() {
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
     </div>
+    {tab === 'customer' && (
+      <Input
+        value={customerSearch}
+        onChange={(event) => setCustomerSearch(event.target.value)}
+        placeholder="Cari nama pelanggan..."
+        aria-label="Cari nama pelanggan"
+      />
+    )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : openDebts.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
       {openDebts.map((debt) => <Card key={debt.id}><CardContent className="space-y-3 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
