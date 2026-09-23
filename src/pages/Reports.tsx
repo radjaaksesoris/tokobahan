@@ -242,8 +242,8 @@ export default function Reports() {
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <Card className="relative overflow-hidden">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-10">
+        <Card className="relative overflow-hidden lg:col-span-2">
           <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -252,7 +252,7 @@ export default function Reports() {
             <p className="text-xl font-bold text-ink">{formatCurrency(totalRevenue)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden lg:col-span-2">
           <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-orange-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -262,7 +262,7 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground">Uang keluar</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden lg:col-span-2">
           <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-blue-600/[0.08]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -272,7 +272,7 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground">Uang masuk - vendor</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden lg:col-span-2">
           <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-red-600/[0.08]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -281,7 +281,7 @@ export default function Reports() {
             <p className="text-xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden lg:col-span-2">
           <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-emerald-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -290,7 +290,7 @@ export default function Reports() {
             <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalProfit)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden lg:col-span-5">
           <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -300,7 +300,7 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
-        <Card className="relative col-span-2 overflow-hidden lg:col-span-1">
+        <Card className="relative col-span-2 overflow-hidden lg:col-span-5">
           <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-amber-600/[0.09]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
