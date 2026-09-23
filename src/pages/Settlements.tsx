@@ -22,6 +22,23 @@ type Debt = {
   payments: DebtPayment[]
   items: DebtItem[]
 }
+type VendorDebtRow = {
+  id: string
+  quantity_received: number
+  unit_cost: number
+  received_at: string
+  due_date: string | null
+  vendor_id: string | null
+  vendor: { name: string } | null
+  product: { name: string; stock_unit: string } | null
+  vendor_debt_payments: DebtPayment[]
+}
+type VendorBatchRow = {
+  id: string
+  quantity_received: number
+  unit_cost: number
+  vendor_debt_payments: DebtPayment[]
+}
 
 export default function Settlements() {
   const [tab, setTab] = useState<Tab>('vendor')
@@ -34,10 +51,11 @@ export default function Settlements() {
   async function load() {
     setLoading(true)
     if (tab === 'vendor') {
-      const { data, error } = await supabase.from('product_stock_batches')
+      const { data: rawData, error } = await supabase.from('product_stock_batches')
         .select('id, quantity_received, unit_cost, received_at, due_date, vendor_id, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
         .eq('payment_status', 'kredit').order('due_date')
       if (error) toast.error(error.message)
+      const data = rawData as unknown as VendorDebtRow[] | null
       const grouped = new Map<string, Debt>()
       for (const row of data || []) {
         const receivedDate = row.received_at.slice(0, 10)
@@ -115,7 +133,7 @@ export default function Settlements() {
       let remaining = amount
       for (const batchId of debt.batchIds) {
         if (remaining <= 0.009) break
-        const { data: batch, error: batchError } = await supabase
+        const { data: rawBatch, error: batchError } = await supabase
           .from('product_stock_batches')
           .select('id, quantity_received, unit_cost, vendor_debt_payments(amount)')
           .eq('id', batchId)
@@ -124,6 +142,7 @@ export default function Settlements() {
           error = batchError
           break
         }
+        const batch = rawBatch as unknown as VendorBatchRow
         const batchTotal = Number(batch.quantity_received) * Number(batch.unit_cost)
         const batchPaid = (batch.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0)
         const batchOutstanding = Math.max(0, batchTotal - batchPaid)
