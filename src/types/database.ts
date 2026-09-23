@@ -396,6 +396,10 @@ export interface Database {
         Args: { p_allocations: Json }
         Returns: undefined
       }
+      pay_customer_debt: {
+        Args: { p_sale_id: string; p_amount: number }
+        Returns: string
+      }
     }
     Enums: {}
     CompositeTypes: {}

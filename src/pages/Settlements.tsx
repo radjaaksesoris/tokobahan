@@ -207,7 +207,7 @@ export default function Settlements() {
         error = result.error
       }
     } else {
-      const result = await supabase.from('customer_debt_payments').insert({ sale_id: debt.id, amount })
+      const result = await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
       error = result.error
     }
     if (error) toast.error(error.message)
