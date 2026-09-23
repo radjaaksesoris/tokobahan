@@ -287,7 +287,6 @@ export default function Dashboard() {
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ringkasan operasional</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-primary">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
-          <p className="mt-1 max-w-[42rem] text-sm text-muted-foreground">Pantau arus penjualan, laba, dan stok dari satu ruang kerja.</p>
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button
