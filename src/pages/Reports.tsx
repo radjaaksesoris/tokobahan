@@ -262,14 +262,14 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground">Uang keluar</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden lg:col-span-2">
-          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-blue-600/[0.08]" />
+        <Card className="relative overflow-hidden border-emerald-200 bg-emerald-50 lg:col-span-2">
+          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-emerald-700/[0.12]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-emerald-900">
               <DollarSign className="h-4 w-4" /> Kas Bersih
             </div>
-            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{formatCurrency(netCash)}</p>
-            <p className="text-xs text-muted-foreground">Uang masuk - vendor</p>
+            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-emerald-800' : 'text-red-700'}`}>{formatCurrency(netCash)}</p>
+            <p className="text-xs text-emerald-800/80">Uang masuk - vendor</p>
           </CardContent>
         </Card>
         <Card className="relative overflow-hidden lg:col-span-2">
