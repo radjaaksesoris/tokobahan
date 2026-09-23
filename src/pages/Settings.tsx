@@ -224,7 +224,11 @@ export default function Settings() {
       const totalRecords = Object.values(result.counts || {}).reduce((total, count) => total + Number(count || 0), 0)
       toast.success(`Backup berhasil dibuat${totalRecords ? ` (${totalRecords} data)` : ''}`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Gagal membuat backup'
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'Gagal membuat backup'
       setCloudBackupError(message)
       toast.error(`Backup gagal: ${message}`)
     } finally {
