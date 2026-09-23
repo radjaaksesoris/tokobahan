@@ -30,6 +30,9 @@ export default function Settings() {
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [vendorName, setVendorName] = useState('')
   const [vendorLoading, setVendorLoading] = useState(false)
+  const [units, setUnits] = useState<{ id: string; name: string }[]>([])
+  const [unitName, setUnitName] = useState('')
+  const [unitLoading, setUnitLoading] = useState(false)
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -61,6 +64,43 @@ export default function Settings() {
     else {
       toast.success('Vendor dihapus')
       await loadVendors()
+    }
+
+    async function loadUnits() {
+      const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
+      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+      else setUnits(data || [])
+    }
+
+    useEffect(() => {
+      void loadUnits()
+    }, [])
+
+    async function addUnit() {
+      const name = unitName.trim()
+      if (!name) return
+      if (units.some((unit) => unit.name.toLowerCase() === name.toLowerCase())) {
+        toast.error('Satuan tersebut sudah ada')
+        return
+      }
+      setUnitLoading(true)
+      const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
+      if (error) toast.error(`Gagal menambah satuan: ${error.message}`)
+      else {
+        toast.success('Satuan ditambahkan')
+        setUnitName('')
+        await loadUnits()
+      }
+      setUnitLoading(false)
+    }
+
+    async function removeUnit(id: string) {
+      const { error } = await supabase.from('custom_units').delete().eq('id', id)
+      if (error) toast.error(`Gagal menghapus satuan: ${error.message}`)
+      else {
+        toast.success('Satuan dihapus')
+        await loadUnits()
+      }
     }
   }
 
@@ -290,6 +330,37 @@ export default function Settings() {
             </ul>
           )}
         </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Master Satuan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">Tambahkan nama satuan yang akan muncul di dropdown Produk.</p>
+            <div className="flex gap-2">
+              <Input
+                value={unitName}
+                onChange={(event) => setUnitName(event.target.value)}
+                placeholder="Contoh: Roll, Kg, Dus"
+                onKeyDown={(event) => { if (event.key === 'Enter') void addUnit() }}
+              />
+              <Button onClick={() => void addUnit()} disabled={unitLoading || !unitName.trim()}>Tambah</Button>
+            </div>
+            {units.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Belum ada satuan tambahan.</p>
+            ) : (
+              <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border">
+                {units.map((unit) => (
+                  <li key={unit.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                    <span>{unit.name}</span>
+                    <button type="button" onClick={() => void removeUnit(unit.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600" aria-label={`Hapus satuan ${unit.name}`}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
         </Card>
       </div>
 

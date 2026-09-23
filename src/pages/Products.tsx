@@ -40,6 +40,7 @@ export default function Products() {
   const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
+  const [customUnits, setCustomUnits] = useState<UnitType[]>([])
   const [stockVendorId, setStockVendorId] = useState('')
   const [stockPaymentStatus, setStockPaymentStatus] = useState<'lunas' | 'kredit'>('lunas')
   const [stockDueDate, setStockDueDate] = useState('')
@@ -78,7 +79,7 @@ export default function Products() {
     return () => mediaQuery.removeEventListener('change', updatePageSize)
   }, [])
 
-  const allUnits = ALL_UNITS
+  const allUnits = [...ALL_UNITS, ...customUnits.filter((unit) => !ALL_UNITS.includes(unit))]
   const unitOptions = allUnits.map((unit) => ({
     value: unit,
     label: UNIT_LABELS[unit] || unit,
@@ -89,6 +90,10 @@ export default function Products() {
     supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
       if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
       else setVendors(data || [])
+    })
+    supabase.from('custom_units').select('name').order('name').then(({ data, error }) => {
+      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+      else setCustomUnits((data || []).map((unit) => unit.name))
     })
   }, [])
 
