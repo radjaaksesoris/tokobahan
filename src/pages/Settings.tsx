@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database, Download, RefreshCw, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { UNIT_LABELS } from '@/types'
+import type { Json } from '@/types/database'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 
@@ -27,6 +28,15 @@ export default function Settings() {
   const [resetOpen, setResetOpen] = useState(false)
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const [cloudBackupLoading, setCloudBackupLoading] = useState(false)
+  const [cloudBackupError, setCloudBackupError] = useState<string | null>(null)
+  const [cloudBackups, setCloudBackups] = useState<Array<{
+    id: string
+    created_at: string
+    created_by: string
+    backup_version: string
+    payload: Json
+  }>>([])
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -80,6 +90,24 @@ export default function Settings() {
   useEffect(() => {
     void loadUnits()
   }, [])
+
+  async function loadCloudBackups() {
+    setCloudBackupError(null)
+    const { data, error } = await supabase
+      .from('operational_backups')
+      .select('id, created_at, created_by, backup_version, payload')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error) {
+      setCloudBackupError(error.message)
+      return
+    }
+    setCloudBackups((data || []) as typeof cloudBackups)
+  }
+
+  useEffect(() => {
+    if (isRole('admin')) void loadCloudBackups()
+  }, [isRole])
 
   async function addUnit() {
     const name = unitName.trim()
@@ -177,38 +205,76 @@ export default function Settings() {
   }
 
   async function createBackup() {
+    setCloudBackupError(null)
     setBackupLoading(true)
-    const { data, error } = await supabase.rpc('create_operational_backup')
-    if (error) {
-      toast.error(`Backup gagal: ${error.message}`)
+    try {
+      const { data, error } = await supabase.rpc('create_operational_backup')
+      if (error) throw error
+      const result = data as { id: string; created_at: string; payload: Json; counts?: Record<string, number> } | null
+      if (!result?.payload || !result.id) throw new Error('Respons backup tidak valid')
+      downloadBackup(result.payload, result.created_at)
+      await loadCloudBackups()
+      const totalRecords = Object.values(result.counts || {}).reduce((total, count) => total + Number(count || 0), 0)
+      toast.success(`Backup berhasil dibuat${totalRecords ? ` (${totalRecords} data)` : ''}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal membuat backup'
+      setCloudBackupError(message)
+      toast.error(`Backup gagal: ${message}`)
+    } finally {
       setBackupLoading(false)
-      return
     }
+  }
 
-    const result = data as {
-      id: string
-      created_at: string
-      payload: Record<string, unknown>
-      counts: Record<string, number>
-    } | null
-    if (!result?.payload || !result.id) {
-      toast.error('Backup gagal: respons backup tidak valid')
-      setBackupLoading(false)
-      return
-    }
-
-    const filenameDate = new Date(result.created_at).toISOString().replace(/[:.]/g, '-')
-    const blob = new Blob([JSON.stringify(result.payload, null, 2)], { type: 'application/json' })
+  function downloadBackup(payload: Json, createdAt: string) {
+    const filenameDate = new Date(createdAt).toISOString().replace(/[:.]/g, '-')
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
     link.download = `tokobahan-backup-${filenameDate}.json`
     link.click()
     URL.revokeObjectURL(url)
+  }
 
-    const totalRecords = Object.values(result.counts).reduce((total, count) => total + Number(count || 0), 0)
-    toast.success(`Backup berhasil diunduh (${totalRecords} data, ID ${result.id.slice(0, 8)})`)
-    setBackupLoading(false)
+  async function uploadBackup(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setCloudBackupLoading(true)
+    setCloudBackupError(null)
+    try {
+      const payload = JSON.parse(await file.text()) as Record<string, unknown>
+      if (payload.format !== 'tokobahan-operational-backup' || !payload.tables) {
+        throw new Error('Format backup tidak valid')
+      }
+      const { error } = await supabase.rpc('upload_operational_backup', { p_payload: payload as Json })
+      if (error) throw error
+      await loadCloudBackups()
+      toast.success('Backup berhasil diunggah ke cloud')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal mengunggah backup'
+      setCloudBackupError(message)
+      toast.error(`Upload backup gagal: ${message}`)
+    } finally {
+      setCloudBackupLoading(false)
+    }
+  }
+
+  async function restoreCloudBackup(backup: typeof cloudBackups[number]) {
+    if (!window.confirm('Restore akan mengganti seluruh data operasional saat ini. Lanjutkan?')) return
+    setRestoreLoading(true)
+    setCloudBackupError(null)
+    try {
+      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: backup.payload })
+      if (error) throw error
+      toast.success('Backup cloud berhasil dipulihkan')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal memulihkan backup'
+      setCloudBackupError(message)
+      toast.error(`Restore gagal: ${message}`)
+    } finally {
+      setRestoreLoading(false)
+    }
   }
 
   async function restoreBackup(event: ChangeEvent<HTMLInputElement>) {
@@ -420,6 +486,53 @@ export default function Settings() {
             <input type="file" accept="application/json,.json" className="sr-only" onChange={restoreBackup} disabled={restoreLoading} />
             {restoreLoading ? 'Memulihkan...' : 'Restore Backup JSON'}
           </label>
+          <div className="border-t border-border pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-ink">Backup cloud</p>
+                <p className="text-xs text-muted-foreground">Tersedia untuk admin yang login. Maksimal 7 backup terbaru per admin.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => void loadCloudBackups()} disabled={cloudBackupLoading}>
+                <RefreshCw className="h-4 w-4" />
+                Muat ulang
+              </Button>
+            </div>
+            {cloudBackupError && (
+              <div role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {cloudBackupError}
+              </div>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-primary/30 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/5">
+                <input type="file" accept="application/json,.json" className="sr-only" onChange={uploadBackup} disabled={cloudBackupLoading} />
+                <Upload className="h-4 w-4" />
+                {cloudBackupLoading ? 'Mengunggah...' : 'Upload JSON ke cloud'}
+              </label>
+            </div>
+            {cloudBackups.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">Belum ada backup cloud.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
+                {cloudBackups.map((backup) => (
+                  <li key={backup.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 text-sm">
+                    <div>
+                      <p className="font-medium text-ink">{new Date(backup.created_at).toLocaleString('id-ID')}</p>
+                      <p className="text-xs text-muted-foreground">ID {backup.id.slice(0, 8)} · v{backup.backup_version}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => downloadBackup(backup.payload, backup.created_at)}>
+                        <Download className="h-4 w-4" />
+                        Unduh
+                      </Button>
+                      <Button size="sm" onClick={() => void restoreCloudBackup(backup)} disabled={restoreLoading}>
+                        {restoreLoading ? 'Memulihkan...' : 'Restore'}
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </CardContent>
       </Card>
 

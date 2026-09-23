@@ -380,6 +380,10 @@ export interface Database {
         Args: Record<string, never>
         Returns: Json
       }
+      upload_operational_backup: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       adjust_stock: {
         Args: { p_product_id: string; p_physical_stock: number; p_reason: string }
         Returns: string

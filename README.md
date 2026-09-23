@@ -199,6 +199,10 @@ supabase/
 - Jalankan migration `20260921150000_operational_backups.sql` untuk mengaktifkan
   backup admin. Tombol backup menyimpan snapshot operasional di Supabase dan
   mengunduh file JSON ke perangkat; password dan token tidak ikut dicadangkan.
+- Jalankan migration `20260924010000_cloud_backup_retention.sql` setelah migration
+  backup untuk mengaktifkan upload, daftar, restore backup cloud, dan retensi
+  maksimal 7 backup terbaru per admin. Migration ini dijalankan di Supabase SQL
+  Editor atau melalui Supabase CLI; tidak memerlukan service-role key di aplikasi.
 
 ---
 
