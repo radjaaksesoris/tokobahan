@@ -65,42 +65,42 @@ export default function Settings() {
       toast.success('Vendor dihapus')
       await loadVendors()
     }
+  }
 
-    async function loadUnits() {
-      const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
-      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
-      else setUnits(data || [])
+  async function loadUnits() {
+    const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
+    if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+    else setUnits(data || [])
+  }
+
+  useEffect(() => {
+    void loadUnits()
+  }, [])
+
+  async function addUnit() {
+    const name = unitName.trim()
+    if (!name) return
+    if (units.some((unit) => unit.name.toLowerCase() === name.toLowerCase())) {
+      toast.error('Satuan tersebut sudah ada')
+      return
     }
-
-    useEffect(() => {
-      void loadUnits()
-    }, [])
-
-    async function addUnit() {
-      const name = unitName.trim()
-      if (!name) return
-      if (units.some((unit) => unit.name.toLowerCase() === name.toLowerCase())) {
-        toast.error('Satuan tersebut sudah ada')
-        return
-      }
-      setUnitLoading(true)
-      const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
-      if (error) toast.error(`Gagal menambah satuan: ${error.message}`)
-      else {
-        toast.success('Satuan ditambahkan')
-        setUnitName('')
-        await loadUnits()
-      }
-      setUnitLoading(false)
+    setUnitLoading(true)
+    const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
+    if (error) toast.error(`Gagal menambah satuan: ${error.message}`)
+    else {
+      toast.success('Satuan ditambahkan')
+      setUnitName('')
+      await loadUnits()
     }
+    setUnitLoading(false)
+  }
 
-    async function removeUnit(id: string) {
-      const { error } = await supabase.from('custom_units').delete().eq('id', id)
-      if (error) toast.error(`Gagal menghapus satuan: ${error.message}`)
-      else {
-        toast.success('Satuan dihapus')
-        await loadUnits()
-      }
+  async function removeUnit(id: string) {
+    const { error } = await supabase.from('custom_units').delete().eq('id', id)
+    if (error) toast.error(`Gagal menghapus satuan: ${error.message}`)
+    else {
+      toast.success('Satuan dihapus')
+      await loadUnits()
     }
   }
 
