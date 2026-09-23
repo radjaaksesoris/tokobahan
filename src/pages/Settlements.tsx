@@ -8,35 +8,40 @@ import { toast } from 'sonner'
 import { WalletCards } from 'lucide-react'
 
 type Tab = 'vendor' | 'customer'
-type Debt = { id: string; name: string; reference: string; total: number; paid: number; due: string | null }
+type DebtPayment = { amount: number; paid_at: string }
+type Debt = { id: string; name: string; reference: string; total: number; paid: number; due: string | null; payments: DebtPayment[] }
 
 export default function Settlements() {
   const [tab, setTab] = useState<Tab>('vendor')
   const [debts, setDebts] = useState<Debt[]>([])
   const [payment, setPayment] = useState<Record<string, string>>({})
+  const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   async function load() {
     setLoading(true)
     if (tab === 'vendor') {
       const { data, error } = await supabase.from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, due_date, vendor:vendors(name), vendor_debt_payments(amount)')
+        .select('id, quantity_received, unit_cost, due_date, vendor:vendors(name), vendor_debt_payments(amount, paid_at)')
         .eq('payment_status', 'kredit').order('due_date')
       if (error) toast.error(error.message)
       setDebts((data || []).map((row: any) => ({
         id: row.id, name: row.vendor?.name || 'Vendor', reference: 'Stok masuk',
         total: Number(row.quantity_received) * Number(row.unit_cost),
-        paid: (row.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0), due: row.due_date,
+        paid: (row.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
+        due: row.due_date,
+        payments: (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
       })))
     } else {
       const { data, error } = await supabase.from('sales')
-        .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), customer_debt_payments(amount)')
+        .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), customer_debt_payments(amount, paid_at)')
         .eq('payment_method', 'credit').order('created_at', { ascending: true })
       if (error) toast.error(error.message)
       setDebts((data || []).map((row: any) => ({
         id: row.id, name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
         total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
         due: null,
+        payments: (row.customer_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
       })))
     }
     setLoading(false)
@@ -66,9 +71,35 @@ export default function Settlements() {
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
     </div>
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : openDebts.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
-      {openDebts.map((debt) => <Card key={debt.id}><CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="font-semibold text-ink">{debt.name}</p><p className="text-xs text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p><p className="mt-1 text-sm">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p></div>
-        <div className="flex gap-2"><Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} onChange={(event) => setPayment((current) => ({ ...current, [debt.id]: event.target.value }))} placeholder="Nominal" className="w-32" /><Button onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button></div>
+      {openDebts.map((debt) => <Card key={debt.id}><CardContent className="space-y-3 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="font-semibold text-ink">{debt.name}</p><p className="text-xs text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p><p className="mt-1 text-sm">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p></div>
+          <div className="flex flex-wrap gap-2">
+            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} onChange={(event) => setPayment((current) => ({ ...current, [debt.id]: event.target.value }))} placeholder="Nominal" className="w-32" />
+            <Button variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+              Rincian
+            </Button>
+            <Button onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+          </div>
+        </div>
+        {expandedDebtId === debt.id && (
+          <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm">
+            <div className="grid gap-1 sm:grid-cols-3">
+              <p>Total: <strong>{formatCurrency(debt.total)}</strong></p>
+              <p>Sudah dibayar: <strong>{formatCurrency(debt.paid)}</strong></p>
+              <p>Sisa: <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+            </div>
+            {debt.payments.length > 0 && (
+              <div className="mt-3 space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                {debt.payments.map((item, index) => (
+                  <p key={`${debt.id}-payment-${index}`}>
+                    Pembayaran {index + 1}: {formatCurrency(item.amount)} · {new Date(item.paid_at).toLocaleDateString('id-ID')}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent></Card>)}
     </div>}
   </div>
