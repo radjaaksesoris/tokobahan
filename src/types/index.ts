@@ -1,7 +1,6 @@
 import type { Json } from './database'
 
 export type UnitType = string
-export const UNIT_TYPES: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
 export function isUnitType(value: string): value is UnitType {
   return value.trim().length > 0
@@ -29,13 +28,6 @@ export interface ProductPrice {
   unit: UnitType
   price: number
   conversion: number // how many base units (pcs) in this unit
-}
-
-export interface CustomUnit {
-  id: string
-  name: string
-  factor: number
-  created_at: string
 }
 
 export function parseProductPrices(value: Json): ProductPrice[] {
@@ -77,44 +69,12 @@ export interface Product {
   updated_at: string
 }
 
-export interface Category {
-  id: string
-  name: string
-  created_at: string
-}
-
 export interface CartItem {
   product: Product
   unit: UnitType
   quantity: number // in selected unit
   unit_price: number
   conversion: number
-  line_total: number
-  line_cost: number
-  line_profit: number
-}
-
-export interface Sale {
-  id: string
-  invoice_no: string
-  total_amount: number
-  total_cost: number
-  total_profit: number
-  payment_method: 'cash' | 'transfer' | 'qris' | 'credit'
-  notes: string | null
-  cashier_id: string | null
-  created_at: string
-}
-
-export interface SaleItem {
-  id: string
-  sale_id: string
-  product_id: string
-  product_name: string
-  unit: UnitType
-  quantity: number
-  conversion: number
-  unit_price: number
   line_total: number
   line_cost: number
   line_profit: number
