@@ -506,6 +506,8 @@ export default function POS() {
             totals={totals}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            customerName={customerName}
+            setCustomerName={setCustomerName}
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
@@ -528,6 +530,8 @@ export default function POS() {
             totals={totals}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            customerName={customerName}
+            setCustomerName={setCustomerName}
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
@@ -863,6 +867,8 @@ function CartPanel({
   totals,
   paymentMethod,
   setPaymentMethod,
+  customerName,
+  setCustomerName,
   updateQuantity,
   removeItem,
   onCheckout,
@@ -872,6 +878,8 @@ function CartPanel({
   totals: ReturnType<typeof useCartStore.getState>['getTotals'] extends () => infer R ? R : never
   paymentMethod: PaymentMethod
   setPaymentMethod: (method: PaymentMethod) => void
+  customerName: string
+  setCustomerName: (name: string) => void
   updateQuantity: (id: string, unit: UnitType, q: number) => void
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
@@ -957,6 +965,16 @@ function CartPanel({
             </button>
           ))}
         </div>
+
+        {paymentMethod === 'credit' && (
+          <Input
+            value={customerName}
+            onChange={(event) => setCustomerName(event.target.value)}
+            placeholder="Nama pelanggan (wajib)"
+            aria-label="Nama pelanggan untuk transaksi kredit"
+            className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
+          />
+        )}
 
         <Button
           className="w-full"
