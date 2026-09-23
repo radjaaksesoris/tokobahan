@@ -59,6 +59,8 @@ export default function Settlements() {
   const [selectedItems, setSelectedItems] = useState<Record<string, string[]>>({})
   const [vendorPaymentModes, setVendorPaymentModes] = useState<Record<string, VendorPaymentMode>>({})
   const [customerSearch, setCustomerSearch] = useState('')
+  const [historySearch, setHistorySearch] = useState('')
+  const [historyDate, setHistoryDate] = useState('')
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -140,6 +142,8 @@ export default function Settlements() {
   }
   useEffect(() => {
     setCustomerSearch('')
+    setHistorySearch('')
+    setHistoryDate('')
     setExpandedDebtId(null)
     setVendorPaymentHistory([])
     void load()
@@ -151,6 +155,15 @@ export default function Settlements() {
       && (tab === 'vendor' || !search || debt.name.toLowerCase().includes(search))
     ))
   }, [debts, customerSearch, tab])
+  const filteredVendorPaymentHistory = useMemo(() => {
+    const search = historySearch.trim().toLowerCase()
+    return vendorPaymentHistory.filter((item) => {
+      const vendorName = item.stock_batch?.vendor?.name || 'Vendor'
+      const productName = item.stock_batch?.product?.name || 'Produk tidak ditemukan'
+      return (!search || `${vendorName} ${productName}`.toLowerCase().includes(search))
+        && (!historyDate || item.paid_at.slice(0, 10) === historyDate)
+    })
+  }, [historyDate, historySearch, vendorPaymentHistory])
   async function settle(debt: Debt) {
     const enteredPayment = payment[debt.id]?.trim() || ''
     const hasNominal = enteredPayment !== ''
@@ -223,8 +236,29 @@ export default function Settlements() {
         aria-label="Cari nama pelanggan"
       />
     )}
+    {tab === 'vendor-history' && (
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3 sm:flex-row">
+        <Input
+          value={historySearch}
+          onChange={(event) => setHistorySearch(event.target.value)}
+          placeholder="Cari nama vendor atau item..."
+          aria-label="Cari nama vendor atau item"
+          className="min-w-0 flex-1"
+        />
+        <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-48">
+          <span className="pointer-events-none mr-2 shrink-0">Tanggal</span>
+          <input
+            type="date"
+            value={historyDate}
+            onChange={(event) => setHistoryDate(event.target.value)}
+            aria-label="Filter tanggal pembayaran"
+            className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none"
+          />
+        </label>
+      </div>
+    )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
-      vendorPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
+      filteredVendorPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card><CardContent className="p-3">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[42rem] text-sm">
@@ -237,7 +271,7 @@ export default function Settlements() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/70">
-                {vendorPaymentHistory.map((item) => (
+                {filteredVendorPaymentHistory.map((item) => (
                   <tr key={item.id}>
                     <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
                     <td className="py-2 pr-3 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
