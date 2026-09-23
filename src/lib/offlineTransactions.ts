@@ -21,7 +21,7 @@ export interface QueuedTransaction {
 
 const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-transactions'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const BATCH_SIZE = 5
 let syncPromise: Promise<SyncResult> | null = null
 const listeners = new Set<() => void>()
@@ -48,7 +48,8 @@ function openDatabase(): Promise<IDBDatabase> {
     }
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      if (!request.result.objectStoreNames.contains('offline-settlements')) request.result.createObjectStore('offline-settlements', { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Gagal membuka penyimpanan offline'))

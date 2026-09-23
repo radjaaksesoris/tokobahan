@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
-import { WalletCards } from 'lucide-react'
+import { WalletCards, RefreshCw, CloudOff } from 'lucide-react'
+import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements, syncQueuedSettlements } from '@/lib/offlineSettlements'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -34,12 +35,6 @@ type VendorDebtRow = {
   product: { name: string; stock_unit: string } | null
   vendor_debt_payments: DebtPayment[]
 }
-type VendorBatchRow = {
-  id: string
-  quantity_received: number
-  unit_cost: number
-  vendor_debt_payments: DebtPayment[]
-}
 type VendorPaymentHistory = {
   id: string
   amount: number
@@ -63,6 +58,17 @@ export default function Settlements() {
   const [historyDate, setHistoryDate] = useState('')
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
+  const [pendingSettlements, setPendingSettlements] = useState(0)
+
+  async function refreshQueue() { setPendingSettlements((await getQueuedSettlements()).filter((item) => item.status !== 'syncing').length) }
+
+  useEffect(() => {
+    void refreshQueue()
+    const update = () => { void refreshQueue(); if (navigator.onLine) void syncQueuedSettlements().then(() => refreshQueue()) }
+    window.addEventListener('online', update)
+    const unsubscribe = subscribeOfflineSettlements(update)
+    return () => { window.removeEventListener('online', update); unsubscribe() }
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -165,66 +171,50 @@ export default function Settlements() {
     })
   }, [historyDate, historySearch, vendorPaymentHistory])
   async function settle(debt: Debt) {
-    if (!navigator.onLine) {
-      toast.error('Pelunasan hutang membutuhkan koneksi internet dan tidak dapat diproses offline')
-      return
-    }
     const enteredPayment = payment[debt.id]?.trim() || ''
     const hasNominal = enteredPayment !== ''
     const paymentMode = tab === 'vendor' ? vendorPaymentModes[debt.id] : 'nominal'
     const selectedBatchIds = tab === 'vendor' && paymentMode === 'item' ? (selectedItems[debt.id] || []) : debt.batchIds
-    const selectedOutstanding = debt.items
-      .filter((item) => item.batchId && selectedBatchIds.includes(item.batchId))
-      .reduce((sum, item) => sum + item.subtotal - item.paid, 0)
+    const selectedOutstanding = debt.items.filter((item) => item.batchId && selectedBatchIds.includes(item.batchId)).reduce((sum, item) => sum + item.subtotal - item.paid, 0)
     const outstanding = tab === 'vendor' && paymentMode === 'item' ? selectedOutstanding : debt.total - debt.paid
     const amount = paymentMode === 'item' ? outstanding : Number(enteredPayment)
     if (tab === 'customer' && !hasNominal) { toast.error('Masukkan nominal pembayaran'); return }
     if (tab === 'vendor' && paymentMode === 'item' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
-    let error: { message: string } | null = null
-    if (tab === 'vendor') {
-      let remaining = amount
-      const allocations: { stock_batch_id: string; amount: number }[] = []
-      for (const batchId of selectedBatchIds) {
-        if (remaining <= 0.009) break
-        const { data: rawBatch, error: batchError } = await supabase
-          .from('product_stock_batches')
-          .select('id, quantity_received, unit_cost, vendor_debt_payments(amount)')
-          .eq('id', batchId)
-          .single()
-        if (batchError) {
-          error = batchError
-          break
-        }
-        const batch = rawBatch as unknown as VendorBatchRow
-        const batchTotal = Number(batch.quantity_received) * Number(batch.unit_cost)
-        const batchPaid = (batch.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0)
-        const batchOutstanding = Math.max(0, batchTotal - batchPaid)
-        const batchAmount = Math.min(remaining, batchOutstanding)
-        if (batchAmount > 0.009) {
-          allocations.push({ stock_batch_id: batchId, amount: batchAmount })
-          remaining -= batchAmount
-        }
-      }
-      if (!error) {
-        const result = await supabase.rpc('pay_vendor_debt', { p_allocations: allocations })
-        error = result.error
-      }
-    } else {
-      const result = await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
-      error = result.error
+    const allocations: Array<{ stock_batch_id: string; amount: number }> = []
+    let remaining = amount
+    for (const item of debt.items) {
+      if (!item.batchId || !selectedBatchIds.includes(item.batchId) || remaining <= 0) continue
+      const allocation = Math.min(remaining, Math.max(0, item.subtotal - item.paid))
+      if (allocation > 0) { allocations.push({ stock_batch_id: item.batchId, amount: allocation }); remaining -= allocation }
     }
-    if (error) toast.error(error.message)
-    else {
-      toast.success('Pembayaran berhasil dicatat'); setPayment((current) => ({ ...current, [debt.id]: '' })); void load()
-    }
+    try {
+      if (!navigator.onLine) {
+        await enqueueSettlement(tab === 'vendor' ? 'vendor' : 'customer', tab === 'vendor' ? { allocations } : { sale_id: debt.id, amount })
+        toast.success('Pelunasan disimpan dan akan disinkronkan saat online')
+      } else {
+        const result = tab === 'vendor'
+          ? await supabase.rpc('pay_vendor_debt', { p_allocations: allocations })
+          : await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
+        if (result.error) throw new Error(result.error.message)
+        toast.success('Pembayaran berhasil dicatat')
+      }
+      setPayment((current) => ({ ...current, [debt.id]: '' })); await refreshQueue(); void load()
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Pelunasan gagal dicatat') }
   }
+
+  async function retrySettlements() {
+    const result = await retryFailedSettlements()
+    await refreshQueue(); if (result.failed === 0 && result.synced > 0) { toast.success(`${result.synced} pelunasan berhasil disinkronkan`); void load() }
+  }
+
   return <div className="space-y-6">
     <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Keuangan</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">Pelunasan Hutang</h1>
         <p className="mt-1 text-sm text-muted-foreground">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
+        {pendingSettlements > 0 && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><CloudOff className="h-4 w-4" />{pendingSettlements} pelunasan menunggu sinkronisasi <button className="inline-flex items-center gap-1 underline" onClick={() => void retrySettlements()}><RefreshCw className="h-3 w-3" />Coba lagi</button></div>}
       </div>
       {tab === 'vendor-history' && (
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">

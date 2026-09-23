@@ -21,6 +21,16 @@ export function writeOfflineCache<T>(key: string, value: T, ttlMs = MAX_CACHE_AG
   }
 }
 
+export function readOfflineCacheEntry<T>(key: string): CacheEnvelope<T> | null {
+  try {
+    const raw = window.localStorage.getItem(storageKey(key))
+    if (!raw) return null
+    const envelope = JSON.parse(raw) as CacheEnvelope<T>
+    if (!envelope || typeof envelope.expiresAt !== 'number' || envelope.expiresAt <= Date.now()) return null
+    return envelope
+  } catch { return null }
+}
+
 export function readOfflineCache<T>(key: string): T | null {
   try {
     const raw = window.localStorage.getItem(storageKey(key))

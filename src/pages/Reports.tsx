@@ -24,6 +24,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 
 type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
 
@@ -51,6 +52,7 @@ export default function Reports() {
     transaction_count: 0,
   })
   const [error, setError] = useState<string | null>(null)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
   const requestId = useRef(0)
 
   useEffect(() => {
@@ -113,35 +115,18 @@ export default function Reports() {
     ])
     if (currentRequest !== requestId.current) return
 
-    if (dailyError) {
-      setDailySummary([])
-      setError(dailyError.message || 'Gagal memuat grafik laporan')
-    } else {
-      setDailySummary((dailyData || []) as DailySummaryRow[])
+    const cacheKey = `reports:${period}:${selectedDate || 'current'}`
+    if (summaryError || dailyError || vendorPaymentError) {
+      const cached = readOfflineCacheEntry<{ summary: typeof summary; dailySummary: DailySummaryRow[]; vendorPayments: VendorPaymentRow[] }>(cacheKey)
+      if (cached) { setSummary(cached.value.summary); setDailySummary(cached.value.dailySummary); setVendorPayments(cached.value.vendorPayments); setCachedAt(cached.cachedAt); setError(null) }
+      else setError(summaryError?.message || dailyError?.message || vendorPaymentError?.message || 'Laporan belum tersedia secara offline')
+      return
     }
-
-    if (summaryError) {
-      setError(summaryError.message || 'Gagal memuat ringkasan laporan')
-      setSummary({
-        total_revenue: 0,
-        total_cost: 0,
-        total_profit: 0,
-        transaction_count: 0,
-      })
-    } else {
-      setSummary(summaryData?.[0] || {
-        total_revenue: 0,
-        total_cost: 0,
-        total_profit: 0,
-        transaction_count: 0,
-      })
-    }
-    if (vendorPaymentError) {
-      setVendorPayments([])
-      setError(vendorPaymentError.message || 'Gagal memuat pembayaran vendor')
-    } else {
-      setVendorPayments((vendorPaymentData || []) as VendorPaymentRow[])
-    }
+    const nextSummary = summaryData?.[0] || { total_revenue: 0, total_cost: 0, total_profit: 0, transaction_count: 0 }
+    const nextDailySummary = (dailyData || []) as DailySummaryRow[]
+    const nextVendorPayments = (vendorPaymentData || []) as VendorPaymentRow[]
+    setSummary(nextSummary); setDailySummary(nextDailySummary); setVendorPayments(nextVendorPayments); setCachedAt(Date.now())
+    writeOfflineCache(cacheKey, { summary: nextSummary, dailySummary: nextDailySummary, vendorPayments: nextVendorPayments })
   }
 
   const totalRevenue = Number(summary.total_revenue)
@@ -188,6 +173,7 @@ export default function Reports() {
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Baca performa toko</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
+          {cachedAt && <p className="mt-1 text-xs text-muted-foreground">{navigator.onLine ? "Snapshot cache terbaru" : "Offline · "}Diperbarui {format(new Date(cachedAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>}
           <p className="mt-1 text-sm text-muted-foreground">Uang masuk, biaya, dan laba bersih.</p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">

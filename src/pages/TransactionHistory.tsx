@@ -7,6 +7,7 @@ import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, Eye, History, Search, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
+import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { toast } from 'sonner'
 
 interface SaleRow {
@@ -52,6 +53,7 @@ export default function TransactionHistory() {
   const [returnQuantity, setReturnQuantity] = useState('')
   const [returnReason, setReturnReason] = useState('')
   const [returnSaving, setReturnSaving] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
 
@@ -93,20 +95,16 @@ export default function TransactionHistory() {
     }
     const [{ data, error }, totalResult] = await Promise.all([query, totalQuery || Promise.resolve({ data: null, error: null })])
     if (requestId !== loadRequestId.current) return
-    if (error) {
-      toast.error(error.message)
-      setSales([])
-      setHasNextPage(false)
+    const cacheKey = `transaction-history:${date || 'all'}:${page}:${search.trim().toLowerCase()}`
+    if (error || totalResult.error) {
+      const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
+      if (cached) { setSales(cached.value.rows); setDateTotal(cached.value.total); setHasNextPage(cached.value.hasNextPage); setCachedAt(cached.cachedAt) }
+      else { toast.error(navigator.onLine ? (error?.message || totalResult.error?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false); setDateTotal(0) }
     } else {
       const rows = (data || []) as SaleRow[]
-      setHasNextPage(rows.length > PAGE_SIZE)
-      setSales(rows.slice(0, PAGE_SIZE))
-    }
-    if (totalResult.error) {
-      toast.error(totalResult.error.message)
-      setDateTotal(0)
-    } else {
-      setDateTotal((totalResult.data || []).reduce((sum, row) => sum + Number(row.total_amount), 0))
+      const total = (totalResult.data || []).reduce((sum, row) => sum + Number(row.total_amount), 0)
+      setHasNextPage(rows.length > PAGE_SIZE); setSales(rows.slice(0, PAGE_SIZE)); setDateTotal(total); setCachedAt(Date.now())
+      writeOfflineCache(cacheKey, { rows: rows.slice(0, PAGE_SIZE), total, hasNextPage: rows.length > PAGE_SIZE })
     }
     initialLoadComplete.current = true
     setLoading(false)
@@ -181,6 +179,7 @@ export default function TransactionHistory() {
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
+          {cachedAt && <p className="mt-1 text-xs text-muted-foreground">{navigator.onLine ? "Cache terbaru" : "Offline · "}Diperbarui {format(new Date(cachedAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>}
           <p className="mt-1 text-sm text-muted-foreground">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
         </div>
         <div className="flex w-full items-center gap-2 sm:gap-3 lg:w-auto">
