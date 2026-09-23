@@ -185,24 +185,6 @@ export default function Settings() {
       return
     }
 
-    async function restoreBackup(event: ChangeEvent<HTMLInputElement>) {
-      const file = event.target.files?.[0]
-      event.target.value = ''
-      if (!file) return
-      if (!window.confirm('Restore akan mengganti seluruh data operasional saat ini. Lanjutkan?')) return
-      setRestoreLoading(true)
-      try {
-        const payload = JSON.parse(await file.text())
-        const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
-        if (error) throw error
-        toast.success('Backup berhasil dipulihkan')
-      } catch (error) {
-        toast.error(`Restore gagal: ${error instanceof Error ? error.message : 'Format backup tidak valid'}`)
-      } finally {
-        setRestoreLoading(false)
-      }
-    }
-
     const result = data as {
       id: string
       created_at: string
@@ -227,6 +209,24 @@ export default function Settings() {
     const totalRecords = Object.values(result.counts).reduce((total, count) => total + Number(count || 0), 0)
     toast.success(`Backup berhasil diunduh (${totalRecords} data, ID ${result.id.slice(0, 8)})`)
     setBackupLoading(false)
+  }
+
+  async function restoreBackup(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!window.confirm('Restore akan mengganti seluruh data operasional saat ini. Lanjutkan?')) return
+    setRestoreLoading(true)
+    try {
+      const payload = JSON.parse(await file.text())
+      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
+      if (error) throw error
+      toast.success('Backup berhasil dipulihkan')
+    } catch (error) {
+      toast.error(`Restore gagal: ${error instanceof Error ? error.message : 'Format backup tidak valid'}`)
+    } finally {
+      setRestoreLoading(false)
+    }
   }
 
   async function syncNotifications() {
