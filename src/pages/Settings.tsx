@@ -19,6 +19,7 @@ import { UNIT_LABELS } from '@/types'
 import type { Json } from '@/types/database'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
+const BACKUP_BUCKET = 'operational-backups'
 
 export default function Settings() {
   const { user, isRole } = useAuthStore()
@@ -36,6 +37,11 @@ export default function Settings() {
     created_by: string
     backup_version: string
     payload: Json
+    storage_bucket: string | null
+    storage_object_path: string | null
+    storage_size_bytes: number | null
+    storage_content_type: string | null
+    storage_uploaded_at: string | null
   }>>([])
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
@@ -95,7 +101,7 @@ export default function Settings() {
     setCloudBackupError(null)
     const { data, error } = await supabase
       .from('operational_backups')
-      .select('id, created_at, created_by, backup_version, payload')
+      .select('id, created_at, created_by, backup_version, payload, storage_bucket, storage_object_path, storage_size_bytes, storage_content_type, storage_uploaded_at')
       .order('created_at', { ascending: false })
       .limit(50)
     if (error) {
@@ -212,6 +218,7 @@ export default function Settings() {
       if (error) throw error
       const result = data as { id: string; created_at: string; payload: Json; counts?: Record<string, number> } | null
       if (!result?.payload || !result.id) throw new Error('Respons backup tidak valid')
+      await uploadBackupObject(result.id, result.payload)
       downloadBackup(result.payload, result.created_at)
       await loadCloudBackups()
       const totalRecords = Object.values(result.counts || {}).reduce((total, count) => total + Number(count || 0), 0)
@@ -236,6 +243,29 @@ export default function Settings() {
     URL.revokeObjectURL(url)
   }
 
+  async function uploadBackupObject(backupId: string, payload: Json) {
+    const objectPath = `${user?.id}/${backupId}.json`
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const { error: uploadError } = await supabase.storage
+      .from(BACKUP_BUCKET)
+      .upload(objectPath, blob, { contentType: 'application/json', upsert: false })
+    if (uploadError) throw uploadError
+    const { error: metadataError } = await supabase.rpc('finalize_operational_backup_storage', {
+      p_backup_id: backupId,
+      p_storage_object_path: objectPath,
+      p_storage_size_bytes: blob.size,
+      p_storage_content_type: 'application/json',
+    })
+    if (metadataError) throw metadataError
+  }
+
+  async function readCloudBackup(backup: typeof cloudBackups[number]) {
+    if (!backup.storage_object_path || backup.storage_bucket !== BACKUP_BUCKET) return backup.payload
+    const { data, error } = await supabase.storage.from(BACKUP_BUCKET).download(backup.storage_object_path)
+    if (error) throw error
+    return JSON.parse(await data.text()) as Json
+  }
+
   async function uploadBackup(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -247,8 +277,11 @@ export default function Settings() {
       if (payload.format !== 'tokobahan-operational-backup' || !payload.tables) {
         throw new Error('Format backup tidak valid')
       }
-      const { error } = await supabase.rpc('upload_operational_backup', { p_payload: payload as Json })
+      const { data, error } = await supabase.rpc('upload_operational_backup', { p_payload: payload as Json })
       if (error) throw error
+      const result = data as { id: string; created_at: string } | null
+      if (!result?.id || !result.created_at) throw new Error('Respons upload backup tidak valid')
+      await uploadBackupObject(result.id, payload as Json)
       await loadCloudBackups()
       toast.success('Backup berhasil diunggah ke cloud')
     } catch (error) {
@@ -265,7 +298,8 @@ export default function Settings() {
     setRestoreLoading(true)
     setCloudBackupError(null)
     try {
-      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: backup.payload })
+      const payload = await readCloudBackup(backup)
+      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
       if (error) throw error
       toast.success('Backup cloud berhasil dipulihkan')
     } catch (error) {
@@ -464,14 +498,14 @@ export default function Settings() {
             <p className="font-semibold text-ink">Backup lengkap dan aman</p>
             <p className="mt-1">
               Mencadangkan profil non-sensitif, kategori, produk, transaksi, detail transaksi,
-              dan batch stok ke Supabase lalu mengunduh salinan JSON ke perangkat ini.
+              dan batch stok sebagai file JSON di private Supabase Storage, lalu mengunduh salinan ke perangkat ini.
               Password, token, dan data autentikasi tidak pernah ikut dicadangkan.
             </p>
           </div>
           <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
             <p><strong className="text-ink">Format:</strong> JSON terstruktur</p>
             <p><strong className="text-ink">Akses:</strong> Admin saja</p>
-            <p><strong className="text-ink">Penyimpanan:</strong> Supabase + perangkat</p>
+            <p><strong className="text-ink">Penyimpanan:</strong> Storage private + perangkat</p>
             <p><strong className="text-ink">Identitas:</strong> ID backup tercatat</p>
           </div>
           <Button className="w-full sm:w-auto" onClick={createBackup} disabled={backupLoading}>
@@ -490,7 +524,7 @@ export default function Settings() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-semibold text-ink">Backup cloud</p>
-                <p className="text-xs text-muted-foreground">Tersedia untuk admin yang login. Maksimal 7 backup terbaru per admin.</p>
+                <p className="text-xs text-muted-foreground">File tersimpan di bucket private Supabase Storage; hanya admin yang login dapat mengaksesnya. Maksimal 7 backup terbaru per admin.</p>
               </div>
               <Button variant="outline" size="sm" onClick={() => void loadCloudBackups()} disabled={cloudBackupLoading}>
                 <RefreshCw className="h-4 w-4" />
@@ -520,7 +554,11 @@ export default function Settings() {
                       <p className="text-xs text-muted-foreground">ID {backup.id.slice(0, 8)} · v{backup.backup_version}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => downloadBackup(backup.payload, backup.created_at)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void readCloudBackup(backup).then((payload) => downloadBackup(payload, backup.created_at)).catch((error) => toast.error(`Unduh backup gagal: ${error instanceof Error ? error.message : 'Storage tidak tersedia'}`))}
+                      >
                         <Download className="h-4 w-4" />
                         Unduh
                       </Button>

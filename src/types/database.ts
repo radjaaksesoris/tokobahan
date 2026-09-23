@@ -298,6 +298,11 @@ export interface Database {
           sale_count: number
           sale_item_count: number
           stock_batch_count: number
+          storage_bucket: string | null
+          storage_object_path: string | null
+          storage_size_bytes: number | null
+          storage_content_type: string | null
+          storage_uploaded_at: string | null
         }
         Insert: never
         Update: never
@@ -383,6 +388,10 @@ export interface Database {
       upload_operational_backup: {
         Args: { p_payload: Json }
         Returns: Json
+      }
+      finalize_operational_backup_storage: {
+        Args: { p_backup_id: string; p_storage_object_path: string; p_storage_size_bytes: number; p_storage_content_type?: string }
+        Returns: undefined
       }
       adjust_stock: {
         Args: { p_product_id: string; p_physical_stock: number; p_reason: string }

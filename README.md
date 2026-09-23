@@ -200,9 +200,21 @@ supabase/
   backup admin. Tombol backup menyimpan snapshot operasional di Supabase dan
   mengunduh file JSON ke perangkat; password dan token tidak ikut dicadangkan.
 - Jalankan migration `20260924010000_cloud_backup_retention.sql` setelah migration
-  backup untuk mengaktifkan upload, daftar, restore backup cloud, dan retensi
-  maksimal 7 backup terbaru per admin. Migration ini dijalankan di Supabase SQL
-  Editor atau melalui Supabase CLI; tidak memerlukan service-role key di aplikasi.
+  backup untuk mengaktifkan daftar, restore backup cloud, dan retensi maksimal 7
+  backup terbaru per admin.
+- Jalankan migration `20260924020000_operational_backup_storage.sql` setelah migration
+  retensi. Migration ini membuat bucket private `operational-backups`, policy Storage
+  admin-only, dan metadata object pada `operational_backups`. Backup baru benar-benar
+  diunggah sebagai file JSON ke Storage melalui client Supabase terautentikasi; service
+  role tidak pernah dikirim ke browser. Backup lama tanpa `storage_object_path` tetap
+  dapat diunduh/dipulihkan dari payload database.
+- Urutan SQL Editor yang tepat adalah menjalankan seluruh migration yang belum diterapkan
+  secara kronologis; untuk rangkaian backup, pastikan `20260921150000_operational_backups.sql`,
+  migration restore/expand backup `20260923210000_returns_stock_restore.sql` dan
+  `20260923211000_expand_operational_backup.sql`, lalu `20260924010000_cloud_backup_retention.sql`,
+  dan terakhir `20260924020000_operational_backup_storage.sql`. Jika memakai Supabase CLI,
+  jalankan `supabase db push` dari root repository. Setelah selesai, buka Storage →
+  `operational-backups` untuk memverifikasi file backup baru (bucket harus Private).
 
 ---
 
