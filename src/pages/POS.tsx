@@ -24,6 +24,7 @@ import {
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
+import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
 import {
   createOfflineInvoice,
   enqueueTransaction,
@@ -37,6 +38,7 @@ import {
 } from '@/lib/offlineTransactions'
 
 type PaymentMethod = 'cash' | 'qris' | 'credit'
+const POS_CATALOG_CACHE_KEY = 'pos-catalog'
 
 export default function POS() {
   const navigate = useNavigate()
@@ -128,14 +130,29 @@ export default function POS() {
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
     const { data, error } = await query
-    if (error) toast.error(error.message)
+    if (error) {
+      const cachedProducts = readOfflineCache<Product[]>(POS_CATALOG_CACHE_KEY)
+      if (cachedProducts) {
+        const normalizedTerm = search.trim().toLowerCase()
+        setProducts(normalizedTerm
+          ? cachedProducts.filter((product) =>
+            product.name.toLowerCase().includes(normalizedTerm) ||
+            product.sku?.toLowerCase().includes(normalizedTerm) ||
+            product.barcode?.toLowerCase().includes(normalizedTerm))
+          : cachedProducts)
+        toast.info('Katalog lokal digunakan karena katalog online gagal dimuat')
+      } else {
+        toast.error(navigator.onLine ? error.message : 'Katalog belum pernah disimpan untuk penggunaan offline')
+        setProducts([])
+      }
+    }
     else {
-      setProducts(
-        (data || []).map((p) => ({
+      const normalizedProducts = (data || []).map((p) => ({
           ...p,
           prices: parseProductPrices(p.prices),
         })) as Product[]
-      )
+      setProducts(normalizedProducts)
+      if (!search.trim()) writeOfflineCache(POS_CATALOG_CACHE_KEY, normalizedProducts)
     }
     initialLoadComplete.current = true
     setLoading(false)
@@ -273,6 +290,11 @@ export default function POS() {
     }
     if (!isOnline) {
       toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+      setProducts((current) => current.map((product) => {
+        const sold = items.filter((item) => item.product.id === product.id)
+          .reduce((sum, item) => sum + item.quantity, 0)
+        return sold ? { ...product, stock: Math.max(0, product.stock - sold) } : product
+      }))
       clearCart()
       setShowPaymentModal(false)
       setCashReceived('')
@@ -295,6 +317,11 @@ export default function POS() {
     if (checkoutError) {
       if (isOfflineError(checkoutError)) {
         toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+        setProducts((current) => current.map((product) => {
+          const sold = items.filter((item) => item.product.id === product.id)
+            .reduce((sum, item) => sum + item.quantity, 0)
+          return sold ? { ...product, stock: Math.max(0, product.stock - sold) } : product
+        }))
         clearCart()
         setShowPaymentModal(false)
         setCashReceived('')

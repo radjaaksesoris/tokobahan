@@ -31,7 +31,7 @@ interface SaleItemRow {
   line_total: number
 }
 
-interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity' | 'returned_amount'> {
+interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity'> {
   sale_returns: Array<{ quantity: number; refund_amount: number }> | null
 }
 
@@ -144,6 +144,10 @@ export default function TransactionHistory() {
 
   async function submitReturn() {
     if (!returningItem) return
+    if (!navigator.onLine) {
+      toast.error('Retur membutuhkan koneksi internet dan tidak dapat diproses offline')
+      return
+    }
     const quantity = Number(returnQuantity)
     if (!Number.isFinite(quantity) || quantity <= 0 || !returnReason.trim()) {
       toast.error('Jumlah dan alasan retur wajib diisi')

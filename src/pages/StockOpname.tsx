@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
-import { LoadingDots } from '@/components/ui/LoadingDots'
 
 type ProductRow = { id: string; name: string; stock: number; stock_unit: string }
 
@@ -26,6 +25,10 @@ export default function StockOpname() {
   useEffect(() => { void load() }, [])
 
   async function save(product: ProductRow) {
+    if (!navigator.onLine) {
+      toast.error('Stok opname membutuhkan koneksi internet dan tidak dapat disimpan offline')
+      return
+    }
     const value = Number(physical[product.id])
     const reason = reasons[product.id]?.trim() || ''
     if (!Number.isFinite(value) || value < 0 || !reason) {
@@ -51,12 +54,7 @@ export default function StockOpname() {
         <h1 className="mt-1 text-3xl font-bold text-ink">Stok Opname</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
       </header>
-      {loading ? (
-        <div className="flex items-center justify-center gap-3 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
-          <LoadingDots label="Memuat produk" />
-          Memuat produk...
-        </div>
-      ) : (
+      {loading ? <p className="text-sm text-muted-foreground">Memuat produk...</p> : (
         <div className="grid gap-3">
           {products.map((product) => (
             <Card key={product.id}>
@@ -67,9 +65,7 @@ export default function StockOpname() {
                 </div>
                 <Input type="number" min="0" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Stok fisik" />
                 <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Alasan penyesuaian" />
-                <Button onClick={() => void save(product)} disabled={saving !== null}>
-                  {saving === product.id ? <><LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" label={`Menyimpan stok ${product.name}`} /> Menyimpan...</> : 'Simpan'}
-                </Button>
+                <Button onClick={() => void save(product)} disabled={saving === product.id}>{saving === product.id ? 'Menyimpan...' : 'Simpan'}</Button>
               </CardContent>
             </Card>
           ))}
