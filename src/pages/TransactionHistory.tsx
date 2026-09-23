@@ -218,7 +218,15 @@ export default function TransactionHistory() {
                         <span className="lg:hidden">{format(new Date(sale.created_at), 'dd MMM yy', { locale: localeId })}</span>
                         <span className="hidden lg:inline">{format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}</span>
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize text-muted-foreground lg:table-cell">{sale.payment_method}</td>
+                      <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize lg:table-cell">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 font-semibold ${
+                          sale.payment_method.toLowerCase() === 'credit'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {sale.payment_method}
+                        </span>
+                      </td>
                       <td className="truncate px-1 py-2.5 text-center text-xs font-semibold text-ink lg:px-4 lg:text-sm">
                         {formatCurrency(Number(sale.total_amount))}
                       </td>
