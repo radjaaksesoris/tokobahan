@@ -4,12 +4,23 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
+import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards } from 'lucide-react'
 
 type Tab = 'vendor' | 'customer'
 type DebtPayment = { amount: number; paid_at: string }
-type Debt = { id: string; name: string; reference: string; total: number; paid: number; due: string | null; payments: DebtPayment[] }
+type DebtItem = { name: string; quantity: number; unit: string; unitPrice: number; subtotal: number }
+type Debt = {
+  id: string
+  name: string
+  reference: string
+  total: number
+  paid: number
+  due: string | null
+  payments: DebtPayment[]
+  items: DebtItem[]
+}
 
 export default function Settlements() {
   const [tab, setTab] = useState<Tab>('vendor')
@@ -22,7 +33,7 @@ export default function Settlements() {
     setLoading(true)
     if (tab === 'vendor') {
       const { data, error } = await supabase.from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, due_date, vendor:vendors(name), vendor_debt_payments(amount, paid_at)')
+        .select('id, quantity_received, unit_cost, due_date, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
         .eq('payment_status', 'kredit').order('due_date')
       if (error) toast.error(error.message)
       setDebts((data || []).map((row: any) => ({
@@ -31,10 +42,17 @@ export default function Settlements() {
         paid: (row.vendor_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
         due: row.due_date,
         payments: (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
+        items: [{
+          name: row.product?.name || 'Produk tidak ditemukan',
+          quantity: Number(row.quantity_received),
+          unit: row.product?.stock_unit || 'satuan',
+          unitPrice: Number(row.unit_cost),
+          subtotal: Number(row.quantity_received) * Number(row.unit_cost),
+        }],
       })))
     } else {
       const { data, error } = await supabase.from('sales')
-        .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), customer_debt_payments(amount, paid_at)')
+        .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
         .eq('payment_method', 'credit').order('created_at', { ascending: true })
       if (error) toast.error(error.message)
       setDebts((data || []).map((row: any) => ({
@@ -42,6 +60,13 @@ export default function Settlements() {
         total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
         due: null,
         payments: (row.customer_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
+        items: (row.sale_items || []).map((item: any) => ({
+          name: item.product_name,
+          quantity: Number(item.quantity),
+          unit: item.unit,
+          unitPrice: Number(item.unit_price),
+          subtotal: Number(item.line_total),
+        })),
       })))
     }
     setLoading(false)
@@ -88,6 +113,31 @@ export default function Settlements() {
               <p>Total: <strong>{formatCurrency(debt.total)}</strong></p>
               <p>Sudah dibayar: <strong>{formatCurrency(debt.paid)}</strong></p>
               <p>Sisa: <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+            </div>
+            <div className="mt-3 border-t border-border pt-2">
+              <p className="mb-2 font-semibold text-ink">Rincian item</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[28rem] text-xs">
+                  <thead className="border-b border-border text-left text-muted-foreground">
+                    <tr>
+                      <th className="py-1 pr-3 font-medium">Item</th>
+                      <th className="py-1 pr-3 font-medium">Jumlah</th>
+                      <th className="py-1 pr-3 font-medium">Harga</th>
+                      <th className="py-1 text-right font-medium">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/70">
+                    {debt.items.map((item, index) => (
+                      <tr key={`${debt.id}-item-${index}`}>
+                        <td className="py-1.5 pr-3 text-ink">{item.name}</td>
+                        <td className="py-1.5 pr-3">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
+                        <td className="py-1.5 pr-3">{formatCurrency(item.unitPrice)}</td>
+                        <td className="py-1.5 text-right font-medium text-ink">{formatCurrency(item.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
             {debt.payments.length > 0 && (
               <div className="mt-3 space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
