@@ -37,6 +37,7 @@ export default function TransactionHistory() {
   const [date, setDate] = useState('')
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [dateTotal, setDateTotal] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [selectedSale, setSelectedSale] = useState<SaleRow | null>(null)
   const [items, setItems] = useState<SaleItemRow[]>([])
@@ -70,7 +71,17 @@ export default function TransactionHistory() {
         .lte('created_at', endOfDay(selectedDate).toISOString())
     }
 
-    const { data, error } = await query
+    const totalQuery = date
+      ? supabase
+        .from('sales')
+        .select('total_amount')
+        .gte('created_at', startOfDay(new Date(`${date}T00:00:00`)).toISOString())
+        .lte('created_at', endOfDay(new Date(`${date}T00:00:00`)).toISOString())
+      : null
+    if (term && totalQuery) {
+      totalQuery.or(`invoice_no.ilike.%${term}%,payment_method.ilike.%${term}%`)
+    }
+    const [{ data, error }, totalResult] = await Promise.all([query, totalQuery || Promise.resolve({ data: null, error: null })])
     if (requestId !== loadRequestId.current) return
     if (error) {
       toast.error(error.message)
@@ -80,6 +91,12 @@ export default function TransactionHistory() {
       const rows = (data || []) as SaleRow[]
       setHasNextPage(rows.length > PAGE_SIZE)
       setSales(rows.slice(0, PAGE_SIZE))
+    }
+    if (totalResult.error) {
+      toast.error(totalResult.error.message)
+      setDateTotal(0)
+    } else {
+      setDateTotal((totalResult.data || []).reduce((sum, row) => sum + Number(row.total_amount), 0))
     }
     initialLoadComplete.current = true
     setLoading(false)
@@ -174,11 +191,16 @@ export default function TransactionHistory() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <History className="h-4 w-4" />
             Daftar Transaksi
           </CardTitle>
+          {date && (
+            <p className="text-right text-sm font-semibold text-primary">
+              Total: {formatCurrency(dateTotal)}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
