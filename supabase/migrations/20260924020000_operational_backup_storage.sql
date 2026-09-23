@@ -13,24 +13,15 @@ CREATE INDEX IF NOT EXISTS idx_operational_backups_storage_object_path
   WHERE storage_object_path IS NOT NULL;
 
 
--- Retention previously removed only database rows. Remove matching Storage objects
--- first so the seven-backup limit does not leave orphaned files behind.
+-- Retention removes database metadata only. Storage objects are managed through
+-- the Storage API and are cleaned up by the application when possible.
 CREATE OR REPLACE FUNCTION public.enforce_operational_backup_retention()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, storage
+SET search_path = public
 AS $$
 BEGIN
-  DELETE FROM storage.objects
-  WHERE bucket_id = 'operational-backups'
-    AND name IN (
-      SELECT storage_object_path
-      FROM public.operational_backups
-      WHERE created_by = NEW.created_by
-      ORDER BY created_at DESC, id DESC
-      OFFSET 7
-    );
   DELETE FROM public.operational_backups
   WHERE id IN (
     SELECT id
