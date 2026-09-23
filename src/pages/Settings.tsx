@@ -15,6 +15,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { UNIT_LABELS } from '@/types'
+
+const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 
 export default function Settings() {
   const { user, isRole } = useAuthStore()
@@ -346,20 +349,20 @@ export default function Settings() {
               />
               <Button onClick={() => void addUnit()} disabled={unitLoading || !unitName.trim()}>Tambah</Button>
             </div>
-            {units.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada satuan tambahan.</p>
-            ) : (
-              <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border">
-                {units.map((unit) => (
+            <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border">
+              {[...BUILT_IN_UNITS, ...units.map((unit) => ({ ...unit, builtIn: false }))].map((unit) => (
                   <li key={unit.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                     <span>{unit.name}</span>
-                    <button type="button" onClick={() => void removeUnit(unit.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600" aria-label={`Hapus satuan ${unit.name}`}>
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {unit.builtIn ? (
+                      <span className="text-xs text-muted-foreground">Bawaan</span>
+                    ) : (
+                      <button type="button" onClick={() => void removeUnit(unit.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600" aria-label={`Hapus satuan ${unit.name}`}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </li>
-                ))}
-              </ul>
-            )}
+              ))}
+            </ul>
           </CardContent>
         </Card>
       </div>
