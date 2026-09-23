@@ -180,6 +180,7 @@ export default function Settlements() {
     let error: { message: string } | null = null
     if (tab === 'vendor') {
       let remaining = amount
+      const allocations: { stock_batch_id: string; amount: number }[] = []
       for (const batchId of selectedBatchIds) {
         if (remaining <= 0.009) break
         const { data: rawBatch, error: batchError } = await supabase
@@ -197,20 +198,13 @@ export default function Settlements() {
         const batchOutstanding = Math.max(0, batchTotal - batchPaid)
         const batchAmount = Math.min(remaining, batchOutstanding)
         if (batchAmount > 0.009) {
-          const { error: paymentError } = await supabase.from('vendor_debt_payments').insert({ stock_batch_id: batchId, amount: batchAmount })
-          if (paymentError) {
-            error = paymentError
-            break
-          }
-          if (batchAmount >= batchOutstanding - 0.009) {
-            const { error: statusError } = await supabase.from('product_stock_batches').update({ payment_status: 'lunas' }).eq('id', batchId)
-            if (statusError) {
-              error = statusError
-              break
-            }
-          }
+          allocations.push({ stock_batch_id: batchId, amount: batchAmount })
           remaining -= batchAmount
         }
+      }
+      if (!error) {
+        const result = await supabase.rpc('pay_vendor_debt', { p_allocations: allocations })
+        error = result.error
       }
     } else {
       const result = await supabase.from('customer_debt_payments').insert({ sale_id: debt.id, amount })

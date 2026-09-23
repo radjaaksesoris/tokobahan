@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck, Trash2 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -26,6 +26,7 @@ export default function Settings() {
   const [resetting, setResetting] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [backupLoading, setBackupLoading] = useState(false)
+  const [restoreLoading, setRestoreLoading] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
@@ -182,6 +183,24 @@ export default function Settings() {
       toast.error(`Backup gagal: ${error.message}`)
       setBackupLoading(false)
       return
+    }
+
+    async function restoreBackup(event: ChangeEvent<HTMLInputElement>) {
+      const file = event.target.files?.[0]
+      event.target.value = ''
+      if (!file) return
+      if (!window.confirm('Restore akan mengganti seluruh data operasional saat ini. Lanjutkan?')) return
+      setRestoreLoading(true)
+      try {
+        const payload = JSON.parse(await file.text())
+        const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
+        if (error) throw error
+        toast.success('Backup berhasil dipulihkan')
+      } catch (error) {
+        toast.error(`Restore gagal: ${error instanceof Error ? error.message : 'Format backup tidak valid'}`)
+      } finally {
+        setRestoreLoading(false)
+      }
     }
 
     const result = data as {
@@ -397,6 +416,10 @@ export default function Settings() {
             )}
             {backupLoading ? 'Membuat backup...' : 'Buat & Unduh Backup'}
           </Button>
+          <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-primary/30 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/5">
+            <input type="file" accept="application/json,.json" className="sr-only" onChange={restoreBackup} disabled={restoreLoading} />
+            {restoreLoading ? 'Memulihkan...' : 'Restore Backup JSON'}
+          </label>
         </CardContent>
       </Card>
 

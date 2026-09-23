@@ -36,6 +36,7 @@ const Reports = lazyWithRecovery(() => import('@/pages/Reports'), 'reports')
 const TransactionHistory = lazyWithRecovery(() => import('@/pages/TransactionHistory'), 'transactions')
 const SettingsPage = lazyWithRecovery(() => import('@/pages/Settings'), 'settings')
 const Settlements = lazyWithRecovery(() => import('@/pages/Settlements'), 'settlements')
+const StockOpname = lazyWithRecovery(() => import('@/pages/StockOpname'), 'stock-opname')
 const NotFound = lazyWithRecovery(() => import('@/pages/NotFound'), 'not-found')
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
             <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
             <Route path="products/history" element={<PageSuspense><StockHistory /></PageSuspense>} />
+            <Route path="products/stock-opname" element={<PageSuspense><StockOpname /></PageSuspense>} />
             <Route path="reports" element={<PageSuspense><Reports /></PageSuspense>} />
             <Route path="transactions" element={<PageSuspense><TransactionHistory /></PageSuspense>} />
             <Route path="settings" element={<PageSuspense><SettingsPage /></PageSuspense>} />

@@ -42,6 +42,10 @@ export default function TransactionHistory() {
   const [selectedSale, setSelectedSale] = useState<SaleRow | null>(null)
   const [items, setItems] = useState<SaleItemRow[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
+  const [returningItem, setReturningItem] = useState<SaleItemRow | null>(null)
+  const [returnQuantity, setReturnQuantity] = useState('')
+  const [returnReason, setReturnReason] = useState('')
+  const [returnSaving, setReturnSaving] = useState(false)
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
 
@@ -118,6 +122,25 @@ export default function TransactionHistory() {
       setItems((data || []) as SaleItemRow[])
     }
     setItemsLoading(false)
+  }
+
+  async function submitReturn() {
+    if (!returningItem) return
+    const quantity = Number(returnQuantity)
+    if (!Number.isFinite(quantity) || quantity <= 0 || !returnReason.trim()) {
+      toast.error('Jumlah dan alasan retur wajib diisi')
+      return
+    }
+    setReturnSaving(true)
+    const { error } = await supabase.rpc('return_sale_item', { p_sale_item_id: returningItem.id, p_quantity: quantity, p_reason: returnReason.trim() })
+    if (error) toast.error(error.message)
+    else {
+      toast.success('Retur berhasil diproses')
+      setReturningItem(null)
+      setSelectedSale(null)
+      void loadSales()
+    }
+    setReturnSaving(false)
   }
 
   const filteredSales = useMemo(() => {
@@ -321,9 +344,31 @@ export default function TransactionHistory() {
                           {item.quantity} {item.unit} × {formatCurrency(Number(item.unit_price))}
                         </p>
                       </div>
-                      <p className="font-semibold">{formatCurrency(Number(item.line_total))}</p>
+                      <div className="text-right">
+                        <p className="font-semibold">{formatCurrency(Number(item.line_total))}</p>
+                        <button type="button" className="mt-1 text-xs font-semibold text-primary hover:underline" onClick={() => { setReturningItem(item); setReturnQuantity(String(item.quantity)); setReturnReason('') }}>
+                          Retur
+                        </button>
+                      </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {returningItem && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setReturningItem(null)}>
+                  <Card className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
+                    <CardHeader className="flex-row items-start justify-between border-b border-stone-100">
+                      <div><CardTitle>Retur item</CardTitle><p className="mt-1 text-xs text-muted-foreground">{returningItem.product_name}</p></div>
+                      <button type="button" onClick={() => setReturningItem(null)} aria-label="Tutup"><X className="h-5 w-5 text-muted-foreground" /></button>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                      <Input type="number" min="0.001" max={returningItem.quantity} step="any" value={returnQuantity} onChange={(event) => setReturnQuantity(event.target.value)} placeholder="Jumlah retur" />
+                      <Input value={returnReason} onChange={(event) => setReturnReason(event.target.value)} placeholder="Alasan retur" />
+                      <button type="button" className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" disabled={returnSaving} onClick={() => void submitReturn()}>
+                        {returnSaving ? 'Memproses...' : 'Proses retur'}
+                      </button>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
               <div className="border-t border-stone-200 pt-3 text-sm">

@@ -303,6 +303,18 @@ export interface Database {
         Update: never
         Relationships: []
       }
+      stock_adjustments: {
+        Row: { id: string; product_id: string; system_stock: number; physical_stock: number; difference: number; reason: string; adjusted_by: string | null; created_at: string }
+        Insert: { id?: string; product_id: string; system_stock: number; physical_stock: number; difference: number; reason: string; adjusted_by?: string | null; created_at?: string }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      sale_returns: {
+        Row: { id: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; reason: string; returned_by: string | null; created_at: string }
+        Insert: { id?: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; reason: string; returned_by?: string | null; created_at?: string }
+        Update: Record<string, never>
+        Relationships: []
+      }
     }
     Views: {}
     Functions: {
@@ -367,6 +379,22 @@ export interface Database {
       create_operational_backup: {
         Args: Record<string, never>
         Returns: Json
+      }
+      adjust_stock: {
+        Args: { p_product_id: string; p_physical_stock: number; p_reason: string }
+        Returns: string
+      }
+      return_sale_item: {
+        Args: { p_sale_item_id: string; p_quantity: number; p_reason: string }
+        Returns: string
+      }
+      restore_operational_backup: {
+        Args: { p_payload: Json }
+        Returns: undefined
+      }
+      pay_vendor_debt: {
+        Args: { p_allocations: Json }
+        Returns: undefined
       }
     }
     Enums: {}
