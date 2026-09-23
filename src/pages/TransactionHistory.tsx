@@ -115,15 +115,14 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="border-b border-border pb-5">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
-        <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
-      </div>
-
-      <Card>
-        <CardContent className="flex flex-row items-center gap-2 p-4 sm:gap-3">
-          <div className="relative min-w-0 flex-1">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
+          <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:gap-3 lg:w-auto">
+          <div className="relative min-w-0 flex-1 lg:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9 pr-10"
@@ -171,8 +170,8 @@ export default function TransactionHistory() {
               <X className="h-4 w-4" />
             </button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Card>
         <CardHeader>
