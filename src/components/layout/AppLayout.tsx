@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  WalletCards,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -22,6 +23,7 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles
   { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
   { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'], className: '' },
   { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'], className: '' },
+  { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', roles: ['admin', 'cashier'], className: '' },
   { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'], className: '' },
 ]
 

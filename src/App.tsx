@@ -35,6 +35,7 @@ const StockHistory = lazyWithRecovery(() => import('@/pages/StockHistory'), 'sto
 const Reports = lazyWithRecovery(() => import('@/pages/Reports'), 'reports')
 const TransactionHistory = lazyWithRecovery(() => import('@/pages/TransactionHistory'), 'transactions')
 const SettingsPage = lazyWithRecovery(() => import('@/pages/Settings'), 'settings')
+const Settlements = lazyWithRecovery(() => import('@/pages/Settlements'), 'settlements')
 const NotFound = lazyWithRecovery(() => import('@/pages/NotFound'), 'not-found')
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -107,6 +108,7 @@ function preloadPageChunks() {
     import('@/pages/StockHistory'),
     import('@/pages/TransactionHistory'),
     import('@/pages/Settings'),
+    import('@/pages/Settlements'),
   ]).catch((error) => {
     console.warn('Gagal melakukan prefetch halaman:', error)
   })
@@ -195,6 +197,7 @@ export default function App() {
             <Route path="reports" element={<PageSuspense><Reports /></PageSuspense>} />
             <Route path="transactions" element={<PageSuspense><TransactionHistory /></PageSuspense>} />
             <Route path="settings" element={<PageSuspense><SettingsPage /></PageSuspense>} />
+            <Route path="settlements" element={<PageSuspense><Settlements /></PageSuspense>} />
           </Route>
           <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
         </Routes>

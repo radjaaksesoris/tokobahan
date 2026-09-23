@@ -61,6 +61,12 @@ export interface Database {
         }
         Relationships: []
       }
+      customers: {
+        Row: { id: string; name: string; normalized_name: string; created_at: string }
+        Insert: { id?: string; name: string; created_at?: string }
+        Update: { name?: string }
+        Relationships: []
+      }
       custom_units: {
         Row: { id: string; name: string; factor: number; created_at: string }
         Insert: { id?: string; name: string; factor: number; created_at?: string }
@@ -135,6 +141,8 @@ export interface Database {
           payment_method: string
           notes: string | null
           cashier_id: string | null
+          customer_id: string | null
+          amount_paid: number
           created_at: string
         }
         Insert: {
@@ -146,9 +154,13 @@ export interface Database {
           payment_method?: string
           notes?: string | null
           cashier_id?: string | null
+          customer_id?: string | null
+          amount_paid?: number
         }
         Update: {
           notes?: string | null
+          customer_id?: string | null
+          amount_paid?: number
         }
         Relationships: []
       }
@@ -180,6 +192,18 @@ export interface Database {
           line_profit: number
         }
         Update: Record<string, never>
+        Relationships: []
+      }
+      vendor_debt_payments: {
+        Row: { id: string; stock_batch_id: string; amount: number; paid_at: string; paid_by: string | null }
+        Insert: { id?: string; stock_batch_id: string; amount: number; paid_at?: string; paid_by?: string | null }
+        Update: { amount?: number }
+        Relationships: []
+      }
+      customer_debt_payments: {
+        Row: { id: string; sale_id: string; amount: number; paid_at: string; paid_by: string | null }
+        Insert: { id?: string; sale_id: string; amount: number; paid_at?: string; paid_by?: string | null }
+        Update: { amount?: number }
         Relationships: []
       }
       invoice_sequences: {
@@ -250,6 +274,7 @@ export interface Database {
         }
         Update: {
           quantity_remaining?: number
+          payment_status?: 'kredit' | 'lunas'
         }
         Relationships: [
           {
@@ -294,6 +319,8 @@ export interface Database {
           p_payment_method: string
           p_cashier_id: string | null
           p_items: Json
+          p_customer_name?: string | null
+          p_amount_paid?: number | null
         }
         Returns: string
       }

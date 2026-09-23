@@ -36,7 +36,7 @@ import {
   type QueuedTransaction,
 } from '@/lib/offlineTransactions'
 
-type PaymentMethod = 'cash' | 'qris'
+type PaymentMethod = 'cash' | 'qris' | 'credit'
 
 export default function POS() {
   const navigate = useNavigate()
@@ -55,6 +55,7 @@ export default function POS() {
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [showQtyKeypad, setShowQtyKeypad] = useState(false)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
@@ -205,7 +206,7 @@ export default function POS() {
   }
 
   function handleCheckout() {
-    if (paymentMethod === 'cash') {
+    if (paymentMethod === 'cash' || paymentMethod === 'credit') {
       setCashReceived('')
       setShowPaymentModal(true)
       return
@@ -260,6 +261,8 @@ export default function POS() {
         totalCost: totals.totalCost,
         totalProfit: totals.totalProfit,
         paymentMethod,
+        customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
+        amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
         cashierId: profile?.id || null,
         items: saleItems,
       })
@@ -286,6 +289,8 @@ export default function POS() {
           p_payment_method: paymentMethod,
           p_cashier_id: profile?.id || null,
           p_items: saleItems,
+          p_customer_name: paymentMethod === 'credit' ? customerName.trim() : null,
+          p_amount_paid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
     })
     if (checkoutError) {
       if (isOfflineError(checkoutError)) {
@@ -623,7 +628,9 @@ export default function POS() {
           <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
             <CardContent className="p-5">
               <div className="mb-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Pembayaran tunai</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                  {paymentMethod === 'credit' ? 'Penjualan kredit' : 'Pembayaran tunai'}
+                </p>
                 <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
               </div>
               <div className="overflow-hidden rounded-2xl border border-stone-200 bg-muted/50">
@@ -631,18 +638,23 @@ export default function POS() {
                   <span className="text-sm font-medium text-muted-foreground">Total transaksi</span>
                   <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
                 </div>
+                {paymentMethod === 'credit' && <div className="border-b border-stone-200 px-4 py-3">
+                  <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pelanggan (wajib)" />
+                </div>}
                 <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
-                  <span className="text-sm font-medium text-muted-foreground">Uang diterima</span>
+                  <span className="text-sm font-medium text-muted-foreground">{paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}</span>
                   <span className="text-xl font-bold text-ink">{formatCurrency(Number(cashReceived) || 0)}</span>
                 </div>
                 <div className={`flex items-center justify-between px-4 py-3 ${
                   Number(cashReceived) >= totals.subtotal ? 'bg-emerald-50' : 'bg-white'
                 }`}>
-                  <span className="text-sm font-medium text-muted-foreground">Kembalian</span>
+                  <span className="text-sm font-medium text-muted-foreground">{paymentMethod === 'credit' ? 'Sisa hutang' : 'Kembalian'}</span>
                   <span className={`text-xl font-bold ${
                     Number(cashReceived) >= totals.subtotal ? 'text-emerald-700' : 'text-muted-foreground'
                   }`}>
-                    {formatCurrency(Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
+                    {formatCurrency(paymentMethod === 'credit'
+                      ? Math.max(0, totals.subtotal - (Number(cashReceived) || 0))
+                      : Math.max(0, (Number(cashReceived) || 0) - totals.subtotal))}
                   </span>
                 </div>
               </div>
@@ -658,7 +670,12 @@ export default function POS() {
                 </Button>
                 <Button
                   className="flex-1"
-                  disabled={Number(cashReceived) < totals.subtotal || checkoutLoading}
+                  disabled={
+                    checkoutLoading ||
+                    (paymentMethod === 'credit'
+                      ? (!customerName.trim() || Number(cashReceived) > totals.subtotal)
+                      : Number(cashReceived) < totals.subtotal)
+                  }
                   onClick={processCheckout}
                 >
                   {checkoutLoading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Selesaikan'}
@@ -926,7 +943,7 @@ function CartPanel({
         </div>
 
         <div className="flex gap-1.5">
-          {(['cash', 'qris'] as const).map((m) => (
+          {(['cash', 'qris', 'credit'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPaymentMethod(m)}
@@ -936,7 +953,7 @@ function CartPanel({
                   : 'border-white/15 text-stone-300 hover:border-white/30'
               }`}
             >
-              {m === 'cash' ? 'Tunai' : 'QRIS'}
+              {m === 'cash' ? 'Tunai' : m === 'qris' ? 'QRIS' : 'Kredit'}
             </button>
           ))}
         </div>

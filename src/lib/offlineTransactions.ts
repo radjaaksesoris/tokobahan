@@ -9,6 +9,8 @@ export interface QueuedTransaction {
   totalCost: number
   totalProfit: number
   paymentMethod: string
+  customerName: string | null
+  amountPaid: number
   cashierId: string | null
   items: Array<Record<string, string | number>>
   status: QueuedTransactionStatus
@@ -110,6 +112,8 @@ async function syncOne(transaction: QueuedTransaction) {
     p_payment_method: transaction.paymentMethod,
     p_cashier_id: transaction.cashierId,
     p_items: transaction.items,
+    p_customer_name: transaction.customerName,
+    p_amount_paid: transaction.amountPaid,
   })
   if (!error) {
     await withStore('readwrite', (store) => store.delete(transaction.id))
