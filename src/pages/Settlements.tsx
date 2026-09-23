@@ -95,7 +95,7 @@ export default function Settlements() {
         })
       }
       setDebts(Array.from(grouped.values()))
-      setSelectedItems(Object.fromEntries(Array.from(grouped.values()).map((debt) => [debt.id, debt.batchIds])))
+      setSelectedItems(Object.fromEntries(Array.from(grouped.values()).map((debt) => [debt.id, []])))
     } else {
       const { data, error } = await supabase.from('sales')
         .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
@@ -131,12 +131,16 @@ export default function Settlements() {
     ))
   }, [debts, customerSearch, tab])
   async function settle(debt: Debt) {
-    const amount = Number(payment[debt.id])
-    const selectedBatchIds = tab === 'vendor' ? (selectedItems[debt.id] || []) : debt.batchIds
-    const outstanding = tab === 'vendor'
-      ? debt.items.filter((item) => item.batchId && selectedBatchIds.includes(item.batchId)).reduce((sum, item) => sum + item.subtotal - item.paid, 0)
-      : debt.total - debt.paid
-    if (tab === 'vendor' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
+    const enteredPayment = payment[debt.id]?.trim() || ''
+    const hasNominal = enteredPayment !== ''
+    const selectedBatchIds = tab === 'vendor' && !hasNominal ? (selectedItems[debt.id] || []) : debt.batchIds
+    const selectedOutstanding = debt.items
+      .filter((item) => item.batchId && selectedBatchIds.includes(item.batchId))
+      .reduce((sum, item) => sum + item.subtotal - item.paid, 0)
+    const outstanding = tab === 'vendor' && !hasNominal ? selectedOutstanding : debt.total - debt.paid
+    const amount = hasNominal ? Number(enteredPayment) : outstanding
+    if (tab === 'customer' && !hasNominal) { toast.error('Masukkan nominal pembayaran'); return }
+    if (tab === 'vendor' && !hasNominal && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
     let error: { message: string } | null = null
     if (tab === 'vendor') {
@@ -242,6 +246,7 @@ export default function Settlements() {
                               type="checkbox"
                               className="mr-2 accent-primary"
                               checked={(selectedItems[debt.id] || []).includes(item.batchId)}
+                              disabled={Boolean(payment[debt.id]?.trim())}
                               onChange={(event) => setSelectedItems((current) => ({
                                 ...current,
                                 [debt.id]: event.target.checked
