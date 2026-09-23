@@ -159,7 +159,7 @@ export default function Reports() {
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Baca performa toko</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Pendapatan, biaya, dan laba bersih.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Uang masuk, biaya, dan laba bersih.</p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
           {periods.map((p) => (
@@ -218,7 +218,7 @@ export default function Reports() {
           <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
           <CardContent className="relative z-10 p-4">
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <DollarSign className="h-4 w-4" /> Pendapatan
+              <DollarSign className="h-4 w-4" /> Uang Masuk
             </div>
             <p className="text-xl font-bold text-ink">{formatCurrency(totalRevenue)}</p>
           </CardContent>
@@ -267,7 +267,7 @@ export default function Reports() {
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Grafik Pendapatan vs Laba</CardTitle>
+            <CardTitle className="text-base">Grafik Uang Masuk vs Laba</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80 lg:h-64">
@@ -281,7 +281,7 @@ export default function Reports() {
                     contentStyle={{ borderRadius: 8 }}
                   />
                   <Legend />
-                  <Bar dataKey="revenue" name="Pendapatan" fill="#0f766e" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="revenue" name="Uang Masuk" fill="#0f766e" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="profit" name="Laba" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
