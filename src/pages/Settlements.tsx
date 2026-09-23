@@ -10,7 +10,7 @@ import { WalletCards } from 'lucide-react'
 
 type Tab = 'vendor' | 'customer'
 type DebtPayment = { amount: number; paid_at: string }
-type DebtItem = { name: string; quantity: number; unit: string; unitPrice: number; subtotal: number }
+type DebtItem = { batchId?: string; name: string; quantity: number; unit: string; unitPrice: number; subtotal: number; paid: number }
 type Debt = {
   id: string
   batchIds: string[]
@@ -45,6 +45,7 @@ export default function Settlements() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [payment, setPayment] = useState<Record<string, string>>({})
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
+  const [selectedItems, setSelectedItems] = useState<Record<string, string[]>>({})
   const [customerSearch, setCustomerSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -63,17 +64,20 @@ export default function Settlements() {
         const existing = grouped.get(key)
         const total = Number(row.quantity_received) * Number(row.unit_cost)
         const payments = (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at }))
+        const paid = payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0)
         const item = {
+          batchId: row.id,
           name: row.product?.name || 'Produk tidak ditemukan',
           quantity: Number(row.quantity_received),
           unit: row.product?.stock_unit || 'satuan',
           unitPrice: Number(row.unit_cost),
           subtotal: total,
+          paid,
         }
         if (existing) {
           existing.batchIds.push(row.id)
           existing.total += total
-          existing.paid += payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0)
+          existing.paid += paid
           existing.payments.push(...payments)
           existing.items.push(item)
           continue
@@ -84,13 +88,14 @@ export default function Settlements() {
           name: row.vendor?.name || 'Vendor',
           reference: `Stok masuk · ${receivedDate}`,
           total,
-          paid: payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0),
+          paid,
           due: row.due_date,
           payments,
           items: [item],
         })
       }
       setDebts(Array.from(grouped.values()))
+      setSelectedItems(Object.fromEntries(Array.from(grouped.values()).map((debt) => [debt.id, debt.batchIds])))
     } else {
       const { data, error } = await supabase.from('sales')
         .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
@@ -107,6 +112,7 @@ export default function Settlements() {
           unit: item.unit,
           unitPrice: Number(item.unit_price),
           subtotal: Number(item.line_total),
+          paid: 0,
         })),
       })))
     }
@@ -126,12 +132,16 @@ export default function Settlements() {
   }, [debts, customerSearch, tab])
   async function settle(debt: Debt) {
     const amount = Number(payment[debt.id])
-    const outstanding = debt.total - debt.paid
+    const selectedBatchIds = tab === 'vendor' ? (selectedItems[debt.id] || []) : debt.batchIds
+    const outstanding = tab === 'vendor'
+      ? debt.items.filter((item) => item.batchId && selectedBatchIds.includes(item.batchId)).reduce((sum, item) => sum + item.subtotal - item.paid, 0)
+      : debt.total - debt.paid
+    if (tab === 'vendor' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
     let error: { message: string } | null = null
     if (tab === 'vendor') {
       let remaining = amount
-      for (const batchId of debt.batchIds) {
+      for (const batchId of selectedBatchIds) {
         if (remaining <= 0.009) break
         const { data: rawBatch, error: batchError } = await supabase
           .from('product_stock_batches')
@@ -226,7 +236,23 @@ export default function Settlements() {
                   <tbody className="divide-y divide-border/70">
                     {debt.items.map((item, index) => (
                       <tr key={`${debt.id}-item-${index}`}>
-                        <td className="py-1.5 pr-3 text-ink">{item.name}</td>
+                        <td className="py-1.5 pr-3 text-ink">
+                          {tab === 'vendor' && item.batchId && (
+                            <input
+                              type="checkbox"
+                              className="mr-2 accent-primary"
+                              checked={(selectedItems[debt.id] || []).includes(item.batchId)}
+                              onChange={(event) => setSelectedItems((current) => ({
+                                ...current,
+                                [debt.id]: event.target.checked
+                                  ? [...(current[debt.id] || []), item.batchId as string]
+                                  : (current[debt.id] || []).filter((id) => id !== item.batchId),
+                              }))}
+                              aria-label={`Pilih ${item.name} untuk dibayar`}
+                            />
+                          )}
+                          {item.name}
+                        </td>
                         <td className="py-1.5 pr-3">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
                         <td className="py-1.5 pr-3">{formatCurrency(item.unitPrice)}</td>
                         <td className="py-1.5 text-right font-medium text-ink">{formatCurrency(item.subtotal)}</td>
