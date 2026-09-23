@@ -20,8 +20,8 @@ import type { UserRole } from '@/types'
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles: UserRole[]; className: string }[] = [
   { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', roles: ['admin', 'cashier', 'monitor'], className: '' },
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'], className: '' },
-  { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
   { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'], className: '' },
+  { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
   { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', roles: ['admin', 'cashier'], className: '' },
   { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'], className: '' },
   { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'], className: '' },
