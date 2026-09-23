@@ -222,7 +222,34 @@ export default function Settlements() {
     }
   }
   return <div className="space-y-6">
-    <header><p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Keuangan</p><h1 className="mt-1 text-2xl font-bold text-ink">Pelunasan Hutang</h1><p className="mt-1 text-sm text-muted-foreground">Catat pembayaran bertahap untuk vendor dan pelanggan.</p></header>
+    <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Keuangan</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">Pelunasan Hutang</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
+      </div>
+      {tab === 'vendor-history' && (
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <Input
+            value={historySearch}
+            onChange={(event) => setHistorySearch(event.target.value)}
+            placeholder="Cari vendor atau item..."
+            aria-label="Cari nama vendor atau item"
+            className="min-w-0 sm:w-64"
+          />
+          <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-44">
+            <span className="pointer-events-none mr-2 shrink-0">Tanggal</span>
+            <input
+              type="date"
+              value={historyDate}
+              onChange={(event) => setHistoryDate(event.target.value)}
+              aria-label="Filter tanggal pembayaran"
+              className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none"
+            />
+          </label>
+        </div>
+      )}
+    </header>
     <div className="flex gap-2 rounded-xl bg-muted p-1">
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
@@ -235,27 +262,6 @@ export default function Settlements() {
         placeholder="Cari nama pelanggan..."
         aria-label="Cari nama pelanggan"
       />
-    )}
-    {tab === 'vendor-history' && (
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3 sm:flex-row">
-        <Input
-          value={historySearch}
-          onChange={(event) => setHistorySearch(event.target.value)}
-          placeholder="Cari nama vendor atau item..."
-          aria-label="Cari nama vendor atau item"
-          className="min-w-0 flex-1"
-        />
-        <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-48">
-          <span className="pointer-events-none mr-2 shrink-0">Tanggal</span>
-          <input
-            type="date"
-            value={historyDate}
-            onChange={(event) => setHistoryDate(event.target.value)}
-            aria-label="Filter tanggal pembayaran"
-            className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none"
-          />
-        </label>
-      </div>
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
