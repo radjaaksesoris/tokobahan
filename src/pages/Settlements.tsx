@@ -8,7 +8,7 @@ import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards } from 'lucide-react'
 
-type Tab = 'vendor' | 'customer'
+type Tab = 'vendor' | 'customer' | 'vendor-history'
 type VendorPaymentMode = 'nominal' | 'item'
 type DebtPayment = { amount: number; paid_at: string }
 type DebtItem = { batchId?: string; name: string; quantity: number; unit: string; unitPrice: number; subtotal: number; paid: number }
@@ -40,6 +40,16 @@ type VendorBatchRow = {
   unit_cost: number
   vendor_debt_payments: DebtPayment[]
 }
+type VendorPaymentHistory = {
+  id: string
+  amount: number
+  paid_at: string
+  stock_batch: {
+    received_at: string
+    vendor: { name: string } | null
+    product: { name: string } | null
+  } | null
+}
 
 export default function Settlements() {
   const [tab, setTab] = useState<Tab>('vendor')
@@ -49,11 +59,19 @@ export default function Settlements() {
   const [selectedItems, setSelectedItems] = useState<Record<string, string[]>>({})
   const [vendorPaymentModes, setVendorPaymentModes] = useState<Record<string, VendorPaymentMode>>({})
   const [customerSearch, setCustomerSearch] = useState('')
+  const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
 
   async function load() {
     setLoading(true)
-    if (tab === 'vendor') {
+    if (tab === 'vendor-history') {
+      const { data: rawData, error } = await supabase.from('vendor_debt_payments')
+        .select('id, amount, paid_at, stock_batch:product_stock_batches(received_at, vendor:vendors(name), product:products(name))')
+        .order('paid_at', { ascending: false })
+      if (error) toast.error(error.message)
+      setVendorPaymentHistory(rawData as unknown as VendorPaymentHistory[] || [])
+      setDebts([])
+    } else if (tab === 'vendor') {
       const { data: rawData, error } = await supabase.from('product_stock_batches')
         .select('id, quantity_received, unit_cost, received_at, due_date, vendor_id, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
         .eq('payment_status', 'kredit').order('due_date')
@@ -123,6 +141,7 @@ export default function Settlements() {
   useEffect(() => {
     setCustomerSearch('')
     setExpandedDebtId(null)
+    setVendorPaymentHistory([])
     void load()
   }, [tab])
   const openDebts = useMemo(() => {
@@ -194,6 +213,7 @@ export default function Settlements() {
     <div className="flex gap-2 rounded-xl bg-muted p-1">
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
+      <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor-history' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor-history')}>Riwayat Pembayaran Vendor</button>
     </div>
     {tab === 'customer' && (
       <Input
@@ -203,7 +223,34 @@ export default function Settlements() {
         aria-label="Cari nama pelanggan"
       />
     )}
-    {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : openDebts.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
+    {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
+      vendorPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
+        <Card><CardContent className="p-3">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[42rem] text-sm">
+              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-3 font-medium">Tanggal</th>
+                  <th className="py-2 pr-3 font-medium">Vendor</th>
+                  <th className="py-2 pr-3 font-medium">Item</th>
+                  <th className="py-2 text-right font-medium">Nominal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/70">
+                {vendorPaymentHistory.map((item) => (
+                  <tr key={item.id}>
+                    <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
+                    <td className="py-2 pr-3 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
+                    <td className="py-2 pr-3">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</td>
+                    <td className="py-2 text-right font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent></Card>
+      )
+    ) : openDebts.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
       {openDebts.map((debt) => <Card key={debt.id}><CardContent className="space-y-2 p-2.5 sm:p-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
