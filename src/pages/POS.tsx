@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
@@ -948,9 +949,12 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
           </CardContent>
         </Card>
       </div>
-      <div id="receipt-print-root" aria-hidden="true">
-        <ReceiptDocument receipt={receipt} />
-      </div>
+      {createPortal(
+        <div id="receipt-print-root" aria-hidden="true">
+          <ReceiptDocument receipt={receipt} />
+        </div>,
+        document.body
+      )}
     </>
   )
 }

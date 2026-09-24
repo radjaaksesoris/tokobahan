@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -560,9 +561,12 @@ export default function TransactionHistory() {
         </div>
       )}
       {reprint && (
-        <div id="receipt-print-root" aria-hidden="true">
-          <HistoryReceiptDocument receipt={reprint} />
-        </div>
+        createPortal(
+          <div id="receipt-print-root" aria-hidden="true">
+            <HistoryReceiptDocument receipt={reprint} />
+          </div>,
+          document.body
+        )
       )}
     </div>
   )

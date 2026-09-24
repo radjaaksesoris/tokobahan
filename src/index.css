@@ -428,6 +428,10 @@ textarea::placeholder {
     line-height: 1.35;
   }
 
+  body > #receipt-print-root {
+    display: block !important;
+  }
+
   .receipt-document {
     width: 100%;
   }
