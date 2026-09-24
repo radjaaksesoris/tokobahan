@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
 import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements, syncQueuedSettlements } from '@/lib/offlineSettlements'
 
-type Tab = 'vendor' | 'customer' | 'vendor-history'
+type Tab = 'vendor' | 'customer' | 'vendor-history' | 'customer-history'
 type VendorPaymentMode = 'nominal' | 'item'
 type DebtPayment = { amount: number; paid_at: string }
 type DebtItem = { batchId?: string; name: string; quantity: number; unit: string; unitPrice: number; subtotal: number; paid: number }
@@ -45,6 +45,12 @@ type VendorPaymentHistory = {
     product: { name: string } | null
   } | null
 }
+type CustomerPaymentHistory = {
+  id: string
+  amount: number
+  paid_at: string
+  sale: { invoice_no: string; customer: { name: string } | null } | null
+}
 const PAGE_SIZE = 50
 
 export default function Settlements() {
@@ -58,6 +64,7 @@ export default function Settlements() {
   const [historySearch, setHistorySearch] = useState('')
   const [historyDate, setHistoryDate] = useState('')
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
+  const [customerPaymentHistory, setCustomerPaymentHistory] = useState<CustomerPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingSettlements, setPendingSettlements] = useState(0)
   const [page, setPage] = useState(0)
@@ -82,6 +89,15 @@ export default function Settlements() {
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
       if (error) toast.error(error.message)
       setVendorPaymentHistory((rawData || []).slice(0, PAGE_SIZE) as unknown as VendorPaymentHistory[])
+      setHasNextPage((rawData || []).length > PAGE_SIZE)
+      setDebts([])
+    } else if (tab === 'customer-history') {
+      const { data: rawData, error } = await supabase.from('customer_debt_payments')
+        .select('id, amount, paid_at, sale:sales(invoice_no, customer:customers(name))')
+        .order('paid_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      if (error) toast.error(error.message)
+      setCustomerPaymentHistory((rawData || []).slice(0, PAGE_SIZE) as unknown as CustomerPaymentHistory[])
       setHasNextPage((rawData || []).length > PAGE_SIZE)
       setDebts([])
     } else if (tab === 'vendor') {
@@ -159,6 +175,7 @@ export default function Settlements() {
     setHistoryDate('')
     setExpandedDebtId(null)
     setVendorPaymentHistory([])
+    setCustomerPaymentHistory([])
     setPage(0)
     setHasNextPage(false)
   }, [tab])
@@ -181,6 +198,15 @@ export default function Settlements() {
         && (!historyDate || item.paid_at.slice(0, 10) === historyDate)
     })
   }, [historyDate, historySearch, vendorPaymentHistory])
+  const filteredCustomerPaymentHistory = useMemo(() => {
+    const search = historySearch.trim().toLowerCase()
+    return customerPaymentHistory.filter((item) => {
+      const customerName = item.sale?.customer?.name || 'Pelanggan'
+      const invoiceNo = item.sale?.invoice_no || ''
+      return (!search || `${customerName} ${invoiceNo}`.toLowerCase().includes(search))
+        && (!historyDate || item.paid_at.slice(0, 10) === historyDate)
+    })
+  }, [customerPaymentHistory, historyDate, historySearch])
   async function settle(debt: Debt) {
     const enteredPayment = payment[debt.id]?.trim() || ''
     const hasNominal = enteredPayment !== ''
@@ -227,13 +253,13 @@ export default function Settlements() {
         <p className="mt-1 text-sm text-muted-foreground">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
         {pendingSettlements > 0 && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><CloudOff className="h-4 w-4" />{pendingSettlements} pelunasan menunggu sinkronisasi <button className="inline-flex items-center gap-1 underline" onClick={() => void retrySettlements()}><RefreshCw className="h-3 w-3" />Coba lagi</button></div>}
       </div>
-      {tab === 'vendor-history' && (
+      {(tab === 'vendor-history' || tab === 'customer-history') && (
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
           <Input
             value={historySearch}
             onChange={(event) => setHistorySearch(event.target.value)}
-            placeholder="Cari vendor atau item..."
-            aria-label="Cari nama vendor atau item"
+            placeholder={tab === 'vendor-history' ? 'Cari vendor atau item...' : 'Cari pelanggan atau invoice...'}
+            aria-label={tab === 'vendor-history' ? 'Cari nama vendor atau item' : 'Cari nama pelanggan atau invoice'}
             className="min-w-0 sm:w-64"
           />
           <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-44">
@@ -253,6 +279,7 @@ export default function Settlements() {
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
       <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'vendor-history' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('vendor-history')}>Riwayat Pembayaran Vendor</button>
+      <button className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'customer-history' ? 'bg-surface shadow-sm' : 'text-muted-foreground'}`} onClick={() => setTab('customer-history')}>Riwayat Pembayaran Pelanggan</button>
     </div>
     {tab === 'customer' && (
       <Input
@@ -281,6 +308,33 @@ export default function Settlements() {
                     <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
                     <td className="py-2 pr-3 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
                     <td className="py-2 pr-3">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</td>
+                    <td className="py-2 text-right font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent></Card>
+      )
+    ) : tab === 'customer-history' ? (
+      filteredCustomerPaymentHistory.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
+        <Card><CardContent className="p-3">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[38rem] text-sm">
+              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-3 font-medium">Tanggal</th>
+                  <th className="py-2 pr-3 font-medium">Pelanggan</th>
+                  <th className="py-2 pr-3 font-medium">Invoice</th>
+                  <th className="py-2 text-right font-medium">Nominal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/70">
+                {filteredCustomerPaymentHistory.map((item) => (
+                  <tr key={item.id}>
+                    <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
+                    <td className="py-2 pr-3 font-medium text-ink">{item.sale?.customer?.name || 'Pelanggan'}</td>
+                    <td className="py-2 pr-3">{item.sale?.invoice_no || '-'}</td>
                     <td className="py-2 text-right font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
                   </tr>
                 ))}
