@@ -1115,6 +1115,8 @@ function CartPanel({
   onCheckout: () => void
   loading: boolean
 }) {
+  const checkoutButtonRef = useRef<HTMLButtonElement>(null)
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-white/10 px-4 py-4">
@@ -1181,7 +1183,7 @@ function CartPanel({
         </div>
 
         <div className="flex gap-1.5">
-          {(['cash', 'qris', 'credit'] as const).map((m) => (
+          {(['cash', 'credit', 'qris'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPaymentMethod(m)}
@@ -1202,11 +1204,18 @@ function CartPanel({
             onChange={(event) => setCustomerName(event.target.value)}
             placeholder="Nama pelanggan (wajib)"
             aria-label="Nama pelanggan untuk transaksi kredit"
+            onKeyDown={(event) => {
+              if (event.key === 'Tab') {
+                event.preventDefault()
+                checkoutButtonRef.current?.focus()
+              }
+            }}
             className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
           />
         )}
 
         <Button
+          ref={checkoutButtonRef}
           className="w-full"
           size="lg"
           disabled={items.length === 0 || loading}
