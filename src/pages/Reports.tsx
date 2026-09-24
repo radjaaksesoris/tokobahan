@@ -56,18 +56,28 @@ export default function Reports() {
   const requestId = useRef(0)
 
   useEffect(() => {
-    load()
+    let refreshTimer: number | null = null
+    const scheduleRefresh = () => {
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null
+        void load()
+      }, 750)
+    }
+
+    void load()
 
     const channel = supabase
       .channel('reports-sales')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sales' },
-        () => load(),
+        () => scheduleRefresh(),
       )
       .subscribe()
 
     return () => {
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
       supabase.removeChannel(channel)
     }
   }, [period, selectedDate])

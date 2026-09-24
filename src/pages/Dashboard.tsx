@@ -97,7 +97,16 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadStats()
+    let refreshTimer: number | null = null
+    const scheduleRefresh = () => {
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null
+        void loadStats()
+      }, 750)
+    }
+
+    void loadStats()
 
     // Realtime subscription for sales
     const channel = supabase
@@ -105,11 +114,12 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sales' },
-        () => loadStats()
+        () => scheduleRefresh()
       )
       .subscribe()
 
     return () => {
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
       supabase.removeChannel(channel)
     }
   }, [])
