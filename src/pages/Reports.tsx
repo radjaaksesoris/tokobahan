@@ -36,8 +36,8 @@ interface DailySummaryRow {
   transaction_count: number
 }
 interface VendorPaymentRow {
-  amount: number
-  paid_at: string
+  total_amount: number
+  paid_date: string
 }
 
 export default function Reports() {
@@ -107,11 +107,10 @@ export default function Reports() {
         p_start: start.toISOString(),
         p_end: end.toISOString(),
       }),
-      supabase
-        .from('vendor_debt_payments')
-        .select('amount, paid_at')
-        .gte('paid_at', start.toISOString())
-        .lte('paid_at', end.toISOString()),
+      supabase.rpc('vendor_payment_daily_summary', {
+        p_start: start.toISOString(),
+        p_end: end.toISOString(),
+      }),
     ])
     if (currentRequest !== requestId.current) return
 
@@ -134,7 +133,7 @@ export default function Reports() {
   const totalProfit = Number(summary.total_profit)
   const zakatAmount = Math.max(0, totalProfit) * 0.025
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
-  const totalVendorPayments = vendorPayments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+  const totalVendorPayments = vendorPayments.reduce((sum, payment) => sum + Number(payment.total_amount), 0)
   const netCash = totalRevenue - totalVendorPayments
 
   // daily breakdown for chart
@@ -149,9 +148,9 @@ export default function Reports() {
     }
   })
   vendorPayments.forEach((payment) => {
-    const date = payment.paid_at.slice(0, 10)
+    const date = payment.paid_date
     if (!dailyMap[date]) dailyMap[date] = { revenue: 0, cost: 0, profit: 0, vendorPayments: 0 }
-    dailyMap[date].vendorPayments += Number(payment.amount)
+    dailyMap[date].vendorPayments += Number(payment.total_amount)
   })
   const chartData = Object.entries(dailyMap)
     .sort(([a], [b]) => a.localeCompare(b))

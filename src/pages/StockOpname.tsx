@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 type ProductRow = { id: string; name: string; stock: number; stock_unit: string }
+const PAGE_SIZE = 50
 
 export default function StockOpname() {
   const [products, setProducts] = useState<ProductRow[]>([])
@@ -14,15 +16,25 @@ export default function StockOpname() {
   const [reasons, setReasons] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [hasNextPage, setHasNextPage] = useState(false)
 
   async function load() {
     setLoading(true)
-    const { data, error } = await supabase.from('products').select('id, name, stock, stock_unit').eq('is_active', true).order('name')
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, stock, stock_unit')
+      .eq('is_active', true)
+      .order('name')
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
     if (error) toast.error(error.message)
-    else setProducts((data || []) as ProductRow[])
+    else {
+      setProducts((data || []).slice(0, PAGE_SIZE) as ProductRow[])
+      setHasNextPage((data || []).length > PAGE_SIZE)
+    }
     setLoading(false)
   }
-  useEffect(() => { void load() }, [])
+  useEffect(() => { void load() }, [page])
 
   async function save(product: ProductRow) {
     if (!navigator.onLine) {
@@ -70,6 +82,19 @@ export default function StockOpname() {
             </Card>
           ))}
           {products.length === 0 && <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada produk aktif.</CardContent></Card>}
+          {products.length > 0 && (
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || loading}>
+                  <ChevronLeft className="h-4 w-4" /> Sebelumnya
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>
+                  Berikutnya <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

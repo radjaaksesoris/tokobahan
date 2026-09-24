@@ -36,7 +36,7 @@ export default function Settings() {
     created_at: string
     created_by: string
     backup_version: string
-    payload: Json
+    payload: Json | null
     storage_bucket: string | null
     storage_object_path: string | null
     storage_size_bytes: number | null
@@ -101,7 +101,7 @@ export default function Settings() {
     setCloudBackupError(null)
     const { data, error } = await supabase
       .from('operational_backups')
-      .select('id, created_at, created_by, backup_version, payload, storage_bucket, storage_object_path, storage_size_bytes, storage_content_type, storage_uploaded_at')
+      .select('id, created_at, created_by, backup_version, storage_bucket, storage_object_path, storage_size_bytes, storage_content_type, storage_uploaded_at')
       .order('created_at', { ascending: false })
       .limit(50)
     if (error) {
@@ -270,7 +270,16 @@ export default function Settings() {
   }
 
   async function readCloudBackup(backup: typeof cloudBackups[number]) {
-    if (!backup.storage_object_path || backup.storage_bucket !== BACKUP_BUCKET) return backup.payload
+    if (!backup.storage_object_path || backup.storage_bucket !== BACKUP_BUCKET) {
+      if (backup.payload) return backup.payload
+      const { data, error } = await supabase
+        .from('operational_backups')
+        .select('payload')
+        .eq('id', backup.id)
+        .single()
+      if (error) throw error
+      return data.payload as Json
+    }
     const { data, error } = await supabase.storage.from(BACKUP_BUCKET).download(backup.storage_object_path)
     if (error) throw error
     return JSON.parse(await data.text()) as Json

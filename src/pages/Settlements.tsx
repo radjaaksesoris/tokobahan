@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
-import { WalletCards, RefreshCw, CloudOff } from 'lucide-react'
+import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
 import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements, syncQueuedSettlements } from '@/lib/offlineSettlements'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history'
@@ -45,6 +45,7 @@ type VendorPaymentHistory = {
     product: { name: string } | null
   } | null
 }
+const PAGE_SIZE = 50
 
 export default function Settlements() {
   const [tab, setTab] = useState<Tab>('vendor')
@@ -59,6 +60,8 @@ export default function Settlements() {
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingSettlements, setPendingSettlements] = useState(0)
+  const [page, setPage] = useState(0)
+  const [hasNextPage, setHasNextPage] = useState(false)
 
   async function refreshQueue() { setPendingSettlements((await getQueuedSettlements()).filter((item) => item.status !== 'syncing').length) }
 
@@ -76,14 +79,17 @@ export default function Settlements() {
       const { data: rawData, error } = await supabase.from('vendor_debt_payments')
         .select('id, amount, paid_at, stock_batch:product_stock_batches(received_at, vendor:vendors(name), product:products(name))')
         .order('paid_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
       if (error) toast.error(error.message)
-      setVendorPaymentHistory(rawData as unknown as VendorPaymentHistory[] || [])
+      setVendorPaymentHistory((rawData || []).slice(0, PAGE_SIZE) as unknown as VendorPaymentHistory[])
+      setHasNextPage((rawData || []).length > PAGE_SIZE)
       setDebts([])
     } else if (tab === 'vendor') {
       const { data: rawData, error } = await supabase.from('product_stock_batches')
         .select('id, quantity_received, unit_cost, received_at, due_date, vendor_id, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
-        .eq('payment_status', 'kredit').order('due_date')
+        .eq('payment_status', 'kredit').order('due_date').range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
       if (error) toast.error(error.message)
+      setHasNextPage((rawData || []).length > PAGE_SIZE)
       const data = rawData as unknown as VendorDebtRow[] | null
       const grouped = new Map<string, Debt>()
       for (const row of data || []) {
@@ -127,8 +133,9 @@ export default function Settlements() {
     } else {
       const { data, error } = await supabase.from('sales')
         .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
-        .eq('payment_method', 'credit').order('created_at', { ascending: true })
+        .eq('payment_method', 'credit').order('created_at', { ascending: true }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
       if (error) toast.error(error.message)
+      setHasNextPage((data || []).length > PAGE_SIZE)
       setDebts((data || []).map((row: any) => ({
         id: row.id, batchIds: [row.id], name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
         total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
@@ -152,8 +159,12 @@ export default function Settlements() {
     setHistoryDate('')
     setExpandedDebtId(null)
     setVendorPaymentHistory([])
-    void load()
+    setPage(0)
+    setHasNextPage(false)
   }, [tab])
+  useEffect(() => {
+    void load()
+  }, [tab, page])
   const openDebts = useMemo(() => {
     const search = customerSearch.trim().toLowerCase()
     return debts.filter((debt) => (
@@ -369,5 +380,18 @@ export default function Settlements() {
         )}
       </CardContent></Card>)}
     </div>}
+    {(debts.length > 0 || vendorPaymentHistory.length > 0) && (
+      <div className="flex items-center justify-between border-t border-border pt-3">
+        <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || loading}>
+            <ChevronLeft className="h-4 w-4" /> Sebelumnya
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>
+            Berikutnya <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )}
   </div>
 }

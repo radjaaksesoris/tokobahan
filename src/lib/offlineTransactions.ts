@@ -151,7 +151,10 @@ export async function syncQueuedTransactions(): Promise<SyncResult> {
 }
 
 export async function retryFailedTransactions() {
-  const failed = (await getQueuedTransactions()).filter((transaction) => transaction.status === 'failed')
+  const failed = (await getQueuedTransactions())
+    .filter((transaction) => transaction.status === 'failed')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .slice(0, BATCH_SIZE)
   await Promise.all(failed.map((transaction) => updateTransaction(transaction.id, { status: 'pending', lastError: null })))
   return syncQueuedTransactions()
 }

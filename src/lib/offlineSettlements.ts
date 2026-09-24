@@ -18,6 +18,7 @@ export interface QueuedSettlement {
 const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-settlements'
 const DB_VERSION = 2
+const BATCH_SIZE = 5
 const listeners = new Set<() => void>()
 let syncPromise: Promise<SyncResult> | null = null
 export interface SyncResult { synced: number; failed: number }
@@ -79,6 +80,10 @@ export async function syncQueuedSettlements(): Promise<SyncResult> {
   return syncPromise
 }
 export async function retryFailedSettlements() {
-  await Promise.all((await getQueuedSettlements()).filter((record) => record.status === 'failed').map((record) => updateSettlement(record.id, { status: 'pending', lastError: null })))
+  const failed = (await getQueuedSettlements())
+    .filter((record) => record.status === 'failed')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .slice(0, BATCH_SIZE)
+  await Promise.all(failed.map((record) => updateSettlement(record.id, { status: 'pending', lastError: null })))
   return syncQueuedSettlements()
 }

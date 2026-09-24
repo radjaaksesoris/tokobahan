@@ -83,26 +83,25 @@ export default function TransactionHistory() {
         .lte('created_at', endOfDay(selectedDate).toISOString())
     }
 
-    const totalQuery = date
-      ? supabase
-        .from('sales')
-        .select('total_amount')
-        .gte('created_at', startOfDay(new Date(`${date}T00:00:00`)).toISOString())
-        .lte('created_at', endOfDay(new Date(`${date}T00:00:00`)).toISOString())
-      : null
-    if (term && totalQuery) {
-      totalQuery.or(`invoice_no.ilike.%${term}%,payment_method.ilike.%${term}%`)
-    }
-    const [{ data, error }, totalResult] = await Promise.all([query, totalQuery || Promise.resolve({ data: null, error: null })])
+    const totalStart = date ? startOfDay(new Date(`${date}T00:00:00`)) : new Date(0)
+    const totalEnd = date ? endOfDay(new Date(`${date}T00:00:00`)) : new Date('9999-12-31T23:59:59.999Z')
+    const [{ data, error }, { data: totalData, error: totalError }] = await Promise.all([
+      query,
+      supabase.rpc('sales_total_amount', {
+        p_start: totalStart.toISOString(),
+        p_end: totalEnd.toISOString(),
+        p_search: term || null,
+      }),
+    ])
     if (requestId !== loadRequestId.current) return
     const cacheKey = `transaction-history:${date || 'all'}:${page}:${search.trim().toLowerCase()}`
-    if (error || totalResult.error) {
+    if (error || totalError) {
       const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
       if (cached) { setSales(cached.value.rows); setDateTotal(cached.value.total); setHasNextPage(cached.value.hasNextPage); setCachedAt(cached.cachedAt) }
-      else { toast.error(navigator.onLine ? (error?.message || totalResult.error?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false); setDateTotal(0) }
+      else { toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false); setDateTotal(0) }
     } else {
       const rows = (data || []) as SaleRow[]
-      const total = (totalResult.data || []).reduce((sum, row) => sum + Number(row.total_amount), 0)
+      const total = Number(totalData?.[0]?.total_amount || 0)
       setHasNextPage(rows.length > PAGE_SIZE); setSales(rows.slice(0, PAGE_SIZE)); setDateTotal(total); setCachedAt(Date.now())
       writeOfflineCache(cacheKey, { rows: rows.slice(0, PAGE_SIZE), total, hasNextPage: rows.length > PAGE_SIZE })
     }

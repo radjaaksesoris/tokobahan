@@ -366,6 +366,31 @@ export interface Database {
           transaction_count: number
         }[]
       }
+      sales_total_amount: {
+        Args: {
+          p_start: string
+          p_end: string
+          p_search?: string | null
+        }
+        Returns: {
+          total_amount: number
+          transaction_count: number
+        }[]
+      }
+      vendor_payment_daily_summary: {
+        Args: {
+          p_start: string
+          p_end: string
+        }
+        Returns: {
+          paid_date: string
+          total_amount: number
+        }[]
+      }
+      inventory_summary: {
+        Args: Record<string, never>
+        Returns: Json
+      }
       reset_operational_data: {
         Args: Record<string, never>
         Returns: undefined
