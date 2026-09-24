@@ -19,8 +19,8 @@ import { CurrentDate } from '@/components/layout/CurrentDate'
 import type { UserRole } from '@/types'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles: UserRole[]; className: string }[] = [
-  { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', roles: ['admin', 'cashier', 'monitor'], className: '' },
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'], className: '' },
+  { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', roles: ['admin', 'cashier', 'monitor'], className: '' },
   { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'], className: '' },
   { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
   { to: '/products/stock-opname', icon: ClipboardCheck, label: 'Stok Opname', roles: ['admin'], className: '' },
