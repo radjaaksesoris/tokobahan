@@ -25,6 +25,7 @@ import {
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
+import { printReceiptWithQz } from '@/lib/qzTray'
 import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
 import {
   createOfflineInvoice,
@@ -925,8 +926,15 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
     return () => window.clearTimeout(focusTimer)
   }, [])
 
-  function printReceipt() {
-    window.print()
+  async function printReceipt() {
+    try {
+      await printReceiptWithQz(receipt)
+      toast.success('Struk dikirim ke printer')
+    } catch (error) {
+      console.warn('QZ Tray print failed, falling back to browser print:', error)
+      toast.info('QZ Tray tidak tersedia. Membuka dialog cetak browser.')
+      window.print()
+    }
   }
 
   return (

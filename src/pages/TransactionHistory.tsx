@@ -11,6 +11,7 @@ import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, History, Printer,
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { toast } from 'sonner'
+import { printReceiptWithQz } from '@/lib/qzTray'
 
 interface SaleRow {
   id: string
@@ -196,7 +197,7 @@ export default function TransactionHistory() {
       customerName = data?.name || null
     }
 
-    setReprint({
+    const receipt = {
       invoiceNo: selectedSale.invoice_no,
       createdAt: selectedSale.created_at,
       paymentMethod: selectedSale.payment_method.toLowerCase() as ReprintData['paymentMethod'],
@@ -210,8 +211,21 @@ export default function TransactionHistory() {
         unitPrice: Number(item.unit_price),
         lineTotal: Math.max(0, Number(item.line_total) - item.returned_amount),
       })),
-    })
-    window.setTimeout(() => window.print(), 0)
+    }
+    try {
+      await printReceiptWithQz({
+        ...receipt,
+        change: receipt.paymentMethod === 'cash'
+          ? Math.max(0, receipt.amountPaid - receipt.total)
+          : 0,
+      })
+      toast.success('Struk dikirim ke printer')
+    } catch (error) {
+      console.warn('QZ Tray print failed, falling back to browser print:', error)
+      toast.info('QZ Tray tidak tersedia. Membuka dialog cetak browser.')
+      setReprint(receipt)
+      window.setTimeout(() => window.print(), 0)
+    }
   }
 
   async function changePaymentMethod(method: 'cash' | 'credit') {
