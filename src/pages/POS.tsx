@@ -795,6 +795,15 @@ export default function POS() {
 }
 
 function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+  const printButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => {
+      printButtonRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [])
+
   function printReceipt() {
     window.print()
   }
@@ -811,7 +820,7 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
-              <Button className="flex-1" onClick={printReceipt}>Cetak struk</Button>
+              <Button ref={printButtonRef} className="flex-1" onClick={printReceipt}>Cetak struk</Button>
             </div>
           </CardContent>
         </Card>
