@@ -189,7 +189,7 @@ export default function POS() {
   }, [showPaymentModal])
 
   useEffect(() => {
-    if (!showPaymentModal || paymentMethod !== 'credit' || !isOnline) return
+    if (paymentMethod !== 'credit' || !isOnline) return
     let cancelled = false
     supabase
       .from('customers')
@@ -206,7 +206,7 @@ export default function POS() {
     return () => {
       cancelled = true
     }
-  }, [isOnline, paymentMethod, showPaymentModal])
+  }, [isOnline, paymentMethod])
 
   async function loadProducts() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -635,6 +635,7 @@ export default function POS() {
             setPaymentMethod={setPaymentMethod}
             customerName={customerName}
             setCustomerName={setCustomerName}
+            customers={customers}
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
@@ -659,6 +660,7 @@ export default function POS() {
             setPaymentMethod={setPaymentMethod}
             customerName={customerName}
             setCustomerName={setCustomerName}
+            customers={customers}
             updateQuantity={updateQuantity}
             removeItem={removeItem}
             onCheckout={handleCheckout}
@@ -1138,6 +1140,7 @@ function CartPanel({
   setPaymentMethod,
   customerName,
   setCustomerName,
+  customers,
   updateQuantity,
   removeItem,
   onCheckout,
@@ -1149,12 +1152,18 @@ function CartPanel({
   setPaymentMethod: (method: PaymentMethod) => void
   customerName: string
   setCustomerName: (name: string) => void
+  customers: { id: string; name: string }[]
   updateQuantity: (id: string, unit: UnitType, q: number) => void
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
   loading: boolean
 }) {
   const checkoutButtonRef = useRef<HTMLButtonElement>(null)
+
+  const [customerNameFocused, setCustomerNameFocused] = useState(false)
+  const customerSuggestions = customers
+    .filter((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase()))
+    .slice(0, 8)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -1238,19 +1247,42 @@ function CartPanel({
         </div>
 
         {paymentMethod === 'credit' && (
-          <Input
-            value={customerName}
-            onChange={(event) => setCustomerName(event.target.value)}
-            placeholder="Nama pelanggan (wajib)"
-            aria-label="Nama pelanggan untuk transaksi kredit"
-            onKeyDown={(event) => {
-              if (event.key === 'Tab') {
-                event.preventDefault()
-                checkoutButtonRef.current?.focus()
-              }
-            }}
-            className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
-          />
+          <div className="relative">
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              onFocus={() => setCustomerNameFocused(true)}
+              onBlur={() => window.setTimeout(() => setCustomerNameFocused(false), 150)}
+              placeholder="Nama pelanggan (wajib)"
+              aria-label="Nama pelanggan untuk transaksi kredit"
+              onKeyDown={(event) => {
+                if (event.key === 'Tab') {
+                  event.preventDefault()
+                  checkoutButtonRef.current?.focus()
+                }
+              }}
+              className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
+            />
+            {customerNameFocused && customerSuggestions.length > 0 && (
+              <div className="absolute inset-x-0 bottom-full z-20 mb-1 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-ink p-1 shadow-lg">
+                {customerSuggestions.map((customer) => (
+                  <button
+                    key={customer.id}
+                    type="button"
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/10"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setCustomerName(customer.name)
+                      setCustomerNameFocused(false)
+                      checkoutButtonRef.current?.focus()
+                    }}
+                  >
+                    {customer.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         <Button
