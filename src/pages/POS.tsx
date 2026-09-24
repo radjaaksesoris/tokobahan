@@ -70,6 +70,7 @@ export default function POS() {
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
   const searchFilterRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const keypadPanelRef = useRef<HTMLDivElement>(null)
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -267,6 +268,11 @@ export default function POS() {
     }
     addItem(selectedProduct, selectedUnit, qty)
     setSelectedProduct(null)
+    setSearch('')
+    setActiveProductIndex(-1)
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+    })
   }
 
   function handleCheckout() {
@@ -471,11 +477,10 @@ export default function POS() {
           <div ref={searchFilterRef} className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              ref={searchInputRef}
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
               value={search}
-              readOnly
-              inputMode="none"
               onClick={() => setShowKeypadPanel(true)}
               onChange={(e) => {
                 setSearch(e.target.value)
