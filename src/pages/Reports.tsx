@@ -40,6 +40,14 @@ interface VendorPaymentRow {
   paid_date: string
 }
 
+const chartColors = {
+  revenue: '#0f766e',
+  profit: '#d97706',
+  vendorPayments: '#c2410c',
+  axis: '#526064',
+  grid: '#d9e1df',
+} as const
+
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
   const [selectedDate, setSelectedDate] = useState('')
@@ -253,7 +261,7 @@ export default function Reports() {
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <WalletCards className="h-4 w-4" /> Bayar Vendor
             </div>
-            <p className="text-xl font-bold text-orange-600">{formatCurrency(totalVendorPayments)}</p>
+            <p className="text-xl font-bold text-orange-700">{formatCurrency(totalVendorPayments)}</p>
             <p className="text-xs text-muted-foreground">Uang keluar</p>
           </CardContent>
         </Card>
@@ -273,7 +281,7 @@ export default function Reports() {
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingDown className="h-4 w-4" /> HPP / Modal
             </div>
-            <p className="text-xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
+            <p className="text-xl font-bold text-red-700">{formatCurrency(totalCost)}</p>
           </CardContent>
         </Card>
         <Card className="relative overflow-hidden lg:col-span-2">
@@ -282,7 +290,7 @@ export default function Reports() {
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingUp className="h-4 w-4" /> Laba Bersih
             </div>
-            <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalProfit)}</p>
+            <p className="text-xl font-bold text-emerald-700">{formatCurrency(totalProfit)}</p>
           </CardContent>
         </Card>
         <Card className="relative overflow-hidden lg:col-span-5">
@@ -301,7 +309,7 @@ export default function Reports() {
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <DollarSign className="h-4 w-4" /> Zakat (2,5%)
             </div>
-            <p className="text-xl font-bold text-amber-600">{formatCurrency(zakatAmount)}</p>
+            <p className="text-xl font-bold text-amber-700">{formatCurrency(zakatAmount)}</p>
             <p className="text-xs text-muted-foreground">Dari laba bersih</p>
           </CardContent>
         </Card>
@@ -317,17 +325,62 @@ export default function Reports() {
             <div className="h-80 lg:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={{ stroke: chartColors.axis }}
+                    tickLine={{ stroke: chartColors.axis }}
+                    tick={{ fontSize: 11, fill: chartColors.axis }}
+                  />
+                  <YAxis
+                    axisLine={{ stroke: chartColors.axis }}
+                    tickLine={{ stroke: chartColors.axis }}
+                    tick={{ fontSize: 11, fill: chartColors.axis }}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
                   <Tooltip
                     formatter={(v: number) => formatCurrency(v)}
-                    contentStyle={{ borderRadius: 8 }}
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: `1px solid ${chartColors.grid}`,
+                      backgroundColor: '#202a2e',
+                      color: '#fffdf8',
+                      boxShadow: '0 8px 24px rgba(32,42,46,0.18)',
+                    }}
+                    labelStyle={{ color: '#e4a853', fontWeight: 700 }}
+                    itemStyle={{ color: '#fffdf8' }}
                   />
-                  <Legend />
-                  <Bar dataKey="revenue" name="Uang Masuk" fill="#0f766e" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="profit" name="Laba" fill="#f59e0b" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="vendorPayments" name="Bayar Vendor" fill="#ea580c" radius={[3, 3, 0, 0]} />
+                  <Legend
+                    wrapperStyle={{ color: chartColors.axis, fontSize: 13, paddingTop: 8 }}
+                    formatter={(value) => <span className="font-semibold text-ink">{value}</span>}
+                  />
+                  <Bar
+                    dataKey="revenue"
+                    name="Uang Masuk"
+                    fill={chartColors.revenue}
+                    fillOpacity={1}
+                    stroke={chartColors.revenue}
+                    strokeWidth={1}
+                    radius={[3, 3, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="profit"
+                    name="Laba"
+                    fill={chartColors.profit}
+                    fillOpacity={1}
+                    stroke={chartColors.profit}
+                    strokeWidth={1}
+                    radius={[3, 3, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="vendorPayments"
+                    name="Bayar Vendor"
+                    fill={chartColors.vendorPayments}
+                    fillOpacity={1}
+                    stroke={chartColors.vendorPayments}
+                    strokeWidth={1}
+                    radius={[3, 3, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
