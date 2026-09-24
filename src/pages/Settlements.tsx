@@ -354,13 +354,22 @@ export default function Settlements() {
             <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
           <div className="flex w-full gap-1.5 sm:w-auto">
-            <Input type="number" min="1" max={debt.total - debt.paid} value={payment[debt.id] || ''} disabled={tab === 'vendor' && vendorPaymentModes[debt.id] === 'item'} onChange={(event) => {
-              const value = event.target.value
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={payment[debt.id] ? formatCurrency(Number(payment[debt.id])) : ''}
+              disabled={tab === 'vendor' && vendorPaymentModes[debt.id] === 'item'}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => {
+              const value = event.target.value.replace(/\D/g, '')
               if (tab === 'vendor' && value.trim() && !vendorPaymentModes[debt.id]) {
                 setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'nominal' }))
               }
               setPayment((current) => ({ ...current, [debt.id]: value }))
-            }} placeholder="Nominal" className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none" />
+            }}
+              placeholder="Nominal"
+              className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none"
+            />
             <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
