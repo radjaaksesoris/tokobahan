@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useState, useMemo, useRef, type KeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -73,6 +73,7 @@ export default function POS() {
   const initialLoadComplete = useRef(false)
   const searchFilterRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const checkoutButtonRef = useRef<HTMLButtonElement>(null)
   const keypadPanelRef = useRef<HTMLDivElement>(null)
   const [activeProductIndex, setActiveProductIndex] = useState(-1)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -302,6 +303,11 @@ export default function POS() {
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Tab') {
+      event.preventDefault()
+      checkoutButtonRef.current?.focus()
+      return
+    }
     if (filtered.length === 0) return
 
     if (event.key === 'ArrowDown') {
@@ -679,6 +685,7 @@ export default function POS() {
             removeItem={removeItem}
             onCheckout={handleCheckout}
             loading={checkoutLoading}
+            checkoutButtonRef={checkoutButtonRef}
           />
         )}
       </div>
@@ -704,6 +711,7 @@ export default function POS() {
             removeItem={removeItem}
             onCheckout={handleCheckout}
             loading={checkoutLoading}
+            checkoutButtonRef={checkoutButtonRef}
           />
         </div>
       )}
@@ -1197,6 +1205,7 @@ function CartPanel({
   removeItem,
   onCheckout,
   loading,
+  checkoutButtonRef,
 }: {
   items: ReturnType<typeof useCartStore.getState>['items']
   totals: ReturnType<typeof useCartStore.getState>['getTotals'] extends () => infer R ? R : never
@@ -1209,9 +1218,8 @@ function CartPanel({
   removeItem: (id: string, unit: UnitType) => void
   onCheckout: () => void
   loading: boolean
+  checkoutButtonRef: RefObject<HTMLButtonElement | null>
 }) {
-  const checkoutButtonRef = useRef<HTMLButtonElement>(null)
-
   const [customerNameFocused, setCustomerNameFocused] = useState(false)
   const [activeCustomerIndex, setActiveCustomerIndex] = useState(-1)
   const customerSuggestions = customers
@@ -1362,7 +1370,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full"
+          className="w-full focus-visible:ring-4 focus-visible:ring-accent focus-visible:ring-offset-2"
           size="lg"
           disabled={items.length === 0 || loading}
           onClick={onCheckout}
