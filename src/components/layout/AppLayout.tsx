@@ -50,7 +50,7 @@ export function AppLayout() {
 
   const filteredNav = navItems.filter((item) => {
     if (!isRole(...item.roles)) return false
-    if (isMobile) return item.to === '/' || item.to === '/transactions' || item.to === '/reports'
+    if (isMobile) return item.to === '/' || item.to === '/transactions' || item.to === '/settlements' || item.to === '/reports'
     return true
   })
 
