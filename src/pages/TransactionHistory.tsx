@@ -187,7 +187,12 @@ export default function TransactionHistory() {
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
-          {cachedAt && <p className="mt-1 text-xs text-muted-foreground">{navigator.onLine ? "Cache terbaru" : "Offline · "}Diperbarui {format(new Date(cachedAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>}
+          {cachedAt && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {navigator.onLine ? 'Cache terbaru · ' : 'Offline · '}
+              Diperbarui {format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}
+            </p>
+          )}
           <p className="mt-1 text-sm text-muted-foreground">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
         </div>
         <div className="flex w-full items-center gap-2 sm:gap-3 lg:w-auto">
@@ -195,7 +200,7 @@ export default function TransactionHistory() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9 pr-10"
-              placeholder="Cari nomor invoice atau metode pembayaran..."
+              placeholder="Cari invoice atau metode pembayaran..."
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
