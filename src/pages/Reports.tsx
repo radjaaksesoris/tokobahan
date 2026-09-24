@@ -246,71 +246,71 @@ export default function Reports() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-10">
-        <Card className="relative overflow-hidden lg:col-span-2">
-          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
+        <Card className="relative overflow-hidden border-0 bg-[#0f766e] text-white shadow-[0_12px_28px_rgba(15,118,110,0.2)] lg:col-span-2">
+          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <DollarSign className="h-4 w-4" /> Uang Masuk
             </div>
-            <p className="text-xl font-bold text-ink">{formatCurrency(totalRevenue)}</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalRevenue)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden lg:col-span-2">
-          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-orange-600/[0.09]" />
+        <Card className="relative overflow-hidden border-0 bg-[#c2410c] text-white shadow-[0_12px_28px_rgba(194,65,12,0.2)] lg:col-span-2">
+          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <WalletCards className="h-4 w-4" /> Bayar Vendor
             </div>
-            <p className="text-xl font-bold text-orange-700">{formatCurrency(totalVendorPayments)}</p>
-            <p className="text-xs text-muted-foreground">Uang keluar</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalVendorPayments)}</p>
+            <p className="text-xs text-white/75">Uang keluar</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden border-emerald-200 bg-emerald-50 lg:col-span-2">
-          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-emerald-700/[0.12]" />
+        <Card className="relative overflow-hidden border-0 bg-[#047857] text-white shadow-[0_12px_28px_rgba(4,120,87,0.2)] lg:col-span-2">
+          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-emerald-900">
+            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-white/80">
               <DollarSign className="h-4 w-4" /> Kas Bersih
             </div>
-            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-emerald-800' : 'text-red-700'}`}>{formatCurrency(netCash)}</p>
-            <p className="text-xs text-emerald-800/80">Uang masuk - vendor</p>
+            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-white' : 'text-red-100'}`}>{formatCurrency(netCash)}</p>
+            <p className="text-xs text-white/75">Uang masuk - vendor</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden lg:col-span-2">
-          <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-red-600/[0.08]" />
+        <Card className="relative overflow-hidden border-0 bg-[#b91c1c] text-white shadow-[0_12px_28px_rgba(185,28,28,0.18)] lg:col-span-2">
+          <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <TrendingDown className="h-4 w-4" /> HPP / Modal
             </div>
-            <p className="text-xl font-bold text-red-700">{formatCurrency(totalCost)}</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalCost)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden lg:col-span-2">
-          <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-emerald-600/[0.09]" />
+        <Card className="relative overflow-hidden border-0 bg-[#15803d] text-white shadow-[0_12px_28px_rgba(21,128,61,0.2)] lg:col-span-2">
+          <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <TrendingUp className="h-4 w-4" /> Laba Bersih
             </div>
-            <p className="text-xl font-bold text-emerald-700">{formatCurrency(totalProfit)}</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalProfit)}</p>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden lg:col-span-5">
-          <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-teal-700/[0.08]" />
+        <Card className="relative overflow-hidden border-0 bg-[#115e59] text-white shadow-[0_12px_28px_rgba(17,94,89,0.2)] lg:col-span-5">
+          <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <DollarSign className="h-4 w-4" /> Margin
             </div>
-            <p className="text-xl font-bold text-teal-700">{margin.toFixed(1)}%</p>
-            <p className="text-xs text-muted-foreground">{formatNumber(summary.transaction_count)} transaksi</p>
+            <p className="text-xl font-bold text-white">{margin.toFixed(1)}%</p>
+            <p className="text-xs text-white/75">{formatNumber(summary.transaction_count)} transaksi</p>
           </CardContent>
         </Card>
-        <Card className="relative col-span-2 overflow-hidden lg:col-span-5">
-          <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-amber-600/[0.09]" />
+        <Card className="relative col-span-2 overflow-hidden border-0 bg-[#b45309] text-white shadow-[0_12px_28px_rgba(180,83,9,0.2)] lg:col-span-5">
+          <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
               <DollarSign className="h-4 w-4" /> Zakat (2,5%)
             </div>
-            <p className="text-xl font-bold text-amber-700">{formatCurrency(zakatAmount)}</p>
-            <p className="text-xs text-muted-foreground">Dari laba bersih</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(zakatAmount)}</p>
+            <p className="text-xs text-white/75">Dari laba bersih</p>
           </CardContent>
         </Card>
       </div>
