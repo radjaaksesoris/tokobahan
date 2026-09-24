@@ -646,9 +646,7 @@ export default function POS() {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <Input
-                  type="number"
-                  min={1}
-                  max={selectedProduct.stock}
+                  type="text"
                   value={qty}
                   readOnly
                   inputMode="none"
