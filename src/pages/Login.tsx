@@ -56,7 +56,7 @@ export default function Login() {
   }
 
   return (
-    <div className={`relative flex min-h-dvh justify-center overflow-y-auto bg-ink p-4 sm:p-6 lg:items-center lg:overflow-hidden lg:p-10 ${keyboardVisible ? 'items-start py-2' : 'items-center'}`}>
+    <div className={`login-shell relative flex min-h-dvh justify-center overflow-y-auto bg-ink px-3 py-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-6 lg:items-center lg:overflow-hidden lg:p-10 ${keyboardVisible ? 'items-start' : 'items-center'}`}>
       <img
         src={`${import.meta.env.BASE_URL}login-background.jpg`}
         alt=""
@@ -65,7 +65,7 @@ export default function Login() {
       />
       <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,31,34,0.97)_0%,rgba(21,31,34,0.72)_42%,rgba(21,31,34,0.82)_100%)]" aria-hidden="true" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(228,168,83,0.22),transparent_24%),radial-gradient(circle_at_86%_72%,rgba(36,126,121,0.22),transparent_30%)]" aria-hidden="true" />
-      <div className="relative mx-auto grid w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-[2rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm sm:w-full sm:max-w-5xl lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative mx-auto grid w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm sm:max-w-5xl lg:grid-cols-[1.05fr_0.95fr] lg:rounded-[2rem]">
         <section className="relative hidden min-h-[560px] flex-col justify-between overflow-hidden p-10 text-white lg:flex">
           <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-accent/30" aria-hidden="true" />
           <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full border-[18px] border-primary/20" aria-hidden="true" />
@@ -96,12 +96,12 @@ export default function Login() {
           </div>
         </section>
 
-        <section className={`relative overflow-hidden bg-ink px-6 text-white lg:hidden ${keyboardVisible ? 'py-3' : 'py-7'}`}>
+        <section className={`relative overflow-hidden bg-ink px-5 text-white lg:hidden ${keyboardVisible ? 'py-3' : 'py-6'}`}>
           <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border border-accent/30" aria-hidden="true" />
           <div className="absolute -bottom-20 -left-10 h-36 w-36 rounded-full border-[12px] border-primary/20" aria-hidden="true" />
           <div className="relative">
-            <div className="flex items-center gap-3">
-              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-11 w-11 rounded-2xl object-cover ring-4 ring-accent/20" />
+            <div className="flex items-center gap-2.5">
+              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-10 w-10 rounded-xl object-cover ring-4 ring-accent/20" />
               <div>
                 <p className="text-sm font-semibold tracking-[0.18em] text-accent">RADJA</p>
                 <p className="text-xs text-white/60">Aksesoris Konveksi</p>
@@ -110,7 +110,7 @@ export default function Login() {
             <p className={`${keyboardVisible ? 'mt-3' : 'mt-7'} flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent`}>
               <Sparkles className="h-3.5 w-3.5" /> Ruang kendali toko
             </p>
-            <h1 className={`${keyboardVisible ? 'text-2xl' : 'text-3xl'} mt-2 max-w-xs font-bold leading-none tracking-[-0.04em]`}>
+            <h1 className={`${keyboardVisible ? 'text-2xl' : 'text-[2rem]'} mt-2 max-w-xs font-bold leading-[0.98] tracking-[-0.04em]`}>
               Semua stok,
               <span className="block text-primary-foreground">satu kendali.</span>
             </h1>
@@ -123,13 +123,13 @@ export default function Login() {
             <div className="absolute -bottom-32 -left-20 h-56 w-56 rounded-full border-[18px] border-accent/15" />
             <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(rgba(33,108,104,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(33,108,104,0.06)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_top,black,transparent)]" />
           </div>
-          <CardHeader className={`relative z-10 items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-4' : 'pb-2'}`}>
+          <CardHeader className={`relative z-10 items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-3' : 'pb-1 pt-5'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
           </CardHeader>
-          <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-3' : 'pt-5'}`}>
-            <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-3' : 'space-y-5'}>
+          <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
+            <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
                 <div className="relative hidden lg:block">
@@ -149,7 +149,7 @@ export default function Login() {
                 </div>
                 <div className="lg:hidden">
                   <div
-                    className="flex h-12 items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 shadow-sm"
+                    className="flex h-11 items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 shadow-sm"
                     aria-label={`PIN ${password.length} dari 6 digit`}
                     role="status"
                   >
@@ -161,7 +161,7 @@ export default function Login() {
                     ))}
                   </div>
                   <p className="mt-2 text-center text-xs text-muted-foreground">Masukkan 6 digit password</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="login-keypad mt-3 grid grid-cols-3 gap-2">
                     {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
                       <button
                         key={digit}
@@ -208,7 +208,7 @@ export default function Login() {
                 {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk ke dashboard'}
               </Button>
             </form>
-            <p className="mt-7 border-t border-border pt-5 text-center text-xs text-muted-foreground">
+            <p className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
               Single-device POS <span className="mx-1 text-primary">•</span> Multi-monitor dashboard
             </p>
           </CardContent>
