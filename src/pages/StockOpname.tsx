@@ -63,7 +63,6 @@ export default function StockOpname() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
       <header className="border-b border-border pb-5">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Inventori</p>
         <h1 className="mt-1 text-3xl font-bold text-ink">Stok Opname</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
       </header>

@@ -264,7 +264,6 @@ export default function TransactionHistory() {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Catatan penjualan</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           {cachedAt && (
             <p className="mt-1 text-xs text-muted-foreground">

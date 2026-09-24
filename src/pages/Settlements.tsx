@@ -251,7 +251,6 @@ export default function Settlements() {
   return <div className="space-y-6">
     <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Keuangan</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">Pelunasan Hutang</h1>
         <p className="mt-1 text-sm text-muted-foreground">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
         {pendingSettlements > 0 && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><CloudOff className="h-4 w-4" />{pendingSettlements} pelunasan menunggu sinkronisasi <button className="inline-flex items-center gap-1 underline" onClick={() => void retrySettlements()}><RefreshCw className="h-3 w-3" />Coba lagi</button></div>}

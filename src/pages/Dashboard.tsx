@@ -295,7 +295,6 @@ export default function Dashboard() {
     <div className="mx-auto max-w-[1440px] space-y-7">
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Ringkasan operasional</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-primary">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
         </div>

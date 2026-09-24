@@ -188,7 +188,6 @@ export default function Reports() {
     <div className="mx-auto max-w-[1440px] space-y-7">
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Baca performa toko</p>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Laporan laba rugi</h2>
           {cachedAt && <p className="mt-1 text-xs text-muted-foreground">{navigator.onLine ? "Snapshot cache terbaru" : "Offline · "}Diperbarui {format(new Date(cachedAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>}
           <p className="mt-1 text-sm text-muted-foreground">Uang masuk, biaya, dan laba bersih.</p>
