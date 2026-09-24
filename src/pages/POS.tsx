@@ -66,6 +66,7 @@ export default function POS() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedUnit, setSelectedUnit] = useState<UnitType>('satuan')
   const [qty, setQty] = useState(1)
+  const [qtyInput, setQtyInput] = useState('1')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
@@ -283,10 +284,14 @@ export default function POS() {
     const firstUnit = product.prices?.[0]?.unit || 'satuan'
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
+    setQtyInput('1')
   }
 
   function confirmAdd() {
     if (!selectedProduct) return
+    const quantity = Math.min(selectedProduct.stock, Math.max(1, Number(qtyInput) || 1))
+    setQty(quantity)
+    setQtyInput(String(quantity))
     if (selectedProduct.stock <= 0) {
       toast.error(`${selectedProduct.name} habis`)
       setSelectedProduct(null)
@@ -295,11 +300,11 @@ export default function POS() {
     const existingQuantity = items.find(
       (item) => item.product.id === selectedProduct.id && item.unit === selectedUnit
     )?.quantity || 0
-    if (existingQuantity + qty > selectedProduct.stock) {
+    if (existingQuantity + quantity > selectedProduct.stock) {
       toast.error(`Stok ${selectedProduct.name} hanya tersisa ${Math.max(0, selectedProduct.stock - existingQuantity)}`)
       return
     }
-    addItem(selectedProduct, selectedUnit, qty)
+    addItem(selectedProduct, selectedUnit, quantity)
     setSelectedProduct(null)
     setSearch('')
     setActiveProductIndex(-1)
@@ -688,22 +693,28 @@ export default function POS() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  onClick={() => {
+                    const next = Math.max(1, qty - 1)
+                    setQty(next)
+                    setQtyInput(String(next))
+                  }}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
                 <Input
                   ref={qtyInputRef}
                   type="text"
-                  value={qty}
+                  value={qtyInput}
                   inputMode="none"
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '')
                     if (!digits) {
-                      setQty(1)
+                      setQtyInput('')
                       return
                     }
-                    setQty(Math.min(selectedProduct.stock, Math.max(1, Number(digits))))
+                    const next = Math.min(selectedProduct.stock, Math.max(1, Number(digits)))
+                    setQty(next)
+                    setQtyInput(String(next))
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -713,7 +724,11 @@ export default function POS() {
                   }}
                   className="w-20 text-center text-lg font-bold"
                 />
-                <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
+                <Button variant="outline" size="icon" onClick={() => {
+                  const next = Math.min(selectedProduct.stock, qty + 1)
+                  setQty(next)
+                  setQtyInput(String(next))
+                }}
                 disabled={qty >= selectedProduct.stock}>
                   <Plus className="h-4 w-4" />
                 </Button>
