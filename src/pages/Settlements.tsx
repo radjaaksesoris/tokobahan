@@ -280,16 +280,16 @@ export default function Settlements() {
     <div className="grid gap-3 lg:grid-cols-2">
       <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-2.5 shadow-sm">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-800">Hutang yang harus dibayar</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${tab === 'vendor' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
-          <button className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${tab === 'customer' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
         </div>
       </section>
       <section className="rounded-2xl border border-teal-200 bg-teal-50/70 p-2.5 shadow-sm">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-teal-800">Catatan pembayaran</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${tab === 'vendor-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
-          <button className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${tab === 'customer-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
         </div>
       </section>
     </div>
