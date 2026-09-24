@@ -76,6 +76,7 @@ export default function POS() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
   const qtyInputRef = useRef<HTMLInputElement>(null)
   const paymentInputRef = useRef<HTMLInputElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
@@ -178,6 +179,26 @@ export default function POS() {
     }, 0)
     return () => window.clearTimeout(focusTimer)
   }, [showPaymentModal])
+
+  useEffect(() => {
+    if (!showPaymentModal || paymentMethod !== 'credit' || !isOnline) return
+    let cancelled = false
+    supabase
+      .from('customers')
+      .select('id, name')
+      .order('name')
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          toast.error(error.message || 'Gagal memuat daftar pelanggan')
+          return
+        }
+        setCustomers(data || [])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isOnline, paymentMethod, showPaymentModal])
 
   async function loadProducts() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -733,7 +754,31 @@ export default function POS() {
                   <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
                 </div>
                 {paymentMethod === 'credit' && <div className="border-b border-stone-200 px-4 py-3">
-                  <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pelanggan (wajib)" />
+                  <div className="relative">
+                    <Input
+                      value={customerName}
+                      onChange={(event) => setCustomerName(event.target.value)}
+                      placeholder="Nama pelanggan (wajib)"
+                      autoComplete="off"
+                    />
+                    {customerName.trim() && customers.some((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase())) && (
+                      <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-stone-200 bg-surface p-1 shadow-lg">
+                        {customers
+                          .filter((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase()))
+                          .slice(0, 6)
+                          .map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-teal-50"
+                              onClick={() => setCustomerName(customer.name)}
+                            >
+                              {customer.name}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>}
                 <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
                   <span className="text-sm font-medium text-muted-foreground">{paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}</span>
