@@ -304,7 +304,7 @@ export default function Settlements() {
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="overflow-x-auto">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
             <table className="w-full min-w-[42rem] text-sm">
               <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
@@ -331,7 +331,7 @@ export default function Settlements() {
     ) : tab === 'customer-history' ? (
       filteredCustomerPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="overflow-x-auto">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
             <table className="w-full min-w-[38rem] text-sm">
               <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
@@ -397,7 +397,7 @@ export default function Settlements() {
             </div>
             <div className="mt-3 border-t border-border pt-2">
               <p className="mb-2 font-semibold text-ink">Rincian item</p>
-              <div className="overflow-x-auto">
+              <div className="max-h-64 overflow-auto border-t border-amber-200/80">
                 <table className="w-full min-w-[28rem] text-xs">
                   <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-left text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
                     <tr>

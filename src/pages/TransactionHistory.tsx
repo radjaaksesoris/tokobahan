@@ -357,7 +357,7 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="overflow-x-hidden">
+            <div className="max-h-[calc(100dvh-18rem)] overflow-auto border-t border-border/80 lg:max-h-[calc(100dvh-15rem)]">
               <table className="w-full table-fixed text-sm">
                 <thead className="sticky top-0 z-10 border-y border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(32,42,46,0.12)]">
                   <tr>
