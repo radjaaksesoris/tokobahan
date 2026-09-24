@@ -14,6 +14,7 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 20
+type PageCursor = { received_at: string; id: string } | null
 
 interface StockReceipt {
   id: string
@@ -33,6 +34,7 @@ export default function StockHistory() {
   const [vendorId, setVendorId] = useState('')
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
   const [page, setPage] = useState(0)
+  const [cursorHistory, setCursorHistory] = useState<PageCursor[]>([null])
   const [hasNextPage, setHasNextPage] = useState(false)
   const [loading, setLoading] = useState(true)
   const requestId = useRef(0)
@@ -53,7 +55,12 @@ export default function StockHistory() {
         .select('id, quantity_received, unit_cost, received_at, payment_status, due_date, vendor:vendors(name), product:products(name, stock_unit)')
         .order('received_at', { ascending: false })
         .order('id', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE + 1)
+
+      const cursor = cursorHistory[page]
+      if (cursor) {
+        query = query.or(`received_at.lt.${cursor.received_at},and(received_at.eq.${cursor.received_at},id.lt.${cursor.id})`)
+      }
 
       if (date) {
         const selectedDate = new Date(`${date}T00:00:00`)
@@ -111,14 +118,14 @@ export default function StockHistory() {
             <Input
               type="date"
               value={date}
-              onChange={(event) => { setDate(event.target.value); setPage(0) }}
+              onChange={(event) => { setDate(event.target.value); setPage(0); setCursorHistory([null]) }}
               aria-label="Filter tanggal input stok"
               className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
             />
           </div>
           <Select
             value={vendorId}
-            onChange={(value) => { setVendorId(value); setPage(0) }}
+            onChange={(value) => { setVendorId(value); setPage(0); setCursorHistory([null]) }}
             options={[
               { value: '', label: 'Semua vendor' },
               ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
@@ -127,7 +134,7 @@ export default function StockHistory() {
             aria-label="Filter vendor"
           />
           {date && (
-            <button type="button" onClick={() => { setDate(''); setPage(0) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
+            <button type="button" onClick={() => { setDate(''); setPage(0); setCursorHistory([null]) }} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted" aria-label="Hapus filter tanggal">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -194,8 +201,8 @@ export default function StockHistory() {
           <div className="flex items-center justify-between border-t border-border px-4 py-3">
             <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || loading}><ChevronLeft className="h-4 w-4" /> Sebelumnya</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>Berikutnya <ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => { setCursorHistory((current) => current.slice(0, -1)); setPage((current) => Math.max(0, current - 1)) }} disabled={page === 0 || loading}><ChevronLeft className="h-4 w-4" /> Sebelumnya</Button>
+              <Button variant="outline" size="sm" onClick={() => { const last = history[history.length - 1]; if (!last) return; setCursorHistory((current) => [...current.slice(0, page + 1), { received_at: last.received_at, id: last.id }]); setPage((current) => current + 1) }} disabled={!hasNextPage || loading}>Berikutnya <ChevronRight className="h-4 w-4" /></Button>
               </div>
           </div>
         </CardContent>

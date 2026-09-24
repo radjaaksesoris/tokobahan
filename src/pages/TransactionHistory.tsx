@@ -37,12 +37,14 @@ interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity'> {
 }
 
 const PAGE_SIZE = 20
+type PageCursor = { created_at: string; id: string } | null
 
 export default function TransactionHistory() {
   const [sales, setSales] = useState<SaleRow[]>([])
   const [search, setSearch] = useState('')
   const [date, setDate] = useState('')
   const [page, setPage] = useState(0)
+  const [cursorHistory, setCursorHistory] = useState<PageCursor[]>([null])
   const [loading, setLoading] = useState(true)
   const [dateTotal, setDateTotal] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
@@ -69,7 +71,13 @@ export default function TransactionHistory() {
       .from('sales')
       .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
       .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      .order('id', { ascending: false })
+      .limit(PAGE_SIZE + 1)
+
+    const cursor = cursorHistory[page]
+    if (cursor) {
+      query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`)
+    }
 
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) {
@@ -102,8 +110,9 @@ export default function TransactionHistory() {
     } else {
       const rows = (data || []) as SaleRow[]
       const total = Number(totalData?.[0]?.total_amount || 0)
-      setHasNextPage(rows.length > PAGE_SIZE); setSales(rows.slice(0, PAGE_SIZE)); setDateTotal(total); setCachedAt(Date.now())
-      writeOfflineCache(cacheKey, { rows: rows.slice(0, PAGE_SIZE), total, hasNextPage: rows.length > PAGE_SIZE })
+      const visibleRows = rows.slice(0, PAGE_SIZE)
+      setHasNextPage(rows.length > PAGE_SIZE); setSales(visibleRows); setDateTotal(total); setCachedAt(Date.now())
+      writeOfflineCache(cacheKey, { rows: visibleRows, total, hasNextPage: rows.length > PAGE_SIZE })
     }
     initialLoadComplete.current = true
     setLoading(false)
@@ -188,13 +197,21 @@ export default function TransactionHistory() {
               className="pl-9 pr-10"
               placeholder="Cari nomor invoice atau metode pembayaran..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(0)
+                setCursorHistory([null])
+              }}
             />
             {search && (
               <button
                 type="button"
                 aria-label="Reset pencarian"
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  setSearch('')
+                  setPage(0)
+                  setCursorHistory([null])
+                }}
                 className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
               >
                 <X className="h-4 w-4" />
@@ -213,6 +230,7 @@ export default function TransactionHistory() {
               onChange={(event) => {
                 setDate(event.target.value)
                 setPage(0)
+                setCursorHistory([null])
               }}
               aria-label="Filter tanggal transaksi"
             />
@@ -223,6 +241,7 @@ export default function TransactionHistory() {
               onClick={() => {
                 setDate('')
                 setPage(0)
+                setCursorHistory([null])
               }}
               title="Hapus filter tanggal"
               aria-label="Hapus filter tanggal"
@@ -319,7 +338,10 @@ export default function TransactionHistory() {
               <button
                 className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
                 disabled={page === 0}
-                onClick={() => setPage((current) => current - 1)}
+                onClick={() => {
+                  setCursorHistory((current) => current.slice(0, -1))
+                  setPage((current) => current - 1)
+                }}
               >
                 <ChevronLeft className="h-4 w-4" /> Sebelumnya
               </button>
@@ -327,7 +349,12 @@ export default function TransactionHistory() {
               <button
                 className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
                 disabled={!hasNextPage}
-                onClick={() => setPage((current) => current + 1)}
+                onClick={() => {
+                  const lastSale = sales[sales.length - 1]
+                  if (!lastSale) return
+                  setCursorHistory((current) => [...current.slice(0, page + 1), { created_at: lastSale.created_at, id: lastSale.id }])
+                  setPage((current) => current + 1)
+                }}
               >
                 Berikutnya <ChevronRight className="h-4 w-4" />
               </button>
