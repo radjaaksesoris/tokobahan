@@ -45,6 +45,7 @@ interface ReprintData {
   paymentMethod: 'cash' | 'qris' | 'credit'
   customerName: string | null
   total: number
+  amountPaid: number
   items: Array<{ name: string; unit: string; quantity: number; unitPrice: number; lineTotal: number }>
 }
 
@@ -200,6 +201,7 @@ export default function TransactionHistory() {
       paymentMethod: selectedSale.payment_method.toLowerCase() as ReprintData['paymentMethod'],
       customerName,
       total: Number(selectedSale.total_amount),
+      amountPaid: Number(selectedSale.amount_paid) || 0,
       items: items.map((item) => ({
         name: item.product_name,
         unit: item.unit,
@@ -599,6 +601,12 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
       <div className="receipt-rule" />
       <div className="receipt-total"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
       <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
+        <>
+          <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
+          <div className="receipt-summary"><span>Sisa hutang</span><span>{formatCurrency(Math.max(0, receipt.total - receipt.amountPaid))}</span></div>
+        </>
+      )}
       <footer className="receipt-center receipt-footer">Terima kasih</footer>
     </article>
   )
