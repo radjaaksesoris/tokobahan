@@ -734,6 +734,15 @@ export default function POS() {
                 </Button>
               </div>
 
+              <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-center">
+                <p className="text-xs text-muted-foreground">Stok tersisa setelah ditambahkan</p>
+                <p className={`text-lg font-bold ${
+                  selectedProduct.stock - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
+                }`}>
+                  {Math.max(0, selectedProduct.stock - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedProduct.stock_unit] || selectedProduct.stock_unit}
+                </p>
+              </div>
+
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-teal-700">
