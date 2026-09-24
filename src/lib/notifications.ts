@@ -85,6 +85,25 @@ export async function registerPushSubscription(options: { force?: boolean } = {}
   if (error) throw error
 }
 
+export async function showLowStockNotification(product: {
+  id: string
+  name: string
+  stock: number
+  min_stock: number
+}) {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service worker tidak tersedia untuk notifikasi stok')
+  }
+
+  const registration = await navigator.serviceWorker.ready
+  await registration.showNotification(`Stok menipis: ${product.name}`, {
+    body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+    icon: `${import.meta.env.BASE_URL}icon-192.png`,
+    tag: `low-stock-${product.id}`,
+    data: { url: import.meta.env.BASE_URL },
+  })
+}
+
 export async function notifyLowStockPush() {
   const { data, error } = await supabase.functions.invoke('notify-low-stock', {
     body: {},

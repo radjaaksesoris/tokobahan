@@ -25,7 +25,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { playLowStockSound, registerPushSubscription } from '@/lib/notifications'
+import { playLowStockSound, registerPushSubscription, showLowStockNotification } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
 
 interface Stats {
@@ -45,14 +45,6 @@ interface LowStockProduct {
 }
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
-
-function attachNotificationClick(notification: Notification) {
-  notification.onclick = () => {
-    notification.close()
-    window.focus()
-    window.location.assign(`${import.meta.env.BASE_URL}`)
-  }
-}
 
 export default function Dashboard() {
   const signOut = useAuthStore((state) => state.signOut)
@@ -208,12 +200,9 @@ export default function Dashboard() {
 
     if (notificationPermission === 'granted') {
       newProducts.forEach((product) => {
-        const notification = new Notification(`Stok menipis: ${product.name}`, {
-          body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
-          icon: `${import.meta.env.BASE_URL}icon-192.png`,
-          tag: `low-stock-${product.id}`,
+        void showLowStockNotification(product).catch((error) => {
+          console.warn('Gagal menampilkan notifikasi stok:', error)
         })
-        attachNotificationClick(notification)
       })
     }
   }
@@ -232,12 +221,9 @@ export default function Dashboard() {
         await registerPushSubscription()
         toast.success('Notifikasi stok diaktifkan')
         lowStockProducts.forEach((product) => {
-          const notification = new Notification(`Stok menipis: ${product.name}`, {
-            body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
-            icon: `${import.meta.env.BASE_URL}icon-192.png`,
-            tag: `low-stock-${product.id}`,
+          void showLowStockNotification(product).catch((error) => {
+            console.warn('Gagal menampilkan notifikasi stok:', error)
           })
-          attachNotificationClick(notification)
         })
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Gagal mendaftarkan push notification')
