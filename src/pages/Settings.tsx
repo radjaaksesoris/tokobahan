@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, ClipboardCheck, Database, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { UNIT_LABELS } from '@/types'
 import type { Json } from '@/types/database'
+import StockOpname from '@/pages/StockOpname'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -53,6 +54,7 @@ export default function Settings() {
   const [units, setUnits] = useState<{ id: string; name: string }[]>([])
   const [unitName, setUnitName] = useState('')
   const [unitLoading, setUnitLoading] = useState(false)
+  const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -504,6 +506,35 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-sky-200 bg-sky-50/30">
+        <CardHeader>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={stockOpnameOpen}
+            aria-controls="stock-opname-content"
+            onClick={() => setStockOpnameOpen((open) => !open)}
+          >
+            <CardTitle className="flex items-center gap-2 text-sky-800">
+              <ClipboardCheck className="h-5 w-5" />
+              Stok Opname
+            </CardTitle>
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-sky-700 transition-transform ${stockOpnameOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.
+          </p>
+        </CardHeader>
+        {stockOpnameOpen && (
+          <CardContent id="stock-opname-content" className="border-t border-sky-200 pt-5">
+            <StockOpname />
+          </CardContent>
+        )}
+      </Card>
 
       <Card>
         <CardHeader>
