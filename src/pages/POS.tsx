@@ -1370,7 +1370,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full focus:ring-4 focus:ring-accent focus:ring-offset-2 focus:ring-offset-ink"
+          className="w-full focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
           size="lg"
           disabled={items.length === 0 || loading}
           onClick={onCheckout}
