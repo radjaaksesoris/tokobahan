@@ -1161,6 +1161,7 @@ function CartPanel({
   const checkoutButtonRef = useRef<HTMLButtonElement>(null)
 
   const [customerNameFocused, setCustomerNameFocused] = useState(false)
+  const [activeCustomerIndex, setActiveCustomerIndex] = useState(-1)
   const customerSuggestions = customers
     .filter((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase()))
     .slice(0, 8)
@@ -1250,7 +1251,10 @@ function CartPanel({
           <div className="relative">
             <Input
               value={customerName}
-              onChange={(event) => setCustomerName(event.target.value)}
+              onChange={(event) => {
+                setCustomerName(event.target.value)
+                setActiveCustomerIndex(-1)
+              }}
               onFocus={() => setCustomerNameFocused(true)}
               onBlur={() => window.setTimeout(() => setCustomerNameFocused(false), 150)}
               placeholder="Nama pelanggan (wajib)"
@@ -1260,16 +1264,35 @@ function CartPanel({
                   event.preventDefault()
                   checkoutButtonRef.current?.focus()
                 }
+                if (event.key === 'ArrowDown' && customerSuggestions.length > 0) {
+                  event.preventDefault()
+                  setActiveCustomerIndex((current) => (current + 1) % customerSuggestions.length)
+                }
+                if (event.key === 'ArrowUp' && customerSuggestions.length > 0) {
+                  event.preventDefault()
+                  setActiveCustomerIndex((current) => (current <= 0 ? customerSuggestions.length - 1 : current - 1))
+                }
+                if (event.key === 'Enter' && activeCustomerIndex >= 0) {
+                  event.preventDefault()
+                  const customer = customerSuggestions[activeCustomerIndex]
+                  if (customer) {
+                    setCustomerName(customer.name)
+                    setActiveCustomerIndex(-1)
+                    checkoutButtonRef.current?.focus()
+                  }
+                }
               }}
               className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
             />
-            {customerNameFocused && customerSuggestions.length > 0 && (
+            {customerNameFocused && customerName.trim() && customerSuggestions.length > 0 && (
               <div className="absolute inset-x-0 bottom-full z-20 mb-1 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-ink p-1 shadow-lg">
-                {customerSuggestions.map((customer) => (
+                {customerSuggestions.map((customer, index) => (
                   <button
                     key={customer.id}
                     type="button"
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/10"
+                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm text-white transition-colors ${
+                      activeCustomerIndex === index ? 'bg-white/15' : 'hover:bg-white/10'
+                    }`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
                       setCustomerName(customer.name)
