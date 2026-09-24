@@ -5,7 +5,7 @@ import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
 import { parseProductPrices, UNIT_LABELS } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -1271,7 +1271,7 @@ function CartPanel({
             <Input
               value={customerName}
               onChange={(event) => {
-                setCustomerName(event.target.value)
+                setCustomerName(toTitleCase(event.target.value))
                 setActiveCustomerIndex(-1)
               }}
               onFocus={() => setCustomerNameFocused(true)}

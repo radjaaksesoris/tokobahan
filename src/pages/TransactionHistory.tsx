@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatCurrency, formatNumber, toTitleCase } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, Eye, History, Printer, Search, X } from 'lucide-react'
@@ -466,7 +466,7 @@ export default function TransactionHistory() {
                     </CardHeader>
                     <CardContent className="space-y-4 pt-4">
                       <Input type="number" min="0.001" max={returningItem.quantity} step="any" value={returnQuantity} onChange={(event) => setReturnQuantity(event.target.value)} placeholder="Jumlah retur" />
-                      <Input value={returnReason} onChange={(event) => setReturnReason(event.target.value)} placeholder="Alasan retur" />
+                      <Input value={returnReason} onChange={(event) => setReturnReason(toTitleCase(event.target.value))} placeholder="Alasan retur" />
                       <button type="button" className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" disabled={returnSaving} onClick={() => void submitReturn()}>
                         {returnSaving ? 'Memproses...' : 'Proses retur'}
                       </button>

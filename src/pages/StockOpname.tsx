@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UNIT_LABELS } from '@/types'
+import { toTitleCase } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -76,7 +77,7 @@ export default function StockOpname() {
                   <p className="text-xs text-muted-foreground">Stok sistem: {product.stock} {UNIT_LABELS[product.stock_unit] || product.stock_unit}</p>
                 </div>
                 <Input type="number" min="0" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Stok fisik" />
-                <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Alasan penyesuaian" />
+                <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: toTitleCase(event.target.value) }))} placeholder="Alasan penyesuaian" />
                 <Button onClick={() => void save(product)} disabled={saving === product.id}>{saving === product.id ? 'Menyimpan...' : 'Simpan'}</Button>
               </CardContent>
             </Card>

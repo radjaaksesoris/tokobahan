@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { UNIT_LABELS } from '@/types'
 import type { Json } from '@/types/database'
+import { toTitleCase } from '@/lib/utils'
 import StockOpname from '@/pages/StockOpname'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
@@ -452,7 +453,7 @@ export default function Settings() {
           <div className="flex gap-2">
             <Input
               value={vendorName}
-              onChange={(event) => setVendorName(event.target.value)}
+              onChange={(event) => setVendorName(toTitleCase(event.target.value))}
               placeholder="Nama vendor baru"
               onKeyDown={(event) => { if (event.key === 'Enter') void addVendor() }}
             />
@@ -483,7 +484,7 @@ export default function Settings() {
             <div className="flex gap-2">
               <Input
                 value={unitName}
-                onChange={(event) => setUnitName(event.target.value)}
+                onChange={(event) => setUnitName(toTitleCase(event.target.value))}
                 placeholder="Contoh: Roll, Kg, Dus"
                 onKeyDown={(event) => { if (event.key === 'Enter') void addUnit() }}
               />
