@@ -359,7 +359,7 @@ export default function TransactionHistory() {
           ) : (
             <div className="overflow-x-hidden">
               <table className="w-full table-fixed text-sm">
-                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
+                <thead className="sticky top-0 z-10 border-y border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(32,42,46,0.12)]">
                   <tr>
                     <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
                     <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>

@@ -306,7 +306,7 @@ export default function Settlements() {
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[42rem] text-sm">
-              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
                   <th className="py-2 pr-3 font-medium">Tanggal</th>
                   <th className="py-2 pr-3 font-medium">Vendor</th>
@@ -333,7 +333,7 @@ export default function Settlements() {
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[38rem] text-sm">
-              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
                   <th className="py-2 pr-3 font-medium">Tanggal</th>
                   <th className="py-2 pr-3 font-medium">Pelanggan</th>
@@ -399,7 +399,7 @@ export default function Settlements() {
               <p className="mb-2 font-semibold text-ink">Rincian item</p>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[28rem] text-xs">
-                  <thead className="border-b border-border text-left text-muted-foreground">
+                  <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-left text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
                     <tr>
                       <th className="py-1 pr-3 font-medium">Item</th>
                       <th className="py-1 pr-3 font-medium">Jumlah</th>
