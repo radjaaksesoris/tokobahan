@@ -149,7 +149,10 @@ export default function Settlements() {
     } else {
       const { data, error } = await supabase.from('sales')
         .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
-        .eq('payment_method', 'credit').order('created_at', { ascending: true }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        .eq('payment_method', 'credit')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
       if (error) toast.error(error.message)
       setHasNextPage((data || []).length > PAGE_SIZE)
       setDebts((data || []).map((row: any) => ({
