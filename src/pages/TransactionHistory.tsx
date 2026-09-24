@@ -572,13 +572,15 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
   const paymentLabels = { cash: 'Tunai', qris: 'QRIS', credit: 'Hutang' }
   return (
     <article className="receipt-document">
-      <header className="receipt-center">
+      <header className="receipt-header">
         <div className="receipt-brand">
           <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo Radja Aksesoris" />
-          <strong>RADJA AKSESORIS</strong>
+          <div className="receipt-brand-copy">
+            <strong>RADJA AKSESORIS</strong>
+            <span>Konveksi</span>
+          </div>
         </div>
-        <span>Aksesoris Konveksi</span>
-        <span>Struk Penjualan</span>
+        <span className="receipt-title">Struk Penjualan</span>
       </header>
       <div className="receipt-rule" />
       <div className="receipt-meta">

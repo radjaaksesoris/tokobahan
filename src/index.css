@@ -300,11 +300,18 @@ textarea::placeholder {
   text-align: center;
 }
 
+.receipt-preview-frame .receipt-header,
+.receipt-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
 .receipt-preview-frame .receipt-brand,
 .receipt-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 7px;
 }
 
@@ -317,8 +324,37 @@ textarea::placeholder {
   border-radius: 5px;
 }
 
+.receipt-brand-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
 .receipt-preview-frame .receipt-center strong {
   font-size: 13px;
+}
+
+.receipt-preview-frame .receipt-brand-copy strong,
+.receipt-brand-copy strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.receipt-preview-frame .receipt-brand-copy span,
+.receipt-brand-copy span {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #4b5563;
+}
+
+.receipt-preview-frame .receipt-title,
+.receipt-title {
+  align-self: center;
+  margin-top: 16px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
 }
 
 .receipt-preview-frame .receipt-rule {
@@ -407,10 +443,16 @@ textarea::placeholder {
     font-size: 13px;
   }
 
+  .receipt-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .receipt-brand {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
   }
 
@@ -420,6 +462,31 @@ textarea::placeholder {
     flex: 0 0 22px;
     object-fit: cover;
     border-radius: 4px;
+  }
+
+  .receipt-brand-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+  }
+
+  .receipt-brand-copy strong {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .receipt-brand-copy span {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .receipt-title {
+    align-self: center;
+    margin-top: 16px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
   }
 
   .receipt-rule {
