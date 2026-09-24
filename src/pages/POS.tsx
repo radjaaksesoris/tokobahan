@@ -161,6 +161,12 @@ export default function POS() {
     return () => document.removeEventListener('pointerdown', closeKeypadOnOutsideClick)
   }, [showKeypadPanel])
 
+  function openSearchKeypad() {
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      setShowKeypadPanel(true)
+    }
+  }
+
   useEffect(() => {
     if (!selectedProduct) return
     const focusTimer = window.setTimeout(() => {
@@ -519,7 +525,7 @@ export default function POS() {
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
               value={search}
-              onClick={() => setShowKeypadPanel(true)}
+              onClick={openSearchKeypad}
               onChange={(e) => {
                 setSearch(e.target.value)
                 setActiveProductIndex(-1)
