@@ -75,7 +75,6 @@ export default function POS() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
-  const [showQtyKeypad, setShowQtyKeypad] = useState(false)
   const qtyInputRef = useRef<HTMLInputElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
@@ -659,8 +658,7 @@ export default function POS() {
                   ref={qtyInputRef}
                   type="text"
                   value={qty}
-                  inputMode="numeric"
-                  onClick={() => setShowQtyKeypad(true)}
+                  inputMode="none"
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '')
                     if (!digits) {
@@ -694,15 +692,6 @@ export default function POS() {
               </div>
             </CardContent>
           </Card>
-          {showQtyKeypad && (
-            <NumericKeypad
-              value={String(qty)}
-              title="Jumlah produk"
-              max={selectedProduct.stock}
-              onChange={(value) => setQty(Math.max(1, Math.min(selectedProduct.stock, Number(value) || 1)))}
-              onClose={() => setShowQtyKeypad(false)}
-            />
-          )}
         </div>
       )}
       {showPaymentModal && (
