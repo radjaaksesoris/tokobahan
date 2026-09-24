@@ -76,6 +76,7 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [showQtyKeypad, setShowQtyKeypad] = useState(false)
+  const qtyInputRef = useRef<HTMLInputElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
@@ -156,6 +157,15 @@ export default function POS() {
     document.addEventListener('pointerdown', closeKeypadOnOutsideClick)
     return () => document.removeEventListener('pointerdown', closeKeypadOnOutsideClick)
   }, [showKeypadPanel])
+
+  useEffect(() => {
+    if (!selectedProduct) return
+    const focusTimer = window.setTimeout(() => {
+      qtyInputRef.current?.focus()
+      qtyInputRef.current?.select()
+    }, 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [selectedProduct])
 
   async function loadProducts() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -646,17 +656,19 @@ export default function POS() {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <Input
+                  ref={qtyInputRef}
                   type="text"
                   value={qty}
-                  readOnly
-                  inputMode="none"
+                  inputMode="numeric"
                   onClick={() => setShowQtyKeypad(true)}
-                  onChange={(e) =>
-                    setQty(Math.min(
-                      selectedProduct.stock,
-                      Math.max(1, parseInt(e.target.value) || 1)
-                    ))
-                  }
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '')
+                    if (!digits) {
+                      setQty(1)
+                      return
+                    }
+                    setQty(Math.min(selectedProduct.stock, Math.max(1, Number(digits))))
+                  }}
                   className="w-20 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
