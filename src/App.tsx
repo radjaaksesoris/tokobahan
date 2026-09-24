@@ -216,7 +216,7 @@ export default function App() {
             <Route path="reports" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><Reports /></PageSuspense></RoleGate>} />
             <Route path="transactions" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><TransactionHistory /></PageSuspense></RoleGate>} />
             <Route path="settings" element={<RoleGate roles={['admin']}><PageSuspense><SettingsPage /></PageSuspense></RoleGate>} />
-            <Route path="settlements" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><Settlements /></PageSuspense></RoleGate>} />
+            <Route path="settlements" element={<RoleGate roles={['admin', 'cashier']} monitoring><PageSuspense><Settlements /></PageSuspense></RoleGate>} />
           </Route>
           <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
         </Routes>
