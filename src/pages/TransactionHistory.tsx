@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, Eye, History, Search, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Eye, History, Printer, Search, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { toast } from 'sonner'
@@ -18,6 +19,7 @@ interface SaleRow {
   total_profit: number
   payment_method: string
   cashier_id: string | null
+  customer_id: string | null
   created_at: string
 }
 
@@ -34,6 +36,15 @@ interface SaleItemRow {
 
 interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity'> {
   sale_returns: Array<{ quantity: number; refund_amount: number }> | null
+}
+
+interface ReprintData {
+  invoiceNo: string
+  createdAt: string
+  paymentMethod: 'cash' | 'qris' | 'credit'
+  customerName: string | null
+  total: number
+  items: Array<{ name: string; unit: string; quantity: number; unitPrice: number; lineTotal: number }>
 }
 
 const PAGE_SIZE = 20
@@ -56,6 +67,7 @@ export default function TransactionHistory() {
   const [returnReason, setReturnReason] = useState('')
   const [returnSaving, setReturnSaving] = useState(false)
   const [cachedAt, setCachedAt] = useState<number | null>(null)
+  const [reprint, setReprint] = useState<ReprintData | null>(null)
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
 
@@ -69,7 +81,7 @@ export default function TransactionHistory() {
     if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('sales')
-      .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, created_at')
+      .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, customer_id, created_at')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(PAGE_SIZE + 1)
@@ -169,6 +181,30 @@ export default function TransactionHistory() {
       void loadSales()
     }
     setReturnSaving(false)
+  }
+
+  async function reprintSale() {
+    if (!selectedSale || itemsLoading || items.length === 0) return
+    let customerName: string | null = null
+    if (selectedSale.customer_id) {
+      const { data } = await supabase.from('customers').select('name').eq('id', selectedSale.customer_id).maybeSingle()
+      customerName = data?.name || null
+    }
+    setReprint({
+      invoiceNo: selectedSale.invoice_no,
+      createdAt: selectedSale.created_at,
+      paymentMethod: selectedSale.payment_method.toLowerCase() as ReprintData['paymentMethod'],
+      customerName,
+      total: Number(selectedSale.total_amount),
+      items: items.map((item) => ({
+        name: item.product_name,
+        unit: item.unit,
+        quantity: Math.max(0, Number(item.quantity) - item.returned_quantity),
+        unitPrice: Number(item.unit_price),
+        lineTotal: Math.max(0, Number(item.line_total) - item.returned_amount),
+      })),
+    })
+    window.setTimeout(() => window.print(), 0)
   }
 
   const filteredSales = useMemo(() => {
@@ -412,6 +448,15 @@ export default function TransactionHistory() {
                   ))}
                 </div>
               )}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={itemsLoading || items.length === 0}
+                onClick={reprintSale}
+              >
+                <Printer className="mr-2 h-4 w-4" /> Cetak ulang
+              </Button>
               {returningItem && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setReturningItem(null)}>
                   <Card className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
@@ -437,6 +482,46 @@ export default function TransactionHistory() {
           </Card>
         </div>
       )}
+      {reprint && (
+        <div id="receipt-print-root" aria-hidden="true">
+          <HistoryReceiptDocument receipt={reprint} />
+        </div>
+      )}
     </div>
+  )
+}
+
+function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
+  const paymentLabels = { cash: 'Tunai', qris: 'QRIS', credit: 'Hutang' }
+  return (
+    <article className="receipt-document">
+      <header className="receipt-center">
+        <strong>RADJA AKSESORIS</strong>
+        <span>Aksesoris Konveksi</span>
+        <span>Struk Penjualan</span>
+      </header>
+      <div className="receipt-rule" />
+      <div className="receipt-meta">
+        <span>No. {receipt.invoiceNo}</span>
+        <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
+      </div>
+      {receipt.customerName && <div>Pelanggan: {receipt.customerName}</div>}
+      <div className="receipt-rule" />
+      <div className="receipt-items">
+        {receipt.items.map((item, index) => (
+          <div key={`${item.name}-${index}`} className="receipt-item">
+            <div>{item.name}</div>
+            <div className="receipt-item-detail">
+              <span>{item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}</span>
+              <strong>{formatCurrency(item.lineTotal)}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="receipt-rule" />
+      <div className="receipt-total"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
+      <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      <footer className="receipt-center receipt-footer">Terima kasih</footer>
+    </article>
   )
 }

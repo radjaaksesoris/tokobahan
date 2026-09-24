@@ -112,6 +112,42 @@ export default function POS() {
     }
   }
 
+  async function loadSavedReceipt(saleId: string | null, invoiceNo: string) {
+    let query = supabase
+      .from('sales')
+      .select('invoice_no, total_amount, payment_method, amount_paid, created_at, customer:customers(name), sale_items(product_name, unit, quantity, unit_price, line_total)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+    query = saleId ? query.eq('id', saleId) : query.eq('invoice_no', invoiceNo)
+    const { data, error } = await query.maybeSingle()
+    if (error || !data) return null
+    const sale = data as unknown as {
+      invoice_no: string
+      total_amount: number
+      payment_method: string
+      amount_paid: number
+      created_at: string
+      customer: { name: string } | null
+      sale_items: Array<{ product_name: string; unit: string; quantity: number; unit_price: number; line_total: number }>
+    }
+    return {
+      invoiceNo: sale.invoice_no,
+      createdAt: sale.created_at,
+      paymentMethod: sale.payment_method as PaymentMethod,
+      customerName: sale.customer?.name || null,
+      amountPaid: Number(sale.amount_paid) || 0,
+      change: sale.payment_method === 'cash' ? Math.max(0, Number(sale.amount_paid) - Number(sale.total_amount)) : 0,
+      total: Number(sale.total_amount),
+      items: (sale.sale_items || []).map((item) => ({
+        name: item.product_name,
+        unit: UNIT_LABELS[item.unit] || item.unit,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        lineTotal: Number(item.line_total),
+      })),
+    } satisfies ReceiptData
+  }
+
   async function refreshQueue() {
     setQueuedTransactions(await getQueuedTransactions())
   }
@@ -402,7 +438,7 @@ export default function POS() {
       return
     }
 
-    const { error: checkoutError } = await supabase.rpc('checkout_sale', {
+    const { data: checkoutSaleId, error: checkoutError } = await supabase.rpc('checkout_sale', {
           p_invoice_no: invoiceNo,
           p_total_amount: totals.subtotal,
           p_total_cost: totals.totalCost,
@@ -446,8 +482,9 @@ export default function POS() {
     }
 
     await removeQueuedTransaction(queuedTransaction.id)
-    toast.success(`Transaksi ${invoiceNo} berhasil!`)
-    setReceipt(createReceipt(invoiceNo))
+    const savedReceipt = await loadSavedReceipt(checkoutSaleId, invoiceNo)
+    toast.success(`Transaksi ${savedReceipt?.invoiceNo || invoiceNo} berhasil!`)
+    setReceipt(savedReceipt || createReceipt(invoiceNo))
     clearCart()
     setShowPaymentModal(false)
     setCashReceived('')

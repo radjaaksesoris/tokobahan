@@ -7,8 +7,8 @@
 6 silly config load:file:/usr/local/etc/npmrc
 7 verbose title npm run lint
 8 verbose argv "run" "lint"
-9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-24T04_13_17_077Z-
-10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-24T04_13_17_077Z-debug-0.log
+9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-24T05_31_13_411Z-
+10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-24T05_31_13_411Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
 12 silly logfile done cleaning log files
 13 verbose cwd /Volumes/Macintosh HD - Data 1/tokobahan
