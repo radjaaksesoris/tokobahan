@@ -800,9 +800,10 @@ export default function POS() {
                   <span className="text-xl font-bold text-ink lg:hidden">{formatCurrency(Number(cashReceived) || 0)}</span>
                   <Input
                     ref={paymentInputRef}
-                    value={cashReceived}
+                    value={cashReceived ? formatCurrency(Number(cashReceived)) : ''}
                     inputMode="numeric"
                     onChange={(event) => setCashReceived(event.target.value.replace(/\D/g, ''))}
+                    onFocus={(event) => event.currentTarget.select()}
                     className="hidden h-9 w-36 text-right text-xl font-bold lg:block"
                     aria-label={paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}
                   />
