@@ -98,6 +98,101 @@ textarea::placeholder {
   opacity: 0.72;
 }
 
+.stock-toast {
+  display: flex;
+  width: min(calc(100vw - 2rem), 28rem);
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid rgba(228, 168, 83, 0.42);
+  border-radius: 1rem;
+  background: #fffdf8;
+  padding: 0.8rem 0.85rem;
+  color: #202a2e;
+  box-shadow: 0 14px 34px rgba(32, 42, 46, 0.16), 0 2px 8px rgba(32, 42, 46, 0.08);
+}
+
+.stock-toast-wrapper {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.stock-toast-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  background: #fff1c9;
+  padding: 0.55rem;
+  color: #a16207;
+}
+
+.stock-toast-content {
+  min-width: 0;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.stock-toast-title {
+  color: #a16207;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stock-toast-product {
+  overflow: hidden;
+  margin-top: 0.18rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-toast-detail {
+  margin-top: 0.22rem;
+  color: #667174;
+  font-size: 0.78rem;
+}
+
+.stock-toast-detail strong {
+  color: #202a2e;
+  font-weight: 700;
+}
+
+.stock-toast-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  color: #8a9491;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.stock-toast-close:hover {
+  background: #f2f0e9;
+  color: #202a2e;
+}
+
+@media (max-width: 1023px) {
+  [data-sonner-toaster] {
+    top: calc(0.75rem + env(safe-area-inset-top)) !important;
+    width: 100% !important;
+    padding-inline: 1rem !important;
+  }
+
+  [data-sonner-toast] {
+    width: 100% !important;
+    margin-inline: auto;
+  }
+}
+
 @media (max-width: 1023px) and (max-height: 760px) {
   .login-shell {
     padding-top: calc(0.5rem + env(safe-area-inset-top));

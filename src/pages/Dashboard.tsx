@@ -190,8 +190,30 @@ export default function Dashboard() {
     const notifiedIds = new Set(storedIds)
     const newProducts = products.filter((product) => !notifiedIds.has(product.id))
     newProducts.forEach((product) => {
-      toast.warning(`Stok menipis: ${product.name}`, {
-        description: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+      toast.custom((toastId) => (
+        <div className="stock-toast" role="status">
+          <span className="stock-toast-icon">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="stock-toast-content">
+            <p className="stock-toast-title">Stok menipis</p>
+            <p className="stock-toast-product">{product.name}</p>
+            <p className="stock-toast-detail">
+              Tersisa <strong>{product.stock}</strong> · minimum <strong>{product.min_stock}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            className="stock-toast-close"
+            aria-label="Tutup notifikasi"
+            onClick={() => toast.dismiss(toastId)}
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      ), {
+        duration: 6000,
+        className: 'stock-toast-wrapper',
       })
       if (newProducts.length > 0) playLowStockSound()
       notifiedIds.add(product.id)
