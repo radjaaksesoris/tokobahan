@@ -667,6 +667,12 @@ export default function POS() {
                     }
                     setQty(Math.min(selectedProduct.stock, Math.max(1, Number(digits))))
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      confirmAdd()
+                    }
+                  }}
                   className="w-20 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon"                 onClick={() => setQty(Math.min(selectedProduct.stock, qty + 1))}
