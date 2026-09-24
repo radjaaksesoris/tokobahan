@@ -72,7 +72,8 @@ async function connectQz() {
 export async function printReceiptWithQz(receipt: QzReceipt) {
   await connectQz()
   const savedPrinter = localStorage.getItem(QZ_PRINTER_KEY)
-  const printer = savedPrinter || await qz.printers.find()
+  const foundPrinters = savedPrinter ? savedPrinter : await qz.printers.find()
+  const printer = Array.isArray(foundPrinters) ? foundPrinters[0] : foundPrinters
   if (!printer || typeof printer !== 'string') {
     throw new Error('Printer QZ Tray tidak ditemukan')
   }

@@ -11,7 +11,7 @@ declare module 'qz-tray' {
       isActive(): boolean
     }
     printers: {
-      find(): Promise<string>
+      find(): Promise<string | string[]>
     }
     configs: {
       create(printer: string, options?: QzConfig): unknown
