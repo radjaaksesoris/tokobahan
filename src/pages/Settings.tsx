@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { Navigate } from 'react-router-dom'
-import { AlertTriangle, Bell, ChevronDown, Database, Download, RefreshCw, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, Database, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -545,10 +545,6 @@ export default function Settings() {
                 <p className="text-sm font-semibold text-ink">Backup cloud</p>
                 <p className="text-xs text-muted-foreground">File tersimpan di bucket private Supabase Storage; hanya admin yang login dapat mengaksesnya. Maksimal 7 backup terbaru per admin.</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void loadCloudBackups()} disabled={cloudBackupLoading}>
-                <RefreshCw className="h-4 w-4" />
-                Muat ulang
-              </Button>
             </div>
             {cloudBackupError && (
               <div role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

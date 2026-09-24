@@ -59,15 +59,8 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
         <div className="w-full max-w-md rounded-2xl border border-red-200 bg-surface p-6 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-ink">Halaman tidak dapat ditampilkan</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Terjadi kendala saat membuka tab ini. Coba muat ulang halaman.
+            Terjadi kendala saat membuka tab ini. Silakan buka kembali tab ini.
           </p>
-          <button
-            type="button"
-            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-            onClick={() => window.location.reload()}
-          >
-            Muat ulang
-          </button>
         </div>
       </div>
     )
