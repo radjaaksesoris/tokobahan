@@ -80,6 +80,7 @@ export default function POS() {
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
   const qtyInputRef = useRef<HTMLInputElement>(null)
   const paymentInputRef = useRef<HTMLInputElement>(null)
+  const finishPaymentButtonRef = useRef<HTMLButtonElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
@@ -819,6 +820,12 @@ export default function POS() {
                     inputMode="numeric"
                     onChange={(event) => setCashReceived(event.target.value.replace(/\D/g, ''))}
                     onFocus={(event) => event.currentTarget.select()}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Tab') {
+                        event.preventDefault()
+                        finishPaymentButtonRef.current?.focus()
+                      }
+                    }}
                     className="hidden h-9 w-36 text-right text-xl font-bold lg:block"
                     aria-label={paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}
                   />
@@ -849,6 +856,7 @@ export default function POS() {
                   Batal
                 </Button>
                 <Button
+                  ref={finishPaymentButtonRef}
                   className="flex-1"
                   disabled={
                     checkoutLoading ||
