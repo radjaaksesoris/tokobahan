@@ -269,6 +269,78 @@ textarea::placeholder {
   display: none;
 }
 
+.receipt-preview-frame {
+  max-height: min(48vh, 390px);
+  overflow: auto;
+  padding: 16px 12px;
+  border: 1px solid #e7e1d8;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(20, 184, 166, 0.08), transparent 42%),
+    #f2eee8;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+
+.receipt-preview-frame .receipt-document {
+  width: 58mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 14px 12px 18px;
+  color: #151515;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(33 29 24 / 0.14);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.receipt-preview-frame .receipt-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.receipt-preview-frame .receipt-center strong {
+  font-size: 13px;
+}
+
+.receipt-preview-frame .receipt-rule {
+  margin: 7px 0;
+  border-top: 1px dashed #777;
+}
+
+.receipt-preview-frame .receipt-meta,
+.receipt-preview-frame .receipt-summary,
+.receipt-preview-frame .receipt-total,
+.receipt-preview-frame .receipt-item-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receipt-preview-frame .receipt-meta {
+  flex-direction: column;
+  gap: 1px;
+}
+
+.receipt-preview-frame .receipt-item {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+
+.receipt-preview-frame .receipt-item-detail {
+  padding-left: 8px;
+}
+
+.receipt-preview-frame .receipt-total {
+  margin: 5px 0;
+  font-size: 12px;
+}
+
+.receipt-preview-frame .receipt-footer {
+  margin-top: 12px;
+}
+
 @media print {
   @page {
     size: 58mm auto;
@@ -295,7 +367,7 @@ textarea::placeholder {
   #receipt-print-root {
     display: block !important;
     width: 58mm;
-    padding: 4mm 3mm;
+    padding: 3mm 3mm 4mm;
     color: #000;
     background: #fff;
     font-family: 'Courier New', monospace;

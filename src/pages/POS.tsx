@@ -86,6 +86,7 @@ export default function POS() {
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
+  const [showReceiptPreview, setShowReceiptPreview] = useState(true)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -424,7 +425,7 @@ export default function POS() {
     }
     if (!isOnline) {
       toast.info(`Transaksi disimpan offline (${invoiceNo})`)
-      setReceipt(createReceipt(invoiceNo))
+      if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
       setProducts((current) => current.map((product) => {
         const sold = items.filter((item) => item.product.id === product.id)
           .reduce((sum, item) => sum + item.quantity, 0)
@@ -452,7 +453,7 @@ export default function POS() {
     if (checkoutError) {
       if (isOfflineError(checkoutError)) {
         toast.info(`Transaksi disimpan offline (${invoiceNo})`)
-        setReceipt(createReceipt(invoiceNo))
+        if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
         setProducts((current) => current.map((product) => {
           const sold = items.filter((item) => item.product.id === product.id)
             .reduce((sum, item) => sum + item.quantity, 0)
@@ -484,7 +485,7 @@ export default function POS() {
     await removeQueuedTransaction(queuedTransaction.id)
     const savedReceipt = await loadSavedReceipt(checkoutSaleId, invoiceNo)
     toast.success(`Transaksi ${savedReceipt?.invoiceNo || invoiceNo} berhasil!`)
-    setReceipt(savedReceipt || createReceipt(invoiceNo))
+    if (showReceiptPreview) setReceipt(savedReceipt || createReceipt(invoiceNo))
     clearCart()
     setShowPaymentModal(false)
     setCashReceived('')
@@ -872,6 +873,20 @@ export default function POS() {
                   onClose={() => setShowPaymentModal(false)}
                 />
               </div>
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface px-3 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5">
+                <input
+                  type="checkbox"
+                  checked={showReceiptPreview}
+                  onChange={(event) => setShowReceiptPreview(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-ink">Tampilkan preview struk</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                    Periksa tampilan struk 58 mm sebelum mencetak.
+                  </span>
+                </span>
+              </label>
               <div className="mt-3 flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowPaymentModal(false)}>
                   Batal
@@ -919,9 +934,12 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
         <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
           <CardContent className="space-y-4 p-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Transaksi tersimpan</p>
-              <h3 className="mt-1 text-xl font-bold text-ink">Cetak struk?</h3>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preview struk 58 mm</p>
+              <h3 className="mt-1 text-xl font-bold text-ink">Siap dicetak</h3>
               <p className="mt-1 text-sm text-muted-foreground">{receipt.invoiceNo} · {formatCurrency(receipt.total)}</p>
+            </div>
+            <div className="receipt-preview-frame">
+              <ReceiptDocument receipt={receipt} />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
