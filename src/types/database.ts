@@ -356,6 +356,7 @@ export interface Database {
         }
         Returns: {
           total_revenue: number
+          total_credit: number
           total_cost: number
           total_profit: number
           transaction_count: number
@@ -369,6 +370,7 @@ export interface Database {
         Returns: {
           sale_date: string
           total_revenue: number
+          total_credit: number
           total_cost: number
           total_profit: number
           transaction_count: number

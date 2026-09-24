@@ -31,6 +31,7 @@ type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
 interface DailySummaryRow {
   sale_date: string
   total_revenue: number
+  total_credit: number
   total_cost: number
   total_profit: number
   transaction_count: number
@@ -42,6 +43,7 @@ interface VendorPaymentRow {
 
 const chartColors = {
   revenue: '#0f766e',
+  credit: '#b45309',
   profit: '#d97706',
   vendorPayments: '#c2410c',
   axis: '#526064',
@@ -55,6 +57,7 @@ export default function Reports() {
   const [vendorPayments, setVendorPayments] = useState<VendorPaymentRow[]>([])
   const [summary, setSummary] = useState({
     total_revenue: 0,
+    total_credit: 0,
     total_cost: 0,
     total_profit: 0,
     transaction_count: 0,
@@ -139,7 +142,7 @@ export default function Reports() {
       else setError(summaryError?.message || dailyError?.message || vendorPaymentError?.message || 'Laporan belum tersedia secara offline')
       return
     }
-    const nextSummary = summaryData?.[0] || { total_revenue: 0, total_cost: 0, total_profit: 0, transaction_count: 0 }
+    const nextSummary = summaryData?.[0] || { total_revenue: 0, total_credit: 0, total_cost: 0, total_profit: 0, transaction_count: 0 }
     const nextDailySummary = (dailyData || []) as DailySummaryRow[]
     const nextVendorPayments = (vendorPaymentData || []) as VendorPaymentRow[]
     setSummary(nextSummary); setDailySummary(nextDailySummary); setVendorPayments(nextVendorPayments); setCachedAt(Date.now())
@@ -147,6 +150,7 @@ export default function Reports() {
   }
 
   const totalRevenue = Number(summary.total_revenue)
+  const totalCredit = Number(summary.total_credit || 0)
   const totalCost = Number(summary.total_cost)
   const totalProfit = Number(summary.total_profit)
   const zakatAmount = Math.max(0, totalProfit) * 0.025
@@ -155,11 +159,12 @@ export default function Reports() {
   const netCash = totalRevenue - totalVendorPayments
 
   // daily breakdown for chart
-  const dailyMap: Record<string, { revenue: number; cost: number; profit: number; vendorPayments: number }> = {}
+  const dailyMap: Record<string, { revenue: number; credit: number; cost: number; profit: number; vendorPayments: number }> = {}
   dailySummary.forEach((s) => {
     const d = s.sale_date
     dailyMap[d] = {
       revenue: Number(s.total_revenue),
+      credit: Number(s.total_credit || 0),
       cost: Number(s.total_cost),
       profit: Number(s.total_profit),
       vendorPayments: 0,
@@ -167,7 +172,7 @@ export default function Reports() {
   })
   vendorPayments.forEach((payment) => {
     const date = payment.paid_date
-    if (!dailyMap[date]) dailyMap[date] = { revenue: 0, cost: 0, profit: 0, vendorPayments: 0 }
+    if (!dailyMap[date]) dailyMap[date] = { revenue: 0, credit: 0, cost: 0, profit: 0, vendorPayments: 0 }
     dailyMap[date].vendorPayments += Number(payment.total_amount)
   })
   const chartData = Object.entries(dailyMap)
@@ -292,6 +297,16 @@ export default function Reports() {
             <p className="text-xl font-bold text-white">{formatCurrency(totalProfit)}</p>
           </CardContent>
         </Card>
+        <Card className="relative overflow-hidden border-0 bg-[#a16207] text-white shadow-[0_12px_28px_rgba(161,98,7,0.2)] lg:col-span-2">
+          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
+          <CardContent className="relative z-10 p-4">
+            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
+              <WalletCards className="h-4 w-4" /> Kredit
+            </div>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalCredit)}</p>
+            <p className="text-xs text-white/75">Nilai penjualan kredit</p>
+          </CardContent>
+        </Card>
         <Card className="relative overflow-hidden border-0 bg-[#115e59] text-white shadow-[0_12px_28px_rgba(17,94,89,0.2)] lg:col-span-5">
           <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-white/[0.14]" />
           <CardContent className="relative z-10 p-4">
@@ -359,6 +374,15 @@ export default function Reports() {
                     fill={chartColors.revenue}
                     fillOpacity={1}
                     stroke={chartColors.revenue}
+                    strokeWidth={1}
+                    radius={[3, 3, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="credit"
+                    name="Kredit"
+                    fill={chartColors.credit}
+                    fillOpacity={1}
+                    stroke={chartColors.credit}
                     strokeWidth={1}
                     radius={[3, 3, 0, 0]}
                   />
