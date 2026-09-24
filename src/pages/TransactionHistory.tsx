@@ -264,7 +264,7 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="sticky top-0 z-20 flex flex-col gap-4 border-b border-border bg-canvas pb-5 pt-1 shadow-[0_3px_0_rgba(231,228,220,0.55)] lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           {cachedAt && (
@@ -357,9 +357,9 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="max-h-[calc(100dvh-18rem)] overflow-auto border-t border-border/80 lg:max-h-[calc(100dvh-15rem)]">
+            <div className="overflow-x-hidden">
               <table className="w-full table-fixed text-sm">
-                <thead className="sticky top-0 z-10 border-y border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(32,42,46,0.12)]">
+                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
                   <tr>
                     <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
                     <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
