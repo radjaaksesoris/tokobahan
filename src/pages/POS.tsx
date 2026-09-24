@@ -77,6 +77,7 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
   const qtyInputRef = useRef<HTMLInputElement>(null)
+  const paymentInputRef = useRef<HTMLInputElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
@@ -166,6 +167,17 @@ export default function POS() {
     }, 0)
     return () => window.clearTimeout(focusTimer)
   }, [selectedProduct])
+
+  useEffect(() => {
+    if (!showPaymentModal) return
+    const focusTimer = window.setTimeout(() => {
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        paymentInputRef.current?.focus()
+        paymentInputRef.current?.select()
+      }
+    }, 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [showPaymentModal])
 
   async function loadProducts() {
     if (!initialLoadComplete.current) setLoading(true)
@@ -725,7 +737,15 @@ export default function POS() {
                 </div>}
                 <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
                   <span className="text-sm font-medium text-muted-foreground">{paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}</span>
-                  <span className="text-xl font-bold text-ink">{formatCurrency(Number(cashReceived) || 0)}</span>
+                  <span className="text-xl font-bold text-ink lg:hidden">{formatCurrency(Number(cashReceived) || 0)}</span>
+                  <Input
+                    ref={paymentInputRef}
+                    value={cashReceived}
+                    inputMode="numeric"
+                    onChange={(event) => setCashReceived(event.target.value.replace(/\D/g, ''))}
+                    className="hidden h-9 w-36 text-right text-xl font-bold lg:block"
+                    aria-label={paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}
+                  />
                 </div>
                 <div className={`flex items-center justify-between px-4 py-3 ${
                   Number(cashReceived) >= totals.subtotal ? 'bg-emerald-50' : 'bg-white'
@@ -740,12 +760,14 @@ export default function POS() {
                   </span>
                 </div>
               </div>
-              <NumericKeypad
-                value={cashReceived}
-                title="Nominal pembayaran"
-                onChange={setCashReceived}
-                onClose={() => setShowPaymentModal(false)}
-              />
+              <div className="lg:hidden">
+                <NumericKeypad
+                  value={cashReceived}
+                  title="Nominal pembayaran"
+                  onChange={setCashReceived}
+                  onClose={() => setShowPaymentModal(false)}
+                />
+              </div>
               <div className="mt-3 flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowPaymentModal(false)}>
                   Batal
