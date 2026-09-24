@@ -400,7 +400,13 @@ textarea::placeholder {
     margin: 0;
   }
 
+  html,
   body {
+    width: 58mm;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     min-width: 58mm;
     background: white;
   }
@@ -409,18 +415,15 @@ textarea::placeholder {
     display: none !important;
   }
 
-  body > #root {
+  body > #receipt-print-root {
     display: block !important;
-  }
-
-  #root > * {
-    display: none !important;
-  }
-
-  #receipt-print-root {
-    display: block !important;
-    width: 58mm;
-    padding: 3mm 3mm 4mm;
+    width: 58mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 3mm 3mm 4mm !important;
+    box-sizing: border-box;
+    overflow: visible !important;
     color: #000;
     background: #fff;
     font-family: 'Courier New', monospace;
@@ -428,12 +431,14 @@ textarea::placeholder {
     line-height: 1.35;
   }
 
-  body > #receipt-print-root {
-    display: block !important;
-  }
-
   .receipt-document {
     width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
   .receipt-center {
