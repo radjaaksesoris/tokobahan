@@ -77,7 +77,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <nav className="flex flex-1 overflow-x-auto p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
+        <nav className="relative z-10 flex w-full flex-1 overflow-hidden p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
           {filteredNav.map((item) => (
             <NavLink
               key={item.to}
@@ -85,7 +85,7 @@ export function AppLayout() {
               end
               className={({ isActive }) =>
                 cn(
-                  'group relative flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.68rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
+                  'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
                   item.className,
                   item.to === '/pos' && 'hidden lg:flex',
                   'lg:px-3',
@@ -96,7 +96,7 @@ export function AppLayout() {
               }
             >
               <item.icon className="h-[1.15rem] w-[1.15rem] shrink-0 transition-transform duration-200 group-hover:scale-105" />
-              <span className={item.label === 'Riwayat Transaksi' ? 'lg:hidden' : undefined}>
+              <span className={item.label === 'Riwayat Transaksi' ? 'text-center leading-tight lg:hidden' : 'text-center leading-tight'}>
                 {item.label === 'Riwayat Transaksi' ? 'Riwayat' : item.label}
               </span>
               {item.label === 'Riwayat Transaksi' && <span className="hidden lg:inline">Riwayat Transaksi</span>}
