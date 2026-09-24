@@ -40,6 +40,23 @@ import {
 type PaymentMethod = 'cash' | 'qris' | 'credit'
 const POS_CATALOG_CACHE_KEY = 'pos-catalog'
 
+interface ReceiptData {
+  invoiceNo: string
+  createdAt: string
+  paymentMethod: PaymentMethod
+  customerName: string | null
+  amountPaid: number
+  change: number
+  total: number
+  items: {
+    name: string
+    unit: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+  }[]
+}
+
 export default function POS() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
@@ -63,11 +80,32 @@ export default function POS() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
   const failedQueueCount = queuedTransactions.filter((transaction) => transaction.status === 'failed').length
+
+  function createReceipt(invoiceNo: string): ReceiptData {
+    const amountPaid = paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal
+    return {
+      invoiceNo,
+      createdAt: new Date().toISOString(),
+      paymentMethod,
+      customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
+      amountPaid,
+      change: paymentMethod === 'cash' ? Math.max(0, amountPaid - totals.subtotal) : 0,
+      total: totals.subtotal,
+      items: items.map((item) => ({
+        name: item.product.name,
+        unit: UNIT_LABELS[item.unit] || item.unit,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        lineTotal: item.line_total,
+      })),
+    }
+  }
 
   async function refreshQueue() {
     setQueuedTransactions(await getQueuedTransactions())
@@ -290,6 +328,7 @@ export default function POS() {
     }
     if (!isOnline) {
       toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+      setReceipt(createReceipt(invoiceNo))
       setProducts((current) => current.map((product) => {
         const sold = items.filter((item) => item.product.id === product.id)
           .reduce((sum, item) => sum + item.quantity, 0)
@@ -317,6 +356,7 @@ export default function POS() {
     if (checkoutError) {
       if (isOfflineError(checkoutError)) {
         toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+        setReceipt(createReceipt(invoiceNo))
         setProducts((current) => current.map((product) => {
           const sold = items.filter((item) => item.product.id === product.id)
             .reduce((sum, item) => sum + item.quantity, 0)
@@ -347,6 +387,7 @@ export default function POS() {
 
     await removeQueuedTransaction(queuedTransaction.id)
     toast.success(`Transaksi ${invoiceNo} berhasil!`)
+    setReceipt(createReceipt(invoiceNo))
     clearCart()
     setShowPaymentModal(false)
     setCashReceived('')
@@ -716,7 +757,83 @@ export default function POS() {
           </Card>
         </div>
       )}
+      {receipt && <ReceiptPreview receipt={receipt} onClose={() => setReceipt(null)} />}
       </div>
+  )
+}
+
+function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+  function printReceipt() {
+    window.print()
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4 print:hidden">
+        <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+          <CardContent className="space-y-4 p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Transaksi tersimpan</p>
+              <h3 className="mt-1 text-xl font-bold text-ink">Cetak struk?</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{receipt.invoiceNo} · {formatCurrency(receipt.total)}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
+              <Button className="flex-1" onClick={printReceipt}>Cetak struk</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div id="receipt-print-root" aria-hidden="true">
+        <ReceiptDocument receipt={receipt} />
+      </div>
+    </>
+  )
+}
+
+function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
+  const paymentLabels: Record<PaymentMethod, string> = {
+    cash: 'Tunai',
+    qris: 'QRIS',
+    credit: 'Hutang',
+  }
+
+  return (
+    <article className="receipt-document">
+      <header className="receipt-center">
+        <strong>RADJA AKSESORIS</strong>
+        <span>Aksesoris Konveksi</span>
+        <span>Struk Penjualan</span>
+      </header>
+      <div className="receipt-rule" />
+      <div className="receipt-meta">
+        <span>No. {receipt.invoiceNo}</span>
+        <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
+      </div>
+      {receipt.customerName && <div>Pelanggan: {receipt.customerName}</div>}
+      <div className="receipt-rule" />
+      <div className="receipt-items">
+        {receipt.items.map((item, index) => (
+          <div key={`${item.name}-${index}`} className="receipt-item">
+            <div>{item.name}</div>
+            <div className="receipt-item-detail">
+              <span>{item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}</span>
+              <strong>{formatCurrency(item.lineTotal)}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="receipt-rule" />
+      <div className="receipt-total"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
+      <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      {receipt.paymentMethod === 'cash' && (
+        <>
+          <div className="receipt-summary"><span>Dibayar</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
+          <div className="receipt-summary"><span>Kembalian</span><span>{formatCurrency(receipt.change)}</span></div>
+        </>
+      )}
+      <footer className="receipt-center receipt-footer">Terima kasih</footer>
+    </article>
   )
 }
 
