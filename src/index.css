@@ -300,6 +300,23 @@ textarea::placeholder {
   text-align: center;
 }
 
+.receipt-preview-frame .receipt-brand,
+.receipt-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.receipt-preview-frame .receipt-brand img,
+.receipt-brand img {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
 .receipt-preview-frame .receipt-center strong {
   font-size: 13px;
 }
@@ -388,6 +405,21 @@ textarea::placeholder {
 
   .receipt-center strong {
     font-size: 13px;
+  }
+
+  .receipt-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .receipt-brand img {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    object-fit: cover;
+    border-radius: 4px;
   }
 
   .receipt-rule {

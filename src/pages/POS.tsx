@@ -965,7 +965,10 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
   return (
     <article className="receipt-document">
       <header className="receipt-center">
-        <strong>RADJA AKSESORIS</strong>
+        <div className="receipt-brand">
+          <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo Radja Aksesoris" />
+          <strong>RADJA AKSESORIS</strong>
+        </div>
         <span>Aksesoris Konveksi</span>
         <span>Struk Penjualan</span>
       </header>
