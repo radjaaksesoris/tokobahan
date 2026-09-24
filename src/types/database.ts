@@ -341,6 +341,14 @@ export interface Database {
         }
         Returns: string
       }
+      change_sale_payment_method: {
+        Args: {
+          p_sale_id: string
+          p_payment_method: string
+          p_customer_name?: string | null
+        }
+        Returns: undefined
+      }
       sales_summary: {
         Args: {
           p_start: string
