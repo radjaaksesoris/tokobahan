@@ -915,7 +915,7 @@ export default function POS() {
                 </Button>
                 <Button
                   ref={finishPaymentButtonRef}
-                  className="flex-1"
+                  className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   disabled={
                     checkoutLoading ||
                     (paymentMethod === 'credit'
