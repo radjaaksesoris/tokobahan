@@ -74,6 +74,7 @@ export default function POS() {
   const [qty, setQty] = useState(1)
   const [qtyInput, setQtyInput] = useState('1')
   const [salePriceInput, setSalePriceInput] = useState('')
+  const [salePriceError, setSalePriceError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
@@ -361,6 +362,7 @@ export default function POS() {
     setQty(1)
     setQtyInput('1')
     setSalePriceInput(String(getPriceForUnit(product, firstUnit).price))
+    setSalePriceError('')
   }
 
   function confirmAdd() {
@@ -768,6 +770,7 @@ export default function POS() {
                         const nextUnit = u as UnitType
                         setSelectedUnit(nextUnit)
                         setSalePriceInput(String(getPriceForUnit(selectedProduct, nextUnit).price))
+                        setSalePriceError('')
                       }}
                       className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
                         selectedUnit === u
@@ -851,16 +854,32 @@ export default function POS() {
                     type="text"
                     inputMode="numeric"
                     value={salePriceInput}
-                    onChange={(event) => setSalePriceInput(event.target.value.replace(/\D/g, ''))}
+                    onChange={(event) => {
+                      const nextValue = event.target.value.replace(/\D/g, '')
+                      const nextError = !nextValue || Number(nextValue) <= selectedProduct.cost_price
+                        ? `Harga jual harus lebih besar dari HPP (${formatCurrency(selectedProduct.cost_price)})`
+                        : ''
+                      setSalePriceInput(nextValue)
+                      setSalePriceError(nextError)
+                      if (nextError && !salePriceError) toast.error(nextError)
+                    }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault()
                         confirmAdd()
                       }
                     }}
-                    className="h-9 px-2 text-center text-lg font-bold text-teal-700"
+                    className={`h-9 px-2 text-center text-lg font-bold text-teal-700 ${
+                      salePriceError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                    }`}
                     aria-label="Harga jual"
+                    aria-invalid={Boolean(salePriceError)}
                   />
+                  {salePriceError && (
+                    <p className="mt-1 text-[10px] font-semibold leading-tight text-red-600">
+                      {salePriceError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -879,7 +898,7 @@ export default function POS() {
                   ref={addItemButtonRef}
                   className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   onClick={confirmAdd}
-                  disabled={selectedProduct.stock <= 0}
+                  disabled={selectedProduct.stock <= 0 || Boolean(salePriceError)}
                 >
                   Tambah
                 </Button>
