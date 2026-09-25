@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatNumber, toTitleCase } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, History, Printer, Search, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Printer, Search, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { toast } from 'sonner'
@@ -60,7 +60,6 @@ export default function TransactionHistory() {
   const [page, setPage] = useState(0)
   const [cursorHistory, setCursorHistory] = useState<PageCursor[]>([null])
   const [loading, setLoading] = useState(true)
-  const [dateTotal, setDateTotal] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [selectedSale, setSelectedSale] = useState<SaleRow | null>(null)
   const [items, setItems] = useState<SaleItemRow[]>([])
@@ -122,13 +121,13 @@ export default function TransactionHistory() {
     const cacheKey = `transaction-history:${date || 'all'}:${page}:${search.trim().toLowerCase()}`
     if (error || totalError) {
       const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
-      if (cached) { setSales(cached.value.rows); setDateTotal(cached.value.total); setHasNextPage(cached.value.hasNextPage); setCachedAt(cached.cachedAt) }
-      else { toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false); setDateTotal(0) }
+      if (cached) { setSales(cached.value.rows); setHasNextPage(cached.value.hasNextPage); setCachedAt(cached.cachedAt) }
+      else { toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false) }
     } else {
       const rows = (data || []) as SaleRow[]
       const total = Number(totalData?.[0]?.total_amount || 0)
       const visibleRows = rows.slice(0, PAGE_SIZE)
-      setHasNextPage(rows.length > PAGE_SIZE); setSales(visibleRows); setDateTotal(total); setCachedAt(Date.now())
+      setHasNextPage(rows.length > PAGE_SIZE); setSales(visibleRows); setCachedAt(Date.now())
       writeOfflineCache(cacheKey, { rows: visibleRows, total, hasNextPage: rows.length > PAGE_SIZE })
     }
     initialLoadComplete.current = true
@@ -337,19 +336,7 @@ export default function TransactionHistory() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <History className="h-4 w-4" />
-            Daftar Transaksi
-          </CardTitle>
-          {date && (
-            <p className="text-right text-sm font-semibold text-primary">
-              Total: {formatCurrency(dateTotal)}
-            </p>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           {loading ? (
             <div className="flex justify-center py-12">
               <LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" />
@@ -357,20 +344,20 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="overflow-x-hidden">
-              <table className="w-full table-fixed text-sm">
-                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(33,108,104,0.18)]">
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
+                <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                   <tr>
-                    <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">
+                    <th className="w-9 px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
+                    <th className="px-0.5 py-2 font-semibold lg:px-3">Invoice</th>
+                    <th className="px-0.5 py-2 font-semibold lg:px-3">
                       <span className="lg:hidden">Tanggal</span>
                       <span className="hidden lg:inline">Tanggal & waktu</span>
                     </th>
-                    <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Total</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Laba</th>
-                    <th className="w-9 px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
+                    <th className="hidden px-3 py-2 font-semibold lg:table-cell">Pembayaran</th>
+                    <th className="px-0.5 py-2 font-semibold lg:px-3">Total</th>
+                    <th className="px-0.5 py-2 font-semibold lg:px-3">Laba</th>
+                    <th className="w-9 px-0.5 py-2 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -445,8 +432,7 @@ export default function TransactionHistory() {
               </button>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {selectedSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelectedSale(null)}>
