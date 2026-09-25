@@ -120,7 +120,7 @@ export function Select({
           role="listbox"
           aria-label={ariaLabel}
           className={cn(
-            'absolute left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-[0_12px_28px_rgba(32,42,46,0.12)]',
+            'absolute left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border bg-surface p-0.5 shadow-[0_12px_28px_rgba(32,42,46,0.12)]',
             menuClassName,
           )}
         >
@@ -135,7 +135,7 @@ export function Select({
               role="option"
               aria-selected={option.value === value}
               className={cn(
-                'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm text-ink transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 option.value === value && 'bg-primary/10 font-medium text-primary',
               )}
               onClick={() => {
