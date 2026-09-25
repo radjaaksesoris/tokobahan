@@ -268,6 +268,22 @@ export default function Products() {
       toast.error('Nama produk wajib diisi')
       return
     }
+    if (!sku.trim()) {
+      toast.error('SKU wajib diisi')
+      return
+    }
+    if (costPrice <= 0) {
+      toast.error('Harga modal wajib diisi')
+      return
+    }
+    if (prices.some((price) => price.price <= 0)) {
+      toast.error('Semua harga jual wajib diisi')
+      return
+    }
+    if (!editing && !stockVendorId) {
+      toast.error('Nama vendor wajib dipilih')
+      return
+    }
     if (stock < 0 || minStock < 0 || costPrice < 0 || prices.some((price) => price.price < 0)) {
       toast.error('Stok, harga modal, harga jual, dan stok minimum tidak boleh negatif')
       return
