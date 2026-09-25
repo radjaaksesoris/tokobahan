@@ -37,6 +37,13 @@ export function Select({
     options.findIndex((option) => option.value === value),
   )
 
+  function openMenu() {
+    setOpen(true)
+    window.requestAnimationFrame(() => {
+      optionRefs.current[selectedIndex]?.focus()
+    })
+  }
+
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
@@ -84,19 +91,18 @@ export function Select({
             event.preventDefault()
             setOpen(false)
           }
-          if (event.key === 'Enter' || event.key === ' ') {
+          if ((event.key === 'Enter' || event.key === ' ') && !open) {
             event.preventDefault()
-            setOpen((current) => !current)
+            openMenu()
+            return
           }
           if (event.key === 'ArrowDown') {
             event.preventDefault()
-            setOpen(true)
-            optionRefs.current[selectedIndex]?.focus()
+            openMenu()
           }
           if (event.key === 'ArrowUp') {
             event.preventDefault()
-            setOpen(true)
-            optionRefs.current[selectedIndex]?.focus()
+            openMenu()
           }
         }}
       >
@@ -134,10 +140,7 @@ export function Select({
                 if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                   event.preventDefault()
                   const direction = event.key === 'ArrowDown' ? 1 : -1
-                  const nextIndex = Math.min(
-                    options.length - 1,
-                    Math.max(0, index + direction),
-                  )
+                  const nextIndex = (index + direction + options.length) % options.length
                   optionRefs.current[nextIndex]?.focus()
                 }
                 if (event.key === 'Enter' || event.key === ' ') {
