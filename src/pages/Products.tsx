@@ -395,7 +395,7 @@ export default function Products() {
         </div>
         <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
           <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
-            <Button variant="outline" className="shrink-0 px-3" onClick={() => navigate('/products/history')}>
+            <Button variant="outline" className="h-11 shrink-0 px-3" onClick={() => navigate('/products/history')}>
               <History className="h-4 w-4" />
               Riwayat Input
             </Button>
@@ -425,7 +425,7 @@ export default function Products() {
               )}
             </div>
           </div>
-          <Button className="relative z-10 w-full shrink-0 justify-center lg:w-auto" onClick={openCreate}>
+          <Button className="relative z-10 h-11 w-full shrink-0 justify-center lg:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
