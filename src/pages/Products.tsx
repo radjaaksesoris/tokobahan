@@ -54,6 +54,7 @@ export default function Products() {
   ))
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
+  const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
 
   // form
   const [name, setName] = useState('')
@@ -709,6 +710,12 @@ export default function Products() {
                       type="number"
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey && !editing) {
+                          event.preventDefault()
+                          stockUnitSelectRef.current?.focus()
+                        }
+                      }}
                       readOnly={Boolean(editing)}
                       title={editing ? 'Gunakan Tambah Stok untuk menerima stok baru' : undefined}
                     />
@@ -717,6 +724,7 @@ export default function Products() {
                       value={stockUnit}
                       options={unitOptions}
                       onChange={handleStockUnitChange}
+                      focusRef={stockUnitSelectRef}
                       disabled={Boolean(editing)}
                       aria-label="Satuan stok"
                     />

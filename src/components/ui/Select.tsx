@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,7 @@ interface SelectProps {
   menuClassName?: string
   native?: boolean
   disabled?: boolean
+  focusRef?: RefObject<HTMLButtonElement | null>
   'aria-label'?: string
 }
 
@@ -26,6 +27,7 @@ export function Select({
   menuClassName,
   native = false,
   disabled = false,
+  focusRef,
   'aria-label': ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false)
@@ -79,6 +81,7 @@ export function Select({
   return (
     <div ref={rootRef} className={cn('relative', className)}>
       <button
+        ref={focusRef}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="listbox"
