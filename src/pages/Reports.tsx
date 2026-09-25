@@ -8,7 +8,6 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Percent,
   Coins,
   Calendar,
   X,
@@ -248,86 +247,78 @@ export default function Reports() {
       </div>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-10">
-        <Card className="relative overflow-hidden border-0 bg-[#0f766e] text-white shadow-[0_12px_28px_rgba(15,118,110,0.2)] lg:col-span-2">
-          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <DollarSign className="h-4 w-4" /> Uang Masuk
+      <Card className="overflow-hidden border-primary/15 bg-primary text-white shadow-[0_16px_32px_rgba(33,108,104,0.16)]">
+        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="max-w-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Kesimpulan periode ini</p>
+            <h3 className="mt-2 text-2xl font-bold tracking-tight">Laba bersih {formatCurrency(totalProfit)}</h3>
+            <p className="mt-2 text-sm leading-6 text-white/80">
+              Setelah dikurangi modal barang {formatCurrency(totalCost)}, setiap Rp100 penjualan menghasilkan laba sekitar Rp{Math.round(margin)}.
+            </p>
+          </div>
+          <div className="shrink-0 rounded-2xl bg-white/10 px-5 py-4 sm:min-w-44">
+            <div className="flex items-center gap-2 text-sm text-white/75">
+              <TrendingUp className="h-4 w-4" /> Margin laba
             </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(totalRevenue)}</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#c2410c] text-white shadow-[0_12px_28px_rgba(194,65,12,0.2)] lg:col-span-2">
-          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <WalletCards className="h-4 w-4" /> Bayar Vendor
-            </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(totalVendorPayments)}</p>
-            <p className="text-xs text-white/75">Uang keluar</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#047857] text-white shadow-[0_12px_28px_rgba(4,120,87,0.2)] lg:col-span-2">
-          <DollarSign className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-white/80">
-              <DollarSign className="h-4 w-4" /> Kas Bersih
-            </div>
-            <p className={`text-xl font-bold ${netCash >= 0 ? 'text-white' : 'text-red-100'}`}>{formatCurrency(netCash)}</p>
-            <p className="text-xs text-white/75">Uang masuk - vendor</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#b91c1c] text-white shadow-[0_12px_28px_rgba(185,28,28,0.18)] lg:col-span-2">
-          <TrendingDown className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <TrendingDown className="h-4 w-4" /> HPP / Modal
-            </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(totalCost)}</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#15803d] text-white shadow-[0_12px_28px_rgba(21,128,61,0.2)] lg:col-span-2">
-          <TrendingUp className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <TrendingUp className="h-4 w-4" /> Laba Bersih
-            </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(totalProfit)}</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#a16207] text-white shadow-[0_12px_28px_rgba(161,98,7,0.2)] lg:col-span-2">
-          <WalletCards className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <WalletCards className="h-4 w-4" /> Kredit
-            </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(totalCredit)}</p>
-            <p className="text-xs text-white/75">Nilai penjualan kredit</p>
-          </CardContent>
-        </Card>
-        <Card className="relative overflow-hidden border-0 bg-[#115e59] text-white shadow-[0_12px_28px_rgba(17,94,89,0.2)] lg:col-span-5">
-          <Percent className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <DollarSign className="h-4 w-4" /> Margin
-            </div>
-            <p className="text-xl font-bold text-white">{margin.toFixed(1)}%</p>
-            <p className="text-xs text-white/75">{formatNumber(summary.transaction_count)} transaksi</p>
-          </CardContent>
-        </Card>
-        <Card className="relative col-span-2 overflow-hidden border-0 bg-[#b45309] text-white shadow-[0_12px_28px_rgba(180,83,9,0.2)] lg:col-span-5">
-          <Coins className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-white/[0.14]" />
-          <CardContent className="relative z-10 p-4">
-            <div className="mb-1 flex items-center gap-2 text-xs text-white/80">
-              <DollarSign className="h-4 w-4" /> Zakat (2,5%)
-            </div>
-            <p className="text-xl font-bold text-white">{formatCurrency(zakatAmount)}</p>
-            <p className="text-xs text-white/75">Dari laba bersih</p>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="mt-1 text-3xl font-bold tabular-nums">{margin.toFixed(1)}%</p>
+            <p className="mt-1 text-xs text-white/65">{formatNumber(summary.transaction_count)} transaksi</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <section aria-labelledby="cash-flow-heading">
+        <div className="mb-3">
+          <h3 id="cash-flow-heading" className="text-lg font-bold text-ink">Uang yang bergerak</h3>
+          <p className="text-sm text-muted-foreground">Bagian ini menjawab: uang masuk berapa, keluar berapa, dan sisanya berapa.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { label: 'Uang masuk dari penjualan', value: totalRevenue, note: 'Total penjualan pada periode ini', icon: DollarSign, tone: 'border-primary/20 bg-primary/5 text-primary' },
+            { label: 'Bayar vendor', value: totalVendorPayments, note: 'Uang yang dibayarkan ke vendor', icon: WalletCards, tone: 'border-orange-200 bg-orange-50 text-orange-700' },
+            { label: 'Kas bersih', value: netCash, note: 'Uang masuk dikurangi bayar vendor', icon: WalletCards, tone: netCash >= 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700' },
+          ].map((item) => (
+            <Card key={item.label} className={`border ${item.tone}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{item.label}</p>
+                    <p className="mt-2 text-2xl font-bold tabular-nums text-ink">{formatCurrency(item.value)}</p>
+                  </div>
+                  <item.icon className="h-5 w-5 shrink-0 opacity-70" />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{item.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="sales-result-heading">
+        <div className="mb-3">
+          <h3 id="sales-result-heading" className="text-lg font-bold text-ink">Hasil penjualan</h3>
+          <p className="text-sm text-muted-foreground">Angka yang menjelaskan apakah penjualan menghasilkan keuntungan.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Modal barang (HPP)', value: totalCost, note: 'Modal yang melekat pada barang terjual', icon: TrendingDown },
+            { label: 'Penjualan kredit', value: totalCredit, note: 'Belum seluruhnya diterima tunai', icon: WalletCards },
+            { label: 'Jumlah transaksi', value: formatNumber(summary.transaction_count), note: 'Transaksi yang tercatat', icon: Calendar },
+            { label: 'Perkiraan zakat 2,5%', value: zakatAmount, note: '2,5% dari laba bersih positif', icon: Coins },
+          ].map((item) => (
+            <Card key={item.label} className="border-border bg-surface">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                  <item.icon className="h-4 w-4 text-primary" /> {item.label}
+                </div>
+                <p className="mt-2 text-xl font-bold tabular-nums text-ink">
+                  {typeof item.value === 'number' ? formatCurrency(item.value) : item.value}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{item.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
       {/* Chart */}
       {chartData.length > 0 && (
