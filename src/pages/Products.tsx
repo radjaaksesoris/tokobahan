@@ -27,6 +27,39 @@ function getBatchMargin(product: Product, price: ProductPrice, batchCost: number
   }
 }
 
+function ProductTableSkeleton() {
+  return (
+    <Card role="status" aria-label="Memuat produk">
+      <span className="sr-only">Memuat produk...</span>
+      <div className="hidden animate-pulse overflow-hidden rounded-xl border border-border sm:block">
+        <div className="h-10 bg-primary/80" />
+        <div className="divide-y divide-border">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div key={index} className="grid grid-cols-[2.5rem_1.4fr_1fr_1fr_1fr_1fr_3rem] items-center gap-3 px-4 py-3">
+              {Array.from({ length: 7 }, (_, cell) => (
+                <div key={cell} className={`h-3 animate-pulse rounded-full bg-muted ${cell === 0 || cell === 6 ? 'mx-auto w-6' : 'w-full'}`} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-3 p-3 sm:hidden">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="space-y-3 rounded-xl border border-border p-4">
+            <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-3 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 animate-pulse rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
 export default function Products() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
@@ -445,9 +478,7 @@ export default function Products() {
         </div>
       </div>
       {loading ? (
-        <div className="flex justify-center py-16">
-          <LoadingDots dotClassName="h-2 w-2" />
-        </div>
+        <ProductTableSkeleton />
       ) : products.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-muted-foreground">

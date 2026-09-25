@@ -53,6 +53,32 @@ interface ReprintData {
 const PAGE_SIZE = 20
 type PageCursor = { created_at: string; id: string } | null
 
+function TransactionTableSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface" role="status" aria-label="Memuat riwayat transaksi">
+      <span className="sr-only">Memuat riwayat transaksi...</span>
+      <div className="h-9 animate-pulse bg-primary/80" />
+      <div className="divide-y divide-stone-100">
+        {Array.from({ length: 8 }, (_, index) => (
+          <div key={index} className="grid grid-cols-[2.25rem_1.1fr_1fr_1fr_1fr_2.25rem] items-center gap-2 px-2 py-3 lg:grid-cols-[3rem_1.2fr_1.4fr_1fr_1fr_3rem] lg:px-4">
+            {Array.from({ length: 6 }, (_, cell) => (
+              <div
+                key={cell}
+                className={`h-3 animate-pulse rounded-full bg-muted ${cell === 0 || cell === 5 ? 'mx-auto w-5' : 'w-full'}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between border-t border-stone-100 p-4">
+        <div className="h-8 w-24 animate-pulse rounded-lg bg-muted" />
+        <div className="h-4 w-20 animate-pulse rounded-full bg-muted" />
+        <div className="h-8 w-24 animate-pulse rounded-lg bg-muted" />
+      </div>
+    </div>
+  )
+}
+
 export default function TransactionHistory() {
   const [sales, setSales] = useState<SaleRow[]>([])
   const [search, setSearch] = useState('')
@@ -350,9 +376,7 @@ export default function TransactionHistory() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           {loading ? (
-            <div className="flex justify-center py-12">
-              <LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" />
-            </div>
+            <TransactionTableSkeleton />
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
