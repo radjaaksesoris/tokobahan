@@ -8,7 +8,7 @@ import {
   ShoppingBag,
   Package,
   DollarSign,
-  AlertTriangle,
+  PackageSearch,
   X,
 } from 'lucide-react'
 import {
@@ -193,7 +193,7 @@ export default function Dashboard() {
       toast.custom((toastId) => (
         <div className="stock-toast" role="status">
           <span className="stock-toast-icon">
-            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+            <PackageSearch className="h-4 w-4" aria-hidden="true" />
           </span>
           <div className="stock-toast-content">
             <p className="stock-toast-title">Stok menipis</p>
@@ -340,7 +340,7 @@ export default function Dashboard() {
                 onClick={() => setShowLowStockModal(true)}
               >
                 <span className="rounded-lg bg-amber-400/15 p-1.5 text-amber-300">
-                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  <PackageSearch className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
