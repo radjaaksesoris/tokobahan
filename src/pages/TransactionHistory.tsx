@@ -266,9 +266,7 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div
-        className="sticky isolate top-0 z-[60] -mx-4 -mt-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-3 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:-mt-5 sm:px-5 lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8"
-      >
+      <div className="-mx-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-3 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:flex-row lg:items-end lg:justify-between lg:px-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           {cachedAt && (
@@ -341,7 +339,7 @@ export default function TransactionHistory() {
         </div>
       </div>
 
-      <Card className="relative z-0 !mt-8">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <History className="h-4 w-4" />
@@ -363,7 +361,7 @@ export default function TransactionHistory() {
           ) : (
             <div className="overflow-x-hidden">
               <table className="w-full table-fixed text-sm">
-                <thead className="relative z-0 border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
+                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white">
                   <tr>
                     <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
                     <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
