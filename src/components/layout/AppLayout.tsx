@@ -30,7 +30,7 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 1023px)').matches)
-  const { profile, signOut, isRole } = useAuthStore()
+  const { signOut, isRole } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const isPosRoute = location.pathname.endsWith('/pos')
@@ -108,10 +108,6 @@ export function AppLayout() {
           <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
             <CurrentDate className="text-left text-stone-300" />
-          </div>
-          <div className="mb-3 text-sm">
-            <p className="font-medium">{profile?.full_name || 'User'}</p>
-            <p className="text-xs capitalize text-accent">{profile?.role}</p>
           </div>
           <Button
             variant="outline"
