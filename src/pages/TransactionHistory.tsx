@@ -269,7 +269,7 @@ export default function TransactionHistory() {
       <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Riwayat Transaksi</h2>
-          <p className="mt-1 text-xs text-accent">
+          <p className="mt-1 text-sm text-accent">
             {cachedAt
               ? `${navigator.onLine ? 'Cache terbaru · ' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
               : 'Cache terbaru · Memuat...'}
