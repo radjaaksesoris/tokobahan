@@ -355,7 +355,7 @@ export default function Products() {
           }
         }
         toast.success('Produk ditambahkan')
-        setModal(false)
+        openCreate()
         load()
       }
     }
