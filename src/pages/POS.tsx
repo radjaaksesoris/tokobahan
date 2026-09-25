@@ -630,23 +630,27 @@ export default function POS() {
                     <p className={`truncate text-xs font-medium lg:text-[13px] ${
                       activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
-                    <p className={`mt-0.5 text-[10px] ${
-                      p.stock <= 0
-                        ? 'font-semibold text-red-500'
-                        : activeProductIndex === index
-                          ? 'text-teal-700'
-                          : 'text-muted-foreground'
-                    }`}>
-                      {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
-                    </p>
+                    <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px]">
+                      <span className="shrink-0 text-muted-foreground">
+                        HPP: {formatCurrency(p.cost_price)}
+                      </span>
+                      {p.stock <= 0 && (
+                        <span className="truncate font-semibold text-red-500">Barang habis</span>
+                      )}
+                    </div>
                   </div>
-                  <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${
+                  <div className={`shrink-0 text-right text-[10px] font-semibold lg:text-xs ${
                     activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
                   }`}>
-                    {formatCurrency(
-                      p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
-                    )}
-                  </p>
+                    <span className="block text-[9px] font-medium uppercase tracking-wide text-muted-foreground lg:text-[10px]">
+                      Harga jual
+                    </span>
+                    <span>
+                      {formatCurrency(
+                        p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
+                      )}
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -729,25 +733,35 @@ export default function POS() {
               <h3 className="mb-1 text-lg font-semibold">{selectedProduct.name}</h3>
               <p className="mb-4 text-sm text-muted-foreground">Pilih satuan & jumlah</p>
 
-              <div className="mb-4 grid grid-cols-3 gap-2">
-                {(selectedProduct.stock_unit
-                  ? [selectedProduct.stock_unit]
-                  : selectedProduct.prices?.length
-                    ? selectedProduct.prices.map((p) => p.unit)
-                    : (['satuan'] as UnitType[])
-                ).map((u) => (
-                  <button
-                    key={u}
-                    onClick={() => setSelectedUnit(u as UnitType)}
-                    className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
-                      selectedUnit === u
-                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {UNIT_LABELS[u as UnitType] || u}
-                  </button>
-                ))}
+              <div className="mb-4 flex items-center gap-2">
+                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2">
+                  {(selectedProduct.stock_unit
+                    ? [selectedProduct.stock_unit]
+                    : selectedProduct.prices?.length
+                      ? selectedProduct.prices.map((p) => p.unit)
+                      : (['satuan'] as UnitType[])
+                  ).map((u) => (
+                    <button
+                      key={u}
+                      onClick={() => setSelectedUnit(u as UnitType)}
+                      className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
+                        selectedUnit === u
+                          ? 'border-teal-600 bg-teal-50 text-teal-700'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {UNIT_LABELS[u as UnitType] || u}
+                    </button>
+                  ))}
+                </div>
+                <div className="shrink-0 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-center">
+                  <p className="text-[10px] text-muted-foreground">Sisa stok</p>
+                  <p className={`text-sm font-bold ${
+                    selectedProduct.stock - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
+                  }`}>
+                    {Math.max(0, selectedProduct.stock - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedProduct.stock_unit] || selectedProduct.stock_unit}
+                  </p>
+                </div>
               </div>
 
               <div className="mb-4 flex items-center justify-center gap-4">
@@ -796,15 +810,6 @@ export default function POS() {
                 disabled={qty >= selectedProduct.stock}>
                   <Plus className="h-4 w-4" />
                 </Button>
-              </div>
-
-              <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-center">
-                <p className="text-xs text-muted-foreground">Stok tersisa setelah ditambahkan</p>
-                <p className={`text-lg font-bold ${
-                  selectedProduct.stock - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
-                }`}>
-                  {Math.max(0, selectedProduct.stock - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedProduct.stock_unit] || selectedProduct.stock_unit}
-                </p>
               </div>
 
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
