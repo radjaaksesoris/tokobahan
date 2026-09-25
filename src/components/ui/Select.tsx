@@ -31,11 +31,19 @@ export function Select({
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const suppressNextClickRef = useRef(false)
   const selected = options.find((option) => option.value === value)
   const selectedIndex = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   )
+
+  function suppressNextClick() {
+    suppressNextClickRef.current = true
+    window.setTimeout(() => {
+      suppressNextClickRef.current = false
+    }, 0)
+  }
 
   function openMenu() {
     setOpen(true)
@@ -85,7 +93,13 @@ export function Select({
         aria-expanded={open}
         disabled={disabled}
         className="flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 text-left text-sm text-ink transition-[border-color,box-shadow] hover:border-primary/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (suppressNextClickRef.current) {
+            suppressNextClickRef.current = false
+            return
+          }
+          setOpen((current) => !current)
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && open) {
             event.preventDefault()
@@ -93,15 +107,18 @@ export function Select({
           }
           if ((event.key === 'Enter' || event.key === ' ') && !open) {
             event.preventDefault()
+            suppressNextClick()
             openMenu()
             return
           }
           if (event.key === 'ArrowDown') {
             event.preventDefault()
+            suppressNextClick()
             openMenu()
           }
           if (event.key === 'ArrowUp') {
             event.preventDefault()
+            suppressNextClick()
             openMenu()
           }
         }}
