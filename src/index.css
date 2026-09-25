@@ -393,7 +393,15 @@ html {
 .receipt-preview-frame .receipt-total > :last-child,
 .receipt-preview-frame .receipt-summary > :last-child {
   flex: 0 0 auto;
+  max-width: 100%;
   white-space: nowrap;
+}
+
+.receipt-preview-frame .receipt-item-detail > :first-child,
+.receipt-preview-frame .receipt-total > :first-child,
+.receipt-preview-frame .receipt-summary > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .receipt-preview-frame .receipt-total {
@@ -541,7 +549,15 @@ html {
   .receipt-total > :last-child,
   .receipt-summary > :last-child {
     flex: 0 0 auto;
+    max-width: 100%;
     white-space: nowrap;
+  }
+
+  .receipt-item-detail > :first-child,
+  .receipt-total > :first-child,
+  .receipt-summary > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .receipt-total {
