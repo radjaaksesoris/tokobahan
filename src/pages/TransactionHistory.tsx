@@ -266,7 +266,7 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="-mx-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-3 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-3 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:flex-row lg:items-end lg:justify-between lg:px-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           {cachedAt && (
@@ -359,20 +359,20 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="relative max-h-[min(70vh,48rem)] overflow-auto">
+            <div className="overflow-x-hidden">
               <table className="w-full table-fixed text-sm">
                 <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(33,108,104,0.18)]">
                   <tr>
-                    <th className="sticky top-0 z-20 w-9 bg-primary px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
-                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
-                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">
+                    <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">
                       <span className="lg:hidden">Tanggal</span>
                       <span className="hidden lg:inline">Tanggal & waktu</span>
                     </th>
-                    <th className="sticky top-0 z-20 hidden bg-primary px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
-                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Total</th>
-                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Laba</th>
-                    <th className="sticky top-0 z-20 w-9 bg-primary px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
+                    <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Total</th>
+                    <th className="px-1 py-2.5 font-semibold lg:px-4">Laba</th>
+                    <th className="w-9 px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
