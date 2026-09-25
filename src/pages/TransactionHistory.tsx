@@ -266,7 +266,7 @@ export default function TransactionHistory() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="sticky top-0 z-40 -mx-4 -mt-4 flex flex-col gap-4 border-b border-border bg-canvas/95 px-4 pb-5 pt-7 shadow-[0_3px_0_rgba(231,228,220,0.75)] backdrop-blur-sm sm:-mx-5 sm:px-5 lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:pb-5 lg:pt-11">
+      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-3 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:flex-row lg:items-end lg:justify-between lg:px-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat Transaksi</h2>
           {cachedAt && (
