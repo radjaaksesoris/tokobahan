@@ -479,7 +479,7 @@ export default function Products() {
                       {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">
-                      {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType]}</span>
+                      {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType] || p.cost_unit || 'Satuan'}</span>
                     </td>
                     <td className="min-w-0 px-0.5 py-2 text-center lg:px-3">
                       <div className="flex flex-wrap justify-center gap-1">
