@@ -820,7 +820,7 @@ export default function POS() {
                 </Button>
                 <Button
                   ref={addItemButtonRef}
-                  className="flex-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                  className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   onClick={confirmAdd}
                   disabled={selectedProduct.stock <= 0}
                 >
