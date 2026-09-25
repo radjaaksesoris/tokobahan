@@ -388,7 +388,7 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="-mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-5 text-white sm:-mx-5 sm:px-5 lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-6">
+      <div className="sticky top-0 z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-5 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:-mx-5 sm:-mt-5 lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Produk</h2>
           <p className="mt-1 text-sm text-stone-300">Kelola katalog dan harga multi-satuan.</p>
@@ -446,17 +446,17 @@ export default function Products() {
           </CardContent>
         </Card>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm lg:overflow-visible">
-          <div className="overflow-x-auto lg:overflow-visible">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
+          <div className="overflow-x-auto">
             <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="sticky top-0 z-20 w-[7%] bg-primary px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
-                  <th className="sticky top-0 z-20 w-[27%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
-                  <th className="sticky top-0 z-20 w-[14%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
-                  <th className="sticky top-0 z-20 w-[18%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
-                  <th className="sticky top-0 z-20 w-[20%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
-                  <th className="sticky top-0 z-20 w-[14%] whitespace-nowrap bg-primary px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
+                  <th className="w-[7%] px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
+                  <th className="w-[27%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
+                  <th className="w-[14%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
+                  <th className="w-[18%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
+                  <th className="w-[20%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
+                  <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
