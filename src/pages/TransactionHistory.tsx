@@ -359,20 +359,20 @@ export default function TransactionHistory() {
           ) : filteredSales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
-            <div className="overflow-x-hidden">
+            <div className="relative max-h-[min(70vh,48rem)] overflow-auto">
               <table className="w-full table-fixed text-sm">
-                <thead className="sticky top-0 z-10 border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(33,108,104,0.18)]">
+                <thead className="border-b border-primary/80 bg-primary text-center text-xs uppercase tracking-wide text-white shadow-[0_2px_0_rgba(33,108,104,0.18)]">
                   <tr>
-                    <th className="w-9 px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">
+                    <th className="sticky top-0 z-20 w-9 bg-primary px-1 py-2.5 font-semibold lg:w-12 lg:px-4">No.</th>
+                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Invoice</th>
+                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">
                       <span className="lg:hidden">Tanggal</span>
                       <span className="hidden lg:inline">Tanggal & waktu</span>
                     </th>
-                    <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Total</th>
-                    <th className="px-1 py-2.5 font-semibold lg:px-4">Laba</th>
-                    <th className="w-9 px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
+                    <th className="sticky top-0 z-20 hidden bg-primary px-4 py-2.5 font-semibold lg:table-cell">Pembayaran</th>
+                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Total</th>
+                    <th className="sticky top-0 z-20 bg-primary px-1 py-2.5 font-semibold lg:px-4">Laba</th>
+                    <th className="sticky top-0 z-20 w-9 bg-primary px-1 py-2.5 lg:w-12 lg:px-3"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
