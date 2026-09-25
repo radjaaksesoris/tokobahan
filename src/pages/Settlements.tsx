@@ -212,13 +212,13 @@ export default function Settlements() {
   }, [customerPaymentHistory, historyDate, historySearch])
   async function settle(debt: Debt) {
     const enteredPayment = payment[debt.id]?.trim() || ''
-    const hasNominal = enteredPayment !== ''
     const paymentMode = tab === 'vendor' ? vendorPaymentModes[debt.id] : 'nominal'
     const selectedBatchIds = tab === 'vendor' && paymentMode === 'item' ? (selectedItems[debt.id] || []) : debt.batchIds
     const selectedOutstanding = debt.items.filter((item) => item.batchId && selectedBatchIds.includes(item.batchId)).reduce((sum, item) => sum + item.subtotal - item.paid, 0)
     const outstanding = tab === 'vendor' && paymentMode === 'item' ? selectedOutstanding : debt.total - debt.paid
-    const amount = paymentMode === 'item' ? outstanding : Number(enteredPayment)
-    if (tab === 'customer' && !hasNominal) { toast.error('Masukkan nominal pembayaran'); return }
+    const amount = paymentMode === 'item' || (tab === 'customer' && !enteredPayment)
+      ? outstanding
+      : Number(enteredPayment)
     if (tab === 'vendor' && paymentMode === 'item' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
     const allocations: Array<{ stock_batch_id: string; amount: number }> = []
