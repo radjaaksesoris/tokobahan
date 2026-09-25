@@ -630,27 +630,23 @@ export default function POS() {
                     <p className={`truncate text-xs font-medium lg:text-[13px] ${
                       activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
-                    <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px]">
-                      <span className="shrink-0 text-muted-foreground">
-                        HPP: {formatCurrency(p.cost_price)}
-                      </span>
-                      {p.stock <= 0 && (
-                        <span className="truncate font-semibold text-red-500">Barang habis</span>
-                      )}
-                    </div>
+                    <p className={`mt-0.5 text-[10px] ${
+                      p.stock <= 0
+                        ? 'font-semibold text-red-500'
+                        : activeProductIndex === index
+                          ? 'text-teal-700'
+                          : 'text-muted-foreground'
+                    }`}>
+                      {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
+                    </p>
                   </div>
-                  <div className={`shrink-0 text-right text-[10px] font-semibold lg:text-xs ${
+                  <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${
                     activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
                   }`}>
-                    <span className="block text-[9px] font-medium uppercase tracking-wide text-muted-foreground lg:text-[10px]">
-                      Harga jual
-                    </span>
-                    <span>
-                      {formatCurrency(
-                        p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
-                      )}
-                    </span>
-                  </div>
+                    {formatCurrency(
+                      p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
+                    )}
+                  </p>
                 </button>
               ))}
             </div>
