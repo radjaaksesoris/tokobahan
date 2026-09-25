@@ -24,6 +24,12 @@ type Debt = {
   payments: DebtPayment[]
   items: DebtItem[]
 }
+type PendingSettlement = {
+  debt: Debt
+  amount: number
+  selectedBatchIds: string[]
+  isFullPayment: boolean
+}
 type VendorDebtRow = {
   id: string
   quantity_received: number
@@ -69,6 +75,7 @@ export default function Settlements() {
   const [pendingSettlements, setPendingSettlements] = useState(0)
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
+  const [pendingSettlement, setPendingSettlement] = useState<PendingSettlement | null>(null)
 
   async function refreshQueue() { setPendingSettlements((await getQueuedSettlements()).filter((item) => item.status !== 'syncing').length) }
 
@@ -210,7 +217,7 @@ export default function Settlements() {
         && (!historyDate || item.paid_at.slice(0, 10) === historyDate)
     })
   }, [customerPaymentHistory, historyDate, historySearch])
-  async function settle(debt: Debt) {
+  function settle(debt: Debt) {
     const enteredPayment = payment[debt.id]?.trim() || ''
     const paymentMode = tab === 'vendor' ? vendorPaymentModes[debt.id] : 'nominal'
     const selectedBatchIds = tab === 'vendor' && paymentMode === 'item' ? (selectedItems[debt.id] || []) : debt.batchIds
@@ -221,6 +228,17 @@ export default function Settlements() {
       : Number(enteredPayment)
     if (tab === 'vendor' && paymentMode === 'item' && selectedBatchIds.length === 0) { toast.error('Pilih minimal satu item untuk dibayar'); return }
     if (!amount || amount <= 0 || amount > outstanding) { toast.error('Nominal pembayaran tidak valid'); return }
+    setPendingSettlement({
+      debt,
+      amount,
+      selectedBatchIds,
+      isFullPayment: Math.abs(amount - outstanding) < 0.01,
+    })
+  }
+
+  async function confirmSettlement() {
+    if (!pendingSettlement) return
+    const { debt, amount, selectedBatchIds } = pendingSettlement
     const allocations: Array<{ stock_batch_id: string; amount: number }> = []
     let remaining = amount
     for (const item of debt.items) {
@@ -240,6 +258,7 @@ export default function Settlements() {
         toast.success('Pembayaran berhasil dicatat')
       }
       setPayment((current) => ({ ...current, [debt.id]: '' })); await refreshQueue(); void load()
+      setPendingSettlement(null)
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Pelunasan gagal dicatat') }
   }
 
@@ -385,7 +404,7 @@ export default function Settlements() {
             <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
-            <Button className="h-9 px-3" onClick={() => void settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+            <Button className="h-9 px-3" onClick={() => settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
           </div>
         </div>
         {expandedDebtId === debt.id && (
@@ -465,6 +484,31 @@ export default function Settlements() {
           <Button variant="outline" size="sm" onClick={() => setPage((current) => current + 1)} disabled={!hasNextPage || loading}>
             Berikutnya <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
+      </div>
+    )}
+    {pendingSettlement && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/55 p-4" role="presentation" onClick={() => setPendingSettlement(null)}>
+        <div
+          className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settlement-confirmation-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <h2 id="settlement-confirmation-title" className="text-lg font-semibold text-ink">Konfirmasi pembayaran</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Apakah yakin akan membayar <strong className="text-ink">{formatCurrency(pendingSettlement.amount)}</strong> untuk <strong className="text-ink">{pendingSettlement.debt.name}</strong>?
+          </p>
+          {pendingSettlement.isFullPayment && (
+            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+              Ini akan melunasi seluruh hutang ({formatCurrency(pendingSettlement.debt.total - pendingSettlement.debt.paid)}).
+            </p>
+          )}
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPendingSettlement(null)}>Batal</Button>
+            <Button onClick={() => void confirmSettlement()}>Ya, Bayar</Button>
+          </div>
         </div>
       </div>
     )}
