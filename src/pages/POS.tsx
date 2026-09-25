@@ -867,11 +867,8 @@ export default function POS() {
                     onChange={(event) => {
                       const nextValue = event.target.value.replace(/\D/g, '')
                       const nextError = !nextValue || Number(nextValue) <= selectedProduct.cost_price
-                        ? `Harga jual harus lebih besar dari HPP (${formatCurrency(selectedProduct.cost_price)})`
-                        : ''
                       setSalePriceInput(nextValue)
-                      setSalePriceError(nextError)
-                      if (nextError && !salePriceError) toast.error(nextError)
+                      setSalePriceError(nextError ? 'invalid' : '')
                     }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
@@ -885,11 +882,6 @@ export default function POS() {
                     aria-label="Harga jual"
                     aria-invalid={Boolean(salePriceError)}
                   />
-                  {salePriceError && (
-                    <p className="mt-1 text-[10px] font-semibold leading-tight text-red-600">
-                      {salePriceError}
-                    </p>
-                  )}
                 </div>
               </div>
 
