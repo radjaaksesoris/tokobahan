@@ -255,9 +255,6 @@ export default function Reports() {
           <div className="max-w-xl">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Kesimpulan periode ini</p>
             <h3 className="mt-2 text-2xl font-bold tracking-tight">Laba bersih {formatCurrency(totalProfit)}</h3>
-            <p className="mt-2 text-sm leading-6 text-white/80">
-              Setelah dikurangi modal barang {formatCurrency(totalCost)}, setiap Rp100 penjualan menghasilkan laba sekitar Rp{Math.round(margin)}.
-            </p>
           </div>
           <div className="shrink-0 rounded-2xl bg-white/10 px-5 py-4 sm:min-w-44">
             <div className="flex items-center gap-2 text-sm text-white/75">
