@@ -102,6 +102,12 @@ export default function POS() {
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
   const failedQueueCount = queuedTransactions.filter((transaction) => transaction.status === 'failed').length
+  const getReservedQuantity = (productId: string) =>
+    items
+      .filter((item) => item.product.id === productId)
+      .reduce((sum, item) => sum + item.quantity, 0)
+  const getAvailableStock = (product: Product) =>
+    Math.max(0, product.stock - getReservedQuantity(product.id))
 
   function createReceipt(invoiceNo: string): ReceiptData {
     const amountPaid = paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal
@@ -351,7 +357,8 @@ export default function POS() {
   }
 
   function openAdd(product: Product) {
-    if (product.stock <= 0) {
+    const availableStock = getAvailableStock(product)
+    if (availableStock <= 0) {
       toast.error(`${product.name} habis`)
       return
     }
@@ -367,7 +374,8 @@ export default function POS() {
 
   function confirmAdd() {
     if (!selectedProduct) return
-    const quantity = Math.min(selectedProduct.stock, Math.max(1, Number(qtyInput) || 1))
+    const availableStock = getAvailableStock(selectedProduct)
+    const quantity = Math.min(availableStock, Math.max(1, Number(qtyInput) || 1))
     const salePrice = Number(salePriceInput)
     if (!Number.isFinite(salePrice) || salePrice <= selectedProduct.cost_price) {
       toast.error(`Harga jual harus lebih besar dari HPP (${formatCurrency(selectedProduct.cost_price)})`)
@@ -375,16 +383,13 @@ export default function POS() {
     }
     setQty(quantity)
     setQtyInput(String(quantity))
-    if (selectedProduct.stock <= 0) {
+    if (availableStock <= 0) {
       toast.error(`${selectedProduct.name} habis`)
       setSelectedProduct(null)
       return
     }
-    const existingQuantity = items.find(
-      (item) => item.product.id === selectedProduct.id && item.unit === selectedUnit
-    )?.quantity || 0
-    if (existingQuantity + quantity > selectedProduct.stock) {
-      toast.error(`Stok ${selectedProduct.name} hanya tersisa ${Math.max(0, selectedProduct.stock - existingQuantity)}`)
+    if (quantity <= 0) {
+      toast.error(`Stok ${selectedProduct.name} habis`)
       return
     }
     addItem(selectedProduct, selectedUnit, quantity, salePrice)
@@ -633,6 +638,9 @@ export default function POS() {
           ) : (
             <div className="grid grid-cols-1 gap-1 xl:grid-cols-2 xl:gap-1.5">
               {filtered.map((p, index) => (
+                (() => {
+                  const availableStock = getAvailableStock(p)
+                  return (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
@@ -641,7 +649,7 @@ export default function POS() {
                       ? 'border-primary bg-teal-100 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(33,108,104,0.18)]'
                       : 'border-stone-200/80'
                   } ${
-                    p.stock <= 0
+                    availableStock <= 0
                       ? 'cursor-not-allowed opacity-60'
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
                   }`}
@@ -658,13 +666,13 @@ export default function POS() {
                       activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
                     }`}>{p.name}</p>
                     <p className={`mt-0.5 text-[10px] ${
-                      p.stock <= 0
+                      availableStock <= 0
                         ? 'font-semibold text-red-500'
                         : activeProductIndex === index
                           ? 'text-teal-700'
                           : 'text-muted-foreground'
                     }`}>
-                      {p.stock <= 0 ? 'Barang habis' : `Stok: ${p.stock}`}
+                      {availableStock <= 0 ? 'Barang habis' : `Stok: ${availableStock}`}
                     </p>
                   </div>
                   <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${
@@ -675,6 +683,8 @@ export default function POS() {
                     )}
                   </p>
                 </button>
+                  )
+                })()
               ))}
             </div>
           )}
@@ -785,9 +795,9 @@ export default function POS() {
                 <div className="shrink-0 rounded-lg border border-teal-600 bg-teal-50 px-3 py-2 text-center">
                   <p className="text-[10px] text-muted-foreground">Sisa stok</p>
                   <p className={`text-sm font-bold ${
-                    selectedProduct.stock - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
+                    getAvailableStock(selectedProduct) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
                   }`}>
-                    {Math.max(0, selectedProduct.stock - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedProduct.stock_unit] || selectedProduct.stock_unit}
+                    {Math.max(0, getAvailableStock(selectedProduct) - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedProduct.stock_unit] || selectedProduct.stock_unit}
                   </p>
                 </div>
               </div>
@@ -815,7 +825,7 @@ export default function POS() {
                       setQtyInput('')
                       return
                     }
-                    const next = Math.min(selectedProduct.stock, Math.max(1, Number(digits)))
+                    const next = Math.min(getAvailableStock(selectedProduct), Math.max(1, Number(digits)))
                     setQty(next)
                     setQtyInput(String(next))
                   }}
@@ -831,11 +841,11 @@ export default function POS() {
                   className="w-20 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon" onClick={() => {
-                  const next = Math.min(selectedProduct.stock, qty + 1)
+                  const next = Math.min(getAvailableStock(selectedProduct), qty + 1)
                   setQty(next)
                   setQtyInput(String(next))
                 }}
-                disabled={qty >= selectedProduct.stock}>
+                disabled={qty >= getAvailableStock(selectedProduct)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -898,7 +908,7 @@ export default function POS() {
                   ref={addItemButtonRef}
                   className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   onClick={confirmAdd}
-                  disabled={selectedProduct.stock <= 0 || Boolean(salePriceError)}
+                  disabled={getAvailableStock(selectedProduct) <= 0 || Boolean(salePriceError)}
                 >
                   Tambah
                 </Button>
