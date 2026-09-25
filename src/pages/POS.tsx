@@ -965,7 +965,13 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
-              <Button ref={printButtonRef} className="flex-1" onClick={printReceipt}>Cetak struk</Button>
+              <Button
+                ref={printButtonRef}
+                className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                onClick={printReceipt}
+              >
+                Cetak struk
+              </Button>
             </div>
           </CardContent>
         </Card>
