@@ -1296,7 +1296,7 @@ function CartPanel({
         </div>
 
         <div className="flex gap-1.5">
-          {(['cash', 'credit', 'qris'] as const).map((m) => (
+          {(['cash', 'credit'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPaymentMethod(m)}
@@ -1306,7 +1306,7 @@ function CartPanel({
                   : 'border-white/15 text-stone-300 hover:border-white/30'
               }`}
             >
-              {m === 'cash' ? 'Tunai' : m === 'qris' ? 'QRIS' : 'Kredit'}
+              {m === 'cash' ? 'Tunai' : 'Kredit'}
             </button>
           ))}
         </div>
