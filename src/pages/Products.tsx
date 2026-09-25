@@ -47,7 +47,6 @@ export default function Products() {
   const [stockSaving, setStockSaving] = useState(false)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
-  const [stockSort, setStockSort] = useState<'default' | 'desc' | 'asc'>('default')
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [pageSize, setPageSize] = useState(() => (
@@ -103,7 +102,7 @@ export default function Products() {
   useEffect(() => {
     const timer = window.setTimeout(load, 250)
     return () => window.clearTimeout(timer)
-  }, [search, page, pageSize, stockSort])
+  }, [search, page, pageSize])
 
   async function load() {
     const requestId = ++loadRequestId.current
@@ -112,7 +111,7 @@ export default function Products() {
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
       .eq('is_active', true)
-      .order(stockSort === 'default' ? 'name' : 'stock', { ascending: stockSort === 'asc' })
+      .order('name')
       .range(page * pageSize, (page + 1) * pageSize)
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
@@ -454,26 +453,7 @@ export default function Products() {
                 <tr>
                   <th className="w-[7%] px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
                   <th className="w-[27%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
-                  <th className="w-[14%] px-0.5 py-1 font-semibold lg:w-auto lg:px-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>Stok</span>
-                      <Select
-                        native
-                        value={stockSort}
-                        options={[
-                          { value: 'default', label: 'Reset' },
-                          { value: 'desc', label: 'Terbanyak' },
-                          { value: 'asc', label: 'Terkecil' },
-                        ]}
-                        onChange={(value) => {
-                          setStockSort(value as 'default' | 'desc' | 'asc')
-                          setPage(0)
-                        }}
-                        aria-label="Urutkan stok"
-                        className="w-full max-w-28 text-left normal-case tracking-normal"
-                      />
-                    </div>
-                  </th>
+                  <th className="w-[14%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
                   <th className="w-[18%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
                   <th className="w-[20%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
                   <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
