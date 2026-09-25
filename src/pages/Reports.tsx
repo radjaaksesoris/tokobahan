@@ -193,8 +193,11 @@ export default function Reports() {
       <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-5 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-end sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Laporan laba rugi</h2>
-          {cachedAt && <p className="mt-1 text-xs text-stone-300">{navigator.onLine ? "Snapshot cache terbaru" : "Offline · "}Diperbarui {format(new Date(cachedAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>}
-          <p className="mt-1 text-sm text-stone-300">Uang masuk, biaya, dan laba bersih.</p>
+          <p className="mt-1 text-xs text-accent">
+            {cachedAt
+              ? `${navigator.onLine ? 'Snapshot cache terbaru' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
+              : 'Snapshot cache terbaru · Memuat...'}
+          </p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
           {periods.map((p) => (
