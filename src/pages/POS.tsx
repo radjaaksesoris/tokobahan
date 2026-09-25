@@ -85,6 +85,7 @@ export default function POS() {
   const [customerName, setCustomerName] = useState('')
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
   const qtyInputRef = useRef<HTMLInputElement>(null)
+  const addItemButtonRef = useRef<HTMLButtonElement>(null)
   const paymentInputRef = useRef<HTMLInputElement>(null)
   const finishPaymentButtonRef = useRef<HTMLButtonElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
@@ -780,6 +781,9 @@ export default function POS() {
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       confirmAdd()
+                    } else if (e.key === 'Tab' && !e.shiftKey) {
+                      e.preventDefault()
+                      addItemButtonRef.current?.focus()
                     }
                   }}
                   className="w-20 text-center text-lg font-bold"
@@ -814,7 +818,12 @@ export default function POS() {
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedProduct(null)}>
                   Batal
                 </Button>
-                <Button className="flex-1" onClick={confirmAdd} disabled={selectedProduct.stock <= 0}>
+                <Button
+                  ref={addItemButtonRef}
+                  className="flex-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                  onClick={confirmAdd}
+                  disabled={selectedProduct.stock <= 0}
+                >
                   Tambah
                 </Button>
               </div>
