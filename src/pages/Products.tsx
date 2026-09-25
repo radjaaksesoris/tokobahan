@@ -734,13 +734,13 @@ export default function Products() {
               {!editing && (
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-2">
                   <div className="min-w-0">
-                    <label className="mb-1 block text-sm font-medium">Vendor stok awal</label>
+                    <label className="mb-1 block text-sm font-medium">Nama Vendro</label>
                     <Select
                       value={stockVendorId}
                       onChange={setStockVendorId}
                       className="w-full"
                       options={[
-                        { value: '', label: stock > 0 ? 'Pilih vendor' : 'Tidak ada stok awal' },
+                        { value: '', label: 'Vendor' },
                         ...vendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
                       ]}
                     />
