@@ -57,14 +57,14 @@ function TransactionTableSkeleton() {
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface" role="status" aria-label="Memuat riwayat transaksi">
       <span className="sr-only">Memuat riwayat transaksi...</span>
-      <div className="h-9 animate-pulse bg-primary/80" />
+      <div className="h-9 bg-primary/80" />
       <div className="divide-y divide-stone-100">
         {Array.from({ length: 8 }, (_, index) => (
           <div key={index} className="grid grid-cols-[2.25rem_1.1fr_1fr_1fr_1fr_2.25rem] items-center gap-2 px-2 py-3 lg:grid-cols-[3rem_1.2fr_1.4fr_1fr_1fr_3rem] lg:px-4">
             {Array.from({ length: 6 }, (_, cell) => (
               <div
                 key={cell}
-                className={`h-3 animate-pulse rounded-full bg-muted ${cell === 0 || cell === 5 ? 'mx-auto w-5' : 'w-full'}`}
+                className={`h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80 ${cell === 0 || cell === 5 ? 'mx-auto w-5' : 'w-full'}`}
               />
             ))}
           </div>
