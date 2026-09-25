@@ -270,12 +270,11 @@ export default function TransactionHistory() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Riwayat Transaksi</h2>
           {cachedAt && (
-            <p className="mt-1 text-xs text-stone-300">
+            <p className="mt-1 text-xs text-accent">
               {navigator.onLine ? 'Cache terbaru · ' : 'Offline · '}
               Diperbarui {format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}
             </p>
           )}
-          <p className="mt-1 text-sm text-stone-300">Lihat transaksi yang sudah tersimpan dan rincian barangnya.</p>
         </div>
         <div className="flex w-full items-center gap-2 sm:gap-3 lg:w-auto">
           <div className="relative min-w-0 flex-1 lg:w-80">
