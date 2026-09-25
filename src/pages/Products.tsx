@@ -12,6 +12,7 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
+import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
@@ -106,33 +107,45 @@ export default function Products() {
 
   async function load() {
     const requestId = ++loadRequestId.current
-    if (!initialLoadComplete.current) setLoading(true)
+    const term = search.trim().replace(/[%_,]/g, ' ')
+    const cacheKey = `products:${pageSize}:${page}:${term.toLowerCase()}`
+    const cached = readOfflineCacheEntry<{ products: Product[]; hasNextPage: boolean }>(cacheKey)
+    if (cached) {
+      setProducts(cached.value.products)
+      setHasNextPage(cached.value.hasNextPage)
+      initialLoadComplete.current = true
+      setLoading(false)
+    } else if (!initialLoadComplete.current) {
+      setLoading(true)
+    }
     let query = supabase
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('name')
       .range(page * pageSize, (page + 1) * pageSize)
-    const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
     const { data, error } = await query
     if (requestId !== loadRequestId.current) return
     if (error) {
       toast.error(error.message)
-      setProducts([])
-      setHasNextPage(false)
+      if (!cached) {
+        setProducts([])
+        setHasNextPage(false)
+      }
       initialLoadComplete.current = true
       setLoading(false)
       return
     }
     const rows = data || []
-    setHasNextPage(rows.length > pageSize)
-    setProducts(
-      rows.slice(0, pageSize).map((p) => ({
-        ...p,
-        prices: parseProductPrices(p.prices),
-      })) as Product[]
-    )
+    const visibleProducts = rows.slice(0, pageSize).map((p) => ({
+      ...p,
+      prices: parseProductPrices(p.prices),
+    })) as Product[]
+    const nextPageExists = rows.length > pageSize
+    setHasNextPage(nextPageExists)
+    setProducts(visibleProducts)
+    writeOfflineCache(cacheKey, { products: visibleProducts, hasNextPage: nextPageExists })
     initialLoadComplete.current = true
     setLoading(false)
   }

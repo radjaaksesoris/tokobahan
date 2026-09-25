@@ -82,7 +82,20 @@ export default function TransactionHistory() {
 
   async function loadSales() {
     const requestId = ++loadRequestId.current
-    if (!initialLoadComplete.current) setLoading(true)
+    const term = search.trim().replace(/[%_,]/g, ' ')
+    const cursor = cursorHistory[page]
+    const cursorKey = cursor ? `${cursor.created_at}:${cursor.id}` : 'first'
+    const cacheKey = `transaction-history:${date || 'all'}:${page}:${cursorKey}:${search.trim().toLowerCase()}`
+    const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
+    if (cached) {
+      setSales(cached.value.rows)
+      setHasNextPage(cached.value.hasNextPage)
+      setCachedAt(cached.cachedAt)
+      initialLoadComplete.current = true
+      setLoading(false)
+    } else if (!initialLoadComplete.current) {
+      setLoading(true)
+    }
     let query = supabase
       .from('sales')
       .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, customer_id, amount_paid, created_at')
@@ -90,12 +103,10 @@ export default function TransactionHistory() {
       .order('id', { ascending: false })
       .limit(PAGE_SIZE + 1)
 
-    const cursor = cursorHistory[page]
     if (cursor) {
       query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`)
     }
 
-    const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) {
       query = query.or(`invoice_no.ilike.%${term}%,payment_method.ilike.%${term}%`)
     }
@@ -118,11 +129,12 @@ export default function TransactionHistory() {
       }),
     ])
     if (requestId !== loadRequestId.current) return
-    const cacheKey = `transaction-history:${date || 'all'}:${page}:${search.trim().toLowerCase()}`
     if (error || totalError) {
-      const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
-      if (cached) { setSales(cached.value.rows); setHasNextPage(cached.value.hasNextPage); setCachedAt(cached.cachedAt) }
-      else { toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline'); setSales([]); setHasNextPage(false) }
+      if (!cached) {
+        toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline')
+        setSales([])
+        setHasNextPage(false)
+      }
     } else {
       const rows = (data || []) as SaleRow[]
       const total = Number(totalData?.[0]?.total_amount || 0)
