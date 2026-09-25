@@ -431,6 +431,7 @@ export default function Products() {
           </Button>
         </div>
       </div>
+      <div className="h-2 w-full bg-primary" aria-hidden="true" />
 
       {loading ? (
         <div className="flex justify-center py-16">
