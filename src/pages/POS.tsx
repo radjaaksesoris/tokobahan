@@ -41,6 +41,10 @@ import {
 type PaymentMethod = 'cash' | 'qris' | 'credit'
 const POS_CATALOG_CACHE_KEY = 'pos-catalog'
 
+function sortCatalogProducts(products: Product[]) {
+  return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0))
+}
+
 interface ReceiptData {
   invoiceNo: string
   createdAt: string
@@ -262,12 +266,12 @@ export default function POS() {
       const cachedProducts = readOfflineCache<Product[]>(POS_CATALOG_CACHE_KEY)
       if (cachedProducts) {
         const normalizedTerm = search.trim().toLowerCase()
-        setProducts(normalizedTerm
+        setProducts(sortCatalogProducts(normalizedTerm
           ? cachedProducts.filter((product) =>
             product.name.toLowerCase().includes(normalizedTerm) ||
             product.sku?.toLowerCase().includes(normalizedTerm) ||
             product.barcode?.toLowerCase().includes(normalizedTerm))
-          : cachedProducts)
+          : cachedProducts))
         toast.info('Katalog lokal digunakan karena katalog online gagal dimuat')
       } else {
         toast.error(navigator.onLine ? error.message : 'Katalog belum pernah disimpan untuk penggunaan offline')
@@ -279,7 +283,7 @@ export default function POS() {
           ...p,
           prices: parseProductPrices(p.prices),
         })) as Product[]
-      setProducts(normalizedProducts)
+      setProducts(sortCatalogProducts(normalizedProducts))
       if (!search.trim()) writeOfflineCache(POS_CATALOG_CACHE_KEY, normalizedProducts)
     }
     initialLoadComplete.current = true
