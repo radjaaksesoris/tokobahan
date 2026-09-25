@@ -388,7 +388,8 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-4 border-b border-border bg-canvas px-4 pb-5 pt-1 shadow-[0_3px_0_rgba(231,228,220,0.75)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:px-8 lg:pt-0">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
           <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
@@ -430,6 +431,7 @@ export default function Products() {
             Tambah
           </Button>
         </div>
+      </div>
       </div>
 
       {loading ? (
