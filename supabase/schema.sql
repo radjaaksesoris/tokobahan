@@ -323,32 +323,75 @@ CREATE TRIGGER products_updated_at
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
+CREATE OR REPLACE FUNCTION public.current_user_has_role(required_roles TEXT[])
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = auth.uid()
+      AND role = ANY(required_roles)
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.current_user_has_role(TEXT[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.current_user_has_role(TEXT[]) TO authenticated;
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_items ENABLE ROW LEVEL SECURITY;
 
--- Profiles: users can read all, update own
-CREATE POLICY "Profiles are viewable by authenticated"
-  ON public.profiles FOR SELECT TO authenticated USING (true);
+-- Profiles: users can read their own profile; admins can manage staff visibility.
+CREATE POLICY "Profiles viewable by self or admins"
+  ON public.profiles FOR SELECT TO authenticated
+  USING (auth.uid() = id OR public.current_user_has_role(ARRAY['admin']));
 
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- Products: all authenticated can CRUD (simplify for single store)
-CREATE POLICY "Products full access for authenticated"
-  ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Catalog and sales data are available only to users with an assigned store role.
+CREATE POLICY "Products viewable by staff"
+  ON public.products FOR SELECT TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier', 'monitor']));
 
-CREATE POLICY "Categories full access"
-  ON public.categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Products writable by admin or cashier"
+  ON public.products FOR INSERT TO authenticated
+  WITH CHECK (public.current_user_has_role(ARRAY['admin', 'cashier']));
+CREATE POLICY "Products editable by admin or cashier"
+  ON public.products FOR UPDATE TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier']))
+  WITH CHECK (public.current_user_has_role(ARRAY['admin', 'cashier']));
+CREATE POLICY "Products removable by admin or cashier"
+  ON public.products FOR DELETE TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier']));
 
--- Sales: all authenticated
-CREATE POLICY "Sales viewable by authenticated"
-  ON public.sales FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Categories viewable by staff"
+  ON public.categories FOR SELECT TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier', 'monitor']));
+CREATE POLICY "Categories writable by admin or cashier"
+  ON public.categories FOR INSERT TO authenticated
+  WITH CHECK (public.current_user_has_role(ARRAY['admin', 'cashier']));
+CREATE POLICY "Categories editable by admin or cashier"
+  ON public.categories FOR UPDATE TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier']))
+  WITH CHECK (public.current_user_has_role(ARRAY['admin', 'cashier']));
+CREATE POLICY "Categories removable by admin or cashier"
+  ON public.categories FOR DELETE TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier']));
 
-CREATE POLICY "Sale items viewable by authenticated"
-  ON public.sale_items FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Sales viewable by staff"
+  ON public.sales FOR SELECT TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier', 'monitor']));
+
+CREATE POLICY "Sale items viewable by staff"
+  ON public.sale_items FOR SELECT TO authenticated
+  USING (public.current_user_has_role(ARRAY['admin', 'cashier', 'monitor']));
 REVOKE INSERT, UPDATE, DELETE ON TABLE public.sales, public.sale_items FROM authenticated;
 
 -- Enable Realtime for monitoring
