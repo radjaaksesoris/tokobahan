@@ -593,18 +593,6 @@ export default function POS() {
               </button>
             )}
           </div>
-          <Button
-            variant="secondary"
-            className="lg:hidden shrink-0"
-            onClick={() => setShowCart(true)}
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {items.length > 0 && (
-              <span className="ml-1 rounded-full bg-ink px-1.5 text-xs text-white">
-                {items.length}
-              </span>
-            )}
-          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -665,8 +653,20 @@ export default function POS() {
         </div>
       </div>
 
+      <Button
+        variant="secondary"
+        className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center shadow-lg lg:hidden"
+        onClick={() => setShowCart(true)}
+      >
+        <ShoppingCart className="h-5 w-5" />
+        <span>Keranjang{items.length > 0 ? ` (${items.length})` : ''}</span>
+        {items.length > 0 && (
+          <span className="ml-auto font-semibold text-primary">{formatCurrency(totals.subtotal)}</span>
+        )}
+      </Button>
+
       {/* Cart - desktop */}
-      <div ref={keypadPanelRef} className="pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)]">
+      <div ref={keypadPanelRef} className="pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:sticky lg:top-0 lg:h-full">
         {showKeypadPanel ? (
           <KeypadPanel
             value={search}
