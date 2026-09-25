@@ -380,10 +380,15 @@ export default function Settings() {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="sticky top-[-1rem] z-30 flex flex-col justify-center -mx-4 -mt-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
         <h2 className="text-3xl font-bold tracking-tight text-white">Pengaturan</h2>
-        <p className="mt-1 text-sm text-accent">Pengaturan operasional khusus administrator.</p>
+        <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <section aria-labelledby="master-data-heading" className="space-y-3">
+        <div>
+          <h3 id="master-data-heading" className="text-lg font-bold tracking-tight text-ink">Data dasar dan akses admin</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Kelola data yang dipakai saat membuat produk, mencatat transaksi, dan menjaga aplikasi.</p>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-red-200">
           <CardHeader>
             <button
@@ -395,7 +400,7 @@ export default function Settings() {
             >
               <CardTitle className="flex items-center gap-2 text-red-700">
                 <Database className="h-5 w-5" />
-                Reset Database Operasional
+                Reset data operasional
               </CardTitle>
               <ChevronDown
                 className={`h-5 w-5 shrink-0 text-red-700 transition-transform ${resetOpen ? 'rotate-180' : ''}`}
@@ -446,9 +451,10 @@ export default function Settings() {
 
         <Card>
         <CardHeader>
-          <CardTitle className="text-base">Daftar Vendor</CardTitle>
+          <CardTitle className="text-base">Vendor</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Simpan nama pemasok yang sering dipilih pada produk.</p>
           <div className="flex gap-2">
             <Input
               value={vendorName}
@@ -476,7 +482,7 @@ export default function Settings() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Master Satuan</CardTitle>
+            <CardTitle className="text-base">Satuan produk</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">Tambahkan nama satuan yang akan muncul di dropdown Produk.</p>
@@ -506,7 +512,13 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+      </section>
 
+      <section aria-labelledby="stock-heading" className="space-y-3">
+      <div>
+        <h3 id="stock-heading" className="text-lg font-bold tracking-tight text-ink">Stok</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Periksa dan sesuaikan stok fisik dengan catatan di aplikasi.</p>
+      </div>
       <Card className="border-sky-200 bg-sky-50/30">
         <CardHeader>
           <button
@@ -535,12 +547,18 @@ export default function Settings() {
           </CardContent>
         )}
       </Card>
+      </section>
 
+      <section aria-labelledby="backup-heading" className="space-y-3">
+      <div>
+        <h3 id="backup-heading" className="text-lg font-bold tracking-tight text-ink">Backup dan pemulihan</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Simpan salinan data sebelum melakukan perubahan besar atau pindah perangkat.</p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Backup Data Operasional
+            Cadangan data operasional
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -619,7 +637,14 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+      </section>
 
+      <section aria-labelledby="notification-heading" className="space-y-3">
+      <div>
+        <h3 id="notification-heading" className="text-lg font-bold tracking-tight text-ink">Notifikasi</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Pilih cara aplikasi memberi tahu admin saat stok perlu diperiksa.</p>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -688,6 +713,9 @@ export default function Settings() {
           </Button>
         </CardContent>
       </Card>
+      </div>
+      </section>
+
     </div>
   )
 }
