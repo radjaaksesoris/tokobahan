@@ -55,6 +55,7 @@ export default function Products() {
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
+  const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // form
   const [name, setName] = useState('')
@@ -843,6 +844,12 @@ export default function Products() {
                         inputMode="numeric"
                         value={formatCurrencyInput(pr.price)}
                         onChange={(e) => updatePrice(idx, 'price', parseCurrencyInput(e.target.value))}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Tab' && !event.shiftKey && idx === prices.length - 1) {
+                            event.preventDefault()
+                            saveButtonRef.current?.focus()
+                          }
+                        }}
                       />
                       <Select
                         className="min-w-0"
@@ -917,7 +924,7 @@ export default function Products() {
               <Button variant="outline" className="flex-1" onClick={() => setModal(false)}>
                 Batal
               </Button>
-              <Button className="flex-1" onClick={handleSave} disabled={saving}>
+              <Button ref={saveButtonRef} className="flex-1" onClick={handleSave} disabled={saving}>
                 {saving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan'}
               </Button>
             </div>
