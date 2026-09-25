@@ -58,7 +58,6 @@ interface ReceiptData {
     unit: string
     quantity: number
     unitPrice: number
-    originalUnitPrice?: number
     lineTotal: number
   }[]
 }
@@ -124,25 +123,8 @@ export default function POS() {
         unit: UNIT_LABELS[item.unit] || item.unit,
         quantity: item.quantity,
         unitPrice: item.unit_price,
-        originalUnitPrice: getPriceForUnit(item.product, item.unit).price,
         lineTotal: item.line_total,
       })),
-    }
-  }
-
-  function addOriginalPrices(receiptData: ReceiptData): ReceiptData {
-    return {
-      ...receiptData,
-      items: receiptData.items.map((receiptItem) => {
-        const cartItem = items.find(
-          (item) =>
-            item.product.name === receiptItem.name &&
-            (UNIT_LABELS[item.unit] || item.unit) === receiptItem.unit
-        )
-        return cartItem
-          ? { ...receiptItem, originalUnitPrice: getPriceForUnit(cartItem.product, cartItem.unit).price }
-          : receiptItem
-      }),
     }
   }
 
@@ -529,7 +511,7 @@ export default function POS() {
     await removeQueuedTransaction(queuedTransaction.id)
     const savedReceipt = await loadSavedReceipt(checkoutSaleId, invoiceNo)
     toast.success(`Transaksi ${savedReceipt?.invoiceNo || invoiceNo} berhasil!`)
-    if (showReceiptPreview) setReceipt(savedReceipt ? addOriginalPrices(savedReceipt) : createReceipt(invoiceNo))
+    if (showReceiptPreview) setReceipt(savedReceipt || createReceipt(invoiceNo))
     clearCart()
     setShowPaymentModal(false)
     setCashReceived('')
@@ -1094,23 +1076,10 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         {receipt.items.map((item, index) => (
           <div key={`${item.name}-${index}`} className="receipt-item">
             <div>{item.name}</div>
-            {item.originalUnitPrice !== undefined && item.originalUnitPrice !== item.unitPrice ? (
-              <>
-                <div className="receipt-item-detail">
-                  <span>{item.quantity} {item.unit} × {formatCurrency(item.originalUnitPrice)}</span>
-                  <span>{formatCurrency(item.originalUnitPrice * item.quantity)}</span>
-                </div>
-                <div className="receipt-item-detail">
-                  <span>Harga setelah potongan</span>
-                  <strong>{formatCurrency(item.lineTotal)}</strong>
-                </div>
-              </>
-            ) : (
-              <div className="receipt-item-detail">
-                <span>{item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}</span>
-                <strong>{formatCurrency(item.lineTotal)}</strong>
-              </div>
-            )}
+            <div className="receipt-item-detail">
+              <span>{item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}</span>
+              <strong>{formatCurrency(item.lineTotal)}</strong>
+            </div>
           </div>
         ))}
       </div>
