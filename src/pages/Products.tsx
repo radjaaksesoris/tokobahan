@@ -388,10 +388,10 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="-mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-5 text-white sm:-mx-5 sm:px-5 lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-ink">Produk</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Kelola katalog dan harga multi-satuan.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-white">Produk</h2>
+          <p className="mt-1 text-sm text-stone-300">Kelola katalog dan harga multi-satuan.</p>
         </div>
         <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
           <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
