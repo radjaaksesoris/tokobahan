@@ -389,6 +389,13 @@ html {
   padding-left: 8px;
 }
 
+.receipt-preview-frame .receipt-item-detail > :last-child,
+.receipt-preview-frame .receipt-total > :last-child,
+.receipt-preview-frame .receipt-summary > :last-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .receipt-preview-frame .receipt-total {
   margin: 5px 0;
   font-size: 12px;
@@ -528,6 +535,13 @@ html {
 
   .receipt-item-detail {
     padding-left: 8px;
+  }
+
+  .receipt-item-detail > :last-child,
+  .receipt-total > :last-child,
+  .receipt-summary > :last-child {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .receipt-total {
