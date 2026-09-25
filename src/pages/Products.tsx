@@ -717,7 +717,6 @@ export default function Products() {
                       value={stockUnit}
                       options={unitOptions}
                       onChange={handleStockUnitChange}
-                      native
                       disabled={Boolean(editing)}
                       aria-label="Satuan stok"
                     />
@@ -783,7 +782,6 @@ export default function Products() {
                             : price
                         )))
                       }}
-                      native
                       disabled={Boolean(editing)}
                       aria-label="Satuan harga modal"
                     />
@@ -827,7 +825,6 @@ export default function Products() {
                         value={pr.unit}
                         options={unitOptions}
                         onChange={(value) => updatePrice(idx, 'unit', value)}
-                        native
                         disabled={editingPricesOnly}
                         aria-label={`Satuan harga jual ${idx + 1}`}
                       />
