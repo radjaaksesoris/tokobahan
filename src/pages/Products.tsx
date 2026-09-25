@@ -446,17 +446,17 @@ export default function Products() {
           </CardContent>
         </Card>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
-          <div className="overflow-x-auto">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm lg:overflow-visible">
+          <div className="overflow-x-auto lg:overflow-visible">
             <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
-              <thead className="sticky top-0 z-20 border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
+              <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-[7%] px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
-                  <th className="w-[27%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
-                  <th className="w-[14%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
-                  <th className="w-[18%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
-                  <th className="w-[20%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
-                  <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
+                  <th className="sticky top-0 z-20 w-[7%] bg-primary px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
+                  <th className="sticky top-0 z-20 w-[27%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
+                  <th className="sticky top-0 z-20 w-[14%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
+                  <th className="sticky top-0 z-20 w-[18%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
+                  <th className="sticky top-0 z-20 w-[20%] bg-primary px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
+                  <th className="sticky top-0 z-20 w-[14%] whitespace-nowrap bg-primary px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
