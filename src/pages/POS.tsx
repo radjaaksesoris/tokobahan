@@ -72,6 +72,7 @@ export default function POS() {
   const [selectedUnit, setSelectedUnit] = useState<UnitType>('satuan')
   const [qty, setQty] = useState(1)
   const [qtyInput, setQtyInput] = useState('1')
+  const [salePriceInput, setSalePriceInput] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
   const initialLoadComplete = useRef(false)
@@ -341,11 +342,17 @@ export default function POS() {
     setSelectedUnit(firstUnit as UnitType)
     setQty(1)
     setQtyInput('1')
+    setSalePriceInput(String(getPriceForUnit(product, firstUnit).price))
   }
 
   function confirmAdd() {
     if (!selectedProduct) return
     const quantity = Math.min(selectedProduct.stock, Math.max(1, Number(qtyInput) || 1))
+    const salePrice = Number(salePriceInput)
+    if (!Number.isFinite(salePrice) || salePrice <= selectedProduct.cost_price) {
+      toast.error(`Harga jual harus lebih besar dari HPP (${formatCurrency(selectedProduct.cost_price)})`)
+      return
+    }
     setQty(quantity)
     setQtyInput(String(quantity))
     if (selectedProduct.stock <= 0) {
@@ -360,7 +367,7 @@ export default function POS() {
       toast.error(`Stok ${selectedProduct.name} hanya tersisa ${Math.max(0, selectedProduct.stock - existingQuantity)}`)
       return
     }
-    addItem(selectedProduct, selectedUnit, quantity)
+    addItem(selectedProduct, selectedUnit, quantity, salePrice)
     setSelectedProduct(null)
     setSearch('')
     setActiveProductIndex(-1)
@@ -739,7 +746,11 @@ export default function POS() {
                   ).map((u) => (
                     <button
                       key={u}
-                      onClick={() => setSelectedUnit(u as UnitType)}
+                      onClick={() => {
+                        const nextUnit = u as UnitType
+                        setSelectedUnit(nextUnit)
+                        setSalePriceInput(String(getPriceForUnit(selectedProduct, nextUnit).price))
+                      }}
                       className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
                         selectedUnit === u
                           ? 'border-teal-600 bg-teal-50 text-teal-700'
@@ -750,7 +761,7 @@ export default function POS() {
                     </button>
                   ))}
                 </div>
-                <div className="shrink-0 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-center">
+                <div className="shrink-0 rounded-lg border border-teal-600 bg-teal-50 px-3 py-2 text-center">
                   <p className="text-[10px] text-muted-foreground">Sisa stok</p>
                   <p className={`text-sm font-bold ${
                     selectedProduct.stock - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
@@ -808,10 +819,37 @@ export default function POS() {
                 </Button>
               </div>
 
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-slate-50 p-3 text-center">
+                  <p className="text-xs text-muted-foreground">HPP</p>
+                  <p className="text-lg font-bold text-ink">
+                    {formatCurrency(selectedProduct.cost_price)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 text-center">
+                  <label htmlFor="sale-price" className="mb-1 block text-xs text-muted-foreground">Harga Jual</label>
+                  <Input
+                    id="sale-price"
+                    type="text"
+                    inputMode="numeric"
+                    value={salePriceInput}
+                    onChange={(event) => setSalePriceInput(event.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        confirmAdd()
+                      }
+                    }}
+                    className="h-9 px-2 text-center text-lg font-bold text-teal-700"
+                    aria-label="Harga jual"
+                  />
+                </div>
+              </div>
+
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-teal-700">
-                  {formatCurrency(getPriceForUnit(selectedProduct, selectedUnit).price * qty)}
+                  {formatCurrency((Number(salePriceInput) || 0) * (Number(qtyInput) || 0))}
                 </p>
               </div>
 

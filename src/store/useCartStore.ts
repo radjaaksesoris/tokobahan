@@ -4,7 +4,7 @@ import { UNIT_FACTORS } from '@/types'
 
 interface CartState {
   items: CartItem[]
-  addItem: (product: Product, unit: UnitType, quantity?: number) => void
+  addItem: (product: Product, unit: UnitType, quantity?: number, unitPrice?: number) => void
   updateQuantity: (productId: string, unit: UnitType, quantity: number) => void
   removeItem: (productId: string, unit: UnitType) => void
   clearCart: () => void
@@ -30,8 +30,9 @@ function getCostForUnit(product: Product) {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
-  addItem: (product, unit, quantity = 1) => {
-    const { price, conversion } = getPriceForUnit(product, unit)
+  addItem: (product, unit, quantity = 1, unitPrice) => {
+    const { price: defaultPrice, conversion } = getPriceForUnit(product, unit)
+    const price = unitPrice ?? defaultPrice
     set((state) => {
       const existing = state.items.find(
         (i) => i.product.id === product.id && i.unit === unit
