@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
-import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements, syncQueuedSettlements } from '@/lib/offlineSettlements'
+import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements } from '@/lib/offlineSettlements'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history' | 'customer-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -81,10 +81,8 @@ export default function Settlements() {
 
   useEffect(() => {
     void refreshQueue()
-    const update = () => { void refreshQueue(); if (navigator.onLine) void syncQueuedSettlements().then(() => refreshQueue()) }
-    window.addEventListener('online', update)
-    const unsubscribe = subscribeOfflineSettlements(update)
-    return () => { window.removeEventListener('online', update); unsubscribe() }
+    const unsubscribe = subscribeOfflineSettlements(() => { void refreshQueue() })
+    return () => { unsubscribe() }
   }, [])
 
   async function load() {

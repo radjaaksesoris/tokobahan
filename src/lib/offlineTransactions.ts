@@ -17,12 +17,14 @@ export interface QueuedTransaction {
   attempts: number
   lastError: string | null
   createdAt: string
+  syncStartedAt?: string
 }
 
 const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-transactions'
 const DB_VERSION = 2
 const BATCH_SIZE = 5
+const STALE_SYNC_TIMEOUT_MS = 5 * 60_000
 let syncPromise: Promise<SyncResult> | null = null
 const listeners = new Set<() => void>()
 
@@ -104,7 +106,27 @@ function isRetryableError(error: { message?: string } | null) {
 }
 
 async function syncOne(transaction: QueuedTransaction) {
-  await updateTransaction(transaction.id, { status: 'syncing' })
+  await updateTransaction(transaction.id, { status: 'syncing', syncStartedAt: new Date().toISOString() })
+  const { data: existingSale, error: lookupError } = await supabase
+    .from('sales')
+    .select('id')
+    .eq('invoice_no', transaction.invoiceNo)
+    .maybeSingle()
+  if (lookupError) {
+    await updateTransaction(transaction.id, {
+      status: 'failed',
+      attempts: transaction.attempts + 1,
+      lastError: lookupError.message,
+      syncStartedAt: undefined,
+    })
+    return false
+  }
+  if (existingSale) {
+    await withStore('readwrite', (store) => store.delete(transaction.id))
+    notify()
+    return true
+  }
+
   const { error } = await supabase.rpc('checkout_sale', {
     p_invoice_no: transaction.invoiceNo,
     p_total_amount: transaction.totalAmount,
@@ -125,13 +147,28 @@ async function syncOne(transaction: QueuedTransaction) {
     status: 'failed',
     attempts: transaction.attempts + 1,
     lastError: error.message,
+    syncStartedAt: undefined,
   })
   return false
+}
+
+async function recoverStaleTransactions() {
+  const transactions = await getQueuedTransactions()
+  const stale = transactions.filter((transaction) => {
+    if (transaction.status !== 'syncing') return false
+    const startedAt = Date.parse(transaction.syncStartedAt || transaction.createdAt)
+    return !Number.isFinite(startedAt) || Date.now() - startedAt >= STALE_SYNC_TIMEOUT_MS
+  })
+  await Promise.all(stale.map((transaction) => updateTransaction(transaction.id, {
+    status: 'pending',
+    syncStartedAt: undefined,
+  })))
 }
 
 export async function syncQueuedTransactions(): Promise<SyncResult> {
   if (syncPromise) return syncPromise
   syncPromise = (async () => {
+    await recoverStaleTransactions()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
     const transactions = (await getQueuedTransactions())
       .filter((transaction) => transaction.status !== 'syncing')

@@ -13,12 +13,14 @@ export interface QueuedSettlement {
   attempts: number
   lastError: string | null
   createdAt: string
+  syncStartedAt?: string
 }
 
 const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-settlements'
 const DB_VERSION = 2
 const BATCH_SIZE = 5
+const STALE_SYNC_TIMEOUT_MS = 5 * 60_000
 const listeners = new Set<() => void>()
 let syncPromise: Promise<SyncResult> | null = null
 export interface SyncResult { synced: number; failed: number }
@@ -61,16 +63,34 @@ async function updateSettlement(id: string, patch: Partial<QueuedSettlement>) {
   await withStore('readwrite', (store) => store.put({ ...current, ...patch })); notify()
 }
 async function syncOne(record: QueuedSettlement) {
-  await updateSettlement(record.id, { status: 'syncing' })
+  await updateSettlement(record.id, { status: 'syncing', syncStartedAt: new Date().toISOString() })
   const result = record.kind === 'vendor'
     ? await supabase.rpc('pay_vendor_debt', { p_allocations: (record.payload as VendorSettlementPayload).allocations })
     : await supabase.rpc('pay_customer_debt', { p_sale_id: (record.payload as CustomerSettlementPayload).sale_id, p_amount: (record.payload as CustomerSettlementPayload).amount })
   if (!result.error) { await withStore('readwrite', (store) => store.delete(record.id)); notify(); return true }
-  await updateSettlement(record.id, { status: 'failed', attempts: record.attempts + 1, lastError: result.error.message }); return false
+  await updateSettlement(record.id, {
+    status: 'failed',
+    attempts: record.attempts + 1,
+    lastError: result.error.message,
+    syncStartedAt: undefined,
+  }); return false
+}
+async function recoverStaleSettlements() {
+  const records = await getQueuedSettlements()
+  const stale = records.filter((record) => {
+    if (record.status !== 'syncing') return false
+    const startedAt = Date.parse(record.syncStartedAt || record.createdAt)
+    return !Number.isFinite(startedAt) || Date.now() - startedAt >= STALE_SYNC_TIMEOUT_MS
+  })
+  await Promise.all(stale.map((record) => updateSettlement(record.id, {
+    status: 'pending',
+    syncStartedAt: undefined,
+  })))
 }
 export async function syncQueuedSettlements(): Promise<SyncResult> {
   if (syncPromise) return syncPromise
   syncPromise = (async () => {
+    await recoverStaleSettlements()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
     const records = (await getQueuedSettlements()).filter((record) => record.status !== 'syncing').sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     let synced = 0

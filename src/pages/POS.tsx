@@ -34,7 +34,6 @@ import {
   removeQueuedTransaction,
   retryFailedTransactions,
   subscribeOfflineTransactions,
-  syncQueuedTransactions,
   type QueuedTransaction,
 } from '@/lib/offlineTransactions'
 
@@ -165,33 +164,20 @@ export default function POS() {
   }
 
   async function refreshQueue() {
-    setQueuedTransactions(await getQueuedTransactions())
+    const transactions = await getQueuedTransactions()
+    setQueuedTransactions(transactions)
+    setIsSyncing(transactions.some((transaction) => transaction.status === 'syncing'))
   }
 
   useEffect(() => {
-    const sync = async () => {
-      setIsOnline(navigator.onLine)
-      if (!navigator.onLine) return
-      setIsSyncing(true)
-      try {
-        await syncQueuedTransactions()
-        await refreshQueue()
-      } catch (error) {
-        console.error('Offline transaction sync failed:', error)
-      } finally {
-        setIsSyncing(false)
-      }
-    }
-    refreshQueue().catch(console.error)
-    window.addEventListener('online', sync)
-    window.addEventListener('offline', sync)
-    const interval = window.setInterval(sync, 30_000)
+    const updateOnlineState = () => setIsOnline(navigator.onLine)
+    refreshQueue().catch((error) => console.error('Failed to load offline transaction queue:', error))
+    window.addEventListener('online', updateOnlineState)
+    window.addEventListener('offline', updateOnlineState)
     const unsubscribe = subscribeOfflineTransactions(() => refreshQueue().catch(console.error))
-    sync()
     return () => {
-      window.removeEventListener('online', sync)
-      window.removeEventListener('offline', sync)
-      window.clearInterval(interval)
+      window.removeEventListener('online', updateOnlineState)
+      window.removeEventListener('offline', updateOnlineState)
       unsubscribe()
     }
   }, [])
