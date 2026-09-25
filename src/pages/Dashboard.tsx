@@ -293,10 +293,10 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-7">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-5 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-end sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Transaksi Hari Ini</h2>
-          <p className="mt-1 text-sm font-medium text-primary">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Transaksi Hari Ini</h2>
+          <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button
