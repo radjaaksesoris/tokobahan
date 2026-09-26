@@ -56,6 +56,7 @@ export default function Settings() {
   const [unitName, setUnitName] = useState('')
   const [unitLoading, setUnitLoading] = useState(false)
   const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
 
   async function loadVendors() {
     const { data, error } = await supabase.from('vendors').select('id, name').order('name')
@@ -381,9 +382,30 @@ export default function Settings() {
       <div className="sticky top-[-1rem] z-30 flex flex-col justify-center -mx-4 -mt-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
         <h2 className="text-3xl font-bold tracking-tight text-white">Pengaturan</h2>
         <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
+        <nav className="mt-4 -mx-1 flex gap-1 overflow-x-auto pb-1" aria-label="Bagian pengaturan" role="tablist">
+          {([
+            ['master', 'Data dasar'],
+            ['stock', 'Stok'],
+            ['backup', 'Backup'],
+            ['notification', 'Notifikasi'],
+          ] as const).map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+              className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                activeTab === tab ? 'bg-surface text-ink shadow-sm' : 'text-stone-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      <section aria-labelledby="master-data-heading" className="space-y-3">
+      {activeTab === 'master' && <section aria-labelledby="master-data-heading" className="space-y-3">
         <div>
           <h3 id="master-data-heading" className="text-lg font-bold tracking-tight text-ink">Data dasar dan akses admin</h3>
           <p className="mt-1 text-sm text-muted-foreground">Kelola data yang dipakai saat membuat produk, mencatat transaksi, dan menjaga aplikasi.</p>
@@ -516,9 +538,9 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
-      </section>
+      </section>}
 
-      <section aria-labelledby="stock-heading" className="space-y-3">
+      {activeTab === 'stock' && <section aria-labelledby="stock-heading" className="space-y-3">
       <div>
         <h3 id="stock-heading" className="text-lg font-bold tracking-tight text-ink">Stok</h3>
         <p className="mt-1 text-sm text-muted-foreground">Periksa dan sesuaikan stok fisik dengan catatan di aplikasi.</p>
@@ -551,9 +573,9 @@ export default function Settings() {
           </CardContent>
         )}
       </Card>
-      </section>
+      </section>}
 
-      <section aria-labelledby="backup-heading" className="space-y-3">
+      {activeTab === 'backup' && <section aria-labelledby="backup-heading" className="space-y-3">
       <div>
         <h3 id="backup-heading" className="text-lg font-bold tracking-tight text-ink">Backup dan pemulihan</h3>
         <p className="mt-1 text-sm text-muted-foreground">Simpan salinan data sebelum melakukan perubahan besar atau pindah perangkat.</p>
@@ -641,9 +663,9 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-      </section>
+      </section>}
 
-      <section aria-labelledby="notification-heading" className="space-y-3">
+      {activeTab === 'notification' && <section aria-labelledby="notification-heading" className="space-y-3">
       <div>
         <h3 id="notification-heading" className="text-lg font-bold tracking-tight text-ink">Notifikasi</h3>
         <p className="mt-1 text-sm text-muted-foreground">Pilih cara aplikasi memberi tahu admin saat stok perlu diperiksa.</p>
@@ -718,7 +740,7 @@ export default function Settings() {
         </CardContent>
       </Card>
       </div>
-      </section>
+      </section>}
 
     </div>
   )
