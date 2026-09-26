@@ -155,7 +155,7 @@ BEGIN
     calculated_total_amount := calculated_total_amount + ROUND((item->>'unit_price')::NUMERIC * requested_quantity, 2);
   END LOOP;
 
-  IF paid > calculated_total_amount THEN
+  IF p_payment_method = 'credit' AND paid > calculated_total_amount THEN
     RAISE EXCEPTION 'Nominal pembayaran tidak valid';
   END IF;
 
