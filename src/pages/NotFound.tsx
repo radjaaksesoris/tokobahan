@@ -10,7 +10,7 @@ export default function NotFound() {
           <div className="mb-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-accent">
             <PackageSearch className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">Radja Aksesoris</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">RAJA Aksesoris</p>
           <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Halaman tidak ditemukan</h1>
           <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
             Alamat yang dibuka tidak tersedia atau sudah dipindahkan. Kembali ke ruang kerja untuk melanjutkan.

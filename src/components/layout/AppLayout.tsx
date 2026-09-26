@@ -69,10 +69,10 @@ export function AppLayout() {
       >
         <div className="hidden h-[4.5rem] items-center gap-3 border-b border-white/10 px-4 lg:flex">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink shadow-[0_0_0_4px_rgba(228,168,83,0.14)]">
-            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Radja Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
+            <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="RAJA Aksesoris" className="h-9 w-9 rounded-xl object-cover" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RADJA AKSESORIS</h1>
+            <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RAJA AKSESORIS</h1>
             <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.12em] text-accent">Aksesoris konveksi</p>
           </div>
         </div>

@@ -541,10 +541,10 @@ export default function POS() {
           <div className="flex items-center gap-3">
             <img
               src={`${import.meta.env.BASE_URL}icon-192.png`}
-              alt="Radja Aksesoris"
+              alt="RAJA Aksesoris"
               className="h-8 w-8 rounded-lg object-cover shadow-sm lg:h-10 lg:w-10 lg:rounded-xl"
             />
-            <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RADJA AKSESORIS</h2>
+            <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RAJA AKSESORIS</h2>
           </div>
           {(queuedTransactions.length > 0 || !isOnline || isSyncing) && (
             <button
@@ -1062,9 +1062,9 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
     <article className="receipt-document">
       <header className="receipt-header">
         <div className="receipt-brand">
-          <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo Radja Aksesoris" />
+          <img src={`${import.meta.env.BASE_URL}logo-RAJA.png`} alt="Logo RAJA Aksesoris" />
           <div className="receipt-brand-copy">
-            <strong>RADJA AKSESORIS</strong>
+            <strong>RAJA AKSESORIS</strong>
             <span>Konveksi</span>
           </div>
         </div>
