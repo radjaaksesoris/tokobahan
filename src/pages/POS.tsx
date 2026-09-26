@@ -109,9 +109,7 @@ export default function POS() {
     Math.max(0, product.stock - getReservedQuantity(product.id))
 
   function createReceipt(invoiceNo: string): ReceiptData {
-    const amountPaid = paymentMethod === 'cash' || paymentMethod === 'credit'
-      ? Number(cashReceived) || 0
-      : totals.subtotal
+    const amountPaid = paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal
     return {
       invoiceNo,
       createdAt: new Date().toISOString(),
@@ -434,9 +432,7 @@ export default function POS() {
         totalProfit: totals.totalProfit,
         paymentMethod,
         customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
-        amountPaid: paymentMethod === 'cash' || paymentMethod === 'credit'
-          ? Number(cashReceived) || 0
-          : totals.subtotal,
+        amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
         cashierId: profile?.id || null,
         items: saleItems,
       })
@@ -470,9 +466,7 @@ export default function POS() {
           p_cashier_id: profile?.id || null,
           p_items: saleItems,
           p_customer_name: paymentMethod === 'credit' ? customerName.trim() : null,
-          p_amount_paid: paymentMethod === 'cash' || paymentMethod === 'credit'
-            ? Number(cashReceived) || 0
-            : totals.subtotal,
+          p_amount_paid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
     })
     if (checkoutError) {
       if (isOfflineError(checkoutError)) {

@@ -7,8 +7,8 @@
 6 silly config load:file:/usr/local/etc/npmrc
 7 verbose title npm exec tsc -b --pretty false
 8 verbose argv "exec" "--" "tsc" "-b" "--pretty" "false"
-9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-26T09_43_56_754Z-
-10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-26T09_43_56_754Z-debug-0.log
+9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-26T09_26_49_340Z-
+10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-26T09_26_49_340Z-debug-0.log
 11 silly logfile start cleaning logs, removing 2 files
 12 silly logfile done cleaning log files
 13 verbose cwd /Volumes/Macintosh HD - Data 1/tokobahan
