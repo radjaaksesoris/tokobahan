@@ -501,19 +501,19 @@ export default function Products() {
             <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-[7%] px-0.5 py-2 font-semibold lg:w-12 lg:px-3">No.</th>
-                  <th className="w-[27%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Produk</th>
-                  <th className="w-[14%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Stok</th>
-                  <th className="w-[18%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Modal</th>
-                  <th className="w-[20%] px-0.5 py-2 font-semibold lg:w-auto lg:px-3">Harga jual</th>
-                  <th className="w-[14%] whitespace-nowrap px-0.5 py-2 font-semibold lg:w-28 lg:px-3">Aksi</th>
+                  <th className="w-[7%] px-0.5 py-1.5 font-semibold lg:w-12 lg:px-2">No.</th>
+                  <th className="w-[27%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Produk</th>
+                  <th className="w-[14%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Stok</th>
+                  <th className="w-[18%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Modal</th>
+                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Harga jual</th>
+                  <th className="w-[14%] whitespace-nowrap px-0.5 py-1.5 font-semibold lg:w-28 lg:px-2">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {products.map((p, index) => (
                   <tr key={p.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
-                    <td className="px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">{page * pageSize + index + 1}</td>
-                    <td className="min-w-0 px-0.5 py-2 text-center lg:px-3">
+                    <td className="px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">{page * pageSize + index + 1}</td>
+                    <td className="min-w-0 px-0.5 py-1.5 text-center lg:px-2">
                       <div className="flex min-w-0 items-center justify-center">
                         <div className="min-w-0 text-center">
                           <p className="truncate font-medium text-ink/90">{p.name}</p>
@@ -521,16 +521,16 @@ export default function Products() {
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">
+                    <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
                         {Math.floor(p.stock / (p.stock_conversion || 1))}
                       </span>{' '}
                       {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center text-[11px] text-muted-foreground lg:px-3 lg:text-xs">
+                    <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType] || p.cost_unit || 'Satuan'}</span>
                     </td>
-                    <td className="min-w-0 px-0.5 py-2 text-center lg:px-3">
+                    <td className="min-w-0 px-0.5 py-1.5 text-center lg:px-2">
                       <div className="flex flex-wrap justify-center gap-1">
                         {p.prices?.map((pr) => (
                           <span key={pr.unit} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -539,7 +539,7 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-2 text-center lg:px-3">
+                    <td className="whitespace-nowrap px-0.5 py-1.5 text-center lg:px-2">
                       <div className="flex justify-center gap-0 lg:gap-0.5">
                         <Button variant="ghost" size="icon" className="h-10 w-10 lg:h-10 lg:w-10" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
