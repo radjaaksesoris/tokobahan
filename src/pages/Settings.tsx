@@ -198,7 +198,7 @@ export default function Settings() {
     if (permission === 'granted') {
       try {
         await registerPushSubscription()
-        const result = await notifyLowStockPush()
+        const result = await notifyLowStockPush({ force: true })
         if (result.removed) await registerPushSubscription({ force: true })
         toast.success(
           result.sent
@@ -354,7 +354,7 @@ export default function Settings() {
   async function syncNotifications() {
     try {
       await registerPushSubscription()
-      const result = await notifyLowStockPush()
+      const result = await notifyLowStockPush({ force: true })
       if (result.removed) await registerPushSubscription({ force: true })
       toast.success(
         result.sent

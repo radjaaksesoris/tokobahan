@@ -183,8 +183,12 @@ export default function POS() {
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(loadProducts, 250)
-    return () => window.clearTimeout(timer)
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => void loadProducts(controller.signal), 250)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timer)
+    }
   }, [search])
 
   useEffect(() => {
@@ -246,7 +250,7 @@ export default function POS() {
     }
   }, [isOnline, paymentMethod])
 
-  async function loadProducts() {
+  async function loadProducts(signal?: AbortSignal) {
     if (!initialLoadComplete.current) setLoading(true)
     let query = supabase
       .from('products')
@@ -256,7 +260,8 @@ export default function POS() {
       .limit(100)
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data, error } = await query
+    const { data, error } = await query.abortSignal(signal || new AbortController().signal)
+    if (signal?.aborted) return
     if (error) {
       const cachedProducts = readOfflineCache<Product[]>(POS_CATALOG_CACHE_KEY)
       if (cachedProducts) {

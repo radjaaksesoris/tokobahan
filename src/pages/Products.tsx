@@ -134,11 +134,15 @@ export default function Products() {
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(load, 250)
-    return () => window.clearTimeout(timer)
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => void load(controller.signal), 250)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timer)
+    }
   }, [search, page, pageSize])
 
-  async function load() {
+  async function load(signal?: AbortSignal) {
     const requestId = ++loadRequestId.current
     const term = search.trim().replace(/[%_,]/g, ' ')
     const cacheKey = `products:${pageSize}:${page}:${term.toLowerCase()}`
@@ -158,7 +162,8 @@ export default function Products() {
       .order('name')
       .range(page * pageSize, (page + 1) * pageSize)
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data, error } = await query
+    const { data, error } = await query.abortSignal(signal || new AbortController().signal)
+    if (signal?.aborted) return
     if (requestId !== loadRequestId.current) return
     if (error) {
       toast.error(error.message)

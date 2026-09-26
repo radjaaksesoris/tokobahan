@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase'
 
 const SOUND_ENABLED_KEY = 'tokobahan.low-stock-sound-enabled'
+const PUSH_COOLDOWN_KEY = 'tokobahan.low-stock-push-last-request'
+const PUSH_COOLDOWN_MS = 5 * 60 * 1000
 
 declare global {
   interface Window {
@@ -104,7 +106,14 @@ export async function showLowStockNotification(product: {
   })
 }
 
-export async function notifyLowStockPush() {
+export async function notifyLowStockPush(options: { force?: boolean } = {}) {
+  if (!options.force) {
+    const lastRequest = Number(window.localStorage.getItem(PUSH_COOLDOWN_KEY) || 0)
+    if (Number.isFinite(lastRequest) && Date.now() - lastRequest < PUSH_COOLDOWN_MS) {
+      return { sent: 0, removed: 0, skipped: true }
+    }
+  }
+  window.localStorage.setItem(PUSH_COOLDOWN_KEY, String(Date.now()))
   const { data, error } = await supabase.functions.invoke('notify-low-stock', {
     body: {},
   })
@@ -123,5 +132,5 @@ export async function notifyLowStockPush() {
     }
     throw error
   }
-  return data as { sent?: number; removed?: number }
+  return { ...(data as { sent?: number; removed?: number }), skipped: false }
 }

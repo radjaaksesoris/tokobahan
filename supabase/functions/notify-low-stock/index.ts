@@ -96,10 +96,24 @@ Deno.serve(async (request) => {
     .select('id, endpoint, p256dh, auth')
   if (subscriptionsError) return jsonResponse({ error: subscriptionsError.message }, 500)
 
+  const cooldownSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+  const { data: recentLogs, error: logsError } = await supabase
+    .from('low_stock_notification_log')
+    .select('product_id, subscription_id')
+    .in('product_id', lowStock.map((product) => product.id))
+    .gte('notified_at', cooldownSince)
+  if (logsError) return jsonResponse({ error: logsError.message }, 500)
+
+  const recentlyNotified = new Set(
+    (recentLogs || []).map((log) => `${log.product_id}:${log.subscription_id}`),
+  )
+
   let sent = 0
   let removed = 0
   for (const subscription of subscriptions || []) {
     for (const product of lowStock) {
+      const notificationKey = `${product.id}:${subscription.id}`
+      if (recentlyNotified.has(notificationKey)) continue
       try {
         await webpush.sendNotification({
           endpoint: subscription.endpoint,
@@ -110,6 +124,16 @@ Deno.serve(async (request) => {
           tag: `low-stock-${product.id}`,
           url: '/',
         }))
+        const { error: logError } = await supabase.from('low_stock_notification_log').upsert({
+          product_id: product.id,
+          subscription_id: subscription.id,
+          notified_at: new Date().toISOString(),
+        }, { onConflict: 'product_id,subscription_id' })
+        if (logError) {
+          console.error('Notification log write failed:', logError)
+          continue
+        }
+        recentlyNotified.add(notificationKey)
         sent += 1
       } catch (error) {
         if (isExpiredPushError(error)) {
