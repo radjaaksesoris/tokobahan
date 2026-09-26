@@ -55,7 +55,7 @@ export function AppLayout() {
   })
 
   return (
-    <div className="mobile-page-background flex h-full min-h-screen bg-canvas">
+    <div className="mobile-page-background flex min-h-dvh bg-canvas">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
         Lewati ke konten utama
       </a>
@@ -133,8 +133,8 @@ export function AppLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <main id="main-content" className="flex-1 overflow-auto px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
           <Outlet />
         </main>
       </div>
