@@ -446,7 +446,11 @@ export default function Products() {
         </div>
         <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
           <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
-            <Button variant="outline" className="h-11 shrink-0 px-3" onClick={() => navigate('/products/history')}>
+            <Button
+              variant="outline"
+              className="h-11 shrink-0 border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+              onClick={() => navigate('/products/history')}
+            >
               <History className="h-4 w-4" />
               Riwayat Input
             </Button>

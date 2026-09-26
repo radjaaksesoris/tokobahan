@@ -106,7 +106,11 @@ export default function StockHistory() {
           <p className="mt-1 text-sm text-accent">Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/products')}>
+          <Button
+            variant="outline"
+            className="border-white/25 bg-white text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+            onClick={() => navigate('/products')}
+          >
             Produk
           </Button>
           <div className="relative h-10 w-36 shrink-0 rounded-xl border border-border bg-surface sm:w-44">
