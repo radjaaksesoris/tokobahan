@@ -228,12 +228,12 @@ export default function Reports() {
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <Card className="overflow-hidden border-primary/15 bg-primary text-white shadow-[0_16px_32px_rgba(33,108,104,0.16)]">
-        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="max-w-xl">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Kesimpulan periode ini</p>
             <h3 className="mt-2 text-2xl font-bold tracking-tight">Laba bersih {formatCurrency(totalProfit)}</h3>
           </div>
-          <div className="shrink-0 rounded-2xl bg-white/10 px-5 py-4 sm:min-w-44">
+          <div className="shrink-0 rounded-2xl bg-white/10 px-4 py-3 sm:min-w-44">
             <div className="flex items-center gap-2 text-sm text-white/75">
               <TrendingUp className="h-4 w-4" /> Margin laba
             </div>
