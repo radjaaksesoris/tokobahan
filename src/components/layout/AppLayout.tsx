@@ -134,7 +134,7 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex flex-1 flex-col min-w-0">
-        <main id="main-content" className="flex-1 overflow-auto px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(6rem+env(safe-area-inset-bottom))] lg:p-8">
+        <main id="main-content" className="flex-1 overflow-auto px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
           <Outlet />
         </main>
       </div>
