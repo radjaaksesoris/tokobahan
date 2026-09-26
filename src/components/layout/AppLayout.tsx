@@ -10,49 +10,33 @@ import {
   Settings,
   WalletCards,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { CurrentDate } from '@/components/layout/CurrentDate'
-import type { UserRole } from '@/types'
 
-const navItems: { to: string; icon: typeof LayoutDashboard; label: string; roles: UserRole[]; className: string }[] = [
-  { to: '/pos', icon: ShoppingCart, label: 'Kasir', roles: ['admin', 'cashier'], className: '' },
-  { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', roles: ['admin', 'cashier', 'monitor'], className: '' },
-  { to: '/transactions', icon: History, label: 'Riwayat Transaksi', roles: ['admin', 'monitor'], className: '' },
-  { to: '/products', icon: Package, label: 'Produk', roles: ['admin', 'cashier'], className: '' },
-  { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', roles: ['admin', 'cashier'], className: '' },
-  { to: '/reports', icon: BarChart3, label: 'Laporan', roles: ['admin', 'monitor'], className: '' },
-  { to: '/settings', icon: Settings, label: 'Pengaturan', roles: ['admin'], className: '' },
+const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
+  { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
+  { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', className: '' },
+  { to: '/transactions', icon: History, label: 'Riwayat Transaksi', className: '' },
+  { to: '/products', icon: Package, label: 'Produk', className: '' },
+  { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', className: '' },
+  { to: '/reports', icon: BarChart3, label: 'Laporan', className: '' },
+  { to: '/settings', icon: Settings, label: 'Pengaturan', className: '' },
 ]
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 1023px)').matches)
-  const { signOut, isRole } = useAuthStore()
+  const signOut = useAuthStore((s) => s.signOut)
   const navigate = useNavigate()
   const location = useLocation()
   const isPosRoute = location.pathname.endsWith('/pos')
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 1023px)')
-    const update = () => setIsMobile(mediaQuery.matches)
-    update()
-    mediaQuery.addEventListener('change', update)
-    return () => mediaQuery.removeEventListener('change', update)
-  }, [])
 
   const handleLogout = async () => {
     await signOut()
     navigate('/login')
   }
-
-  const filteredNav = navItems.filter((item) => {
-    if (!isRole(...item.roles)) return false
-    if (isMobile) return item.to === '/' || item.to === '/transactions' || item.to === '/settlements' || item.to === '/reports'
-    return true
-  })
 
   return (
     <div className="mobile-page-background flex min-h-dvh bg-canvas">
@@ -78,7 +62,7 @@ export function AppLayout() {
         </div>
 
         <nav className="relative z-10 flex w-full flex-1 overflow-hidden p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
-          {filteredNav.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -87,7 +71,6 @@ export function AppLayout() {
                 cn(
                   'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
                   item.className,
-                  item.to === '/pos' && 'hidden lg:flex',
                   'lg:px-3',
                   isActive
                     ? 'bg-surface text-ink shadow-[0_8px_20px_rgba(32,42,46,0.12)]'

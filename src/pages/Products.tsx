@@ -942,7 +942,7 @@ export default function Products() {
                             </CardHeader>
                             <CardContent className="space-y-4 pt-4">
                               <p className="text-sm text-muted-foreground">
-                                Produk akan disembunyikan dari kasir. Riwayat transaksi tetap tersimpan.
+                                Produk akan disembunyikan dari POS. Riwayat transaksi tetap tersimpan.
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 Ketik <strong>{deleteTarget.name}</strong> untuk melanjutkan.

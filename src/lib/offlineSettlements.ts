@@ -7,6 +7,7 @@ export interface VendorSettlementPayload { allocations: Array<{ stock_batch_id: 
 export interface CustomerSettlementPayload { sale_id: string; amount: number }
 export interface QueuedSettlement {
   id: string
+  userId?: string
   idempotencyKey?: string
   kind: SettlementKind
   payload: VendorSettlementPayload | CustomerSettlementPayload
@@ -56,10 +57,13 @@ export async function getQueuedSettlements() { return (await withStore<QueuedSet
 export async function enqueueSettlement(
   kind: SettlementKind,
   payload: QueuedSettlement['payload'],
+  userId: string,
   idempotencyKey = crypto.randomUUID(),
 ) {
+  if (!userId) throw new Error('Akun administrator tidak ditemukan')
   const record: QueuedSettlement = {
     id: crypto.randomUUID(),
+    userId,
     idempotencyKey,
     kind,
     payload,
@@ -124,26 +128,31 @@ async function recoverStaleSettlements() {
     syncStartedAt: undefined,
   })))
 }
-export async function syncQueuedSettlements(): Promise<SyncResult> {
+export async function syncQueuedSettlements(userId: string): Promise<SyncResult> {
+  if (!userId) throw new Error('Akun administrator tidak ditemukan')
   if (syncPromise) return syncPromise
   syncPromise = (async () => {
     await recoverStaleSettlements()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
     const records = (await getQueuedSettlements())
-      .filter((record) => record.status !== 'syncing')
+      .filter((record) => record.status !== 'syncing' && record.userId === userId)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .slice(0, BATCH_SIZE)
     let synced = 0
     for (const record of records) { if (await syncOne(record)) synced += 1; if (!navigator.onLine) break }
-    return { synced, failed: (await getQueuedSettlements()).filter((record) => record.status === 'failed').length }
+    return {
+      synced,
+      failed: (await getQueuedSettlements()).filter((record) => record.userId === userId && record.status === 'failed').length,
+    }
   })().finally(() => { syncPromise = null })
   return syncPromise
 }
-export async function retryFailedSettlements() {
+export async function retryFailedSettlements(userId: string) {
+  if (!userId) throw new Error('Akun administrator tidak ditemukan')
   const failed = (await getQueuedSettlements())
-    .filter((record) => record.status === 'failed')
+    .filter((record) => record.userId === userId && record.status === 'failed')
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .slice(0, BATCH_SIZE)
   await Promise.all(failed.map((record) => updateSettlement(record.id, { status: 'pending', lastError: null })))
-  return syncQueuedSettlements()
+  return syncQueuedSettlements(userId)
 }

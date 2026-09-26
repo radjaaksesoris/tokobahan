@@ -13,19 +13,19 @@ export interface Database {
         Row: {
           id: string
           full_name: string
-          role: 'admin' | 'cashier' | 'monitor'
+          role: 'admin'
           avatar_url: string | null
           created_at: string
         }
         Insert: {
           id: string
           full_name: string
-          role?: 'admin' | 'cashier' | 'monitor'
+          role?: 'admin'
           avatar_url?: string | null
         }
         Update: {
           full_name?: string
-          role?: 'admin' | 'cashier' | 'monitor'
+          role?: 'admin'
           avatar_url?: string | null
         }
         Relationships: []

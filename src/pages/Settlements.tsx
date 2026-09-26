@@ -16,6 +16,7 @@ import {
   syncQueuedSettlements,
 } from '@/lib/offlineSettlements'
 import { isOfflineError } from '@/lib/offlineTransactions'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history' | 'customer-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -68,6 +69,7 @@ type CustomerPaymentHistory = {
 const PAGE_SIZE = 50
 
 export default function Settlements() {
+  const administratorId = useAuthStore((state) => state.user?.id)
   const [tab, setTab] = useState<Tab>('vendor')
   const [debts, setDebts] = useState<Debt[]>([])
   const [payment, setPayment] = useState<Record<string, string>>({})
@@ -81,17 +83,22 @@ export default function Settlements() {
   const [customerPaymentHistory, setCustomerPaymentHistory] = useState<CustomerPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingSettlements, setPendingSettlements] = useState(0)
+  const [unmatchedSettlements, setUnmatchedSettlements] = useState(0)
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [pendingSettlement, setPendingSettlement] = useState<PendingSettlement | null>(null)
 
-  async function refreshQueue() { setPendingSettlements((await getQueuedSettlements()).filter((item) => item.status !== 'syncing').length) }
+  async function refreshQueue() {
+    const records = await getQueuedSettlements()
+    setPendingSettlements(records.filter((item) => item.userId === administratorId && item.status !== 'syncing').length)
+    setUnmatchedSettlements(records.filter((item) => item.userId !== administratorId).length)
+  }
 
   useEffect(() => {
     void refreshQueue()
     const unsubscribe = subscribeOfflineSettlements(() => { void refreshQueue() })
     return () => { unsubscribe() }
-  }, [])
+  }, [administratorId])
 
   async function load() {
     setLoading(true)
@@ -255,12 +262,13 @@ export default function Settlements() {
     try {
       const kind = tab === 'vendor' ? 'vendor' : 'customer'
       const payload = kind === 'vendor' ? { allocations } : { sale_id: debt.id, amount }
-      const queued = await enqueueSettlement(kind, payload)
+      if (!administratorId) throw new Error('Akun administrator tidak ditemukan')
+      const queued = await enqueueSettlement(kind, payload, administratorId)
       let accepted = true
 
       if (navigator.onLine) {
         try {
-          await syncQueuedSettlements()
+          await syncQueuedSettlements(administratorId)
         } catch (error) {
           console.error('Immediate settlement sync failed:', error)
         }
@@ -289,7 +297,11 @@ export default function Settlements() {
   }
 
   async function retrySettlements() {
-    const result = await retryFailedSettlements()
+    if (!administratorId) {
+      toast.error('Akun administrator tidak ditemukan')
+      return
+    }
+    const result = await retryFailedSettlements(administratorId)
     await refreshQueue(); if (result.failed === 0 && result.synced > 0) { toast.success(`${result.synced} pelunasan berhasil disinkronkan`); void load() }
   }
 
@@ -299,6 +311,7 @@ export default function Settlements() {
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Pelunasan Hutang</h1>
         <p className="mt-1 text-sm text-accent">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
         {pendingSettlements > 0 && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><CloudOff className="h-4 w-4" />{pendingSettlements} pelunasan menunggu sinkronisasi <button className="inline-flex items-center gap-1 underline" onClick={() => void retrySettlements()}><RefreshCw className="h-3 w-3" />Coba lagi</button></div>}
+        {unmatchedSettlements > 0 && <p className="mt-3 text-xs text-amber-700">{unmatchedSettlements} antrean pelunasan lama tidak dikirim otomatis karena akun pembuatnya tidak cocok atau tidak tercatat. Periksa transaksi tersebut secara manual.</p>}
       </div>
       {(tab === 'vendor-history' || tab === 'customer-history') && (
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">

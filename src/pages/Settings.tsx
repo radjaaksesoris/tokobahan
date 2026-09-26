@@ -1,5 +1,4 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
-import { Navigate } from 'react-router-dom'
 import { AlertTriangle, Bell, ChevronDown, ClipboardCheck, Database, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
@@ -24,7 +23,7 @@ const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, na
 const BACKUP_BUCKET = 'operational-backups'
 
 export default function Settings() {
-  const { user, isRole } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [resetting, setResetting] = useState(false)
@@ -143,8 +142,8 @@ export default function Settings() {
   }
 
   useEffect(() => {
-    if (isRole('admin')) void loadCloudBackups()
-  }, [isRole])
+    void loadCloudBackups()
+  }, [])
 
   async function addUnit() {
     const name = unitName.trim()
@@ -172,8 +171,6 @@ export default function Settings() {
       await loadUnits()
     }
   }
-
-  if (!isRole('admin')) return <Navigate to="/" replace />
 
   async function resetDatabase() {
     if (!user?.email) {

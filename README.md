@@ -7,7 +7,7 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 - Multi-satuan harga jual (Satuan, Lusin, Kodi, Gross, Meter, Pack)
 - Harga berbeda per satuan
 - Perhitungan laba/rugi & pendapatan bersih real-time
-- Single device POS + multi-user monitoring (4+ monitor via dashboard)
+- Satu akun administrator untuk seluruh operasional toko
 - Realtime update via Supabase Realtime
 - Deploy mudah via GitHub → Vercel / Netlify
 
@@ -21,7 +21,7 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 | **Dashboard** | KPI hari ini + grafik 7 hari (realtime) |
 | **Produk** | CRUD produk + atur harga per satuan |
 | **Laporan** | Filter hari ini / 7 hari / bulan + riwayat transaksi |
-| **Role** | `admin`, `cashier`, `monitor` |
+| **Akses** | Hanya akun `admin` |
 
 ### Konversi Satuan Default
 - **Satuan** = 1 pcs
@@ -90,22 +90,18 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
 VITE_VAPID_PUBLIC_KEY=BCxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### 4. Buat User
+### 4. Buat Akun Administrator
 
-Buat satu akun Supabase Auth untuk setiap staf melalui Supabase Dashboard →
-Authentication → Users → Add user. Gunakan akun dan password tersendiri; jangan
-berbagi akun agar transaksi tercatat pada staf yang benar. Form login menerima
-email atau ID staf. ID tanpa `@` dipetakan ke `<id>@outlook.com`.
-
-Setelah user dibuat, update role di tabel `profiles`:
+Buat satu akun Supabase Auth melalui Supabase Dashboard → Authentication →
+Users → Add user. Login aplikasi menggunakan email dan password akun ini.
+Setelah user dibuat, ubah role profilnya menjadi `admin` melalui SQL Editor:
 
 ```sql
 UPDATE profiles SET role = 'admin' WHERE id = 'user-uuid';
--- role: admin | cashier | monitor
 ```
 
-Buat akun monitor terpisah untuk perangkat monitoring dan akun cashier khusus
-untuk perangkat kasir.
+Jangan buat akun kasir atau monitor. Akun dengan role lama tetap tersimpan,
+tetapi tidak lagi bisa mengakses data atau menggunakan aplikasi.
 
 ### 5. Jalankan
 
@@ -182,22 +178,18 @@ supabase/
 
 ## Cara Pakai Singkat
 
-1. **Login** sebagai admin/cashier
+1. **Login** sebagai admin
 2. **Produk** → Tambah barang, isi harga modal + harga jual per satuan
 3. **Kasir** → Cari produk → pilih satuan (Lusin/Gross/dll) → qty → Bayar
-4. **Dashboard / Laporan** → Monitor penjualan & laba (bisa dibuka di 4 HP/tablet berbeda secara realtime)
+4. **Dashboard / Laporan** → Pantau penjualan & laba
 
 ## Catatan Penting
 
-- Aplikasi dirancang **single store / single device POS**. Device kasir cukup satu, sisanya monitor via dashboard.
-- Realtime: setiap transaksi langsung muncul di dashboard monitor lain.
+- Aplikasi dirancang untuk **satu administrator**; seluruh menu operasional tersedia dari akun tersebut.
 - Stok otomatis berkurang saat checkout (berdasarkan conversion satuan).
-- Untuk production: aktifkan RLS lebih ketat jika perlu multi-toko.
-- Setelah migration Supabase dijalankan, uji alur tambah stok dan checkout dari aplikasi
-  menggunakan akun cashier sebelum digunakan pada transaksi nyata.
+- Jalankan migration Supabase secara berurutan sebelum memakai aplikasi setelah deploy.
 - Jalankan migration `20260921140000_production_rls_hardening.sql` sebelum production.
-  Migration ini membatasi perubahan produk/kategori ke admin/cashier dan mencegah
-  cashier/monitor mengubah role pengguna melalui API.
+  Migration ini mengaktifkan pemeriksaan role pada operasi database.
 - Jalankan migration `20260923233000_harden_return_adjustment_writes.sql` setelah migration
   retur. Migration ini membatasi penulisan langsung ke tabel retur dan stok opname;
   pencatatan harus melalui RPC yang memeriksa role.
@@ -219,6 +211,10 @@ supabase/
   dan memasukkan refund tunai retur ke laporan arus kas. Backfill retur lama
   mengasumsikan refund pada transaksi non-kredit dibayar tunai penuh; verifikasi
   asumsi ini terhadap buku kas sebelum mengandalkan laporan historis.
+- Jalankan migration `20260926140000_single_admin_access.sql` paling akhir.
+  Migration ini membatasi akses tabel dan RPC ke administrator, menolak akses
+  aplikasi bagi akun non-admin, dan mempertahankan profil serta transaksi historis.
+  Deploy ulang Edge Function `notify-low-stock` agar aturan admin-only ikut aktif.
 - Urutan SQL Editor yang tepat adalah menjalankan seluruh migration yang belum diterapkan
   secara kronologis; untuk rangkaian backup, pastikan `20260921150000_operational_backups.sql`,
   migration restore/expand backup `20260923210000_returns_stock_restore.sql` dan

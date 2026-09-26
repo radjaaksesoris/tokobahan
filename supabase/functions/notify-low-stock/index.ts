@@ -61,8 +61,8 @@ Deno.serve(async (request) => {
       .eq('id', user.id)
       .maybeSingle()
     if (profileError) return jsonResponse({ error: profileError.message }, 500)
-    if (!profile || !['admin', 'cashier'].includes(profile.role)) {
-      return jsonResponse({ error: 'Role tidak diizinkan mengirim notifikasi stok' }, 403)
+    if (!profile || profile.role !== 'admin') {
+      return jsonResponse({ error: 'Hanya administrator yang dapat mengirim notifikasi stok' }, 403)
     }
   } catch (error) {
     console.error('User verification failed:', error)

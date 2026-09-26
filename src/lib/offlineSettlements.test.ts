@@ -39,13 +39,13 @@ describe('offline settlement synchronization', () => {
     const settlement = await enqueueSettlement('customer', {
       sale_id: 'sale-1',
       amount: 2500,
-    })
+    }, 'admin-1')
     rpc.mockResolvedValueOnce({
       data: null,
       error: { message: 'Failed to fetch' },
     })
 
-    const firstAttempt = await syncQueuedSettlements()
+    const firstAttempt = await syncQueuedSettlements('admin-1')
     expect(firstAttempt).toEqual({ synced: 0, failed: 1 })
     expect(rpc).toHaveBeenNthCalledWith(1, 'pay_customer_debt', {
       p_sale_id: 'sale-1',
@@ -53,7 +53,7 @@ describe('offline settlement synchronization', () => {
       p_idempotency_key: settlement.idempotencyKey,
     })
 
-    const secondAttempt = await retryFailedSettlements()
+    const secondAttempt = await retryFailedSettlements('admin-1')
 
     expect(secondAttempt).toEqual({ synced: 1, failed: 0 })
     expect(rpc).toHaveBeenNthCalledWith(2, 'pay_customer_debt', {
@@ -67,10 +67,10 @@ describe('offline settlement synchronization', () => {
   it('returns queued records to failed status when the RPC throws', async () => {
     await enqueueSettlement('vendor', {
       allocations: [{ stock_batch_id: 'batch-1', amount: 1250 }],
-    })
+    }, 'admin-1')
     rpc.mockRejectedValueOnce(new TypeError('Network request failed'))
 
-    const result = await syncQueuedSettlements()
+    const result = await syncQueuedSettlements('admin-1')
     const [queued] = await getQueuedSettlements()
 
     expect(result).toEqual({ synced: 0, failed: 1 })
@@ -79,5 +79,40 @@ describe('offline settlement synchronization', () => {
       attempts: 1,
       lastError: 'Network request failed',
     })
+  })
+
+  it('does not sync settlements created by a different or unknown account', async () => {
+    const foreignSettlement = await enqueueSettlement('customer', {
+      sale_id: 'sale-1',
+      amount: 2500,
+    }, 'admin-2')
+    const legacySettlement = {
+      ...await enqueueSettlement('customer', {
+        sale_id: 'sale-2',
+        amount: 3000,
+      }, 'admin-1'),
+      userId: undefined,
+    }
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('konveksi-pos', 2)
+      request.onsuccess = () => {
+        const database = request.result
+        const transaction = database.transaction('offline-settlements', 'readwrite')
+        transaction.objectStore('offline-settlements').put(legacySettlement)
+        transaction.oncomplete = () => {
+          database.close()
+          resolve()
+        }
+        transaction.onerror = () => reject(transaction.error)
+      }
+      request.onerror = () => reject(request.error)
+    })
+
+    expect(await syncQueuedSettlements('admin-1')).toEqual({ synced: 0, failed: 0 })
+    expect(rpc).not.toHaveBeenCalled()
+    expect(await getQueuedSettlements()).toEqual(expect.arrayContaining([
+      foreignSettlement,
+      legacySettlement,
+    ]))
   })
 })

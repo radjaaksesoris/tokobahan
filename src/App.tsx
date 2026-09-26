@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useState, type ErrorInfo, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, type ErrorInfo, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -10,7 +10,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import Login from '@/pages/Login'
-import type { UserRole } from '@/types'
 
 function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   importer: () => Promise<{ default: T }>,
@@ -112,23 +111,7 @@ function preloadPageChunks() {
   })
 }
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
-  ))
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 1023px)')
-    const update = () => setIsMobile(mediaQuery.matches)
-    update()
-    mediaQuery.addEventListener('change', update)
-    return () => mediaQuery.removeEventListener('change', update)
-  }, [])
-
-  return isMobile
-}
-
-function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: UserRole[] }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore()
 
   if (loading) {
@@ -139,48 +122,43 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
     )
   }
 
-  if (!user) return <Navigate to="/login" replace />
-  if (roles && (!profile || !roles.includes(profile.role))) return <Navigate to="/" replace />
+  if (!user || profile?.role !== 'admin') return <Navigate to="/login" replace />
   return <>{children}</>
-}
-
-function RoleGate({ children, roles, monitoring = false }: { children: React.ReactNode; roles: UserRole[]; monitoring?: boolean }) {
-  const isMobile = useIsMobile()
-  if (isMobile && !monitoring) return <Navigate to="/" replace />
-  return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>
 }
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
   const user = useAuthStore((s) => s.user)
+  const profile = useAuthStore((s) => s.profile)
   const authLoading = useAuthStore((s) => s.loading)
+  const isAdmin = profile?.role === 'admin'
 
   useEffect(() => {
     initialize()
   }, [initialize])
 
   useEffect(() => {
-    if (authLoading || !user || !('Notification' in window) || Notification.permission !== 'granted') return
+    if (authLoading || !user || !isAdmin || !('Notification' in window) || Notification.permission !== 'granted') return
 
     registerPushSubscription().catch((error) => {
       console.warn('Push subscription sync failed:', error)
     })
-  }, [authLoading, user])
+  }, [authLoading, isAdmin, user])
 
   useEffect(() => {
-    if (authLoading || !user) return
+    if (authLoading || !user || !isAdmin) return
 
     preloadPageChunks()
-  }, [authLoading, user])
+  }, [authLoading, isAdmin, user])
 
   useEffect(() => {
-    if (authLoading || !user) return
+    if (authLoading || !user || !isAdmin) return
 
     const syncOfflineQueues = () => {
       syncQueuedTransactions().catch((error) => {
         console.error('Offline transaction sync failed:', error)
       })
-      syncQueuedSettlements().catch((error) => {
+      syncQueuedSettlements(user.id).catch((error) => {
         console.error('Offline settlement sync failed:', error)
       })
     }
@@ -201,15 +179,15 @@ export default function App() {
       window.removeEventListener('focus', syncWhenVisible)
       document.removeEventListener('visibilitychange', syncWhenVisible)
     }
-  }, [authLoading, user])
+  }, [authLoading, isAdmin, user])
 
   useEffect(() => {
-    if (authLoading || !user || !window.matchMedia('(max-width: 1023px)').matches) return
+    if (authLoading || !user || !isAdmin || !window.matchMedia('(max-width: 1023px)').matches) return
 
     return startInactivityLogout(() => {
       void useAuthStore.getState().signOut()
     }, 10 * 60 * 1000)
-  }, [authLoading, user])
+  }, [authLoading, isAdmin, user])
 
   if (!isSupabaseConfigured) {
     return (
@@ -240,14 +218,14 @@ export default function App() {
             }
           >
             <Route index element={<PageSuspense><Dashboard /></PageSuspense>} />
-            <Route path="pos" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><POS /></PageSuspense></RoleGate>} />
-            <Route path="products" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><Products /></PageSuspense></RoleGate>} />
-            <Route path="products/history" element={<RoleGate roles={['admin', 'cashier']}><PageSuspense><StockHistory /></PageSuspense></RoleGate>} />
-            <Route path="products/stock-opname" element={<RoleGate roles={['admin']}><PageSuspense><StockOpname /></PageSuspense></RoleGate>} />
-            <Route path="reports" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><Reports /></PageSuspense></RoleGate>} />
-            <Route path="transactions" element={<RoleGate roles={['admin', 'monitor']} monitoring><PageSuspense><TransactionHistory /></PageSuspense></RoleGate>} />
-            <Route path="settings" element={<RoleGate roles={['admin']}><PageSuspense><SettingsPage /></PageSuspense></RoleGate>} />
-            <Route path="settlements" element={<RoleGate roles={['admin', 'cashier']} monitoring><PageSuspense><Settlements /></PageSuspense></RoleGate>} />
+            <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
+            <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
+            <Route path="products/history" element={<PageSuspense><StockHistory /></PageSuspense>} />
+            <Route path="products/stock-opname" element={<PageSuspense><StockOpname /></PageSuspense>} />
+            <Route path="reports" element={<PageSuspense><Reports /></PageSuspense>} />
+            <Route path="transactions" element={<PageSuspense><TransactionHistory /></PageSuspense>} />
+            <Route path="settings" element={<PageSuspense><SettingsPage /></PageSuspense>} />
+            <Route path="settlements" element={<PageSuspense><Settlements /></PageSuspense>} />
           </Route>
           <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
         </Routes>

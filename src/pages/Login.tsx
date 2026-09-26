@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 
 export default function Login() {
-  const [identifier, setIdentifier] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
@@ -32,10 +32,10 @@ export default function Login() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (loading || !identifier.trim() || !password) return
+    if (loading || !email.trim() || !password) return
     setLoading(true)
     try {
-      const { error } = await signIn(identifier, password)
+      const { error } = await signIn(email, password)
       if (error) {
         toast.error(error)
         setPassword('')
@@ -81,12 +81,12 @@ export default function Login() {
                 <span className="block text-primary-foreground">satu kendali.</span>
               </h1>
               <p className="mt-6 max-w-xs text-sm leading-6 text-white/65">
-                Kelola katalog, kasir, dan laporan penjualan dari satu tempat yang ringkas.
+                Kelola stok, transaksi, dan laporan toko dari satu tempat.
               </p>
             </div>
           </div>
           <div className="relative flex items-center justify-between text-xs text-white/50">
-            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /> Akses aman untuk tim toko</span>
+            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /> Akses aman untuk administrator</span>
             <ArrowUpRight className="h-5 w-5 text-accent" />
           </div>
         </section>
@@ -126,13 +126,13 @@ export default function Login() {
           <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
               <div>
-                <label htmlFor="login-identifier" className="mb-1.5 block text-sm font-semibold text-ink/85">Email atau ID staf</label>
+                <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-ink/85">Email administrator</label>
                 <Input
-                  id="login-identifier"
-                  type="text"
-                  placeholder="Masukkan email atau ID staf"
-                  value={identifier}
-                  onChange={(event) => setIdentifier(event.target.value)}
+                  id="login-email"
+                  type="email"
+                  placeholder="Masukkan email administrator"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                   autoComplete="username"
                   autoCapitalize="none"
@@ -164,7 +164,7 @@ export default function Login() {
               </Button>
             </form>
             <p className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-              Gunakan akun masing-masing <span className="mx-1 text-primary">•</span> Akses mengikuti peran staf
+              Masuk menggunakan akun administrator toko
             </p>
           </CardContent>
         </Card>

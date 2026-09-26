@@ -155,6 +155,13 @@ AS $$
 DECLARE
   current_number INTEGER;
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Hanya admin yang dapat membuat nomor transaksi';
+  END IF;
+
   UPDATE public.invoice_sequences
   SET next_number = next_number + 1
   WHERE id = 1
@@ -211,6 +218,13 @@ DECLARE
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Sesi pengguna tidak valid';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Hanya admin yang dapat membuat transaksi';
   END IF;
 
   IF p_cashier_id IS DISTINCT FROM auth.uid() THEN
@@ -295,7 +309,7 @@ BEGIN
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'cashier')
+    'cashier'
   );
   RETURN NEW;
 END;
@@ -330,11 +344,11 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+  SELECT COALESCE('admin' = ANY(required_roles), false) AND EXISTS (
     SELECT 1
     FROM public.profiles
     WHERE id = auth.uid()
-      AND role = ANY(required_roles)
+      AND role = 'admin'
   );
 $$;
 

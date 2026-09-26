@@ -80,7 +80,7 @@ export interface CartItem {
   line_profit: number
 }
 
-export type UserRole = 'admin' | 'cashier' | 'monitor'
+export type UserRole = 'admin'
 
 export interface Profile {
   id: string

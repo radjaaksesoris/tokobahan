@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
-import type { Profile, UserRole } from '@/types'
+import type { Profile } from '@/types'
 import type { User } from '@supabase/supabase-js'
 import { readOfflineCache, removeOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
 
@@ -11,14 +11,6 @@ interface AuthState {
   initialize: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
-  isRole: (...roles: UserRole[]) => boolean
-}
-
-function normalizeLoginIdentifier(identifier: string) {
-  const normalizedIdentifier = identifier.trim().toLowerCase()
-  return normalizedIdentifier.includes('@')
-    ? normalizedIdentifier
-    : `${normalizedIdentifier}@outlook.com`
 }
 
 let authInitialized = false
@@ -43,7 +35,7 @@ async function loadProfile(user: User) {
 
   if (error) {
     console.error('Failed to load user profile:', error)
-    return readOfflineCache<Profile>(profileCacheKey(user.id))
+    return navigator.onLine ? null : readOfflineCache<Profile>(profileCacheKey(user.id))
   }
 
   if (profile) writeOfflineCache(profileCacheKey(user.id), profile)
@@ -111,11 +103,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: normalizeLoginIdentifier(email),
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
       password,
     })
     if (error) return { error: error.message }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle()
+
+    if (profileError || profile?.role !== 'admin') {
+      const { error: signOutError } = await supabase.auth.signOut()
+      if (signOutError) console.error('Failed to sign out non-admin user:', signOutError)
+      return { error: 'Aplikasi ini hanya menerima akun administrator.' }
+    }
+
     return { error: null }
   },
 
@@ -124,10 +129,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     removeOfflineCache(AUTH_CACHE_KEY)
     if (get().user) removeOfflineCache(profileCacheKey(get().user!.id))
     set({ user: null, profile: null })
-  },
-
-  isRole: (...roles) => {
-    const role = get().profile?.role
-    return role ? roles.includes(role) : false
   },
 }))
