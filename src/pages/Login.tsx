@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { toast } from 'sonner'
 import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 
+const ADMIN_EMAIL = 'voltker1@outlook.com'
+
 export default function Login() {
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
@@ -32,10 +33,10 @@ export default function Login() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (loading || !email.trim() || !password) return
+    if (loading || !password) return
     setLoading(true)
     try {
-      const { error } = await signIn(email, password)
+      const { error } = await signIn(ADMIN_EMAIL, password)
       if (error) {
         toast.error(error)
         setPassword('')
@@ -125,21 +126,6 @@ export default function Login() {
           </CardHeader>
           <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
-              <div>
-                <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-ink/85">Email administrator</label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="Masukkan email administrator"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  disabled={loading}
-                />
-              </div>
               <div>
                 <label htmlFor="login-password" className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
                 <div className="relative">
