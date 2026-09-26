@@ -35,6 +35,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Page headers stay flush with the top edge of the main scroll container. */
+#main-content .sticky {
+  top: 0 !important;
+}
+
 body {
   font-family: 'Nunito Sans', system-ui, sans-serif;
   background-color: #fbfaf5;
