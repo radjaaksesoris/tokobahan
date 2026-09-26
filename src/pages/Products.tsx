@@ -455,7 +455,7 @@ export default function Products() {
               <Input
                 aria-label="Cari produk"
                 className="pl-9 pr-10"
-                placeholder="Cari nama, SKU, atau barcode..."
+                placeholder="Cari"
                 value={search}
                 onChange={(event) => {
                   setSearch(event.target.value)
