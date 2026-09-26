@@ -1083,7 +1083,7 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         ))}
       </div>
       <div className="receipt-rule" />
-      <div className="receipt-total"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
+      <div className="receipt-total receipt-total-highlight"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
       <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
       {receipt.paymentMethod === 'cash' && (
         <>

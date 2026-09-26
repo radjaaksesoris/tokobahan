@@ -418,6 +418,64 @@ html {
   margin-top: 12px;
 }
 
+.receipt-document {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.receipt-brand-copy strong {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.receipt-title {
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.receipt-item > div:first-child {
+  font-weight: 800;
+}
+
+.receipt-item-detail {
+  font-size: 9px;
+}
+
+.receipt-item-detail > :last-child {
+  font-weight: 900;
+}
+
+.receipt-total-highlight {
+  padding: 6px 5px;
+  border-top: 2px solid currentColor;
+  border-bottom: 3px double currentColor;
+  font-weight: 900;
+}
+
+.receipt-total-highlight > :last-child {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.receipt-summary {
+  font-size: 9px;
+}
+
+.receipt-summary > :last-child {
+  font-weight: 800;
+}
+
+.receipt-footer {
+  padding-top: 8px;
+  border-top: 1px dashed currentColor;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @media print {
   @page {
     size: 58mm auto;
