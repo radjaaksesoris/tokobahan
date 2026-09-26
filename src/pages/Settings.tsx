@@ -377,7 +377,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
+    <div className="mx-auto max-w-[1440px] space-y-6">
       <div className="sticky top-[-1rem] z-30 flex flex-col justify-center -mx-4 -mt-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
         <h2 className="text-3xl font-bold tracking-tight text-white">Pengaturan</h2>
         <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
@@ -417,8 +417,9 @@ export default function Settings() {
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Password admin</label>
+              <label htmlFor="reset-password" className="mb-1 block text-sm font-medium">Password admin</label>
               <Input
+                id="reset-password"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -427,10 +428,11 @@ export default function Settings() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label htmlFor="reset-confirmation" className="mb-1 block text-sm font-medium">
                 Ketik <strong>RESET SEMUA</strong>
               </label>
               <Input
+                id="reset-confirmation"
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
                 placeholder="RESET SEMUA"
@@ -457,6 +459,7 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground">Simpan nama pemasok yang sering dipilih pada produk.</p>
           <div className="flex gap-2">
             <Input
+              aria-label="Nama vendor baru"
               value={vendorName}
               onChange={(event) => setVendorName(toTitleCase(event.target.value))}
               placeholder="Nama vendor baru"
@@ -488,6 +491,7 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">Tambahkan nama satuan yang akan muncul di dropdown Produk.</p>
             <div className="flex gap-2">
               <Input
+                aria-label="Nama satuan baru"
                 value={unitName}
                 onChange={(event) => setUnitName(toTitleCase(event.target.value))}
                 placeholder="Contoh: Roll, Kg, Dus"

@@ -573,6 +573,7 @@ export default function POS() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
+              aria-label="Cari produk, SKU, atau barcode"
               placeholder="Cari produk / SKU / barcode..."
               className="pl-9 pr-10"
               value={search}
@@ -588,7 +589,7 @@ export default function POS() {
                 type="button"
                 aria-label="Reset pencarian"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-stone-200 hover:text-ink/85"
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-stone-200 hover:text-ink/85"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -705,7 +706,7 @@ export default function POS() {
         <div className="fixed inset-0 z-50 flex flex-col bg-surface lg:hidden">
           <div className="flex h-14 items-center justify-between border-b px-4">
             <h3 className="font-semibold">Keranjang</h3>
-            <button onClick={() => setShowCart(false)}>
+            <button type="button" aria-label="Tutup keranjang" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={() => setShowCart(false)}>
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -893,8 +894,9 @@ export default function POS() {
                   <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
                 </div>
                 {paymentMethod === 'credit' && <div className="border-b border-stone-200 px-4 py-3">
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Pelanggan kredit</label>
+                  <label htmlFor="credit-customer-name" className="mb-1 block text-xs font-medium text-muted-foreground">Pelanggan kredit</label>
                   <Input
+                    id="credit-customer-name"
                     value={customerName}
                     readOnly
                     aria-label="Nama pelanggan kredit"

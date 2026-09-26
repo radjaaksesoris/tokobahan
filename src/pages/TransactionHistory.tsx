@@ -302,7 +302,7 @@ export default function TransactionHistory() {
   }, [sales, search])
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
+    <div className="mx-auto max-w-[1440px] space-y-6">
       <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Riwayat Transaksi</h2>
@@ -316,6 +316,7 @@ export default function TransactionHistory() {
           <div className="relative min-w-0 flex-1 lg:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Cari invoice atau metode pembayaran"
               className="pl-9 pr-10"
               placeholder="Cari invoice atau metode pembayaran..."
               value={search}
@@ -334,7 +335,7 @@ export default function TransactionHistory() {
                   setPage(0)
                   setCursorHistory([null])
                 }}
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -481,7 +482,7 @@ export default function TransactionHistory() {
                   {format(new Date(selectedSale.created_at), 'dd MMMM yyyy HH:mm', { locale: localeId })}
                 </p>
               </div>
-              <button onClick={() => setSelectedSale(null)} aria-label="Tutup detail">
+              <button type="button" onClick={() => setSelectedSale(null)} aria-label="Tutup detail" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </CardHeader>

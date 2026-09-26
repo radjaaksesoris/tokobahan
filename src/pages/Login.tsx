@@ -131,9 +131,10 @@ export default function Login() {
           <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
+                <label htmlFor="login-password" className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
                 <div className="relative hidden lg:block">
                   <Input
+                    id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Masukkan password"
                     value={password}

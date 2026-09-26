@@ -99,11 +99,11 @@ export default function StockHistory() {
   )
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto max-w-[1440px] space-y-6">
+      <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-end sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-ink">Riwayat input stok</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Riwayat input stok</h1>
+          <p className="mt-1 text-sm text-accent">Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => navigate('/products')}>
@@ -147,8 +147,8 @@ export default function StockHistory() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-hidden">
-            <table className="w-full table-fixed text-[11px] sm:table-auto sm:text-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] w-full table-auto text-[11px] sm:text-sm">
                   <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>

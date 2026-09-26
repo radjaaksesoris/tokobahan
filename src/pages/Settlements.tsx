@@ -397,12 +397,13 @@ export default function Settlements() {
               setPayment((current) => ({ ...current, [debt.id]: value }))
             }}
               placeholder="Nominal"
-              className="h-9 min-w-0 flex-1 sm:w-28 sm:flex-none"
+              aria-label={`Nominal pembayaran ${debt.name}`}
+              className="h-10 min-w-0 flex-1 sm:w-28 sm:flex-none"
             />
-            <Button className="h-9 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+            <Button className="h-10 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
-            <Button className="h-9 px-3" onClick={() => settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+            <Button className="h-10 px-3" onClick={() => settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
           </div>
         </div>
         {expandedDebtId === debt.id && (

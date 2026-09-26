@@ -433,7 +433,7 @@ export default function Products() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
+    <div className="mx-auto max-w-[1440px] space-y-6">
       <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Produk</h2>
@@ -448,6 +448,7 @@ export default function Products() {
             <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label="Cari produk"
                 className="pl-9 pr-10"
                 placeholder="Cari nama, SKU, atau barcode..."
                 value={search}
@@ -464,7 +465,7 @@ export default function Products() {
                     setSearch('')
                     setPage(0)
                   }}
-                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
+                  className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -535,13 +536,13 @@ export default function Products() {
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-2 text-center lg:px-3">
                       <div className="flex justify-center gap-0 lg:gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 lg:h-7 lg:w-7" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 lg:h-10 lg:w-10" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary lg:h-7 lg:w-7" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 text-primary lg:h-10 lg:w-10" onClick={() => openStock(p)} aria-label={`Tambah stok ${p.name}`}>
                           <Boxes className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 lg:h-7 lg:w-7" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 lg:h-10 lg:w-10" onClick={() => requestDelete(p)} aria-label={`Nonaktifkan ${p.name}`}>
                           <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         </Button>
                       </div>
@@ -571,7 +572,7 @@ export default function Products() {
                     <CardTitle>Tambah Stok</CardTitle>
                     <p className="mt-1 text-sm text-muted-foreground">{stockProduct.name}</p>
                   </div>
-                  <button onClick={() => setStockProduct(null)} aria-label="Tutup tambah stok">
+                  <button type="button" onClick={() => setStockProduct(null)} aria-label="Tutup tambah stok" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
                     <X className="h-5 w-5" />
                   </button>
                 </CardHeader>
@@ -580,8 +581,9 @@ export default function Products() {
                     Stok saat ini: <strong>{stockProduct.stock} {UNIT_LABELS[(stockProduct.stock_unit || 'satuan') as UnitType]}</strong>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
+                    <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
                     <Input
+                      id="stock-quantity"
                       type="number"
                       min="0"
                       value={stockQuantity}
@@ -593,8 +595,9 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">HPP batch baru</label>
+                    <label htmlFor="stock-cost" className="mb-1 block text-sm font-medium">HPP batch baru</label>
                     <Input
+                      id="stock-cost"
                       inputMode="numeric"
                       value={formatCurrencyInput(stockCost)}
                       onChange={(event) => setStockCost(parseCurrencyInput(event.target.value))}
@@ -604,8 +607,9 @@ export default function Products() {
                     </p>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Vendor</label>
+                    <label htmlFor="stock-vendor" className="mb-1 block text-sm font-medium">Vendor</label>
                     <Select
+                      id="stock-vendor"
                       value={stockVendorId}
                       onChange={setStockVendorId}
                       options={[
@@ -615,8 +619,9 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Status pembayaran</label>
+                    <label htmlFor="stock-payment-status" className="mb-1 block text-sm font-medium">Status pembayaran</label>
                     <Select
+                      id="stock-payment-status"
                       value={stockPaymentStatus}
                       onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
                       options={[
@@ -627,8 +632,8 @@ export default function Products() {
                   </div>
                   {stockPaymentStatus === 'kredit' && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo</label>
-                      <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                      <label htmlFor="stock-due-date" className="mb-1 block text-sm font-medium">Tanggal jatuh tempo</label>
+                      <Input id="stock-due-date" type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
                     </div>
                   )}
                   <div className="rounded-lg border border-stone-200">
@@ -725,8 +730,9 @@ export default function Products() {
             </CardHeader>
             <CardContent className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
               <div>
-                <label className="mb-1 block text-sm font-medium">Nama Produk *</label>
+                <label htmlFor="product-name" className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
+                  id="product-name"
                   value={name}
                   onChange={(e) => setName(toTitleCase(e.target.value))}
                   placeholder="Nama item"
@@ -735,9 +741,10 @@ export default function Products() {
               </div>
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
-                  <label className="mb-1 block text-sm font-medium">SKU</label>
+                  <label htmlFor="product-sku" className="mb-1 block text-sm font-medium">SKU</label>
                   <div className="flex min-w-0 gap-2">
                     <Input
+                      id="product-sku"
                       value={sku}
                       onChange={(e) => setSku(e.target.value)}
                       readOnly={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing)}
@@ -763,9 +770,10 @@ export default function Products() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <label className="mb-1 block text-sm font-medium">Stok</label>
+                  <label htmlFor="product-stock" className="mb-1 block text-sm font-medium">Stok</label>
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,6.5rem)] gap-2">
                     <Input
+                      id="product-stock"
                       className="min-w-0 w-full"
                       type="number"
                       value={stock}
@@ -794,8 +802,9 @@ export default function Products() {
               {!editing && (
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-2">
                   <div className="min-w-0">
-                    <label className="mb-1 block text-sm font-medium">Nama Vendor</label>
+                    <label htmlFor="initial-stock-vendor" className="mb-1 block text-sm font-medium">Nama Vendor</label>
                     <Select
+                      id="initial-stock-vendor"
                       value={stockVendorId}
                       onChange={setStockVendorId}
                       className="w-full"
@@ -806,8 +815,9 @@ export default function Products() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <label className="mb-1 block text-sm font-medium">Status pembayaran awal</label>
+                    <label htmlFor="initial-payment-status" className="mb-1 block text-sm font-medium">Status pembayaran awal</label>
                     <Select
+                      id="initial-payment-status"
                       value={stockPaymentStatus}
                       onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
                       className="w-full"
@@ -819,17 +829,18 @@ export default function Products() {
                   </div>
                   {stockPaymentStatus === 'kredit' && stock > 0 && (
                     <div className="min-w-0 sm:col-span-2">
-                      <label className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
-                      <Input type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                      <label htmlFor="initial-due-date" className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
+                      <Input id="initial-due-date" type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
                     </div>
                   )}
                 </div>
               )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Harga Modal</label>
+                  <label htmlFor="product-cost" className="mb-1 block text-sm font-medium">Harga Modal</label>
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
                     <Input
+                      id="product-cost"
                       className="min-w-0"
                       inputMode="numeric"
                       value={formatCurrencyInput(costPrice)}
@@ -861,8 +872,9 @@ export default function Products() {
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Min. Stok</label>
+                  <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">Min. Stok</label>
                   <Input
+                    id="product-min-stock"
                     type="number"
                     value={minStock}
                     onChange={(e) => setMinStock(Number(e.target.value))}
@@ -873,7 +885,7 @@ export default function Products() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium">Harga Jual per Unit</label>
+                  <span id="sale-prices-label" className="text-sm font-medium">Harga Jual per Unit</span>
                   <Button variant="outline" size="sm" onClick={addPriceRow} disabled={editingPricesOnly}>
                     <Plus className="h-3 w-3" /> Tambah
                   </Button>
@@ -904,8 +916,10 @@ export default function Products() {
                       />
                       {prices.length > 1 && (
                         <button
+                          type="button"
+                          aria-label={`Hapus harga ${idx + 1}`}
                           onClick={() => removePrice(idx)}
-                          className="text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg text-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={editingPricesOnly}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -917,7 +931,7 @@ export default function Products() {
                           <Card className="w-full max-w-md">
                             <CardHeader className="flex-row items-center justify-between border-b">
                               <CardTitle>Konfirmasi nonaktifkan produk</CardTitle>
-                              <button onClick={() => setDeleteTarget(null)}>
+                              <button type="button" aria-label="Tutup konfirmasi" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={() => setDeleteTarget(null)}>
                                 <X className="h-5 w-5" />
                               </button>
                             </CardHeader>

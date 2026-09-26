@@ -61,10 +61,10 @@ export default function StockOpname() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
-      <header className="border-b border-border pb-5">
-        <h1 className="mt-1 text-3xl font-bold text-ink">Stok Opname</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
+    <div className="mx-auto max-w-[1440px] space-y-6">
+      <header className="sticky top-[-1rem] z-30 -mx-4 -mt-4 border-b border-ink/10 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:px-8 lg:py-5">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Stok Opname</h1>
+        <p className="mt-1 text-sm text-accent">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
       </header>
       {loading ? <p className="text-sm text-muted-foreground">Memuat produk...</p> : (
         <div className="grid gap-3">
@@ -75,8 +75,8 @@ export default function StockOpname() {
                   <p className="font-semibold text-ink">{product.name}</p>
                   <p className="text-xs text-muted-foreground">Stok sistem: {product.stock} {UNIT_LABELS[product.stock_unit] || product.stock_unit}</p>
                 </div>
-                <Input type="number" min="0" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Stok fisik" />
-                <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: toTitleCase(event.target.value) }))} placeholder="Alasan penyesuaian" />
+                <Input type="number" min="0" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Stok fisik" aria-label={`Stok fisik ${product.name}`} />
+                <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: toTitleCase(event.target.value) }))} placeholder="Alasan penyesuaian" aria-label={`Alasan penyesuaian ${product.name}`} />
                 <Button onClick={() => void save(product)} disabled={saving === product.id}>{saving === product.id ? 'Menyimpan...' : 'Simpan'}</Button>
               </CardContent>
             </Card>

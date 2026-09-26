@@ -15,6 +15,7 @@ interface SelectProps {
   menuClassName?: string
   native?: boolean
   disabled?: boolean
+  id?: string
   focusRef?: RefObject<HTMLButtonElement | null>
   'aria-label'?: string
 }
@@ -27,6 +28,7 @@ export function Select({
   menuClassName,
   native = false,
   disabled = false,
+  id,
   focusRef,
   'aria-label': ariaLabel,
 }: SelectProps) {
@@ -61,6 +63,7 @@ export function Select({
     return (
       <div className={cn('relative min-w-28 shrink-0', className)}>
         <select
+          id={id}
           value={value}
           disabled={disabled}
           aria-label={ariaLabel}
@@ -81,6 +84,7 @@ export function Select({
   return (
     <div ref={rootRef} className={cn('relative', className)}>
       <button
+        id={id}
         ref={focusRef}
         type="button"
         aria-label={ariaLabel}
