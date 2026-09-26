@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ArrowUpRight, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 
 export default function Login() {
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
@@ -29,30 +30,24 @@ export default function Login() {
     return () => viewport.removeEventListener('resize', updateKeyboardState)
   }, [])
 
-  const handleLogin = async (value: string) => {
-    if (loading || value.length !== 6) return
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (loading || !identifier.trim() || !password) return
     setLoading(true)
-    const { error } = await signIn('voltker1', value)
-    setLoading(false)
-    if (error) {
-      toast.error(error)
-      setPassword('')
-    } else {
+    try {
+      const { error } = await signIn(identifier, password)
+      if (error) {
+        toast.error(error)
+        setPassword('')
+        return
+      }
       toast.success('Berhasil masuk')
       navigate('/')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal masuk ke aplikasi')
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await handleLogin(password)
-  }
-
-  const handlePinDigit = (digit: string) => {
-    if (loading || password.length >= 6) return
-    const nextPassword = `${password}${digit}`
-    setPassword(nextPassword)
-    if (nextPassword.length === 6) void handleLogin(nextPassword)
   }
 
   return (
@@ -131,86 +126,45 @@ export default function Login() {
           <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
               <div>
+                <label htmlFor="login-identifier" className="mb-1.5 block text-sm font-semibold text-ink/85">Email atau ID staf</label>
+                <Input
+                  id="login-identifier"
+                  type="text"
+                  placeholder="Masukkan email atau ID staf"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                  required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={loading}
+                />
+              </div>
+              <div>
                 <label htmlFor="login-password" className="mb-1.5 block text-sm font-semibold text-ink/85">Password</label>
-                <div className="relative hidden lg:block">
+                <div className="relative">
                   <Input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Masukkan password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(event) => setPassword(event.target.value)}
                     required
                     autoComplete="current-password"
-                    inputMode="numeric"
                     className="pr-11"
+                    disabled={loading}
                   />
                   <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <div className="lg:hidden">
-                  <div
-                    className="flex h-11 items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 shadow-sm"
-                    aria-label={`PIN ${password.length} dari 6 digit`}
-                    role="status"
-                  >
-                    {Array.from({ length: 6 }, (_, index) => (
-                      <span
-                        key={index}
-                        className={`h-3 w-3 rounded-full border-2 ${index < password.length ? 'border-primary bg-primary' : 'border-muted-foreground/40 bg-transparent'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-2 text-center text-xs text-muted-foreground">Masukkan 6 digit password</p>
-                  <div className="login-keypad mt-3 grid grid-cols-3 gap-2">
-                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
-                      <button
-                        key={digit}
-                        type="button"
-                        onClick={() => handlePinDigit(digit)}
-                        disabled={loading}
-                        className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-ink transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
-                        aria-label={`Angka ${digit}`}
-                      >
-                        {digit}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setPassword('')}
-                      disabled={loading || password.length === 0}
-                      className="h-11 rounded-xl border border-border bg-muted/50 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
-                      aria-label="Hapus semua angka"
-                    >
-                      Hapus
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handlePinDigit('0')}
-                      disabled={loading}
-                      className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-ink transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
-                      aria-label="Angka 0"
-                    >
-                      0
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPassword((value) => value.slice(0, -1))}
-                      disabled={loading || password.length === 0}
-                      className="h-11 rounded-xl border border-border bg-muted/50 text-lg font-semibold text-muted-foreground transition-colors hover:bg-primary/10 active:scale-[0.98] disabled:opacity-50"
-                      aria-label="Hapus angka terakhir"
-                    >
-                      ←
-                    </button>
-                  </div>
-                </div>
               </div>
-              <Button type="submit" className="hidden w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)] lg:flex" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)]" size="lg" disabled={loading}>
                 {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk ke dashboard'}
               </Button>
             </form>
             <p className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-              Single-device POS <span className="mx-1 text-primary">•</span> Multi-monitor dashboard
+              Gunakan akun masing-masing <span className="mx-1 text-primary">•</span> Akses mengikuti peran staf
             </p>
           </CardContent>
         </Card>

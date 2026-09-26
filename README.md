@@ -92,8 +92,10 @@ VITE_VAPID_PUBLIC_KEY=BCxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### 4. Buat User
 
-Di Supabase Dashboard → Authentication → Users → Add user  
-Atau daftar via app (setelah enable Email provider).
+Buat satu akun Supabase Auth untuk setiap staf melalui Supabase Dashboard →
+Authentication → Users → Add user. Gunakan akun dan password tersendiri; jangan
+berbagi akun agar transaksi tercatat pada staf yang benar. Form login menerima
+email atau ID staf. ID tanpa `@` dipetakan ke `<id>@outlook.com`.
 
 Setelah user dibuat, update role di tabel `profiles`:
 
@@ -102,7 +104,8 @@ UPDATE profiles SET role = 'admin' WHERE id = 'user-uuid';
 -- role: admin | cashier | monitor
 ```
 
-Buat 4 user dengan role `monitor` / `admin` untuk monitoring, dan 1 `cashier` untuk device kasir.
+Buat akun monitor terpisah untuk perangkat monitoring dan akun cashier khusus
+untuk perangkat kasir.
 
 ### 5. Jalankan
 
@@ -210,11 +213,18 @@ supabase/
   diunggah sebagai file JSON ke Storage melalui client Supabase terautentikasi; service
   role tidak pernah dikirim ke browser. Backup lama tanpa `storage_object_path` tetap
   dapat diunduh/dipulihkan dari payload database.
+- Jalankan migration `20260926130000_harden_production_financial_workflows.sql`
+  setelah migration sebelumnya. Migration ini memvalidasi transaksi di RPC checkout,
+  membuat retry pelunasan offline idempoten, mempertahankan seluruh riwayat penjualan,
+  dan memasukkan refund tunai retur ke laporan arus kas. Backfill retur lama
+  mengasumsikan refund pada transaksi non-kredit dibayar tunai penuh; verifikasi
+  asumsi ini terhadap buku kas sebelum mengandalkan laporan historis.
 - Urutan SQL Editor yang tepat adalah menjalankan seluruh migration yang belum diterapkan
   secara kronologis; untuk rangkaian backup, pastikan `20260921150000_operational_backups.sql`,
   migration restore/expand backup `20260923210000_returns_stock_restore.sql` dan
   `20260923211000_expand_operational_backup.sql`, lalu `20260924010000_cloud_backup_retention.sql`,
-  dan terakhir `20260924020000_operational_backup_storage.sql`. Jika memakai Supabase CLI,
+  `20260924020000_operational_backup_storage.sql`, dan terakhir
+  `20260926130000_harden_production_financial_workflows.sql`. Jika memakai Supabase CLI,
   jalankan `supabase db push` dari root repository. Setelah selesai, buka Storage →
   `operational-backups` untuk memverifikasi file backup baru (bucket harus Private).
 

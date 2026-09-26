@@ -7,7 +7,15 @@ import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
-import { enqueueSettlement, getQueuedSettlements, retryFailedSettlements, subscribeOfflineSettlements } from '@/lib/offlineSettlements'
+import {
+  enqueueSettlement,
+  getQueuedSettlements,
+  removeQueuedSettlement,
+  retryFailedSettlements,
+  subscribeOfflineSettlements,
+  syncQueuedSettlements,
+} from '@/lib/offlineSettlements'
+import { isOfflineError } from '@/lib/offlineTransactions'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history' | 'customer-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -245,18 +253,38 @@ export default function Settlements() {
       if (allocation > 0) { allocations.push({ stock_batch_id: item.batchId, amount: allocation }); remaining -= allocation }
     }
     try {
-      if (!navigator.onLine) {
-        await enqueueSettlement(tab === 'vendor' ? 'vendor' : 'customer', tab === 'vendor' ? { allocations } : { sale_id: debt.id, amount })
-        toast.success('Pelunasan disimpan dan akan disinkronkan saat online')
+      const kind = tab === 'vendor' ? 'vendor' : 'customer'
+      const payload = kind === 'vendor' ? { allocations } : { sale_id: debt.id, amount }
+      const queued = await enqueueSettlement(kind, payload)
+      let accepted = true
+
+      if (navigator.onLine) {
+        try {
+          await syncQueuedSettlements()
+        } catch (error) {
+          console.error('Immediate settlement sync failed:', error)
+        }
+        const stillQueued = (await getQueuedSettlements()).find((record) => record.id === queued.id)
+        if (!stillQueued) {
+          toast.success('Pembayaran berhasil dicatat')
+        } else if (stillQueued.status === 'failed' && !isOfflineError({ message: stillQueued.lastError || '' })) {
+          await removeQueuedSettlement(stillQueued.id)
+          accepted = false
+          toast.error(stillQueued.lastError || 'Pelunasan ditolak')
+        } else {
+          toast.info('Pelunasan tersimpan dan akan disinkronkan otomatis')
+        }
       } else {
-        const result = tab === 'vendor'
-          ? await supabase.rpc('pay_vendor_debt', { p_allocations: allocations })
-          : await supabase.rpc('pay_customer_debt', { p_sale_id: debt.id, p_amount: amount })
-        if (result.error) throw new Error(result.error.message)
-        toast.success('Pembayaran berhasil dicatat')
+        toast.info('Pelunasan disimpan dan akan disinkronkan saat online')
       }
-      setPayment((current) => ({ ...current, [debt.id]: '' })); await refreshQueue(); void load()
-      setPendingSettlement(null)
+
+      if (accepted) {
+        setPayment((current) => ({ ...current, [debt.id]: '' }))
+        setPendingSettlement(null)
+      }
+      await refreshQueue()
+      if (accepted && !navigator.onLine) void load()
+      else if (accepted) void load()
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Pelunasan gagal dicatat') }
   }
 

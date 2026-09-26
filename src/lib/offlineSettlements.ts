@@ -7,6 +7,7 @@ export interface VendorSettlementPayload { allocations: Array<{ stock_batch_id: 
 export interface CustomerSettlementPayload { sale_id: string; amount: number }
 export interface QueuedSettlement {
   id: string
+  idempotencyKey?: string
   kind: SettlementKind
   payload: VendorSettlementPayload | CustomerSettlementPayload
   status: QueuedSettlementStatus
@@ -30,7 +31,7 @@ export function subscribeOfflineSettlements(listener: () => void) { listeners.ad
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    if (!('indexedDB' in window)) { reject(new Error('Penyimpanan offline tidak tersedia di browser ini')); return }
+    if (!('indexedDB' in globalThis)) { reject(new Error('Penyimpanan offline tidak tersedia di browser ini')); return }
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
       const database = request.result
@@ -52,10 +53,27 @@ async function withStore<T>(mode: IDBTransactionMode, operation: (store: IDBObje
 }
 
 export async function getQueuedSettlements() { return (await withStore<QueuedSettlement[]>('readonly', (store) => store.getAll())) || [] }
-export async function enqueueSettlement(kind: SettlementKind, payload: QueuedSettlement['payload']) {
-  const record: QueuedSettlement = { id: crypto.randomUUID(), kind, payload, status: 'pending', attempts: 0, lastError: null, createdAt: new Date().toISOString() }
+export async function enqueueSettlement(
+  kind: SettlementKind,
+  payload: QueuedSettlement['payload'],
+  idempotencyKey = crypto.randomUUID(),
+) {
+  const record: QueuedSettlement = {
+    id: crypto.randomUUID(),
+    idempotencyKey,
+    kind,
+    payload,
+    status: 'pending',
+    attempts: 0,
+    lastError: null,
+    createdAt: new Date().toISOString(),
+  }
   await withStore('readwrite', (store) => store.add(record))
   notify(); return record
+}
+export async function removeQueuedSettlement(id: string) {
+  await withStore('readwrite', (store) => store.delete(id))
+  notify()
 }
 async function updateSettlement(id: string, patch: Partial<QueuedSettlement>) {
   const current = (await getQueuedSettlements()).find((record) => record.id === id)
@@ -64,9 +82,28 @@ async function updateSettlement(id: string, patch: Partial<QueuedSettlement>) {
 }
 async function syncOne(record: QueuedSettlement) {
   await updateSettlement(record.id, { status: 'syncing', syncStartedAt: new Date().toISOString() })
-  const result = record.kind === 'vendor'
-    ? await supabase.rpc('pay_vendor_debt', { p_allocations: (record.payload as VendorSettlementPayload).allocations })
-    : await supabase.rpc('pay_customer_debt', { p_sale_id: (record.payload as CustomerSettlementPayload).sale_id, p_amount: (record.payload as CustomerSettlementPayload).amount })
+  let result: { error: { message: string } | null }
+  try {
+    result = record.kind === 'vendor'
+      ? await supabase.rpc('pay_vendor_debt', {
+        p_allocations: (record.payload as VendorSettlementPayload).allocations,
+        p_idempotency_key: record.idempotencyKey || record.id,
+      })
+      : await supabase.rpc('pay_customer_debt', {
+        p_sale_id: (record.payload as CustomerSettlementPayload).sale_id,
+        p_amount: (record.payload as CustomerSettlementPayload).amount,
+        p_idempotency_key: record.idempotencyKey || record.id,
+      })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Gagal menyinkronkan pelunasan'
+    await updateSettlement(record.id, {
+      status: 'failed',
+      attempts: record.attempts + 1,
+      lastError: message,
+      syncStartedAt: undefined,
+    })
+    return false
+  }
   if (!result.error) { await withStore('readwrite', (store) => store.delete(record.id)); notify(); return true }
   await updateSettlement(record.id, {
     status: 'failed',
@@ -92,7 +129,10 @@ export async function syncQueuedSettlements(): Promise<SyncResult> {
   syncPromise = (async () => {
     await recoverStaleSettlements()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
-    const records = (await getQueuedSettlements()).filter((record) => record.status !== 'syncing').sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const records = (await getQueuedSettlements())
+      .filter((record) => record.status !== 'syncing')
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .slice(0, BATCH_SIZE)
     let synced = 0
     for (const record of records) { if (await syncOne(record)) synced += 1; if (!navigator.onLine) break }
     return { synced, failed: (await getQueuedSettlements()).filter((record) => record.status === 'failed').length }

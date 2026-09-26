@@ -315,8 +315,8 @@ export interface Database {
         Relationships: []
       }
       sale_returns: {
-        Row: { id: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; reason: string; returned_by: string | null; created_at: string }
-        Insert: { id?: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; reason: string; returned_by?: string | null; created_at?: string }
+        Row: { id: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; cash_refund_amount: number; reason: string; returned_by: string | null; created_at: string }
+        Insert: { id?: string; sale_id: string; sale_item_id: string; quantity: number; refund_amount: number; cash_refund_amount?: number; reason: string; returned_by?: string | null; created_at?: string }
         Update: Record<string, never>
         Relationships: []
       }
@@ -441,11 +441,11 @@ export interface Database {
         Returns: undefined
       }
       pay_vendor_debt: {
-        Args: { p_allocations: Json }
+        Args: { p_allocations: Json; p_idempotency_key: string }
         Returns: undefined
       }
       pay_customer_debt: {
-        Args: { p_sale_id: string; p_amount: number }
+        Args: { p_sale_id: string; p_amount: number; p_idempotency_key: string }
         Returns: string
       }
     }
