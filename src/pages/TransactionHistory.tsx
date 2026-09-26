@@ -318,7 +318,7 @@ export default function TransactionHistory() {
             <Input
               aria-label="Cari invoice atau metode pembayaran"
               className="pl-9 pr-10"
-              placeholder="Cari invoice atau metode pembayaran..."
+              placeholder="Cari"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
