@@ -27,6 +27,8 @@ import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { playLowStockSound, registerPushSubscription, showLowStockNotification } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
+import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
+import { getUnnotifiedProducts } from '@/lib/lowStockNotifications'
 
 interface Stats {
   todaySales: number
@@ -45,6 +47,12 @@ interface LowStockProduct {
 }
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
+const DASHBOARD_CACHE_KEY = 'dashboard-stats'
+
+interface DashboardSnapshot {
+  stats: Stats
+  lowStockProducts: LowStockProduct[]
+}
 
 export default function Dashboard() {
   const signOut = useAuthStore((state) => state.signOut)
@@ -59,6 +67,8 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
+  const [isUsingCache, setIsUsingCache] = useState(false)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
@@ -97,9 +107,11 @@ export default function Dashboard() {
         () => scheduleRefresh()
       )
       .subscribe()
+    window.addEventListener('online', scheduleRefresh)
 
     return () => {
       if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      window.removeEventListener('online', scheduleRefresh)
       supabase.removeChannel(channel)
     }
   }, [])
@@ -127,7 +139,16 @@ export default function Dashboard() {
     const queryError = todaySummaryRes.error || inventoryRes.error || weekSales.error
     if (requestId !== statsRequestId.current) return
     if (queryError) {
-      setError(queryError.message)
+      const cached = readOfflineCacheEntry<DashboardSnapshot>(DASHBOARD_CACHE_KEY)
+      if (cached) {
+        setStats(cached.value.stats)
+        setLowStockProducts(cached.value.lowStockProducts)
+        setCachedAt(cached.cachedAt)
+        setIsUsingCache(true)
+        setError(null)
+      } else {
+        setError(queryError.message)
+      }
       setLoading(false)
       initialLoadComplete.current = true
       return
@@ -169,7 +190,11 @@ export default function Dashboard() {
       profit: v.profit,
     }))
 
-    setStats({ todaySales, todayProfit, todayOrders, totalProducts, lowStock, weekData })
+    const nextStats = { todaySales, todayProfit, todayOrders, totalProducts, lowStock, weekData }
+    setStats(nextStats)
+    setCachedAt(Date.now())
+    setIsUsingCache(false)
+    writeOfflineCache(DASHBOARD_CACHE_KEY, { stats: nextStats, lowStockProducts: lowStockRows })
     setLoading(false)
     initialLoadComplete.current = true
   }
@@ -187,25 +212,36 @@ export default function Dashboard() {
     } catch {
       storedIds = []
     }
-    const notifiedIds = new Set(storedIds)
-    const newProducts = products.filter((product) => !notifiedIds.has(product.id))
-    newProducts.forEach((product) => {
+    const newProducts = getUnnotifiedProducts(products, storedIds)
+    if (newProducts.length > 0) {
+      const productNames = newProducts.slice(0, 3).map((product) => product.name).join(', ')
+      const remainingCount = newProducts.length - 3
       toast.custom((toastId) => (
         <div className="stock-toast" role="status">
           <span className="stock-toast-icon">
             <PackageSearch className="h-4 w-4" aria-hidden="true" />
           </span>
           <div className="stock-toast-content">
-            <p className="stock-toast-title">Stok menipis</p>
-            <p className="stock-toast-product">{product.name}</p>
-            <p className="stock-toast-detail">
-              Tersisa <strong>{product.stock}</strong> · minimum <strong>{product.min_stock}</strong>
+            <p className="stock-toast-title">Stok menipis · {newProducts.length} produk</p>
+            <p className="stock-toast-product">
+              {productNames}{remainingCount > 0 ? ` dan ${remainingCount} lainnya` : ''}
             </p>
           </div>
           <button
             type="button"
             className="stock-toast-close"
-            aria-label="Tutup notifikasi"
+            aria-label="Lihat daftar stok menipis"
+            onClick={() => {
+              toast.dismiss(toastId)
+              setShowLowStockModal(true)
+            }}
+          >
+            Lihat
+          </button>
+          <button
+            type="button"
+            className="stock-toast-close"
+            aria-label="Tutup notifikasi stok menipis"
             onClick={() => toast.dismiss(toastId)}
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -215,10 +251,12 @@ export default function Dashboard() {
         duration: 6000,
         className: 'stock-toast-wrapper',
       })
-      if (newProducts.length > 0) playLowStockSound()
-      notifiedIds.add(product.id)
-    })
-    window.localStorage.setItem(LOW_STOCK_NOTIFIED_KEY, JSON.stringify([...notifiedIds]))
+      playLowStockSound()
+    }
+    window.localStorage.setItem(
+      LOW_STOCK_NOTIFIED_KEY,
+      JSON.stringify(products.map((product) => product.id)),
+    )
 
     if (notificationPermission === 'granted') {
       newProducts.forEach((product) => {
@@ -297,6 +335,11 @@ export default function Dashboard() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
+          {isUsingCache && cachedAt && (
+            <p className="mt-1 text-xs font-medium text-amber-200" role="status">
+              Snapshot offline · diperbarui {format(new Date(cachedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
+            </p>
+          )}
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button

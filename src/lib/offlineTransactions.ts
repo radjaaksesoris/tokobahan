@@ -44,7 +44,7 @@ export function subscribeOfflineTransactions(listener: () => void) {
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    if (!('indexedDB' in window)) {
+    if (!('indexedDB' in globalThis)) {
       reject(new Error('Penyimpanan offline tidak tersedia di browser ini'))
       return
     }

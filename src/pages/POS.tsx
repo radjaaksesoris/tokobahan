@@ -26,6 +26,7 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
 import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
+import { fetchAllPages } from '@/lib/paginateQuery'
 import {
   createOfflineInvoice,
   enqueueTransaction,
@@ -258,10 +259,12 @@ export default function POS() {
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('name')
-      .limit(100)
+      .order('id')
     const term = search.trim().replace(/[%_,]/g, ' ')
     if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data, error } = await query.abortSignal(signal || new AbortController().signal)
+    const { data, error } = await fetchAllPages(async (from, to) =>
+      await query.range(from, to).abortSignal(signal || new AbortController().signal),
+    )
     if (signal?.aborted) return
     if (error) {
       const cachedProducts = readOfflineCache<Product[]>(POS_CATALOG_CACHE_KEY)

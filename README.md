@@ -110,6 +110,8 @@ Buat 4 user dengan role `monitor` / `admin` untuk monitoring, dan 1 `cashier` un
 npm run dev
 ```
 
+Jalankan test unit dengan `npm test`.
+
 Buka http://localhost:5173
 
 ### PWA

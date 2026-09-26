@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { syncQueuedSettlements } from '@/lib/offlineSettlements'
 import { syncQueuedTransactions } from '@/lib/offlineTransactions'
+import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -205,11 +206,9 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user || !window.matchMedia('(max-width: 1023px)').matches) return
 
-    const timeout = window.setTimeout(() => {
+    return startInactivityLogout(() => {
       void useAuthStore.getState().signOut()
     }, 10 * 60 * 1000)
-
-    return () => window.clearTimeout(timeout)
   }, [authLoading, user])
 
   if (!isSupabaseConfigured) {
