@@ -41,6 +41,16 @@ html {
   top: 0 !important;
 }
 
+@media (min-width: 1024px) {
+  .page-header {
+    min-height: 6.25rem;
+  }
+
+  #main-content .page-header-tabs {
+    top: 6.25rem !important;
+  }
+}
+
 body {
   font-family: 'Nunito Sans', system-ui, sans-serif;
   background-color: #fbfaf5;

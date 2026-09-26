@@ -100,7 +100,7 @@ export default function StockHistory() {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-6">
-      <div className="sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-end sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
+      <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-end sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:px-8 lg:py-5">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Riwayat input stok</h1>
           <p className="mt-1 text-sm text-accent">Rekap barang yang ditambahkan ke stok berdasarkan tanggal penerimaan.</p>
