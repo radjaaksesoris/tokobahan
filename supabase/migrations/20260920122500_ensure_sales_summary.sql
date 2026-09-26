@@ -1,4 +1,7 @@
 -- Ensure the profit-and-loss summary RPC exists in deployed databases.
+-- PostgreSQL cannot replace a function when its RETURNS TABLE columns differ.
+DROP FUNCTION IF EXISTS public.sales_summary(TIMESTAMPTZ, TIMESTAMPTZ);
+
 CREATE OR REPLACE FUNCTION public.sales_summary(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
 RETURNS TABLE (
   total_revenue NUMERIC,

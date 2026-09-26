@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import webpush from 'web-push'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import webpush from 'npm:web-push@3'
 
 interface LowStockProduct {
   id: string

@@ -3,6 +3,11 @@ UPDATE public.sales
 SET amount_paid = total_amount
 WHERE payment_method <> 'credit' AND amount_paid = 0;
 
+-- The return columns changed in a later report migration. Drop the old
+-- signature first because CREATE OR REPLACE cannot change RETURNS TABLE.
+DROP FUNCTION IF EXISTS public.sales_summary(TIMESTAMPTZ, TIMESTAMPTZ);
+DROP FUNCTION IF EXISTS public.sales_daily_summary(TIMESTAMPTZ, TIMESTAMPTZ);
+
 CREATE OR REPLACE FUNCTION public.sales_summary(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
 RETURNS TABLE (
   total_revenue NUMERIC,

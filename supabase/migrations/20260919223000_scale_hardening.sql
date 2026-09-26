@@ -113,6 +113,9 @@ $$;
 REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) TO authenticated;
 
+-- PostgreSQL cannot replace a function when its RETURNS TABLE columns differ.
+DROP FUNCTION IF EXISTS public.sales_daily_summary(TIMESTAMPTZ, TIMESTAMPTZ);
+
 CREATE OR REPLACE FUNCTION public.sales_daily_summary(p_start TIMESTAMPTZ, p_end TIMESTAMPTZ)
 RETURNS TABLE (
   sale_date DATE,
