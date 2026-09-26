@@ -6,7 +6,7 @@ import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
 import { parseProductPrices, UNIT_LABELS } from '@/types'
-import { formatCurrency, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -72,6 +72,7 @@ export default function POS() {
   const [qty, setQty] = useState(1)
   const [qtyInput, setQtyInput] = useState('1')
   const [salePriceInput, setSalePriceInput] = useState('')
+  const [salePriceEditing, setSalePriceEditing] = useState(false)
   const [salePriceError, setSalePriceError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showCart, setShowCart] = useState(false)
@@ -837,9 +838,14 @@ export default function POS() {
                     id="sale-price"
                     type="text"
                     inputMode="numeric"
-                    value={salePriceInput}
+                    value={salePriceEditing ? salePriceInput : formatCurrencyInput(Number(salePriceInput))}
+                    onFocus={(event) => {
+                      setSalePriceEditing(true)
+                      event.currentTarget.select()
+                    }}
+                    onBlur={() => setSalePriceEditing(false)}
                     onChange={(event) => {
-                      const nextValue = event.target.value.replace(/\D/g, '')
+                      const nextValue = String(parseCurrencyInput(event.target.value))
                       const nextError = !nextValue || Number(nextValue) <= selectedProduct.cost_price
                       setSalePriceInput(nextValue)
                       setSalePriceError(nextError ? 'invalid' : '')
