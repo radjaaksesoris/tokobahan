@@ -33,6 +33,7 @@ html, body, #root {
 
 html {
   scroll-behavior: smooth;
+  overscroll-behavior-y: none;
 }
 
 /* Page headers stay flush with the top edge of the main scroll container. */
