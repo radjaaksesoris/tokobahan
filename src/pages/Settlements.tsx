@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -38,6 +39,16 @@ type PendingSettlement = {
   amount: number
   selectedBatchIds: string[]
   isFullPayment: boolean
+}
+type CustomerDebtReceipt = {
+  invoiceNo: string
+  customerName: string
+  createdAt: string
+  total: number
+  payment: number
+  remainingDebt: number
+  pendingSync: boolean
+  items: DebtItem[]
 }
 type VendorDebtRow = {
   id: string
@@ -87,6 +98,7 @@ export default function Settlements() {
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [pendingSettlement, setPendingSettlement] = useState<PendingSettlement | null>(null)
+  const [settlementReceipt, setSettlementReceipt] = useState<CustomerDebtReceipt | null>(null)
 
   async function refreshQueue() {
     const records = await getQueuedSettlements()
@@ -265,6 +277,7 @@ export default function Settlements() {
       if (!administratorId) throw new Error('Akun administrator tidak ditemukan')
       const queued = await enqueueSettlement(kind, payload, administratorId)
       let accepted = true
+      let pendingSync = !navigator.onLine
 
       if (navigator.onLine) {
         try {
@@ -273,6 +286,7 @@ export default function Settlements() {
           console.error('Immediate settlement sync failed:', error)
         }
         const stillQueued = (await getQueuedSettlements()).find((record) => record.id === queued.id)
+        pendingSync = Boolean(stillQueued)
         if (!stillQueued) {
           toast.success('Pembayaran berhasil dicatat')
         } else if (stillQueued.status === 'failed' && !isOfflineError({ message: stillQueued.lastError || '' })) {
@@ -287,6 +301,19 @@ export default function Settlements() {
       }
 
       if (accepted) {
+        if (kind === 'customer') {
+          setSettlementReceipt({
+            invoiceNo: debt.reference,
+            customerName: debt.name,
+            createdAt: new Date().toISOString(),
+            total: debt.total,
+            payment: amount,
+            remainingDebt: Math.max(0, debt.total - debt.paid - amount),
+            pendingSync,
+            items: debt.items,
+          })
+          window.setTimeout(() => window.print(), 0)
+        }
         setPayment((current) => ({ ...current, [debt.id]: '' }))
         setPendingSettlement(null)
       }
@@ -551,6 +578,61 @@ export default function Settlements() {
           </div>
         </div>
       </div>
+    )}
+    {settlementReceipt && createPortal(
+      <div id="receipt-print-root" aria-hidden="true">
+        <article className="receipt-document">
+          <header className="receipt-header">
+            <div className="receipt-brand">
+              <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo RAJA Aksesoris" />
+              <div className="receipt-brand-copy">
+                <strong>RAJA AKSESORIS</strong>
+                <span>Konveksi</span>
+              </div>
+            </div>
+            <span className="receipt-title">Struk Pembayaran Hutang</span>
+          </header>
+          <div className="receipt-rule" />
+          <div className="receipt-meta">
+            <span>No. {settlementReceipt.invoiceNo}</span>
+            <span>{new Date(settlementReceipt.createdAt).toLocaleString('id-ID')}</span>
+          </div>
+          <div>Pelanggan: {settlementReceipt.customerName}</div>
+          <div className="receipt-rule" />
+          <div className="receipt-items">
+            {settlementReceipt.items.map((item, index) => (
+              <div key={`${item.name}-${index}`} className="receipt-item">
+                <div>{item.name}</div>
+                <div className="receipt-item-detail">
+                  <span>{item.quantity} {UNIT_LABELS[item.unit] || item.unit} × {formatCurrency(item.unitPrice)}</span>
+                  <strong>{formatCurrency(item.subtotal)}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="receipt-rule" />
+          <div className="receipt-total receipt-total-highlight">
+            <span>TOTAL</span>
+            <strong>{formatCurrency(settlementReceipt.total)}</strong>
+          </div>
+          <div className="receipt-summary">
+            <span>Bayar hutang</span>
+            <span>{formatCurrency(settlementReceipt.payment)}</span>
+          </div>
+          <div className="receipt-summary">
+            <span>Sisa hutang</span>
+            <span>{formatCurrency(settlementReceipt.remainingDebt)}</span>
+          </div>
+          {settlementReceipt.pendingSync && (
+            <div className="receipt-summary">
+              <span>Status</span>
+              <span>Menunggu sinkronisasi</span>
+            </div>
+          )}
+          <footer className="receipt-center receipt-footer">Terima kasih</footer>
+        </article>
+      </div>,
+      document.body,
     )}
   </div>
 }
