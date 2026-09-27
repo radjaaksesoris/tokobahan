@@ -5,15 +5,15 @@
 4 silly config load:file:/Volumes/Macintosh HD - Data 1/tokobahan/.npmrc
 5 silly config load:file:/Users/em2studio/.npmrc
 6 silly config load:file:/usr/local/etc/npmrc
-7 verbose title npm run build
-8 verbose argv "run" "build"
-9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-27T00_20_03_797Z-
-10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-27T00_20_03_797Z-debug-0.log
+7 verbose title npm run lint
+8 verbose argv "run" "lint"
+9 verbose logfile logs-max:10 dir:/Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-27T04_22_25_500Z-
+10 verbose logfile /Volumes/Macintosh HD - Data 1/tokobahan/npm-cache/_logs/2026-09-27T04_22_25_500Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
 12 silly logfile done cleaning log files
 13 verbose cwd /Volumes/Macintosh HD - Data 1/tokobahan
 14 verbose os Darwin 21.6.0
 15 verbose node v24.15.0
 16 verbose npm  v11.12.1
-17 verbose exit 2
-18 verbose code 2
+17 verbose exit 0
+18 info ok
