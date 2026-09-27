@@ -145,6 +145,7 @@ export function AppLayout() {
                 cn(
                   'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
                   item.className,
+                  item.to === '/pos' && 'hidden lg:flex',
                   'lg:px-3',
                   isActive
                     ? 'bg-surface text-ink shadow-[0_8px_20px_rgba(32,42,46,0.12)]'
