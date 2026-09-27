@@ -439,7 +439,7 @@ export default function Settlements() {
             }}
               placeholder="Nominal"
               aria-label={`Nominal pembayaran ${debt.name}`}
-              className="h-10 min-w-0 flex-1 sm:w-28 sm:flex-none"
+              className="h-10 min-w-[8.5rem] flex-1 sm:w-40 sm:flex-none"
             />
             <Button className="h-10 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
