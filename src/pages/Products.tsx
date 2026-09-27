@@ -688,7 +688,7 @@ export default function Products() {
                             return (
                               <tr key={price.unit} className="text-center">
                                 <td className="px-2 py-1.5 text-muted-foreground">{index + 1}</td>
-                                <td className="px-2 py-1.5 font-medium text-ink/85">{UNIT_LABELS[price.unit]}</td>
+                                <td className="px-2 py-1.5 font-medium text-ink/85">{UNIT_LABELS[price.unit] || price.unit}</td>
                                 <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{formatCurrency(price.price)}</td>
                                 <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">{formatCurrency(margin.unitCost)}</td>
                                 <td className={`whitespace-nowrap px-2 py-1.5 font-semibold ${profitable ? 'text-emerald-600' : 'text-red-600'}`}>
