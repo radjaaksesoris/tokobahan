@@ -15,6 +15,11 @@ import { Select } from '@/components/ui/Select'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
+
+function getUnitLabel(unit: string | null | undefined) {
+  return unit ? UNIT_LABELS[unit] || unit : 'Satuan'
+}
+
 function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
   const costPerBaseUnit = batchCost / (product.cost_conversion || 1)
   const priceConversion = price.conversion || UNIT_FACTORS[price.unit] || 1
@@ -528,7 +533,7 @@ export default function Products() {
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
                         {Math.floor(p.stock / (p.stock_conversion || 1))}
                       </span>{' '}
-                      {UNIT_LABELS[(p.stock_unit || 'satuan') as UnitType]}
+                      {getUnitLabel(p.stock_unit)}
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType] || p.cost_unit || 'Satuan'}</span>
@@ -586,7 +591,7 @@ export default function Products() {
                 </CardHeader>
                 <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                    Stok saat ini: <strong>{stockProduct.stock} {UNIT_LABELS[(stockProduct.stock_unit || 'satuan') as UnitType]}</strong>
+                    Stok saat ini: <strong>{stockProduct.stock} {getUnitLabel(stockProduct.stock_unit)}</strong>
                   </div>
                   <div>
                     <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
