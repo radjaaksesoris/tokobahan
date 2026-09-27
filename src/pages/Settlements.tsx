@@ -300,8 +300,9 @@ export default function Settlements() {
         toast.info('Pelunasan disimpan dan akan disinkronkan saat online')
       }
 
+      const showReceiptPreview = accepted && kind === 'customer'
       if (accepted) {
-        if (kind === 'customer') {
+        if (showReceiptPreview) {
           setSettlementReceipt({
             invoiceNo: debt.reference,
             customerName: debt.name,
@@ -317,9 +318,13 @@ export default function Settlements() {
         setPendingSettlement(null)
       }
       await refreshQueue()
-      if (accepted && !navigator.onLine) void load()
-      else if (accepted) void load()
+      if (accepted && !showReceiptPreview) void load()
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Pelunasan gagal dicatat') }
+  }
+
+  function closeSettlementReceipt() {
+    setSettlementReceipt(null)
+    void load()
   }
 
   async function retrySettlements() {
@@ -581,7 +586,7 @@ export default function Settlements() {
     {settlementReceipt && (
       <SettlementReceiptPreview
         receipt={settlementReceipt}
-        onClose={() => setSettlementReceipt(null)}
+        onClose={closeSettlementReceipt}
       />
     )}
   </div>
@@ -597,7 +602,7 @@ function SettlementReceiptPreview({
   const printButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    const focusTimer = window.setTimeout(() => printButtonRef.current?.focus(), 0)
+    const focusTimer = window.setTimeout(() => printButtonRef.current?.focus({ preventScroll: true }), 0)
     return () => window.clearTimeout(focusTimer)
   }, [])
 
