@@ -377,7 +377,6 @@ export default function Products() {
             sku: sku || null,
             prices: prices.map((price) => ({ ...price })),
           })
-          setStockQuantity('0')
           setReturnToStockProduct(null)
         }
         setEditing(null)
