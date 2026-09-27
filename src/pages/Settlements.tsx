@@ -394,22 +394,22 @@ export default function Settlements() {
       filteredVendorPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
-            <table className="w-full min-w-[42rem] text-sm">
-              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
+            <table className="w-full min-w-[42rem] text-center text-sm">
+              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
-                  <th className="py-2 pr-3 font-medium">Tanggal</th>
-                  <th className="py-2 pr-3 font-medium">Vendor</th>
-                  <th className="py-2 pr-3 font-medium">Item</th>
-                  <th className="py-2 text-right font-medium">Nominal</th>
+                  <th className="py-2 font-medium">Tanggal</th>
+                  <th className="py-2 font-medium">Vendor</th>
+                  <th className="py-2 font-medium">Item</th>
+                  <th className="py-2 font-medium">Nominal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/70">
                 {filteredVendorPaymentHistory.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
-                    <td className="py-2 pr-3 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
-                    <td className="py-2 pr-3">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</td>
-                    <td className="py-2 text-right font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
+                    <td className="py-2 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
+                    <td className="py-2 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
+                    <td className="py-2">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</td>
+                    <td className="py-2 font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -421,22 +421,22 @@ export default function Settlements() {
       filteredCustomerPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
-            <table className="w-full min-w-[38rem] text-sm">
-              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
+            <table className="w-full min-w-[38rem] text-center text-sm">
+              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
-                  <th className="py-2 pr-3 font-medium">Tanggal</th>
-                  <th className="py-2 pr-3 font-medium">Pelanggan</th>
-                  <th className="py-2 pr-3 font-medium">Invoice</th>
-                  <th className="py-2 text-right font-medium">Nominal</th>
+                  <th className="py-2 font-medium">Tanggal</th>
+                  <th className="py-2 font-medium">Pelanggan</th>
+                  <th className="py-2 font-medium">Invoice</th>
+                  <th className="py-2 font-medium">Nominal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/70">
                 {filteredCustomerPaymentHistory.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2 pr-3 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
-                    <td className="py-2 pr-3 font-medium text-ink">{item.sale?.customer?.name || 'Pelanggan'}</td>
-                    <td className="py-2 pr-3">{item.sale?.invoice_no || '-'}</td>
-                    <td className="py-2 text-right font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
+                    <td className="py-2 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
+                    <td className="py-2 font-medium text-ink">{item.sale?.customer?.name || 'Pelanggan'}</td>
+                    <td className="py-2">{item.sale?.invoice_no || '-'}</td>
+                    <td className="py-2 font-semibold text-primary">{formatCurrency(Number(item.amount))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -488,19 +488,19 @@ export default function Settlements() {
             <div className="mt-3 border-t border-border pt-2">
               <p className="mb-2 font-semibold text-ink">Rincian item</p>
               <div className="max-h-64 overflow-auto border-t border-amber-200/80">
-                <table className="w-full min-w-[28rem] text-xs">
-                  <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-left text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
+                <table className="w-full min-w-[28rem] text-center text-xs">
+                  <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
                     <tr>
-                      <th className="py-1 pr-3 font-medium">Item</th>
-                      <th className="py-1 pr-3 font-medium">Jumlah</th>
-                      <th className="py-1 pr-3 font-medium">Harga</th>
-                      <th className="py-1 text-right font-medium">Subtotal</th>
+                      <th className="py-1 font-medium">Item</th>
+                      <th className="py-1 font-medium">Jumlah</th>
+                      <th className="py-1 font-medium">Harga</th>
+                      <th className="py-1 font-medium">Subtotal</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/70">
                     {debt.items.map((item, index) => (
                       <tr key={`${debt.id}-item-${index}`}>
-                        <td className="py-1.5 pr-3 text-ink">
+                        <td className="py-1.5 text-ink">
                           {tab === 'vendor' && item.batchId && (
                             <input
                               type="checkbox"
@@ -523,9 +523,9 @@ export default function Settlements() {
                           )}
                           {item.name}
                         </td>
-                        <td className="py-1.5 pr-3">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
-                        <td className="py-1.5 pr-3">{formatCurrency(item.unitPrice)}</td>
-                        <td className="py-1.5 text-right font-medium text-ink">{formatCurrency(item.subtotal)}</td>
+                        <td className="py-1.5">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
+                        <td className="py-1.5">{formatCurrency(item.unitPrice)}</td>
+                        <td className="py-1.5 font-medium text-ink">{formatCurrency(item.subtotal)}</td>
                       </tr>
                     ))}
                   </tbody>
