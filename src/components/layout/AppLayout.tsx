@@ -154,10 +154,12 @@ export function AppLayout() {
               }
             >
               <item.icon className="h-[1.15rem] w-[1.15rem] shrink-0 transition-transform duration-200 group-hover:scale-105" />
-              <span className={item.label === 'Riwayat Transaksi' ? 'text-center leading-tight lg:hidden' : 'text-center leading-tight'}>
-                {item.label === 'Riwayat Transaksi' ? 'Riwayat' : item.label}
+              <span className={item.label === 'Riwayat Transaksi' || item.to === '/' ? 'text-center leading-tight lg:hidden' : 'text-center leading-tight'}>
+                {item.to === '/' ? 'TRANSAKSI' : item.label === 'Riwayat Transaksi' ? 'Riwayat' : item.label}
               </span>
-              {item.label === 'Riwayat Transaksi' && <span className="hidden lg:inline">Riwayat Transaksi</span>}
+              {(item.label === 'Riwayat Transaksi' || item.to === '/') && (
+                <span className="hidden lg:inline">{item.label}</span>
+              )}
             </NavLink>
           ))}
         </nav>
