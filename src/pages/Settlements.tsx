@@ -393,23 +393,7 @@ export default function Settlements() {
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="divide-y divide-teal-200/70 sm:hidden">
-            {filteredVendorPaymentHistory.map((item) => (
-              <article key={item.id} className="space-y-1.5 py-3 first:pt-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</p>
-                    <p className="truncate text-xs text-muted-foreground">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</p>
-                  </div>
-                  <p className="shrink-0 text-right text-sm font-semibold tabular-nums text-primary">{formatCurrency(Number(item.amount))}</p>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tanggal bayar · {new Date(item.paid_at).toLocaleDateString('id-ID')}
-                </p>
-              </article>
-            ))}
-          </div>
-          <div className="hidden max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80 sm:block">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
             <table className="w-full min-w-[42rem] text-sm">
               <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
@@ -436,23 +420,7 @@ export default function Settlements() {
     ) : tab === 'customer-history' ? (
       filteredCustomerPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
         <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="divide-y divide-teal-200/70 sm:hidden">
-            {filteredCustomerPaymentHistory.map((item) => (
-              <article key={item.id} className="space-y-1.5 py-3 first:pt-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{item.sale?.customer?.name || 'Pelanggan'}</p>
-                    <p className="truncate text-xs text-muted-foreground">Invoice {item.sale?.invoice_no || '-'}</p>
-                  </div>
-                  <p className="shrink-0 text-right text-sm font-semibold tabular-nums text-primary">{formatCurrency(Number(item.amount))}</p>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tanggal bayar · {new Date(item.paid_at).toLocaleDateString('id-ID')}
-                </p>
-              </article>
-            ))}
-          </div>
-          <div className="hidden max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80 sm:block">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
             <table className="w-full min-w-[38rem] text-sm">
               <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-left text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
                 <tr>
@@ -477,185 +445,105 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : openDebts.length === 0 ? <Card className="border-amber-200 bg-amber-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
-      {openDebts.map((debt) => {
-        const outstanding = debt.total - debt.paid
-        const isExpanded = expandedDebtId === debt.id
-        return (
-          <Card key={debt.id} className="border-amber-200 bg-amber-50/40">
-            <CardContent className="space-y-3 p-3 sm:p-4">
-              <div className="min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-ink">{debt.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{debt.reference}</p>
-                  </div>
-                  {debt.due && (
-                    <span className="shrink-0 rounded-md bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-900">
-                      Jatuh tempo {debt.due}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  <div className="rounded-lg bg-surface/80 px-2.5 py-2">
-                    <p className="text-[10px] font-medium text-muted-foreground">Total hutang</p>
-                    <p className="mt-0.5 truncate text-xs font-semibold tabular-nums text-ink sm:text-sm">{formatCurrency(debt.total)}</p>
-                  </div>
-                  <div className="rounded-lg bg-surface/80 px-2.5 py-2">
-                    <p className="text-[10px] font-medium text-muted-foreground">Sudah dibayar</p>
-                    <p className="mt-0.5 truncate text-xs font-semibold tabular-nums text-ink sm:text-sm">{formatCurrency(debt.paid)}</p>
-                  </div>
-                  <div className="col-span-2 rounded-lg border border-amber-200 bg-amber-100/70 px-2.5 py-2 sm:col-span-1">
-                    <p className="text-[10px] font-semibold text-amber-900">Sisa hutang</p>
-                    <p className="mt-0.5 truncate text-sm font-bold tabular-nums text-amber-950 sm:text-base">{formatCurrency(outstanding)}</p>
-                  </div>
-                </div>
+      {openDebts.map((debt) => <Card key={debt.id} className="border-amber-200 bg-amber-50/40"><CardContent className="space-y-2 p-2.5 sm:p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
+              <p className="text-[11px] text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+          </div>
+          <div className="flex w-full gap-1.5 sm:w-auto">
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={payment[debt.id] ? formatCurrency(Number(payment[debt.id])) : ''}
+              disabled={tab === 'vendor' && vendorPaymentModes[debt.id] === 'item'}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => {
+              const value = event.target.value.replace(/\D/g, '')
+              if (tab === 'vendor' && value.trim() && !vendorPaymentModes[debt.id]) {
+                setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'nominal' }))
+              }
+              setPayment((current) => ({ ...current, [debt.id]: value }))
+            }}
+              placeholder="Nominal"
+              aria-label={`Nominal pembayaran ${debt.name}`}
+              className="h-10 min-w-[8.5rem] flex-1 sm:w-40 sm:flex-none"
+            />
+            <Button className="h-10 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+              Rincian
+            </Button>
+            <Button className="h-10 px-3" onClick={() => settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+          </div>
+        </div>
+        {expandedDebtId === debt.id && (
+          <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm">
+            <div className="grid gap-1 sm:grid-cols-3">
+              <p>Total: <strong>{formatCurrency(debt.total)}</strong></p>
+              <p>Sudah dibayar: <strong>{formatCurrency(debt.paid)}</strong></p>
+              <p>Sisa: <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+            </div>
+            <div className="mt-3 border-t border-border pt-2">
+              <p className="mb-2 font-semibold text-ink">Rincian item</p>
+              <div className="max-h-64 overflow-auto border-t border-amber-200/80">
+                <table className="w-full min-w-[28rem] text-xs">
+                  <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-left text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
+                    <tr>
+                      <th className="py-1 pr-3 font-medium">Item</th>
+                      <th className="py-1 pr-3 font-medium">Jumlah</th>
+                      <th className="py-1 pr-3 font-medium">Harga</th>
+                      <th className="py-1 text-right font-medium">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/70">
+                    {debt.items.map((item, index) => (
+                      <tr key={`${debt.id}-item-${index}`}>
+                        <td className="py-1.5 pr-3 text-ink">
+                          {tab === 'vendor' && item.batchId && (
+                            <input
+                              type="checkbox"
+                              className="mr-2 accent-primary"
+                              checked={(selectedItems[debt.id] || []).includes(item.batchId)}
+                              disabled={vendorPaymentModes[debt.id] === 'nominal'}
+                              onChange={(event) => setSelectedItems((current) => ({
+                                ...current,
+                                [debt.id]: event.target.checked
+                                  ? [...(current[debt.id] || []), item.batchId as string]
+                                  : (current[debt.id] || []).filter((id) => id !== item.batchId),
+                              }))}
+                              onClick={() => {
+                                if (!vendorPaymentModes[debt.id]) {
+                                  setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'item' }))
+                                }
+                              }}
+                              aria-label={`Pilih ${item.name} untuk dibayar`}
+                            />
+                          )}
+                          {item.name}
+                        </td>
+                        <td className="py-1.5 pr-3">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
+                        <td className="py-1.5 pr-3">{formatCurrency(item.unitPrice)}</td>
+                        <td className="py-1.5 text-right font-medium text-ink">{formatCurrency(item.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="space-y-2 border-t border-amber-200/80 pt-3">
-                <label htmlFor={`settlement-amount-${debt.id}`} className="block text-xs font-semibold text-ink">
-                  Nominal pembayaran
-                </label>
-                <Input
-                  id={`settlement-amount-${debt.id}`}
-                  type="text"
-                  inputMode="numeric"
-                  value={payment[debt.id] ? formatCurrency(Number(payment[debt.id])) : ''}
-                  disabled={tab === 'vendor' && vendorPaymentModes[debt.id] === 'item'}
-                  onFocus={(event) => event.currentTarget.select()}
-                  onChange={(event) => {
-                    const value = event.target.value.replace(/\D/g, '')
-                    if (tab === 'vendor' && value.trim() && !vendorPaymentModes[debt.id]) {
-                      setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'nominal' }))
-                    }
-                    setPayment((current) => ({ ...current, [debt.id]: value }))
-                  }}
-                  placeholder={tab === 'customer' ? 'Kosong = lunasi seluruh sisa' : 'Masukkan jumlah yang dibayar'}
-                  aria-label={`Nominal pembayaran ${debt.name}`}
-                  className="h-11 min-w-0 w-full"
-                />
-                <p className="text-[11px] leading-4 text-muted-foreground">
-                  {tab === 'customer'
-                    ? 'Isi nominal untuk membayar sebagian. Kosongkan untuk melunasi seluruh sisa hutang.'
-                    : 'Isi nominal pembayaran, atau pilih item pada rincian untuk membayar per barang.'}
-                </p>
-                <div className="grid grid-cols-[1fr_1.15fr] gap-2 sm:flex sm:justify-end">
-                  <Button
-                    className="h-10 px-3"
-                    variant="outline"
-                    aria-expanded={isExpanded}
-                    onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}
-                  >
-                    {isExpanded ? 'Tutup rincian' : 'Lihat rincian'}
-                  </Button>
-                  <Button className="h-10 px-3" onClick={() => settle(debt)}>
-                    <WalletCards className="h-4 w-4" /> Bayar
-                  </Button>
-                </div>
+            </div>
+            {debt.payments.length > 0 && (
+              <div className="mt-3 space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                {debt.payments.map((item, index) => (
+                  <p key={`${debt.id}-payment-${index}`}>
+                    Pembayaran {index + 1}: {formatCurrency(item.amount)} · {new Date(item.paid_at).toLocaleDateString('id-ID')}
+                  </p>
+                ))}
               </div>
-              {isExpanded && (
-                <div className="rounded-xl border border-amber-200 bg-surface p-3 text-sm">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <p className="text-xs text-muted-foreground">Total: <strong className="text-ink">{formatCurrency(debt.total)}</strong></p>
-                    <p className="text-xs text-muted-foreground">Sudah dibayar: <strong className="text-ink">{formatCurrency(debt.paid)}</strong></p>
-                    <p className="col-span-2 text-xs text-muted-foreground sm:col-span-1">Sisa: <strong className="text-primary">{formatCurrency(outstanding)}</strong></p>
-                  </div>
-                  <div className="mt-3 border-t border-border pt-2">
-                    <p className="mb-2 font-semibold text-ink">Rincian item{tab === 'vendor' ? ' · pilih item yang akan dibayar' : ''}</p>
-                    <div className="divide-y divide-amber-100 sm:hidden">
-                      {debt.items.map((item, index) => (
-                        <article key={`${debt.id}-mobile-item-${index}`} className="space-y-1.5 py-2.5 first:pt-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex min-w-0 items-start gap-2">
-                              {tab === 'vendor' && item.batchId && (
-                                <input
-                                  type="checkbox"
-                                  className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                                  checked={(selectedItems[debt.id] || []).includes(item.batchId)}
-                                  disabled={vendorPaymentModes[debt.id] === 'nominal'}
-                                  onChange={(event) => setSelectedItems((current) => ({
-                                    ...current,
-                                    [debt.id]: event.target.checked
-                                      ? [...(current[debt.id] || []), item.batchId as string]
-                                      : (current[debt.id] || []).filter((id) => id !== item.batchId),
-                                  }))}
-                                  onClick={() => {
-                                    if (!vendorPaymentModes[debt.id]) {
-                                      setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'item' }))
-                                    }
-                                  }}
-                                  aria-label={`Pilih ${item.name} untuk dibayar`}
-                                />
-                              )}
-                              <span className="min-w-0 text-xs font-medium text-ink">{item.name}</span>
-                            </div>
-                            <span className="shrink-0 text-xs font-semibold tabular-nums text-ink">{formatCurrency(item.subtotal)}</span>
-                          </div>
-                          <p className="pl-6 text-[11px] text-muted-foreground">
-                            {item.quantity} {UNIT_LABELS[item.unit] || item.unit} × {formatCurrency(item.unitPrice)}
-                          </p>
-                        </article>
-                      ))}
-                    </div>
-                    <div className="hidden max-h-64 overflow-auto border-t border-amber-200/80 sm:block">
-                      <table className="w-full min-w-[28rem] text-xs">
-                        <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-left text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
-                          <tr>
-                            <th className="py-1 pr-3 font-medium">Item</th>
-                            <th className="py-1 pr-3 font-medium">Jumlah</th>
-                            <th className="py-1 pr-3 font-medium">Harga</th>
-                            <th className="py-1 text-right font-medium">Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/70">
-                          {debt.items.map((item, index) => (
-                            <tr key={`${debt.id}-item-${index}`}>
-                              <td className="py-1.5 pr-3 text-ink">
-                                {tab === 'vendor' && item.batchId && (
-                                  <input
-                                    type="checkbox"
-                                    className="mr-2 accent-primary"
-                                    checked={(selectedItems[debt.id] || []).includes(item.batchId)}
-                                    disabled={vendorPaymentModes[debt.id] === 'nominal'}
-                                    onChange={(event) => setSelectedItems((current) => ({
-                                      ...current,
-                                      [debt.id]: event.target.checked
-                                        ? [...(current[debt.id] || []), item.batchId as string]
-                                        : (current[debt.id] || []).filter((id) => id !== item.batchId),
-                                    }))}
-                                    onClick={() => {
-                                      if (!vendorPaymentModes[debt.id]) {
-                                        setVendorPaymentModes((current) => ({ ...current, [debt.id]: 'item' }))
-                                      }
-                                    }}
-                                    aria-label={`Pilih ${item.name} untuk dibayar`}
-                                  />
-                                )}
-                                {item.name}
-                              </td>
-                              <td className="py-1.5 pr-3">{item.quantity} {UNIT_LABELS[item.unit] || item.unit}</td>
-                              <td className="py-1.5 pr-3">{formatCurrency(item.unitPrice)}</td>
-                              <td className="py-1.5 text-right font-medium text-ink">{formatCurrency(item.subtotal)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  {debt.payments.length > 0 && (
-                    <div className="mt-3 space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
-                      <p className="mb-1 font-semibold text-ink">Riwayat pembayaran</p>
-                      {debt.payments.map((item, index) => (
-                        <p key={`${debt.id}-payment-${index}`}>
-                          Pembayaran {index + 1}: {formatCurrency(item.amount)} · {new Date(item.paid_at).toLocaleDateString('id-ID')}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )
-      })}
+            )}
+          </div>
+        )}
+      </CardContent></Card>)}
     </div>}
     {(debts.length > 0 || vendorPaymentHistory.length > 0) && (
       <div className="flex items-center justify-between border-t border-border pt-3">
