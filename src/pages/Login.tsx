@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -13,10 +13,20 @@ const ADMIN_EMAIL = 'voltker1@outlook.com'
 export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 1023px)').matches)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [loading, setLoading] = useState(false)
+  const loginInProgress = useRef(false)
   const signIn = useAuthStore((s) => s.signIn)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px)')
+    const updateMobileState = () => setIsMobile(media.matches)
+    updateMobileState()
+    media.addEventListener('change', updateMobileState)
+    return () => media.removeEventListener('change', updateMobileState)
+  }, [])
 
   useEffect(() => {
     const viewport = window.visualViewport
@@ -31,12 +41,12 @@ export default function Login() {
     return () => viewport.removeEventListener('resize', updateKeyboardState)
   }, [])
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (loading || !password) return
+  const submitPassword = async (value: string) => {
+    if (loginInProgress.current || !value) return
+    loginInProgress.current = true
     setLoading(true)
     try {
-      const { error } = await signIn(ADMIN_EMAIL, password)
+      const { error } = await signIn(ADMIN_EMAIL, value)
       if (error) {
         toast.error(error)
         setPassword('')
@@ -47,8 +57,21 @@ export default function Login() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal masuk ke aplikasi')
     } finally {
+      loginInProgress.current = false
       setLoading(false)
     }
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void submitPassword(password)
+  }
+
+  const appendPinDigit = (digit: string) => {
+    if (loading || password.length >= 6) return
+    const nextPassword = `${password}${digit}`
+    setPassword(nextPassword)
+    if (nextPassword.length === 6) void submitPassword(nextPassword)
   }
 
   return (
@@ -132,11 +155,13 @@ export default function Login() {
                   <Input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Masukkan password"
+                    placeholder={isMobile ? 'Masukkan 6 digit PIN' : 'Masukkan password'}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
                     autoComplete="current-password"
+                    inputMode={isMobile ? 'none' : undefined}
+                    readOnly={isMobile}
                     className="pr-11"
                     disabled={loading}
                   />
@@ -145,6 +170,26 @@ export default function Login() {
                   </button>
                 </div>
               </div>
+              {isMobile && (
+                <div className="login-keypad grid grid-cols-3 gap-2" aria-label="Numpad PIN">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Hapus', '0', '⌫'].map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => {
+                        if (key === 'Hapus') setPassword('')
+                        else if (key === '⌫') setPassword((current) => current.slice(0, -1))
+                        else appendPinDigit(key)
+                      }}
+                      aria-label={key === '⌫' ? 'Hapus satu digit' : key === 'Hapus' ? 'Hapus semua digit' : `Digit ${key}`}
+                      className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-lg font-semibold text-ink/85 transition-colors hover:bg-slate-100 active:bg-slate-200 disabled:opacity-50"
+                    >
+                      {key}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Button type="submit" className="w-full shadow-[0_12px_24px_rgba(36,126,121,0.2)]" size="lg" disabled={loading}>
                 {loading ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Masuk ke dashboard'}
               </Button>
