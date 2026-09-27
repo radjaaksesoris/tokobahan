@@ -228,17 +228,17 @@ export default function Reports() {
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <Card className="overflow-hidden border-primary/15 bg-primary text-white shadow-[0_16px_32px_rgba(33,108,104,0.16)]">
-        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <CardContent className="flex flex-row items-center justify-between gap-3 p-3 sm:p-5">
           <div className="max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Kesimpulan periode ini</p>
-            <h3 className="mt-2 text-2xl font-bold tracking-tight">Laba bersih {formatCurrency(totalProfit)}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 sm:text-xs sm:tracking-[0.16em]">Kesimpulan periode ini</p>
+            <h3 className="mt-1 text-lg font-bold tracking-tight sm:mt-2 sm:text-2xl">Laba bersih {formatCurrency(totalProfit)}</h3>
           </div>
-          <div className="shrink-0 rounded-2xl bg-white/10 px-4 py-3 sm:min-w-44">
-            <div className="flex items-center gap-2 text-sm text-white/75">
-              <TrendingUp className="h-4 w-4" /> Margin laba
+          <div className="shrink-0 rounded-xl bg-white/10 px-2.5 py-2 sm:min-w-44 sm:rounded-2xl sm:px-4 sm:py-3">
+            <div className="flex items-center gap-1.5 text-xs text-white/75 sm:gap-2 sm:text-sm">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Margin laba
             </div>
-            <p className="mt-1 text-3xl font-bold tabular-nums">{margin.toFixed(1)}%</p>
-            <p className="mt-1 text-xs text-white/65">{formatNumber(summary.transaction_count)} transaksi</p>
+            <p className="mt-0.5 text-xl font-bold tabular-nums sm:mt-1 sm:text-3xl">{margin.toFixed(1)}%</p>
+            <p className="mt-0.5 text-[10px] text-white/65 sm:mt-1 sm:text-xs">{formatNumber(summary.transaction_count)} transaksi</p>
           </div>
         </CardContent>
       </Card>
