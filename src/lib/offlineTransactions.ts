@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { prepareOfflineQueuesForSync } from '@/lib/offlineQueueReset'
 
 export type QueuedTransactionStatus = 'pending' | 'syncing' | 'failed'
 
@@ -168,6 +169,7 @@ async function recoverStaleTransactions() {
 export async function syncQueuedTransactions(): Promise<SyncResult> {
   if (syncPromise) return syncPromise
   syncPromise = (async () => {
+    if (!await prepareOfflineQueuesForSync()) return { synced: 0, failed: 0 }
     await recoverStaleTransactions()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
     const transactions = (await getQueuedTransactions())

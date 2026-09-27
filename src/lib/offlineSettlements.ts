@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { prepareOfflineQueuesForSync } from '@/lib/offlineQueueReset'
 
 export type SettlementKind = 'vendor' | 'customer'
 export type QueuedSettlementStatus = 'pending' | 'syncing' | 'failed'
@@ -132,6 +133,7 @@ export async function syncQueuedSettlements(userId: string): Promise<SyncResult>
   if (!userId) throw new Error('Akun administrator tidak ditemukan')
   if (syncPromise) return syncPromise
   syncPromise = (async () => {
+    if (!await prepareOfflineQueuesForSync()) return { synced: 0, failed: 0 }
     await recoverStaleSettlements()
     if (!navigator.onLine) return { synced: 0, failed: 0 }
     const records = (await getQueuedSettlements())

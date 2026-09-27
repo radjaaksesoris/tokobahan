@@ -23,12 +23,29 @@ function deleteOfflineDatabase() {
   })
 }
 
+function createStorage(): Storage {
+  const values = new Map<string, string>()
+  return {
+    get length() { return values.size },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key) => { values.delete(key) },
+    setItem: (key, value) => { values.set(key, String(value)) },
+  }
+}
+
 describe('offline settlement synchronization', () => {
   beforeEach(async () => {
     vi.stubGlobal('navigator', { onLine: true })
+    vi.stubGlobal('localStorage', createStorage())
     await deleteOfflineDatabase()
     vi.clearAllMocks()
-    rpc.mockResolvedValue({ data: null, error: null })
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: null },
+    ))
   })
 
   afterEach(() => {
@@ -40,23 +57,29 @@ describe('offline settlement synchronization', () => {
       sale_id: 'sale-1',
       amount: 2500,
     }, 'admin-1')
-    rpc.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Failed to fetch' },
-    })
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: { message: 'Failed to fetch' } },
+    ))
 
     const firstAttempt = await syncQueuedSettlements('admin-1')
     expect(firstAttempt).toEqual({ synced: 0, failed: 1 })
-    expect(rpc).toHaveBeenNthCalledWith(1, 'pay_customer_debt', {
+    expect(rpc).toHaveBeenCalledWith('pay_customer_debt', {
       p_sale_id: 'sale-1',
       p_amount: 2500,
       p_idempotency_key: settlement.idempotencyKey,
     })
 
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: null },
+    ))
     const secondAttempt = await retryFailedSettlements('admin-1')
 
     expect(secondAttempt).toEqual({ synced: 1, failed: 0 })
-    expect(rpc).toHaveBeenNthCalledWith(2, 'pay_customer_debt', {
+    expect(rpc).toHaveBeenCalledWith('pay_customer_debt', {
       p_sale_id: 'sale-1',
       p_amount: 2500,
       p_idempotency_key: settlement.idempotencyKey,
@@ -68,7 +91,9 @@ describe('offline settlement synchronization', () => {
     await enqueueSettlement('vendor', {
       allocations: [{ stock_batch_id: 'batch-1', amount: 1250 }],
     }, 'admin-1')
-    rpc.mockRejectedValueOnce(new TypeError('Network request failed'))
+    rpc.mockImplementation((name: string) => name === 'get_operational_reset_generation'
+      ? Promise.resolve({ data: 0, error: null })
+      : Promise.reject(new TypeError('Network request failed')))
 
     const result = await syncQueuedSettlements('admin-1')
     const [queued] = await getQueuedSettlements()
@@ -109,7 +134,7 @@ describe('offline settlement synchronization', () => {
     })
 
     expect(await syncQueuedSettlements('admin-1')).toEqual({ synced: 0, failed: 0 })
-    expect(rpc).not.toHaveBeenCalled()
+    expect(rpc.mock.calls.map(([name]) => name)).toContain('get_operational_reset_generation')
     expect(await getQueuedSettlements()).toEqual(expect.arrayContaining([
       foreignSettlement,
       legacySettlement,

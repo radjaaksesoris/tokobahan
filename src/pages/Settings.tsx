@@ -13,6 +13,7 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { clearOfflineOperationalCache } from '@/lib/offlineCache'
 import { clearOfflineOperationalData } from '@/lib/offlineOperationalData'
+import { rememberCurrentResetGeneration } from '@/lib/offlineQueueReset'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -219,6 +220,13 @@ export default function Settings() {
       toast.error('Data server sudah direset, tetapi antrean offline perangkat ini gagal dihapus. Jangan sinkronkan antrean lama; hubungi admin.')
       setResetting(false)
       return
+    }
+
+    try {
+      await rememberCurrentResetGeneration()
+    } catch (error) {
+      console.error('Database reset succeeded, but the local reset generation could not be saved:', error)
+      toast.warning('Data server dan antrean perangkat ini sudah direset, tetapi status sinkronisasi belum tersimpan. Perangkat ini akan memeriksa ulang sebelum mengirim antrean.')
     }
 
     toast.success('Data operasional dikosongkan. Backup, akun admin, dan pengaturan tetap tersimpan.')
@@ -463,9 +471,10 @@ export default function Settings() {
                   ID data memakai UUID dan tidak diurutkan ulang. Reset tidak dapat dibatalkan.
                 </p>
                 <p className="mt-2 text-xs text-red-700">
-                  Pastikan antrean offline sudah disinkronkan atau tidak lagi diperlukan. Antrean di
-                  perangkat/browser lain tidak bisa dihapus dari sini; buka aplikasi di tiap perangkat
-                  setelah reset dan hapus data situs jika masih ada antrean lama.
+                  Pastikan antrean offline sudah disinkronkan atau tidak lagi diperlukan. Perangkat
+                  lain akan menghapus antrean dan cache lama otomatis saat kembali online. Jangan
+                  mencatat transaksi offline di perangkat yang belum tersambung setelah reset karena
+                  antrean tersebut akan ikut dibuang.
                 </p>
               </div>
             </div>

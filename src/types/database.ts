@@ -405,6 +405,10 @@ export interface Database {
         Args: Record<string, never>
         Returns: undefined
       }
+      get_operational_reset_generation: {
+        Args: Record<string, never>
+        Returns: number
+      }
       receive_stock_batch: {
         Args: {
           p_product_id: string

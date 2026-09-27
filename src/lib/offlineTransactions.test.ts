@@ -41,16 +41,33 @@ function deleteOfflineDatabase() {
   })
 }
 
+function createStorage(): Storage {
+  const values = new Map<string, string>()
+  return {
+    get length() { return values.size },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key) => { values.delete(key) },
+    setItem: (key, value) => { values.set(key, String(value)) },
+  }
+}
+
 describe('offline transaction synchronization', () => {
   beforeEach(async () => {
     vi.stubGlobal('navigator', { onLine: true })
+    vi.stubGlobal('localStorage', createStorage())
     await deleteOfflineDatabase()
     vi.clearAllMocks()
     from.mockReturnValue({ select })
     select.mockReturnValue({ eq })
     eq.mockReturnValue({ maybeSingle })
     maybeSingle.mockResolvedValue({ data: null, error: null })
-    rpc.mockResolvedValue({ data: null, error: null })
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: null },
+    ))
   })
 
   afterEach(() => {
@@ -79,7 +96,11 @@ describe('offline transaction synchronization', () => {
 
   it('retries failed checkouts and removes them after success', async () => {
     await enqueueTransaction(transaction)
-    rpc.mockResolvedValueOnce({ data: null, error: { message: 'temporary failure' } })
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: { message: 'temporary failure' } },
+    ))
 
     const firstAttempt = await syncQueuedTransactions()
     expect(firstAttempt).toEqual({ synced: 0, failed: 1 })
@@ -89,11 +110,16 @@ describe('offline transaction synchronization', () => {
       lastError: 'temporary failure',
     })
 
+    rpc.mockImplementation((name: string) => Promise.resolve(
+      name === 'get_operational_reset_generation'
+        ? { data: 0, error: null }
+        : { data: null, error: null },
+    ))
     const retryResult = await retryFailedTransactions()
 
     expect(retryResult).toEqual({ synced: 1, failed: 0 })
     expect(await getQueuedTransactions()).toEqual([])
-    expect(rpc).toHaveBeenCalledTimes(2)
+    expect(rpc).toHaveBeenCalledTimes(4)
   })
 
   it('does not submit a checkout already committed with the same invoice', async () => {
@@ -103,7 +129,7 @@ describe('offline transaction synchronization', () => {
     const result = await syncQueuedTransactions()
 
     expect(result).toEqual({ synced: 1, failed: 0 })
-    expect(rpc).not.toHaveBeenCalled()
+    expect(rpc).not.toHaveBeenCalledWith('checkout_sale', expect.anything())
     expect(await getQueuedTransactions()).toEqual([])
   })
 })
