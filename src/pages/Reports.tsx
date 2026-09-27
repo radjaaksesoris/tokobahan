@@ -248,13 +248,13 @@ export default function Reports() {
           <h3 id="cash-flow-heading" className="text-lg font-bold text-ink">Uang yang bergerak</h3>
           <p className="text-sm text-muted-foreground">Bagian ini menjawab: uang masuk berapa, keluar berapa, dan sisanya berapa.</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {[
             { label: 'Uang masuk dari penjualan', value: totalRevenue, note: 'Total penjualan pada periode ini', icon: DollarSign, tone: 'border-primary/20 bg-primary/5 text-primary' },
             { label: 'Bayar vendor', value: totalVendorPayments, note: 'Uang yang dibayarkan ke vendor', icon: WalletCards, tone: 'border-orange-200 bg-orange-50 text-orange-700' },
             { label: 'Kas bersih', value: netCash, note: 'Uang masuk dikurangi bayar vendor', icon: WalletCards, tone: netCash >= 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700' },
           ].map((item) => (
-            <Card key={item.label} className={`border ${item.tone}`}>
+            <Card key={item.label} className={`border ${item.tone} ${item.label === 'Uang masuk dari penjualan' ? 'col-span-2 md:col-span-1' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -275,7 +275,7 @@ export default function Reports() {
           <h3 id="sales-result-heading" className="text-lg font-bold text-ink">Hasil penjualan</h3>
           <p className="text-sm text-muted-foreground">Angka yang menjelaskan apakah penjualan menghasilkan keuntungan.</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { label: 'Modal barang (HPP)', value: totalCost, note: 'Modal yang melekat pada barang terjual', icon: TrendingDown },
             { label: 'Penjualan kredit', value: totalCredit, note: 'Belum seluruhnya diterima tunai', icon: WalletCards },
