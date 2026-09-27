@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -312,7 +312,6 @@ export default function Settlements() {
             pendingSync,
             items: debt.items,
           })
-          window.setTimeout(() => window.print(), 0)
         }
         setPayment((current) => ({ ...current, [debt.id]: '' }))
         setPendingSettlement(null)
@@ -579,60 +578,118 @@ export default function Settlements() {
         </div>
       </div>
     )}
-    {settlementReceipt && createPortal(
-      <div id="receipt-print-root" aria-hidden="true">
-        <article className="receipt-document">
-          <header className="receipt-header">
-            <div className="receipt-brand">
-              <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo RAJA Aksesoris" />
-              <div className="receipt-brand-copy">
-                <strong>RAJA AKSESORIS</strong>
-                <span>Konveksi</span>
-              </div>
-            </div>
-            <span className="receipt-title">Struk Pembayaran Hutang</span>
-          </header>
-          <div className="receipt-rule" />
-          <div className="receipt-meta">
-            <span>No. {settlementReceipt.invoiceNo}</span>
-            <span>{new Date(settlementReceipt.createdAt).toLocaleString('id-ID')}</span>
-          </div>
-          <div>Pelanggan: {settlementReceipt.customerName}</div>
-          <div className="receipt-rule" />
-          <div className="receipt-items">
-            {settlementReceipt.items.map((item, index) => (
-              <div key={`${item.name}-${index}`} className="receipt-item">
-                <div>{item.name}</div>
-                <div className="receipt-item-detail">
-                  <span>{item.quantity} {UNIT_LABELS[item.unit] || item.unit} × {formatCurrency(item.unitPrice)}</span>
-                  <strong>{formatCurrency(item.subtotal)}</strong>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="receipt-rule" />
-          <div className="receipt-total receipt-total-highlight">
-            <span>TOTAL</span>
-            <strong>{formatCurrency(settlementReceipt.total)}</strong>
-          </div>
-          <div className="receipt-summary">
-            <span>Bayar hutang</span>
-            <span>{formatCurrency(settlementReceipt.payment)}</span>
-          </div>
-          <div className="receipt-summary">
-            <span>Sisa hutang</span>
-            <span>{formatCurrency(settlementReceipt.remainingDebt)}</span>
-          </div>
-          {settlementReceipt.pendingSync && (
-            <div className="receipt-summary">
-              <span>Status</span>
-              <span>Menunggu sinkronisasi</span>
-            </div>
-          )}
-          <footer className="receipt-center receipt-footer">Terima kasih</footer>
-        </article>
-      </div>,
-      document.body,
+    {settlementReceipt && (
+      <SettlementReceiptPreview
+        receipt={settlementReceipt}
+        onClose={() => setSettlementReceipt(null)}
+      />
     )}
   </div>
+}
+
+function SettlementReceiptPreview({
+  receipt,
+  onClose,
+}: {
+  receipt: CustomerDebtReceipt
+  onClose: () => void
+}) {
+  const printButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => printButtonRef.current?.focus(), 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [])
+
+  function ReceiptDocument() {
+    return (
+      <article className="receipt-document">
+        <header className="receipt-header">
+          <div className="receipt-brand">
+            <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo RAJA Aksesoris" />
+            <div className="receipt-brand-copy">
+              <strong>RAJA AKSESORIS</strong>
+              <span>Konveksi</span>
+            </div>
+          </div>
+          <span className="receipt-title">Struk Pembayaran Hutang</span>
+        </header>
+        <div className="receipt-rule" />
+        <div className="receipt-meta">
+          <span>No. {receipt.invoiceNo}</span>
+          <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
+        </div>
+        <div>Pelanggan: {receipt.customerName}</div>
+        <div className="receipt-rule" />
+        <div className="receipt-items">
+          {receipt.items.map((item, index) => (
+            <div key={`${item.name}-${index}`} className="receipt-item">
+              <div>{item.name}</div>
+              <div className="receipt-item-detail">
+                <span>{item.quantity} {UNIT_LABELS[item.unit] || item.unit} × {formatCurrency(item.unitPrice)}</span>
+                <strong>{formatCurrency(item.subtotal)}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="receipt-rule" />
+        <div className="receipt-total receipt-total-highlight">
+          <span>TOTAL</span>
+          <strong>{formatCurrency(receipt.total)}</strong>
+        </div>
+        <div className="receipt-summary">
+          <span>Bayar hutang</span>
+          <span>{formatCurrency(receipt.payment)}</span>
+        </div>
+        <div className="receipt-summary">
+          <span>Sisa hutang</span>
+          <span>{formatCurrency(receipt.remainingDebt)}</span>
+        </div>
+        {receipt.pendingSync && (
+          <div className="receipt-summary">
+            <span>Status</span>
+            <span>Menunggu sinkronisasi</span>
+          </div>
+        )}
+        <footer className="receipt-center receipt-footer">Terima kasih</footer>
+      </article>
+    )
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4 print:hidden">
+        <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+          <CardContent className="space-y-4 p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preview struk 58 mm</p>
+              <h3 className="mt-1 text-xl font-bold text-ink">Siap dicetak</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {receipt.invoiceNo} · {formatCurrency(receipt.payment)}
+              </p>
+            </div>
+            <div className="receipt-preview-frame">
+              <ReceiptDocument />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
+              <Button
+                ref={printButtonRef}
+                className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                onClick={() => window.print()}
+              >
+                Cetak struk
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {createPortal(
+        <div id="receipt-print-root" aria-hidden="true">
+          <ReceiptDocument />
+        </div>,
+        document.body,
+      )}
+    </>
+  )
 }
