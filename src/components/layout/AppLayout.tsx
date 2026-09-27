@@ -10,7 +10,7 @@ import {
   Settings,
   WalletCards,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -28,10 +28,81 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [scrollMetrics, setScrollMetrics] = useState({ height: 0, top: 0, max: 0 })
+  const scrollTrackRef = useRef<HTMLDivElement>(null)
+  const dragOffsetRef = useRef(0)
+  const isDraggingRef = useRef(false)
   const signOut = useAuthStore((s) => s.signOut)
   const navigate = useNavigate()
   const location = useLocation()
   const isPosRoute = location.pathname.endsWith('/pos')
+  const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
+  const scrollPercent = scrollMetrics.max > 0
+    ? Math.round((scrollMetrics.top / Math.max(1, scrollTrackHeight - scrollMetrics.height)) * 100)
+    : 0
+
+  useEffect(() => {
+    const main = document.getElementById('main-content')
+    const track = scrollTrackRef.current
+    if (!main || !track) return
+
+    const updateScrollMetrics = () => {
+      const max = Math.max(0, main.scrollHeight - main.clientHeight)
+      const trackHeight = track.clientHeight
+      const height = max > 0 ? Math.max(28, (main.clientHeight / main.scrollHeight) * trackHeight) : 0
+      const top = max > 0 ? (main.scrollTop / max) * (trackHeight - height) : 0
+      setScrollMetrics({ height, top, max })
+    }
+
+    const resizeObserver = new ResizeObserver(updateScrollMetrics)
+    resizeObserver.observe(main)
+    if (main.firstElementChild) resizeObserver.observe(main.firstElementChild)
+    main.addEventListener('scroll', updateScrollMetrics, { passive: true })
+    updateScrollMetrics()
+
+    return () => {
+      resizeObserver.disconnect()
+      main.removeEventListener('scroll', updateScrollMetrics)
+    }
+  }, [location.pathname])
+
+  const scrollFromPointer = (event: PointerEvent<HTMLDivElement>) => {
+    const main = document.getElementById('main-content')
+    const track = scrollTrackRef.current
+    if (!main || !track || scrollMetrics.max <= 0) return
+
+    const trackRect = track.getBoundingClientRect()
+    const scrollRange = track.clientHeight - scrollMetrics.height
+    const nextTop = Math.min(
+      scrollRange,
+      Math.max(0, event.clientY - trackRect.top - dragOffsetRef.current),
+    )
+    main.scrollTop = (nextTop / scrollRange) * scrollMetrics.max
+  }
+
+  const handleScrollPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const track = scrollTrackRef.current
+    if (!track) return
+
+    const thumbTop = track.getBoundingClientRect().top + scrollMetrics.top
+    const isThumb = event.target === event.currentTarget.firstElementChild
+    dragOffsetRef.current = isThumb ? event.clientY - thumbTop : scrollMetrics.height / 2
+    isDraggingRef.current = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    scrollFromPointer(event)
+  }
+
+  const handleScrollPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (isDraggingRef.current) scrollFromPointer(event)
+  }
+
+  const handleScrollPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    isDraggingRef.current = false
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -39,7 +110,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="mobile-page-background flex min-h-dvh bg-canvas">
+    <div className="mobile-page-background flex h-dvh overflow-hidden bg-canvas">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
         Lewati ke konten utama
       </a>
@@ -116,10 +187,43 @@ export function AppLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <main id="main-content" className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
           <Outlet />
         </main>
+        <div
+          ref={scrollTrackRef}
+          className="app-scrollbar-track"
+          role="scrollbar"
+          aria-controls="main-content"
+          aria-label="Gulir halaman"
+          aria-orientation="vertical"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={scrollPercent}
+          tabIndex={scrollMetrics.max > 0 ? 0 : -1}
+          onPointerDown={handleScrollPointerDown}
+          onPointerMove={handleScrollPointerMove}
+          onPointerUp={handleScrollPointerUp}
+          onPointerCancel={handleScrollPointerUp}
+          onKeyDown={(event) => {
+            const main = document.getElementById('main-content')
+            if (!main) return
+            if (event.key === 'ArrowDown') main.scrollBy({ top: 40 })
+            else if (event.key === 'ArrowUp') main.scrollBy({ top: -40 })
+            else if (event.key === 'PageDown') main.scrollBy({ top: main.clientHeight })
+            else if (event.key === 'PageUp') main.scrollBy({ top: -main.clientHeight })
+            else if (event.key === 'Home') main.scrollTo({ top: 0 })
+            else if (event.key === 'End') main.scrollTo({ top: main.scrollHeight })
+            else return
+            event.preventDefault()
+          }}
+        >
+          <span
+            className="app-scrollbar-thumb"
+            style={{ height: scrollMetrics.height, transform: `translateY(${scrollMetrics.top}px)` }}
+          />
+        </div>
       </div>
       {!sidebarOpen && (
         <button
