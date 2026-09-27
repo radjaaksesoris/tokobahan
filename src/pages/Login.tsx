@@ -145,7 +145,7 @@ export default function Login() {
           <CardHeader className={`relative z-10 items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-3' : 'pb-1 pt-5'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
             <CardTitle className="text-3xl tracking-tight text-ink">LOGIN</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">Lanjutkan aktivitas toko Anda hari ini.</p>
+            <p className="mt-1 hidden text-sm text-muted-foreground lg:block">Lanjutkan aktivitas toko Anda hari ini.</p>
           </CardHeader>
           <CardContent className={`relative z-10 ${keyboardVisible ? 'pt-2' : 'pt-4'}`}>
             <form onSubmit={handleSubmit} className={keyboardVisible ? 'space-y-2.5' : 'space-y-4'}>
