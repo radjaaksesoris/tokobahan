@@ -70,7 +70,11 @@ export default function Settings() {
           role="tab"
           aria-selected={activeTab === tab}
           onClick={() => setActiveTab(tab)}
-          className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          className={`rounded-lg py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            isDesktop
+              ? 'shrink-0 px-3'
+              : 'w-full min-w-0 px-1 text-center text-[clamp(0.65rem,3.1vw,0.875rem)]'
+          } ${
             activeTab === tab
               ? 'bg-surface text-ink shadow-sm'
               : isDesktop
@@ -406,7 +410,7 @@ export default function Settings() {
       <div className="page-header sticky top-[-1rem] z-30 flex flex-col justify-center -mx-4 -mt-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:!mb-0 lg:px-8 lg:py-5">
         <h2 className="text-3xl font-bold tracking-tight text-white">Pengaturan</h2>
         <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
-        {renderTabNavigation('mt-4 -mx-1 flex gap-1 overflow-x-auto pb-1 lg:hidden')}
+        {renderTabNavigation('mt-4 -mx-1 grid w-full grid-cols-4 gap-1 pb-1 lg:hidden')}
       </div>
       {renderTabNavigation('page-header-tabs hidden gap-1 overflow-x-auto border-b border-border pb-1 lg:!mt-0 lg:sticky lg:z-20 lg:flex lg:bg-canvas', true)}
 
