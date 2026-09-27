@@ -504,12 +504,12 @@ export default function Products() {
             <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
               <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-[7%] px-0.5 py-1.5 font-semibold lg:w-12 lg:px-2">No.</th>
-                  <th className="w-[27%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Produk</th>
-                  <th className="w-[14%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Stok</th>
-                  <th className="w-[18%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Modal</th>
-                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Harga jual</th>
-                  <th className="w-[14%] whitespace-nowrap px-0.5 py-1.5 font-semibold lg:w-28 lg:px-2">Aksi</th>
+                  <th className="w-[8%] px-0.5 py-1.5 font-semibold lg:w-12 lg:px-2">No.</th>
+                  <th className="w-[32%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Produk</th>
+                  <th className="w-[17%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Stok</th>
+                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Modal</th>
+                  <th className="w-[23%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Harga jual</th>
+                  <th className="hidden whitespace-nowrap px-0.5 py-1.5 font-semibold lg:table-cell lg:w-28 lg:px-2">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -542,7 +542,7 @@ export default function Products() {
                         ))}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-0.5 py-1.5 text-center lg:px-2">
+                    <td className="hidden whitespace-nowrap px-0.5 py-1.5 text-center lg:table-cell lg:px-2">
                       <div className="flex justify-center gap-0 lg:gap-0.5">
                         <Button variant="ghost" size="icon" className="h-10 w-10 lg:h-10 lg:w-10" onClick={() => openEdit(p)} aria-label={`Edit ${p.name}`}>
                           <Pencil className="h-3.5 w-3.5" />
