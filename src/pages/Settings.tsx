@@ -11,6 +11,8 @@ import {
   setStockSoundEnabled,
 } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
+import { clearOfflineOperationalCache } from '@/lib/offlineCache'
+import { clearOfflineOperationalData } from '@/lib/offlineOperationalData'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -209,7 +211,17 @@ export default function Settings() {
       return
     }
 
-    toast.success('Database operasional berhasil dikosongkan')
+    try {
+      await clearOfflineOperationalData()
+      clearOfflineOperationalCache()
+    } catch (error) {
+      console.error('Database reset succeeded, but local offline data could not be cleared:', error)
+      toast.error('Data server sudah direset, tetapi antrean offline perangkat ini gagal dihapus. Jangan sinkronkan antrean lama; hubungi admin.')
+      setResetting(false)
+      return
+    }
+
+    toast.success('Data operasional dikosongkan. Backup, akun admin, dan pengaturan tetap tersimpan.')
     setPassword('')
     setConfirmation('')
     setResetting(false)
@@ -442,10 +454,20 @@ export default function Settings() {
           {resetOpen && <CardContent id="reset-database-content" className="space-y-4">
             <div className="flex gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800">
               <AlertTriangle className="h-5 w-5 shrink-0" />
-              <p>
-                Tindakan ini menghapus semua produk, kategori, transaksi, dan detail transaksi.
-                Akun login dan profil admin tidak ikut dihapus. Tindakan ini tidak dapat dibatalkan.
-              </p>
+              <div className="min-w-0">
+                <p>
+                  Tindakan ini menghapus seluruh data operasional dan master, termasuk produk, kategori,
+                  vendor, pelanggan, satuan khusus, transaksi, stok, hutang, retur, dan opname. Antrean
+                  offline di perangkat ini juga dihapus. Akun admin, subscription notifikasi, pengaturan,
+                  fungsi Edge, dan backup lama tetap tersimpan. Nomor invoice online kembali ke RJA-0001;
+                  ID data memakai UUID dan tidak diurutkan ulang. Reset tidak dapat dibatalkan.
+                </p>
+                <p className="mt-2 text-xs text-red-700">
+                  Pastikan antrean offline sudah disinkronkan atau tidak lagi diperlukan. Antrean di
+                  perangkat/browser lain tidak bisa dihapus dari sini; buka aplikasi di tiap perangkat
+                  setelah reset dan hapus data situs jika masih ada antrean lama.
+                </p>
+              </div>
             </div>
             <div>
               <label htmlFor="reset-password" className="mb-1 block text-sm font-medium">Password admin</label>

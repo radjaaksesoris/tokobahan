@@ -190,6 +190,11 @@ supabase/
 
 - Aplikasi dirancang untuk **satu administrator**; seluruh menu operasional tersedia dari akun tersebut.
 - Stok otomatis berkurang saat checkout (berdasarkan conversion satuan).
+- Tombol **Reset Semua Data** menghapus data operasional dan master, membersihkan antrean
+  offline di perangkat yang menjalankan reset, dan mengembalikan nomor invoice online ke
+  `RJA-0001`. Akun/profil admin, subscription notifikasi, konfigurasi Edge Functions, dan
+  backup operasional tetap dipertahankan. Antrean offline di perangkat/browser lain harus
+  ditangani terpisah; UUID data tidak diurutkan ulang.
 - Jalankan migration Supabase secara berurutan sebelum memakai aplikasi setelah deploy.
 - Jalankan migration `20260921140000_production_rls_hardening.sql` sebelum production.
   Migration ini mengaktifkan pemeriksaan role pada operasi database.

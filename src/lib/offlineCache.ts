@@ -53,3 +53,17 @@ export function removeOfflineCache(key: string) {
     // Storage can be unavailable in private browsing; the app can continue online.
   }
 }
+
+export function clearOfflineOperationalCache() {
+  const authKey = storageKey('auth-session')
+  const profilePrefix = storageKey('profile:')
+  const keys = Array.from({ length: window.localStorage.length }, (_, index) => (
+    window.localStorage.key(index)
+  )).filter((key): key is string => key !== null && key.startsWith(CACHE_PREFIX))
+
+  for (const key of keys) {
+    if (key !== authKey && !key.startsWith(profilePrefix)) {
+      window.localStorage.removeItem(key)
+    }
+  }
+}
