@@ -291,6 +291,12 @@ html::-webkit-scrollbar {
   background: rgba(32, 42, 46, 0.7);
 }
 
+@media (max-width: 1023px) {
+  .app-scrollbar-track {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
