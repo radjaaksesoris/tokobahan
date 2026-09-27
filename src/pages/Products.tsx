@@ -481,7 +481,7 @@ export default function Products() {
               )}
             </div>
           </div>
-          <Button className="relative z-10 h-11 w-full shrink-0 justify-center lg:w-auto" onClick={openCreate}>
+          <Button className="relative z-10 hidden h-11 w-full shrink-0 justify-center lg:inline-flex lg:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
           </Button>
