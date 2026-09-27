@@ -229,7 +229,7 @@ textarea::placeholder {
   }
 }
 
-/* Keep a narrow native scrollbar in nested scroll areas; the page uses its own visible handle. */
+/* Keep nested scroll areas usable while the document uses its own visible handle. */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(32, 42, 46, 0.3) transparent;
@@ -250,16 +250,16 @@ textarea::placeholder {
   background: rgba(32, 42, 46, 0.55);
 }
 
-#main-content {
+html {
   scrollbar-width: none;
 }
 
-#main-content::-webkit-scrollbar {
+html::-webkit-scrollbar {
   display: none;
 }
 
 .app-scrollbar-track {
-  position: absolute;
+  position: fixed;
   z-index: 20;
   top: 0;
   right: 1px;
