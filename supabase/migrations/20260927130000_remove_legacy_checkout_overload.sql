@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP FUNCTION IF EXISTS public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB);
+DROP FUNCTION IF EXISTS public.checkout_sale_internal(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB);
+
+NOTIFY pgrst, 'reload schema';
+COMMIT;

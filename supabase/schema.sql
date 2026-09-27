@@ -295,8 +295,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) TO authenticated;
+REVOKE ALL ON FUNCTION public.checkout_sale(TEXT, NUMERIC, NUMERIC, NUMERIC, TEXT, UUID, JSONB) FROM PUBLIC, anon, authenticated;
 
 -- Refresh PostgREST after function changes so RPC calls see the current signature.
 NOTIFY pgrst, 'reload schema';

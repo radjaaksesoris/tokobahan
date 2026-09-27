@@ -600,7 +600,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
     <article className="receipt-document">
       <header className="receipt-header">
         <div className="receipt-brand">
-          <img src={`${import.meta.env.BASE_URL}logo-RAJA.png`} alt="Logo RAJA Aksesoris" />
+          <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo RAJA Aksesoris" />
           <div className="receipt-brand-copy">
             <strong>RAJA AKSESORIS</strong>
             <span>Konveksi</span>

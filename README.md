@@ -58,6 +58,9 @@ npm install
 
 1. Buka [supabase.com](https://supabase.com) → New Project
 2. Masuk ke **SQL Editor** → paste seluruh isi file `supabase/schema.sql` → Run
+   - Setelah schema dasar, jalankan semua file di `supabase/migrations/` yang belum
+     diterapkan dalam urutan nama/timestamp sebelum aplikasi digunakan. Untuk database
+     production, jangan hanya menjalankan contoh migration pilihan di bawah.
    - Stok, harga modal, dan harga jual menggunakan satuan yang dipilih secara langsung;
      sistem tidak mengonversi nilai ke pcs/base unit.
    - Jika database sudah pernah dibuat, jalankan file
@@ -211,7 +214,8 @@ supabase/
   dan memasukkan refund tunai retur ke laporan arus kas. Backfill retur lama
   mengasumsikan refund pada transaksi non-kredit dibayar tunai penuh; verifikasi
   asumsi ini terhadap buku kas sebelum mengandalkan laporan historis.
-- Jalankan migration `20260926140000_single_admin_access.sql` paling akhir.
+- Jalankan migration `20260926140000_single_admin_access.sql` setelah migration
+  sebelumnya.
   Migration ini membatasi akses tabel dan RPC ke administrator, menolak akses
   aplikasi bagi akun non-admin, dan mempertahankan profil serta transaksi historis.
   Deploy ulang Edge Function `notify-low-stock` agar aturan admin-only ikut aktif.
@@ -223,6 +227,26 @@ supabase/
   `20260926130000_harden_production_financial_workflows.sql`. Jika memakai Supabase CLI,
   jalankan `supabase db push` dari root repository. Setelah selesai, buka Storage →
   `operational-backups` untuk memverifikasi file backup baru (bucket harus Private).
+- Setelah menjalankan migration `20260927130000_remove_legacy_checkout_overload.sql`,
+  verifikasi signature dan hak akses checkout di SQL Editor. Hasil harus hanya berisi
+  satu fungsi checkout 9-parameter; `authenticated` boleh menjalankannya, sedangkan
+  `anon` tidak:
+
+  ```sql
+  SELECT
+    p.oid::regprocedure AS signature,
+    has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated_can_execute,
+    has_function_privilege('anon', p.oid, 'EXECUTE') AS anon_can_execute
+  FROM pg_proc p
+  WHERE p.pronamespace = 'public'::regnamespace
+    AND p.proname IN ('checkout_sale', 'checkout_sale_internal');
+  ```
+
+  Pastikan hasil tepat satu baris dengan signature
+  `checkout_sale(text,numeric,numeric,numeric,text,uuid,jsonb,text,numeric)`,
+  `authenticated_can_execute = true`, dan `anon_can_execute = false`.
+  Migration menghapus signature lama 7-parameter dan helper internal lamanya yang
+  menerima total dari klien.
 
 ---
 
