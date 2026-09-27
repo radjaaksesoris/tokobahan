@@ -72,8 +72,6 @@ export default function Dashboard() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
-  const [lowStockSwipeOffset, setLowStockSwipeOffset] = useState(0)
-  const lowStockTouchStart = useRef<number | null>(null)
   const statsRequestId = useRef(0)
   const initialLoadComplete = useRef(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
@@ -293,9 +291,8 @@ export default function Dashboard() {
     }
   }
 
-  function dismissLowStockAlert(direction: 1 | -1 = 1) {
-    setLowStockSwipeOffset(direction * 120)
-    window.setTimeout(() => setLowStockDismissed(true), 180)
+  function dismissLowStockAlert() {
+    setLowStockDismissed(true)
   }
 
   const cards = [
@@ -355,27 +352,7 @@ export default function Dashboard() {
             <div
               role="alert"
               aria-live="polite"
-              className="relative min-w-0 flex-1 touch-pan-y rounded-2xl bg-ink px-3 py-3 text-white transition-[transform,opacity] duration-200 ease-out sm:min-w-[9.5rem] lg:flex-none"
-              style={{
-                opacity: Math.max(0, 1 - Math.abs(lowStockSwipeOffset) / 120),
-                transform: `translateX(${lowStockSwipeOffset}px)`,
-              }}
-              onTouchStart={(event) => {
-                lowStockTouchStart.current = event.touches[0]?.clientX ?? null
-              }}
-              onTouchMove={(event) => {
-                if (lowStockTouchStart.current === null) return
-                setLowStockSwipeOffset(event.touches[0].clientX - lowStockTouchStart.current)
-              }}
-              onTouchEnd={() => {
-                const offset = lowStockSwipeOffset
-                lowStockTouchStart.current = null
-                if (Math.abs(offset) >= 80) {
-                  dismissLowStockAlert(offset > 0 ? 1 : -1)
-                } else {
-                  setLowStockSwipeOffset(0)
-                }
-              }}
+              className="relative min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-white sm:min-w-[9.5rem] lg:flex-none"
             >
               <button
                 type="button"
@@ -402,8 +379,8 @@ export default function Dashboard() {
               <button
                 type="button"
                 aria-label="Tutup notifikasi stok menipis"
-                className="absolute right-2 top-2 rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white"
-                onClick={() => dismissLowStockAlert()}
+                className="absolute right-2 top-2 hidden rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white lg:block"
+                onClick={dismissLowStockAlert}
               >
                 <X className="h-4 w-4" />
               </button>
