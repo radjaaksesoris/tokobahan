@@ -613,7 +613,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
         <span>No. {receipt.invoiceNo}</span>
         <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
       </div>
-      {receipt.customerName && <div>Pelanggan: {receipt.customerName}</div>}
+      {receipt.customerName && <div className="receipt-customer">Pelanggan: {receipt.customerName}</div>}
       <div className="receipt-rule" />
       <div className="receipt-items">
         {receipt.items.map((item, index) => (
@@ -627,7 +627,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
         ))}
       </div>
       <div className="receipt-rule" />
-      <div className="receipt-total"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
+      <div className="receipt-total receipt-total-highlight"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
       <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
       {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
         <>

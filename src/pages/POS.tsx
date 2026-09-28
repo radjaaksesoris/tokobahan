@@ -1072,7 +1072,7 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         <span>No. {receipt.invoiceNo}</span>
         <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
       </div>
-      {receipt.customerName && <div>Pelanggan: {receipt.customerName}</div>}
+      {receipt.customerName && <div className="receipt-customer">Pelanggan: {receipt.customerName}</div>}
       <div className="receipt-rule" />
       <div className="receipt-items">
         {receipt.items.map((item, index) => (
