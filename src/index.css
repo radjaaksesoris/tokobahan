@@ -502,7 +502,7 @@ html::-webkit-scrollbar {
 
 .receipt-item > div:first-child {
   color: #202a2e;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .receipt-item-detail {
