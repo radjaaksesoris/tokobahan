@@ -562,7 +562,7 @@ html::-webkit-scrollbar {
     height: auto !important;
     min-height: 0 !important;
     margin: 0 !important;
-    padding: 3mm 3mm 4mm !important;
+    padding: 3mm 5mm 4mm !important;
     box-sizing: border-box;
     overflow: visible !important;
     color: #000;
