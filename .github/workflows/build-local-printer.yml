@@ -1,0 +1,30 @@
+name: Build Windows local printer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "local-printer/**"
+      - ".github/workflows/build-local-printer.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish self-contained Windows application
+        run: dotnet publish local-printer/RAJALocalPrinter/RAJALocalPrinter.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true --output local-printer/publish
+      - name: Package application
+        run: Compress-Archive -Path local-printer/publish/RAJALocalPrinter.exe -DestinationPath local-printer/RAJA-Local-Printer-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RAJA-Local-Printer-win-x64
+          path: local-printer/RAJA-Local-Printer-win-x64.zip
+          retention-days: 90

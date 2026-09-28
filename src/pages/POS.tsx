@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef, type KeyboardEvent, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
@@ -27,6 +26,7 @@ import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
 import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
 import { fetchAllPages } from '@/lib/paginateQuery'
+import { createSalesReceiptPrintData, printReceiptLocally } from '@/lib/localPrinter'
 import {
   createOfflineInvoice,
   enqueueTransaction,
@@ -1009,6 +1009,7 @@ export default function POS() {
 
 function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
+  const [printing, setPrinting] = useState(false)
 
   useEffect(() => {
     const focusTimer = window.setTimeout(() => {
@@ -1017,8 +1018,17 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
     return () => window.clearTimeout(focusTimer)
   }, [])
 
-  function printReceipt() {
-    window.print()
+  async function printReceipt() {
+    setPrinting(true)
+    try {
+      await printReceiptLocally(createSalesReceiptPrintData(receipt))
+      toast.success('Struk dikirim ke printer POS58')
+      onClose()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal mencetak struk')
+    } finally {
+      setPrinting(false)
+    }
   }
 
   return (
@@ -1039,20 +1049,15 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                disabled={printing}
                 onClick={printReceipt}
               >
-                Cetak struk
+                {printing ? 'Mengirim ke printer...' : 'Cetak struk'}
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-      {createPortal(
-        <div id="receipt-print-root" aria-hidden="true">
-          <ReceiptDocument receipt={receipt} />
-        </div>,
-        document.body
-      )}
     </>
   )
 }
