@@ -110,7 +110,7 @@ export default function POS() {
     Math.max(0, product.stock - getReservedQuantity(product.id))
 
   function createReceipt(invoiceNo: string): ReceiptData {
-    const amountPaid = paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal
+    const amountPaid = paymentMethod === 'qris' ? totals.subtotal : Number(cashReceived) || 0
     return {
       invoiceNo,
       createdAt: new Date().toISOString(),
@@ -506,7 +506,16 @@ export default function POS() {
     await removeQueuedTransaction(queuedTransaction.id)
     const savedReceipt = await loadSavedReceipt(checkoutSaleId, invoiceNo)
     toast.success(`Transaksi ${savedReceipt?.invoiceNo || invoiceNo} berhasil!`)
-    if (showReceiptPreview) setReceipt(savedReceipt || createReceipt(invoiceNo))
+    if (showReceiptPreview) {
+      const receipt = savedReceipt || createReceipt(invoiceNo)
+      setReceipt(paymentMethod === 'cash'
+        ? {
+            ...receipt,
+            amountPaid: Number(cashReceived) || 0,
+            change: Math.max(0, (Number(cashReceived) || 0) - receipt.total),
+          }
+        : receipt)
+    }
     clearCart()
     setShowPaymentModal(false)
     setCashReceived('')
