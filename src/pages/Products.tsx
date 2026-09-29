@@ -13,14 +13,6 @@ import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
-import { requestProductNameAvailability } from '@/lib/productNameAvailability'
-import {
-  escapeProductNameSuggestionPattern,
-  normalizeProductNameForDuplicate,
-  normalizeProductNameSuggestionTerm,
-  requestProductNameSuggestions,
-  type ProductNameSuggestionResult,
-} from '@/lib/productNameSuggestions'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -105,19 +97,10 @@ export default function Products() {
   const productNameInputRef = useRef<HTMLInputElement>(null)
   const productSkuInputRef = useRef<HTMLInputElement>(null)
   const skuCheckRequestId = useRef(0)
-  const nameCheckRequestId = useRef(0)
-  const nameCheckController = useRef<AbortController | null>(null)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // form
   const [name, setName] = useState('')
-  const [nameValidationError, setNameValidationError] = useState('')
-  const [nameChecking, setNameChecking] = useState(false)
-  const [nameSuggestions, setNameSuggestions] = useState<{
-    query: string
-    result: ProductNameSuggestionResult
-  }>({ query: '', result: { status: 'empty' } })
-  const [nameSuggestionsDismissed, setNameSuggestionsDismissed] = useState(false)
   const [sku, setSku] = useState('')
   const [skuValidationError, setSkuValidationError] = useState('')
   const [skuChecking, setSkuChecking] = useState(false)
@@ -142,91 +125,12 @@ export default function Products() {
     return () => mediaQuery.removeEventListener('change', updatePageSize)
   }, [])
 
-  useEffect(() => () => {
-    nameCheckRequestId.current += 1
-    nameCheckController.current?.abort()
-    nameCheckController.current = null
-  }, [])
-
-  useEffect(() => {
-    const normalizedName = normalizeProductNameForDuplicate(name)
-    if (!modal || editingPricesOnly || !normalizedName) return
-
-    if (editing && normalizedName === normalizeProductNameForDuplicate(editing.name)) {
-      setNameValidationError('')
-      return
-    }
-
-    const controller = new AbortController()
-    const requestId = ++nameCheckRequestId.current
-    const timer = window.setTimeout(() => {
-      if (requestId !== nameCheckRequestId.current || controller.signal.aborted) return
-      nameCheckController.current = controller
-      setNameChecking(true)
-      void runProductNameAvailabilityCheck(name, controller.signal, requestId)
-    }, 300)
-
-    return () => {
-      window.clearTimeout(timer)
-      controller.abort()
-      if (nameCheckController.current === controller) {
-        nameCheckController.current = null
-        setNameChecking(false)
-      }
-      if (nameCheckRequestId.current === requestId) {
-        nameCheckRequestId.current += 1
-      }
-    }
-  }, [name, modal, editing, editingPricesOnly])
-
-  useEffect(() => {
-    const term = normalizeProductNameSuggestionTerm(name)
-    if (!modal || editing || editingPricesOnly || !term || nameSuggestionsDismissed) {
-      return
-    }
-
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      setNameSuggestions({ query: name, result: { status: 'loading' } })
-      void requestProductNameSuggestions(async (searchTerm, signal) => {
-      const escapedSearchTerm = escapeProductNameSuggestionPattern(searchTerm)
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name')
-        .eq('is_active', true)
-        .ilike('name', `%${escapedSearchTerm}%`)
-        .order('name')
-        .order('id')
-        .limit(5)
-          .abortSignal(signal)
-        return { data, error }
-      }, name, controller.signal).then((result) => {
-        if (controller.signal.aborted || result.status === 'cancelled') return
-        setNameSuggestions({ query: name, result })
-        if (result.status === 'error') {
-          toast.error('Saran nama produk gagal dimuat. Periksa koneksi internet.')
-        }
-      })
-    }, 300)
-
-    return () => {
-      controller.abort()
-      window.clearTimeout(timer)
-    }
-  }, [name, modal, editing, editingPricesOnly, nameSuggestionsDismissed])
-
   const allUnits = [...ALL_UNITS, ...customUnits.filter((unit) => !ALL_UNITS.includes(unit))]
   const unitOptions = allUnits.map((unit) => ({
     value: unit,
     label: UNIT_LABELS[unit] || unit,
   }))
   const unitFactors = UNIT_FACTORS
-  const showNameSuggestions = !editing && !editingPricesOnly &&
-    Boolean(normalizeProductNameSuggestionTerm(name)) &&
-    nameSuggestions.query === name &&
-    nameSuggestions.result.status === 'matches'
-  const nameSuggestionsLoading = !editing && !editingPricesOnly &&
-    nameSuggestions.query === name && nameSuggestions.result.status === 'loading'
 
   useEffect(() => {
     supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
@@ -296,14 +200,10 @@ export default function Products() {
 
   function openCreate() {
     skuCheckRequestId.current += 1
-    invalidateProductNameCheck()
     setEditing(null)
     setEditingPricesOnly(false)
     setReturnToStockProduct(null)
     setName('')
-    setNameValidationError('')
-    setNameSuggestions({ query: '', result: { status: 'empty' } })
-    setNameSuggestionsDismissed(false)
     setSku('')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -323,14 +223,10 @@ export default function Products() {
 
   function openEdit(p: Product, pricesOnly = false) {
     skuCheckRequestId.current += 1
-    invalidateProductNameCheck()
     if (!pricesOnly) setReturnToStockProduct(null)
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
-    setNameValidationError('')
-    setNameSuggestions({ query: '', result: { status: 'empty' } })
-    setNameSuggestionsDismissed(false)
     setSku(p.sku || '')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -351,14 +247,6 @@ export default function Products() {
     setUnitBase(p.unit_base as 'pcs' | 'meter')
     setPrices(productPrices)
     setModal(true)
-  }
-
-  function closeModal() {
-    invalidateProductNameCheck()
-    setNameSuggestions({ query: '', result: { status: 'empty' } })
-    setNameSuggestionsDismissed(false)
-    setNameValidationError('')
-    setModal(false)
   }
 
   function openStock(p: Product) {
@@ -480,76 +368,11 @@ export default function Products() {
     return true
   }
 
-  function invalidateProductNameCheck() {
-    nameCheckRequestId.current += 1
-    nameCheckController.current?.abort()
-    nameCheckController.current = null
-    setNameChecking(false)
-  }
-
-  async function runProductNameAvailabilityCheck(
-    value: string,
-    signal: AbortSignal,
-    requestId: number,
-  ) {
-    const result = await requestProductNameAvailability(async (normalizedName, requestSignal) => {
-      const { data, error } = await supabase.rpc('is_product_name_taken', {
-        p_name: normalizedName,
-        p_product_id: editing?.id ?? null,
-      }).abortSignal(requestSignal)
-      return { data, error }
-    }, value, signal)
-
-    if (requestId !== nameCheckRequestId.current || signal.aborted) return false
-    setNameChecking(false)
-    if (nameCheckController.current?.signal === signal) {
-      nameCheckController.current = null
-    }
-
-    if (result.status === 'error') {
-      console.error('Failed to check product name:', result.error)
-      setNameValidationError('Nama produk tidak dapat diperiksa. Periksa koneksi lalu coba lagi.')
-      return false
-    }
-    if (result.status === 'duplicate') {
-      setNameValidationError('Nama produk sudah digunakan.')
-      return false
-    }
-
-    setNameValidationError('')
-    return result.status === 'available'
-  }
-
-  async function checkProductNameAvailability(value: string) {
-    const normalizedName = normalizeProductNameForDuplicate(value)
-    if (!normalizedName) {
-      setNameValidationError('')
-      return false
-    }
-
-    if (editing && normalizedName === normalizeProductNameForDuplicate(editing.name)) {
-      invalidateProductNameCheck()
-      setNameValidationError('')
-      return true
-    }
-
-    nameCheckController.current?.abort()
-    const controller = new AbortController()
-    const requestId = ++nameCheckRequestId.current
-    nameCheckController.current = controller
-    setNameChecking(true)
-    return runProductNameAvailabilityCheck(value, controller.signal, requestId)
-  }
-
   async function handleSave() {
     const initialStock = Number(stock) || 0
 
     if (!name.trim()) {
       toast.error('Nama produk wajib diisi')
-      return
-    }
-    if (!await checkProductNameAvailability(name)) {
-      productNameInputRef.current?.focus()
       return
     }
     if (!sku.trim()) {
@@ -603,19 +426,13 @@ export default function Products() {
     if (editing) {
       const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
       if (error) {
-        if (error.code === '23505' && error.message.includes('Nama produk')) {
-          setNameValidationError('Nama produk sudah digunakan.')
-          productNameInputRef.current?.focus()
-        }
         toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? error.message.includes('Nama produk')
-            ? 'Nama produk sudah digunakan.'
-            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
           : error.message)
       }
       else {
         toast.success('Produk diperbarui')
-        closeModal()
+        setModal(false)
         if (editingPricesOnly && returnToStockProduct) {
           setStockProduct({
             ...returnToStockProduct,
@@ -632,14 +449,8 @@ export default function Products() {
     } else {
       const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
       if (error) {
-        if (error.code === '23505' && error.message.includes('Nama produk')) {
-          setNameValidationError('Nama produk sudah digunakan.')
-          productNameInputRef.current?.focus()
-        }
         toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? error.message.includes('Nama produk')
-            ? 'Nama produk sudah digunakan.'
-            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
           : error.message)
       }
       else {
@@ -654,7 +465,7 @@ export default function Products() {
           })
           if (receiptError) {
             toast.error(`Produk dibuat, tetapi stok awal gagal disimpan: ${receiptError.message}`)
-            closeModal()
+            setModal(false)
             load()
             setSaving(false)
             return
@@ -1027,12 +838,12 @@ export default function Products() {
             type="button"
             aria-label="Tutup panel produk"
             className="absolute inset-0 cursor-default"
-            onClick={closeModal}
+            onClick={() => setModal(false)}
           />
           <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
             <CardHeader className="relative z-10 flex-row items-center justify-between border-b bg-surface px-5 py-4">
               <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
-              <button type="button" onClick={closeModal} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
+              <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
@@ -1042,54 +853,11 @@ export default function Products() {
                 <Input
                   ref={productNameInputRef}
                   id="product-name"
-                  className={showNameSuggestions ? 'rounded-b-none border-b-0' : undefined}
                   value={name}
-                  onChange={(e) => {
-                    invalidateProductNameCheck()
-                    setName(toTitleCase(e.target.value))
-                    setNameValidationError('')
-                    setNameSuggestions({ query: '', result: { status: 'empty' } })
-                    setNameSuggestionsDismissed(false)
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape' && showNameSuggestions) {
-                      setNameSuggestionsDismissed(true)
-                      setNameSuggestions({ query: '', result: { status: 'empty' } })
-                    }
-                  }}
+                  onChange={(e) => setName(toTitleCase(e.target.value))}
                   placeholder="Nama item"
                   readOnly={editingPricesOnly}
-                  aria-invalid={Boolean(nameValidationError)}
-                  aria-describedby={nameValidationError ? 'product-name-error' : undefined}
                 />
-                {nameValidationError && (
-                  <p id="product-name-error" className="mt-1 text-xs text-red-700" role="alert">
-                    {nameValidationError}
-                  </p>
-                )}
-                {nameChecking && (
-                  <span className="sr-only" role="status" aria-live="polite">
-                    Memeriksa nama produk
-                  </span>
-                )}
-                  {(nameChecking || nameSuggestionsLoading) && (
-                    <span className="sr-only" role="status" aria-live="polite">
-                      {nameChecking ? 'Memeriksa nama produk' : 'Memeriksa saran nama produk'}
-                    </span>
-                  )}
-                {showNameSuggestions && nameSuggestions.result.status === 'matches' && (
-                  <ul
-                    aria-label="Saran nama produk"
-                    aria-live="polite"
-                    className="mt-0 max-h-48 w-full overflow-y-auto rounded-b-xl border border-t-0 border-border bg-surface px-3 py-1"
-                  >
-                    {nameSuggestions.result.matches.map((product) => (
-                      <li key={product.id} className="break-words border-b border-border py-2 text-sm text-ink last:border-b-0">
-                        {product.name}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
@@ -1350,15 +1118,10 @@ export default function Products() {
               </div>
             </CardContent>
             <div className="flex gap-2 border-t p-4">
-              <Button variant="outline" className="flex-1" onClick={closeModal}>
+              <Button variant="outline" className="flex-1" onClick={() => setModal(false)}>
                 Batal
               </Button>
-              <Button
-                ref={saveButtonRef}
-                className="flex-1"
-                onClick={handleSave}
-                disabled={saving || Boolean(nameValidationError) || Boolean(skuValidationError) || skuChecking}
-              >
+              <Button ref={saveButtonRef} className="flex-1" onClick={handleSave} disabled={saving}>
                 {saving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan'}
               </Button>
             </div>
