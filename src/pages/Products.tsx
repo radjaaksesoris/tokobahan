@@ -95,11 +95,15 @@ export default function Products() {
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
   const productNameInputRef = useRef<HTMLInputElement>(null)
+  const productSkuInputRef = useRef<HTMLInputElement>(null)
+  const skuCheckRequestId = useRef(0)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // form
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
+  const [skuValidationError, setSkuValidationError] = useState('')
+  const [skuChecking, setSkuChecking] = useState(false)
   const [skuEditing, setSkuEditing] = useState(false)
   const [costPrice, setCostPrice] = useState(0)
   const [costUnit, setCostUnit] = useState<UnitType>('satuan')
@@ -195,11 +199,14 @@ export default function Products() {
   }
 
   function openCreate() {
+    skuCheckRequestId.current += 1
     setEditing(null)
     setEditingPricesOnly(false)
     setReturnToStockProduct(null)
     setName('')
     setSku('')
+    setSkuValidationError('')
+    setSkuChecking(false)
     setSkuEditing(true)
     setCostPrice(0)
     setCostUnit('satuan')
@@ -215,11 +222,14 @@ export default function Products() {
   }
 
   function openEdit(p: Product, pricesOnly = false) {
+    skuCheckRequestId.current += 1
     if (!pricesOnly) setReturnToStockProduct(null)
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
     setSku(p.sku || '')
+    setSkuValidationError('')
+    setSkuChecking(false)
     setSkuEditing(!p.sku)
     setCostPrice(p.cost_price)
     const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
@@ -321,6 +331,43 @@ export default function Products() {
     )))
   }
 
+  async function checkSkuAvailability(value: string) {
+    const normalizedSku = value.trim().toLocaleLowerCase()
+    if (!normalizedSku) {
+      setSkuValidationError('')
+      setSkuChecking(false)
+      return false
+    }
+
+    if (editing?.sku?.trim().toLocaleLowerCase() === normalizedSku) {
+      setSkuValidationError('')
+      setSkuChecking(false)
+      return true
+    }
+
+    const requestId = ++skuCheckRequestId.current
+    setSkuChecking(true)
+    const { data, error } = await supabase.rpc('is_product_sku_taken', {
+      p_sku: value.trim(),
+      p_product_id: editing?.id ?? null,
+    })
+    if (requestId !== skuCheckRequestId.current) return false
+    setSkuChecking(false)
+
+    if (error) {
+      console.error('Failed to check product SKU:', error)
+      setSkuValidationError('SKU tidak dapat diperiksa. Periksa koneksi lalu coba lagi.')
+      return false
+    }
+    if (data) {
+      setSkuValidationError(`SKU "${value.trim()}" sudah digunakan produk lain.`)
+      return false
+    }
+
+    setSkuValidationError('')
+    return true
+  }
+
   async function handleSave() {
     const initialStock = Number(stock) || 0
 
@@ -330,6 +377,10 @@ export default function Products() {
     }
     if (!sku.trim()) {
       toast.error('SKU wajib diisi')
+      return
+    }
+    if (!await checkSkuAvailability(sku)) {
+      productSkuInputRef.current?.focus()
       return
     }
     if (costPrice <= 0) {
@@ -359,7 +410,7 @@ export default function Products() {
     setSaving(true)
     const payload = {
       name: name.trim(),
-      sku: sku || null,
+      sku: sku.trim() || null,
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: unitFactors[costUnit] || 1,
@@ -374,7 +425,11 @@ export default function Products() {
 
     if (editing) {
       const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
-      if (error) toast.error(error.message)
+      if (error) {
+        toast.error(error.code === '23505' || error.message.includes('SKU')
+          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          : error.message)
+      }
       else {
         toast.success('Produk diperbarui')
         setModal(false)
@@ -393,7 +448,11 @@ export default function Products() {
       }
     } else {
       const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
-      if (error) toast.error(error.message)
+      if (error) {
+        toast.error(error.code === '23505' || error.message.includes('SKU')
+          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          : error.message)
+      }
       else {
         if (initialStock > 0) {
           const { error: receiptError } = await supabase.rpc('receive_stock_batch', {
@@ -805,11 +864,22 @@ export default function Products() {
                   <label htmlFor="product-sku" className="mb-1 block text-sm font-medium">SKU</label>
                   <div className="flex min-w-0 gap-2">
                     <Input
+                      ref={productSkuInputRef}
                       id="product-sku"
                       value={sku}
-                      onChange={(e) => setSku(e.target.value)}
+                      onChange={(e) => {
+                        setSku(e.target.value)
+                        setSkuValidationError('')
+                        skuCheckRequestId.current += 1
+                        setSkuChecking(false)
+                      }}
+                      onBlur={() => {
+                        if (sku.trim()) void checkSkuAvailability(sku)
+                      }}
                       readOnly={editingPricesOnly || (Boolean(editing?.sku) && !skuEditing)}
                       className={`min-w-0 w-full ${editingPricesOnly || (Boolean(editing?.sku) && !skuEditing) ? 'bg-muted text-muted-foreground' : ''}`}
+                      aria-invalid={Boolean(skuValidationError)}
+                      aria-describedby={skuValidationError ? 'product-sku-error' : undefined}
                     />
                     {editing?.sku && (
                       <Button
@@ -826,6 +896,12 @@ export default function Products() {
                     )}
 
                   </div>
+                  {skuChecking && <p className="mt-1 text-xs text-muted-foreground" role="status">Memeriksa SKU…</p>}
+                  {skuValidationError && (
+                    <p id="product-sku-error" className="mt-1 text-xs text-red-700" role="alert">
+                      {skuValidationError}
+                    </p>
+                  )}
                   {editing?.sku && !skuEditing && (
                     <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
                   )}

@@ -409,6 +409,10 @@ export interface Database {
         Args: Record<string, never>
         Returns: number
       }
+      is_product_sku_taken: {
+        Args: { p_sku: string; p_product_id: string | null }
+        Returns: boolean
+      }
       receive_stock_batch: {
         Args: {
           p_product_id: string
