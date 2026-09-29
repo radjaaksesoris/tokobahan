@@ -21,6 +21,14 @@ var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 app.Use(async (context, next) =>
 {
     var origin = context.Request.Headers["Origin"].ToString();
+    if (string.IsNullOrEmpty(origin) &&
+        HttpMethods.IsGet(context.Request.Method) &&
+        context.Request.Path == "/health")
+    {
+        await next();
+        return;
+    }
+
     if (!allowedOrigins.Contains(origin))
     {
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -47,6 +55,8 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "RAJA Local Printer" }));
 
 app.MapPost("/print", async (HttpContext context) =>
 {

@@ -13,7 +13,13 @@ and only accepts browser requests from the production POS origin.
 4. Extract the ZIP and run `RAJALocalPrinter.exe`. Keep the window running while
    using the POS. If Chrome asks for local network access, allow the RAJA POS
    site to connect to devices on the local network.
-5. Open or reload the installed RAJA POS PWA and print a test receipt.
+5. On the cashier PC, open `http://127.0.0.1:17854/health` in Chrome. It should
+   show `{"status":"ok","service":"RAJA Local Printer"}`. If it does not, the
+   helper is not listening; restart it and check whether another program is
+   already using port 17854.
+6. Open or reload the installed RAJA POS PWA and print a test receipt. If the
+   health URL works but POS still cannot connect, allow local network access
+   for `https://radjaaksesoris.github.io` in Chrome site settings.
 
 The helper has no installer or automatic startup registration. It runs as the
 current Windows user and sends jobs to that user's default printer. Do not expose
