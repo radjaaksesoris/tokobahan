@@ -94,6 +94,7 @@ export default function Products() {
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
+  const productNameInputRef = useRef<HTMLInputElement>(null)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // form
@@ -413,6 +414,7 @@ export default function Products() {
         }
         toast.success('Produk ditambahkan')
         openCreate()
+        window.setTimeout(() => productNameInputRef.current?.focus(), 0)
         load()
       }
     }
@@ -790,6 +792,7 @@ export default function Products() {
               <div>
                 <label htmlFor="product-name" className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
+                  ref={productNameInputRef}
                   id="product-name"
                   value={name}
                   onChange={(e) => setName(toTitleCase(e.target.value))}
