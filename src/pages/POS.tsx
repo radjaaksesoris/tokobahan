@@ -1015,6 +1015,11 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
     return () => window.clearTimeout(focusTimer)
   }, [])
 
+  function printReceipt() {
+    window.print()
+    onClose()
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4 print:hidden">
@@ -1033,7 +1038,7 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                onClick={() => window.print()}
+                onClick={printReceipt}
               >
                 Cetak struk
               </Button>
