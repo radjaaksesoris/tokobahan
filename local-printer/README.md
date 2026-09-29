@@ -17,9 +17,11 @@ and only accepts browser requests from the production POS origin.
    show `{"status":"ok","service":"RAJA Local Printer"}`. If it does not, the
    helper is not listening; restart it and check whether another program is
    already using port 17854.
-6. Open or reload the installed RAJA POS PWA and print a test receipt. If the
-   health URL works but POS still cannot connect, allow local network access
-   for `https://radjaaksesoris.github.io` in Chrome site settings.
+6. Open or reload the installed RAJA POS PWA and print a test receipt. The POS
+   explicitly marks the helper request as local so Chrome can apply its local
+   network permission. If the health URL works but POS still cannot connect,
+   allow local network access for `https://radjaaksesoris.github.io` in Chrome
+   site settings, then reload the POS.
 
 The helper has no installer or automatic startup registration. It runs as the
 current Windows user and sends jobs to that user's default printer. Do not expose

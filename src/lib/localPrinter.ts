@@ -18,6 +18,10 @@ export interface LocalReceipt {
 
 const LOCAL_PRINTER_URL = 'http://127.0.0.1:17854'
 
+interface LocalAddressRequestInit extends RequestInit {
+  targetAddressSpace: 'local'
+}
+
 function paymentSummaries(paymentMethod: string, amountPaid: number, total: number, change = 0) {
   const labels: Record<string, string> = {
     cash: 'Tunai',
@@ -98,14 +102,16 @@ export async function printReceiptLocally(receipt: LocalReceipt): Promise<void> 
   const timeout = window.setTimeout(() => controller.abort(), 15_000)
 
   try {
-    const response = await fetch(`${LOCAL_PRINTER_URL}/print`, {
+    const request: LocalAddressRequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(receipt),
       mode: 'cors',
       credentials: 'omit',
       signal: controller.signal,
-    })
+      targetAddressSpace: 'local',
+    }
+    const response = await fetch(`${LOCAL_PRINTER_URL}/print`, request)
 
     if (!response.ok) {
       const body = await response.json().catch(() => null) as { error?: string } | null
@@ -116,7 +122,7 @@ export async function printReceiptLocally(receipt: LocalReceipt): Promise<void> 
       throw new Error('Waktu tunggu printer habis. Periksa program printer lokal dan POS58.')
     }
     if (error instanceof TypeError) {
-      throw new Error('Tidak dapat menghubungi printer lokal. Pastikan RAJA Local Printer berjalan dan izin jaringan lokal untuk situs POS diizinkan.')
+      throw new Error('Browser memblokir koneksi printer lokal. Pastikan RAJA Local Printer versi terbaru berjalan di http://127.0.0.1:17854/health dan izinkan akses jaringan lokal untuk situs POS.')
     }
     throw error
   } finally {
