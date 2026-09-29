@@ -54,17 +54,6 @@ export function removeOfflineCache(key: string) {
   }
 }
 
-export function clearCachedProductLists() {
-  try {
-    const productPrefix = storageKey('products:')
-    const keys = Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
-      .filter((key): key is string => key !== null && key.startsWith(productPrefix))
-    for (const key of keys) window.localStorage.removeItem(key)
-  } catch (error) {
-    console.error('Failed to clear cached product lists:', error)
-  }
-}
-
 export function clearOfflineOperationalCache() {
   const authKey = storageKey('auth-session')
   const profilePrefix = storageKey('profile:')
