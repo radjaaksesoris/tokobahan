@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('id, full_name, role, avatar_url, created_at')
       .eq('id', data.user.id)
       .maybeSingle()
 
@@ -141,6 +141,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (signOutError) console.error('Failed to sign out non-admin user:', signOutError)
       return { error: 'Aplikasi ini hanya menerima akun administrator.' }
     }
+
+    cacheAuth(data.user, data.session?.expires_at)
+    writeOfflineCache(profileCacheKey(data.user.id), profile)
+    set({ user: data.user, profile: profile as Profile, loading: false })
 
     return { error: null }
   },
