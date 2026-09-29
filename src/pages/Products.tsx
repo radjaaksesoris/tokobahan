@@ -20,6 +20,10 @@ function getUnitLabel(unit: string | null | undefined) {
   return unit ? UNIT_LABELS[unit] || unit : 'Satuan'
 }
 
+function normalizeProductName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+}
+
 function getBatchMargin(product: Product, price: ProductPrice, batchCost: number) {
   const costPerBaseUnit = batchCost / (product.cost_conversion || 1)
   const priceConversion = price.conversion || UNIT_FACTORS[price.unit] || 1
@@ -97,10 +101,13 @@ export default function Products() {
   const productNameInputRef = useRef<HTMLInputElement>(null)
   const productSkuInputRef = useRef<HTMLInputElement>(null)
   const skuCheckRequestId = useRef(0)
+  const nameCheckRequestId = useRef(0)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // form
   const [name, setName] = useState('')
+  const [nameValidationError, setNameValidationError] = useState('')
+  const [nameChecking, setNameChecking] = useState(false)
   const [sku, setSku] = useState('')
   const [skuValidationError, setSkuValidationError] = useState('')
   const [skuChecking, setSkuChecking] = useState(false)
@@ -200,10 +207,13 @@ export default function Products() {
 
   function openCreate() {
     skuCheckRequestId.current += 1
+    nameCheckRequestId.current += 1
     setEditing(null)
     setEditingPricesOnly(false)
     setReturnToStockProduct(null)
     setName('')
+    setNameValidationError('')
+    setNameChecking(false)
     setSku('')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -223,10 +233,13 @@ export default function Products() {
 
   function openEdit(p: Product, pricesOnly = false) {
     skuCheckRequestId.current += 1
+    nameCheckRequestId.current += 1
     if (!pricesOnly) setReturnToStockProduct(null)
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
+    setNameValidationError('')
+    setNameChecking(false)
     setSku(p.sku?.toUpperCase() || '')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -331,6 +344,43 @@ export default function Products() {
     )))
   }
 
+  async function checkProductNameAvailability(value: string) {
+    const normalizedName = normalizeProductName(value)
+    if (!normalizedName) {
+      setNameValidationError('')
+      setNameChecking(false)
+      return false
+    }
+
+    if (editing && normalizedName === normalizeProductName(editing.name)) {
+      setNameValidationError('')
+      setNameChecking(false)
+      return true
+    }
+
+    const requestId = ++nameCheckRequestId.current
+    setNameChecking(true)
+    const { data, error } = await supabase.rpc('is_product_name_taken', {
+      p_name: value.trim(),
+      p_product_id: editing?.id ?? null,
+    })
+    if (requestId !== nameCheckRequestId.current) return false
+    setNameChecking(false)
+
+    if (error) {
+      console.error('Failed to check product name:', error)
+      setNameValidationError('Nama produk tidak dapat diperiksa. Periksa koneksi lalu coba lagi.')
+      return false
+    }
+    if (data) {
+      setNameValidationError('Nama produk sudah digunakan.')
+      return false
+    }
+
+    setNameValidationError('')
+    return true
+  }
+
   async function checkSkuAvailability(value: string) {
     const normalizedSku = value.trim().toLocaleLowerCase()
     if (!normalizedSku) {
@@ -373,6 +423,10 @@ export default function Products() {
 
     if (!name.trim()) {
       toast.error('Nama produk wajib diisi')
+      return
+    }
+    if (!await checkProductNameAvailability(name)) {
+      productNameInputRef.current?.focus()
       return
     }
     if (!sku.trim()) {
@@ -426,8 +480,14 @@ export default function Products() {
     if (editing) {
       const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
       if (error) {
+        if (error.code === '23505' && error.message.includes('Nama produk')) {
+          setNameValidationError('Nama produk sudah digunakan.')
+          productNameInputRef.current?.focus()
+        }
         toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          ? error.message.includes('Nama produk')
+            ? 'Nama produk sudah digunakan.'
+            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
           : error.message)
       }
       else {
@@ -449,8 +509,14 @@ export default function Products() {
     } else {
       const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
       if (error) {
+        if (error.code === '23505' && error.message.includes('Nama produk')) {
+          setNameValidationError('Nama produk sudah digunakan.')
+          productNameInputRef.current?.focus()
+        }
         toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? `SKU "${sku.trim()}" sudah digunakan produk lain.`
+          ? error.message.includes('Nama produk')
+            ? 'Nama produk sudah digunakan.'
+            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
           : error.message)
       }
       else {
@@ -854,10 +920,26 @@ export default function Products() {
                   ref={productNameInputRef}
                   id="product-name"
                   value={name}
-                  onChange={(e) => setName(toTitleCase(e.target.value))}
+                  onChange={(e) => {
+                    setName(toTitleCase(e.target.value))
+                    setNameValidationError('')
+                    nameCheckRequestId.current += 1
+                    setNameChecking(false)
+                  }}
+                  onBlur={() => {
+                    if (name.trim()) void checkProductNameAvailability(name)
+                  }}
                   placeholder="Nama item"
                   readOnly={editingPricesOnly}
+                  aria-invalid={Boolean(nameValidationError)}
+                  aria-describedby={nameValidationError ? 'product-name-error' : undefined}
                 />
+                {nameChecking && <p className="mt-1 text-xs text-muted-foreground" role="status">Memeriksa nama produk…</p>}
+                {nameValidationError && (
+                  <p id="product-name-error" className="mt-1 text-xs text-red-700" role="alert">
+                    {nameValidationError}
+                  </p>
+                )}
               </div>
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
