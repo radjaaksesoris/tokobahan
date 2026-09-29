@@ -102,7 +102,7 @@ export default function Products() {
   const [skuEditing, setSkuEditing] = useState(false)
   const [costPrice, setCostPrice] = useState(0)
   const [costUnit, setCostUnit] = useState<UnitType>('satuan')
-  const [stock, setStock] = useState(0)
+  const [stock, setStock] = useState('0')
   const [stockUnit, setStockUnit] = useState<UnitType>('satuan')
   const [minStock, setMinStock] = useState(10)
   const [unitBase, setUnitBase] = useState<'pcs' | 'meter'>('pcs')
@@ -202,7 +202,7 @@ export default function Products() {
     setSkuEditing(true)
     setCostPrice(0)
     setCostUnit('satuan')
-    setStock(0)
+    setStock('0')
     setStockUnit('satuan')
     setStockVendorId('')
     setStockPaymentStatus('lunas')
@@ -230,7 +230,7 @@ export default function Products() {
           : price
       ))
       : [{ unit: savedStockUnit, price: 0, conversion: unitFactors[savedStockUnit] || 1 }]
-    setStock(p.stock)
+    setStock(String(p.stock))
     setStockUnit(savedStockUnit)
     setMinStock(p.min_stock)
     setUnitBase(p.unit_base as 'pcs' | 'meter')
@@ -321,6 +321,8 @@ export default function Products() {
   }
 
   async function handleSave() {
+    const initialStock = Number(stock) || 0
+
     if (!name.trim()) {
       toast.error('Nama produk wajib diisi')
       return
@@ -341,15 +343,15 @@ export default function Products() {
       toast.error('Nama vendor wajib dipilih')
       return
     }
-    if (stock < 0 || minStock < 0 || costPrice < 0 || prices.some((price) => price.price < 0)) {
+    if (initialStock < 0 || minStock < 0 || costPrice < 0 || prices.some((price) => price.price < 0)) {
       toast.error('Stok, harga modal, harga jual, dan stok minimum tidak boleh negatif')
       return
     }
-    if (!editing && stock > 0 && !stockVendorId) {
+    if (!editing && initialStock > 0 && !stockVendorId) {
       toast.error('Pilih vendor untuk stok awal produk')
       return
     }
-    if (!editing && stock > 0 && stockPaymentStatus === 'kredit' && !stockDueDate) {
+    if (!editing && initialStock > 0 && stockPaymentStatus === 'kredit' && !stockDueDate) {
       toast.error('Tanggal jatuh tempo wajib diisi untuk stok awal kredit')
       return
     }
@@ -360,7 +362,7 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: unitFactors[costUnit] || 1,
-      stock: editing ? stock : 0,
+      stock: editing ? Number(stock) : 0,
       stock_unit: stockUnit,
       stock_conversion: 1,
       min_stock: minStock,
@@ -392,10 +394,10 @@ export default function Products() {
       const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
       if (error) toast.error(error.message)
       else {
-        if (stock > 0) {
+        if (initialStock > 0) {
           const { error: receiptError } = await supabase.rpc('receive_stock_batch', {
             p_product_id: createdProduct.id,
-            p_quantity: stock,
+            p_quantity: initialStock,
             p_unit_cost: costPrice,
             p_vendor_id: stockVendorId,
             p_payment_status: stockPaymentStatus,
@@ -833,7 +835,10 @@ export default function Products() {
                       className="min-w-0 w-full"
                       type="number"
                       value={stock}
-                      onChange={(e) => setStock(Number(e.target.value))}
+                      onFocus={() => {
+                        if (stock === '0') setStock('')
+                      }}
+                      onChange={(e) => setStock(e.target.value)}
                       onKeyDown={(event) => {
                         if (event.key === 'Tab' && !event.shiftKey && !editing) {
                           event.preventDefault()
@@ -883,7 +888,7 @@ export default function Products() {
                       ]}
                     />
                   </div>
-                  {stockPaymentStatus === 'kredit' && stock > 0 && (
+                  {stockPaymentStatus === 'kredit' && Number(stock) > 0 && (
                     <div className="min-w-0 sm:col-span-2">
                       <label htmlFor="initial-due-date" className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
                       <Input id="initial-due-date" type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
