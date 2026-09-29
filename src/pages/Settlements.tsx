@@ -606,6 +606,11 @@ function SettlementReceiptPreview({
     return () => window.clearTimeout(focusTimer)
   }, [])
 
+  function printReceipt() {
+    window.print()
+    onClose()
+  }
+
   function ReceiptDocument() {
     return (
       <article className="receipt-document">
@@ -681,7 +686,7 @@ function SettlementReceiptPreview({
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                onClick={() => window.print()}
+                onClick={printReceipt}
               >
                 Cetak struk
               </Button>
