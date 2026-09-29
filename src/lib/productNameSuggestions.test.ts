@@ -1,23 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import {
+  escapeProductNameSuggestionPattern,
+  normalizeProductNameForDuplicate,
   normalizeProductNameSuggestionTerm,
   requestProductNameSuggestions,
   type ProductNameSuggestion,
 } from './productNameSuggestions'
 
 const products: ProductNameSuggestion[] = [
-  { id: '5', name: 'Kabel USB', sku: 'USB-5' },
-  { id: '4', name: 'Kabel Data', sku: null },
-  { id: '3', name: 'Kabel Type C', sku: 'TYPE-C' },
-  { id: '2', name: 'Kabel Charger', sku: 'CHARGER' },
-  { id: '1', name: 'Kabel Audio', sku: 'AUDIO' },
-  { id: '6', name: 'Kabel Power', sku: 'POWER' },
-  { id: '7', name: 'Adaptor USB', sku: 'ADAPTOR' },
+  { id: '5', name: 'Kabel USB' },
+  { id: '4', name: 'Kabel Data' },
+  { id: '3', name: 'Kabel Type C' },
+  { id: '2', name: 'Kabel Charger' },
+  { id: '1', name: 'Kabel Audio' },
+  { id: '6', name: 'Kabel Power' },
+  { id: '7', name: 'Adaptor USB' },
 ]
 
 describe('product name suggestions', () => {
-  it('normalizes whitespace and prevents user wildcard characters from broadening searches', () => {
-    expect(normalizeProductNameSuggestionTerm('  kabel   %_ data  ')).toBe('kabel data')
+  it('normalizes whitespace and escapes wildcard characters in search patterns', () => {
+    expect(normalizeProductNameSuggestionTerm('  kabel   %_ data  ')).toBe('kabel %_ data')
+    expect(escapeProductNameSuggestionPattern('kabel \\%_ data')).toBe('kabel \\\\\\%\\_ data')
+  })
+
+  it('normalizes duplicate names by trimming, collapsing whitespace, and ignoring case', () => {
+    expect(normalizeProductNameForDuplicate('  Kabel\t  Type   C  ')).toBe('kabel type c')
+    expect(normalizeProductNameForDuplicate('KABEL TYPE C')).toBe('kabel type c')
   })
 
   it('returns up to five active-name substring matches in name order, case-insensitively', async () => {
@@ -32,16 +40,16 @@ describe('product name suggestions', () => {
     expect(result).toEqual({
       status: 'matches',
       matches: [
-        { id: '1', name: 'Kabel Audio', sku: 'AUDIO' },
-        { id: '2', name: 'Kabel Charger', sku: 'CHARGER' },
-        { id: '4', name: 'Kabel Data', sku: null },
-        { id: '6', name: 'Kabel Power', sku: 'POWER' },
-        { id: '3', name: 'Kabel Type C', sku: 'TYPE-C' },
+        { id: '1', name: 'Kabel Audio' },
+        { id: '2', name: 'Kabel Charger' },
+        { id: '4', name: 'Kabel Data' },
+        { id: '6', name: 'Kabel Power' },
+        { id: '3', name: 'Kabel Type C' },
       ],
     })
   })
 
-  it('returns empty without querying for a blank or wildcard-only name', async () => {
+  it('returns empty without querying for a blank name', async () => {
     let queried = false
     const query = async () => {
       queried = true
@@ -51,15 +59,13 @@ describe('product name suggestions', () => {
 
     await expect(requestProductNameSuggestions(query, '   ', controller.signal))
       .resolves.toEqual({ status: 'empty' })
-    await expect(requestProductNameSuggestions(query, '%_', controller.signal))
-      .resolves.toEqual({ status: 'empty' })
     expect(queried).toBe(false)
   })
 
   it('distinguishes no matches from a failed request', async () => {
     const controller = new AbortController()
     await expect(requestProductNameSuggestions(async () => ({
-      data: [{ id: '1', name: 'Charger', sku: null }],
+      data: [{ id: '1', name: 'Charger' }],
       error: null,
     }), 'kabel', controller.signal)).resolves.toEqual({ status: 'empty' })
 

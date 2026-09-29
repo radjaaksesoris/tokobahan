@@ -1,7 +1,6 @@
 export type ProductNameSuggestion = {
   id: string
   name: string
-  sku: string | null
 }
 
 export type ProductNameSuggestionResult =
@@ -17,7 +16,15 @@ type ProductNameSuggestionQuery = (
 ) => Promise<{ data: ProductNameSuggestion[] | null; error: unknown | null }>
 
 export function normalizeProductNameSuggestionTerm(value: string) {
-  return value.trim().replace(/[%_]/g, ' ').replace(/\s+/g, ' ').trim()
+  return value.trim().replace(/\s+/g, ' ')
+}
+
+export function escapeProductNameSuggestionPattern(value: string) {
+  return value.replace(/[\\%_]/g, '\\$&')
+}
+
+export function normalizeProductNameForDuplicate(value: string) {
+  return normalizeProductNameSuggestionTerm(value).toLowerCase()
 }
 
 export async function requestProductNameSuggestions(
