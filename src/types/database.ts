@@ -420,6 +420,10 @@ export interface Database {
         }
         Returns: undefined
       }
+      import_master_products: {
+        Args: { p_rows: Json; p_idempotency_key: string }
+        Returns: Json
+      }
       create_operational_backup: {
         Args: Record<string, never>
         Returns: Json

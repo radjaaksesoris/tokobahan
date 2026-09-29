@@ -21,6 +21,7 @@ import { UNIT_LABELS } from '@/types'
 import type { Json } from '@/types/database'
 import { toTitleCase } from '@/lib/utils'
 import StockOpname from '@/pages/StockOpname'
+import { ProductImportSection } from '@/components/settings/ProductImportSection'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -439,6 +440,7 @@ export default function Settings() {
           <h3 id="master-data-heading" className="text-lg font-bold tracking-tight text-ink">Data dasar dan akses admin</h3>
           <p className="mt-1 text-sm text-muted-foreground">Kelola data yang dipakai saat membuat produk, mencatat transaksi, dan menjaga aplikasi.</p>
         </div>
+        <ProductImportSection />
         <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-red-200">
           <CardHeader>
