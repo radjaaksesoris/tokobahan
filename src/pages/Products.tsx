@@ -227,7 +227,7 @@ export default function Products() {
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
-    setSku(p.sku || '')
+    setSku(p.sku?.toUpperCase() || '')
     setSkuValidationError('')
     setSkuChecking(false)
     setSkuEditing(!p.sku)
@@ -410,7 +410,7 @@ export default function Products() {
     setSaving(true)
     const payload = {
       name: name.trim(),
-      sku: sku.trim() || null,
+      sku: sku.trim().toUpperCase() || null,
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: unitFactors[costUnit] || 1,
@@ -868,7 +868,7 @@ export default function Products() {
                       id="product-sku"
                       value={sku}
                       onChange={(e) => {
-                        setSku(e.target.value)
+                        setSku(e.target.value.toUpperCase())
                         setSkuValidationError('')
                         skuCheckRequestId.current += 1
                         setSkuChecking(false)
