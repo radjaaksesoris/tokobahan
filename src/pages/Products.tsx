@@ -13,6 +13,11 @@ import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
+import {
+  normalizeProductNameSuggestionTerm,
+  requestProductNameSuggestions,
+  type ProductNameSuggestionResult,
+} from '@/lib/productNameSuggestions'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -101,6 +106,11 @@ export default function Products() {
 
   // form
   const [name, setName] = useState('')
+  const [nameSuggestions, setNameSuggestions] = useState<{
+    query: string
+    result: ProductNameSuggestionResult
+  }>({ query: '', result: { status: 'empty' } })
+  const [nameSuggestionsDismissed, setNameSuggestionsDismissed] = useState(false)
   const [sku, setSku] = useState('')
   const [skuValidationError, setSkuValidationError] = useState('')
   const [skuChecking, setSkuChecking] = useState(false)
@@ -125,12 +135,47 @@ export default function Products() {
     return () => mediaQuery.removeEventListener('change', updatePageSize)
   }, [])
 
+  useEffect(() => {
+    const term = normalizeProductNameSuggestionTerm(name)
+    if (!modal || editing || editingPricesOnly || !term || nameSuggestionsDismissed) {
+      return
+    }
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setNameSuggestions({ query: name, result: { status: 'loading' } })
+      void requestProductNameSuggestions(async (searchTerm, signal) => {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, sku')
+          .eq('is_active', true)
+          .ilike('name', `%${searchTerm}%`)
+          .order('name')
+          .order('id')
+          .limit(5)
+          .abortSignal(signal)
+        return { data, error }
+      }, name, controller.signal).then((result) => {
+        if (controller.signal.aborted || result.status === 'cancelled') return
+        setNameSuggestions({ query: name, result })
+      })
+    }, 300)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timer)
+    }
+  }, [name, modal, editing, editingPricesOnly, nameSuggestionsDismissed])
+
   const allUnits = [...ALL_UNITS, ...customUnits.filter((unit) => !ALL_UNITS.includes(unit))]
   const unitOptions = allUnits.map((unit) => ({
     value: unit,
     label: UNIT_LABELS[unit] || unit,
   }))
   const unitFactors = UNIT_FACTORS
+  const showNameSuggestions = Boolean(normalizeProductNameSuggestionTerm(name)) &&
+    nameSuggestions.query === name &&
+    nameSuggestions.result.status !== 'cancelled'
 
   useEffect(() => {
     supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
@@ -204,6 +249,8 @@ export default function Products() {
     setEditingPricesOnly(false)
     setReturnToStockProduct(null)
     setName('')
+    setNameSuggestions({ query: '', result: { status: 'empty' } })
+    setNameSuggestionsDismissed(false)
     setSku('')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -227,6 +274,8 @@ export default function Products() {
     setEditing(p)
     setEditingPricesOnly(pricesOnly)
     setName(p.name)
+    setNameSuggestions({ query: '', result: { status: 'empty' } })
+    setNameSuggestionsDismissed(false)
     setSku(p.sku || '')
     setSkuValidationError('')
     setSkuChecking(false)
@@ -247,6 +296,12 @@ export default function Products() {
     setUnitBase(p.unit_base as 'pcs' | 'meter')
     setPrices(productPrices)
     setModal(true)
+  }
+
+  function closeModal() {
+    setNameSuggestions({ query: '', result: { status: 'empty' } })
+    setNameSuggestionsDismissed(false)
+    setModal(false)
   }
 
   function openStock(p: Product) {
@@ -432,7 +487,7 @@ export default function Products() {
       }
       else {
         toast.success('Produk diperbarui')
-        setModal(false)
+        closeModal()
         if (editingPricesOnly && returnToStockProduct) {
           setStockProduct({
             ...returnToStockProduct,
@@ -465,7 +520,7 @@ export default function Products() {
           })
           if (receiptError) {
             toast.error(`Produk dibuat, tetapi stok awal gagal disimpan: ${receiptError.message}`)
-            setModal(false)
+            closeModal()
             load()
             setSaving(false)
             return
@@ -838,12 +893,12 @@ export default function Products() {
             type="button"
             aria-label="Tutup panel produk"
             className="absolute inset-0 cursor-default"
-            onClick={() => setModal(false)}
+            onClick={closeModal}
           />
           <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
             <CardHeader className="relative z-10 flex-row items-center justify-between border-b bg-surface px-5 py-4">
               <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
-              <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
+              <button type="button" onClick={closeModal} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
@@ -854,10 +909,44 @@ export default function Products() {
                   ref={productNameInputRef}
                   id="product-name"
                   value={name}
-                  onChange={(e) => setName(toTitleCase(e.target.value))}
+                  onChange={(e) => {
+                    setName(toTitleCase(e.target.value))
+                    setNameSuggestions({ query: '', result: { status: 'empty' } })
+                    setNameSuggestionsDismissed(false)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape' && showNameSuggestions) {
+                      setNameSuggestionsDismissed(true)
+                      setNameSuggestions({ query: '', result: { status: 'empty' } })
+                    }
+                  }}
                   placeholder="Nama item"
                   readOnly={editingPricesOnly}
                 />
+                {!editing && !editingPricesOnly && showNameSuggestions && (
+                  <div className="mt-2 rounded-lg border border-border bg-surface px-3 py-2">
+                    <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+                      {nameSuggestions.result.status === 'loading' && 'Mencari nama produk yang cocok…'}
+                      {nameSuggestions.result.status === 'matches' &&
+                        `${nameSuggestions.result.matches.length} nama produk cocok.`}
+                      {nameSuggestions.result.status === 'empty' && 'Belum ada nama produk yang cocok.'}
+                      {nameSuggestions.result.status === 'error' &&
+                        'Nama produk yang mirip tidak dapat diperiksa. Anda tetap dapat melanjutkan.'}
+                    </p>
+                    {nameSuggestions.result.status === 'matches' && (
+                      <ul aria-label="Nama produk yang cocok" className="mt-2 divide-y divide-border">
+                        {nameSuggestions.result.matches.map((product) => (
+                          <li key={product.id} className="py-2 first:pt-0 last:pb-0">
+                            <p className="break-words text-sm text-ink">{product.name}</p>
+                            {product.sku && (
+                              <p className="mt-0.5 break-all text-xs text-muted-foreground">SKU: {product.sku}</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
@@ -1118,7 +1207,7 @@ export default function Products() {
               </div>
             </CardContent>
             <div className="flex gap-2 border-t p-4">
-              <Button variant="outline" className="flex-1" onClick={() => setModal(false)}>
+              <Button variant="outline" className="flex-1" onClick={closeModal}>
                 Batal
               </Button>
               <Button ref={saveButtonRef} className="flex-1" onClick={handleSave} disabled={saving}>
