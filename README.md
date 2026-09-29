@@ -123,15 +123,6 @@ Checkout offline membutuhkan browser dengan IndexedDB dan sesi kasir yang masih 
 invoice offline memakai prefix `OFF-`; RPC `checkout_sale` tetap menjadi satu-satunya jalur
 penyimpanan server dan validasi stok.
 
-### Cetak langsung di Windows
-
-Untuk mengirim struk langsung ke printer default tanpa dialog cetak browser, gunakan program
-pendamping Windows untuk POS58. Pasang driver POS58, jadikan POS58 printer default Windows,
-lalu ikuti [panduan RAJA Local Printer](./local-printer/README.md). Program tersebut harus
-berjalan di setiap komputer kasir yang akan mencetak. Tanpa program pendamping, tombol cetak
-akan menampilkan pesan bahwa printer lokal tidak tersedia; aplikasi tidak diam-diam membuka
-dialog browser.
-
 ## Deploy ke GitHub + Vercel (Recommended)
 
 ### 1. Push ke GitHub

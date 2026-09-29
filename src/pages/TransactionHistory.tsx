@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +11,6 @@ import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Printer, Search, 
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { toast } from 'sonner'
-import { createSalesReceiptPrintData, printReceiptLocally } from '@/lib/localPrinter'
 
 interface SaleRow {
   id: string
@@ -38,6 +38,16 @@ interface SaleItemRow {
 
 interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity'> {
   sale_returns: Array<{ quantity: number; refund_amount: number }> | null
+}
+
+interface ReprintData {
+  invoiceNo: string
+  createdAt: string
+  paymentMethod: 'cash' | 'qris' | 'credit'
+  customerName: string | null
+  total: number
+  amountPaid: number
+  items: Array<{ name: string; unit: string; quantity: number; unitPrice: number; lineTotal: number }>
 }
 
 const PAGE_SIZE = 20
@@ -85,6 +95,7 @@ export default function TransactionHistory() {
   const [returnReason, setReturnReason] = useState('')
   const [returnSaving, setReturnSaving] = useState(false)
   const [cachedAt, setCachedAt] = useState<number | null>(null)
+  const [reprint, setReprint] = useState<ReprintData | null>(null)
   const [paymentMethodSaving, setPaymentMethodSaving] = useState(false)
   const [creditCustomerName, setCreditCustomerName] = useState('')
   const initialLoadComplete = useRef(false)
@@ -225,7 +236,7 @@ export default function TransactionHistory() {
     const receipt = {
       invoiceNo: selectedSale.invoice_no,
       createdAt: selectedSale.created_at,
-      paymentMethod: selectedSale.payment_method.toLowerCase() as 'cash' | 'qris' | 'credit',
+      paymentMethod: selectedSale.payment_method.toLowerCase() as ReprintData['paymentMethod'],
       customerName,
       total: Number(selectedSale.total_amount),
       amountPaid: Number(selectedSale.amount_paid) || 0,
@@ -237,12 +248,8 @@ export default function TransactionHistory() {
         lineTotal: Math.max(0, Number(item.line_total) - item.returned_amount),
       })),
     }
-    try {
-      await printReceiptLocally(createSalesReceiptPrintData(receipt))
-      toast.success('Struk dikirim ke printer POS58')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gagal mencetak struk')
-    }
+    setReprint(receipt)
+    window.setTimeout(() => window.print(), 0)
   }
 
   async function changePaymentMethod(method: 'cash' | 'credit') {
@@ -575,6 +582,61 @@ export default function TransactionHistory() {
           </Card>
         </div>
       )}
+      {reprint && createPortal(
+        <div id="receipt-print-root" aria-hidden="true">
+          <HistoryReceiptDocument receipt={reprint} />
+        </div>,
+        document.body
+      )}
     </div>
+  )
+}
+
+function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
+  const paymentLabels = { cash: 'Tunai', qris: 'QRIS', credit: 'Hutang' }
+  return (
+    <article className="receipt-document">
+      <header className="receipt-header">
+        <div className="receipt-brand">
+          <img src={`${import.meta.env.BASE_URL}logo-radja.png`} alt="Logo RAJA Aksesoris" />
+          <div className="receipt-brand-copy">
+            <strong>RAJA AKSESORIS</strong>
+            <span>Konveksi</span>
+          </div>
+        </div>
+        <span className="receipt-title">Struk Penjualan</span>
+      </header>
+      <div className="receipt-rule" />
+      <div className="receipt-meta">
+        <span>No. {receipt.invoiceNo}</span>
+        <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
+      </div>
+      {receipt.customerName && <div className="receipt-customer">Pelanggan: {receipt.customerName}</div>}
+      <div className="receipt-rule" />
+      <div className="receipt-items">
+        {receipt.items.map((item, index) => (
+          <div key={`${item.name}-${index}`} className="receipt-item">
+            <div>{item.name}</div>
+            <div className="receipt-item-detail">
+              <span>{item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}</span>
+              <strong>{formatCurrency(item.lineTotal)}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="receipt-rule" />
+      <div className="receipt-total receipt-total-highlight">
+        <span>TOTAL</span>
+        <strong>{formatCurrency(receipt.total)}</strong>
+      </div>
+      <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
+        <>
+          <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
+          <div className="receipt-summary"><span>Sisa hutang</span><span>{formatCurrency(Math.max(0, receipt.total - receipt.amountPaid))}</span></div>
+        </>
+      )}
+      <footer className="receipt-center receipt-footer">Terima kasih</footer>
+    </article>
   )
 }

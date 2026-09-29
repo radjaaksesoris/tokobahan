@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
-import { createSettlementReceiptPrintData, printReceiptLocally } from '@/lib/localPrinter'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -600,25 +600,11 @@ function SettlementReceiptPreview({
   onClose: () => void
 }) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
-  const [printing, setPrinting] = useState(false)
 
   useEffect(() => {
     const focusTimer = window.setTimeout(() => printButtonRef.current?.focus({ preventScroll: true }), 0)
     return () => window.clearTimeout(focusTimer)
   }, [])
-
-  async function printSettlementReceipt() {
-    setPrinting(true)
-    try {
-      await printReceiptLocally(createSettlementReceiptPrintData(receipt))
-      toast.success('Struk dikirim ke printer POS58')
-      onClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gagal mencetak struk')
-    } finally {
-      setPrinting(false)
-    }
-  }
 
   function ReceiptDocument() {
     return (
@@ -695,15 +681,20 @@ function SettlementReceiptPreview({
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                disabled={printing}
-                onClick={printSettlementReceipt}
+                onClick={() => window.print()}
               >
-                {printing ? 'Mengirim ke printer...' : 'Cetak struk'}
+                Cetak struk
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+      {createPortal(
+        <div id="receipt-print-root" aria-hidden="true">
+          <ReceiptDocument />
+        </div>,
+        document.body,
+      )}
     </>
   )
 }
