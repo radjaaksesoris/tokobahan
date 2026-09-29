@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
-import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight } from 'lucide-react'
+import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
 import {
   enqueueSettlement,
   getQueuedSettlements,
@@ -28,6 +28,7 @@ type Debt = {
   batchIds: string[]
   name: string
   reference: string
+  createdAt: string
   total: number
   paid: number
   due: string | null
@@ -169,6 +170,7 @@ export default function Settlements() {
           batchIds: [row.id],
           name: row.vendor?.name || 'Vendor',
           reference: `Stok masuk · ${receivedDate}`,
+          createdAt: row.received_at,
           total,
           paid,
           due: row.due_date,
@@ -189,6 +191,7 @@ export default function Settlements() {
       setHasNextPage((data || []).length > PAGE_SIZE)
       setDebts((data || []).map((row: any) => ({
         id: row.id, batchIds: [row.id], name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
+        createdAt: row.created_at,
         total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
         due: null,
         payments: (row.customer_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
@@ -327,6 +330,23 @@ export default function Settlements() {
     void load()
   }
 
+  function reprintCustomerDebt(debt: Debt) {
+    const latestPayment = debt.payments.reduce<DebtPayment | null>(
+      (latest, current) => !latest || current.paid_at > latest.paid_at ? current : latest,
+      null,
+    )
+    setSettlementReceipt({
+      invoiceNo: debt.reference,
+      customerName: debt.name,
+      createdAt: latestPayment?.paid_at || debt.createdAt,
+      total: debt.total,
+      payment: latestPayment?.amount ?? debt.paid,
+      remainingDebt: Math.max(0, debt.total - debt.paid),
+      pendingSync: false,
+      items: debt.items,
+    })
+  }
+
   async function retrySettlements() {
     if (!administratorId) {
       toast.error('Akun administrator tidak ditemukan')
@@ -455,6 +475,17 @@ export default function Settlements() {
             <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
           <div className="flex w-full gap-1.5 sm:w-auto">
+            {tab === 'customer' && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => reprintCustomerDebt(debt)}
+                aria-label={`Cetak ulang struk ${debt.name} ${debt.reference}`}
+                title="Cetak ulang struk"
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
+            )}
             <Input
               type="text"
               inputMode="numeric"
