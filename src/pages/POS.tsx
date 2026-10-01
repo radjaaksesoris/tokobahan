@@ -84,7 +84,7 @@ export default function POS() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
-  const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'error'>('loading')
+  const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'setup' | 'error'>('loading')
   const [syncingSnapshot, setSyncingSnapshot] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
@@ -134,11 +134,13 @@ export default function POS() {
         const snapshot = await readOperationalSnapshot()
         if (cancelled) return
         setSnapshotSyncStatus(
-          snapshot && snapshot.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at
-            ? 'pending'
-            : snapshot
-              ? 'synced'
-              : 'error',
+          !snapshot
+            ? 'error'
+            : !snapshot.server_revision
+              ? 'setup'
+              : snapshot.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at
+                ? 'pending'
+                : 'synced',
         )
       } catch {
         if (!cancelled) setSnapshotSyncStatus('error')
@@ -355,6 +357,14 @@ export default function POS() {
   }
 
   async function syncSnapshotFromHeader() {
+    const snapshot = await readOperationalSnapshot()
+    if (!snapshot?.server_revision) {
+      setSnapshotSyncStatus('setup')
+      toast.info('Buka Pengaturan lalu pilih Ambil ulang data server untuk menyiapkan sinkronisasi.')
+      navigate('/settings')
+      return
+    }
+
     setSyncingSnapshot(true)
     try {
       const result = await syncOperationalSnapshot()
@@ -448,9 +458,15 @@ export default function POS() {
                     ? 'border-red-300 text-red-700 hover:bg-red-50'
                     : ''
               }`}
-              aria-label={snapshotSyncStatus === 'pending' ? 'Sinkronkan data terbaru ke Supabase' : 'Status sinkronisasi data'}
+              aria-label={snapshotSyncStatus === 'pending'
+                ? 'Sinkronkan data terbaru ke Supabase'
+                : snapshotSyncStatus === 'setup'
+                  ? 'Siapkan data lokal untuk sinkronisasi'
+                  : 'Status sinkronisasi data'}
               title={snapshotSyncStatus === 'pending'
                 ? 'Sinkronkan data terbaru ke Supabase'
+                : snapshotSyncStatus === 'setup'
+                  ? 'Buka Pengaturan untuk mengambil ulang data server sebelum sinkronisasi'
                 : snapshotSyncStatus === 'synced'
                   ? 'Data lokal sudah tersinkron ke Supabase'
                   : 'Sinkronisasi belum tersedia'}
