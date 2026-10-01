@@ -24,6 +24,8 @@ import {
   Legend,
 } from 'recharts'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { getLocalReportAnalytics } from '@/lib/offlineOperationalAnalytics'
 
 type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
 
@@ -63,6 +65,7 @@ export default function Reports() {
   })
   const [error, setError] = useState<string | null>(null)
   const [cachedAt, setCachedAt] = useState<number | null>(null)
+  const [dataSource, setDataSource] = useState<'server' | 'local' | 'cache' | null>(null)
   const requestId = useRef(0)
 
   useEffect(() => {
@@ -90,7 +93,35 @@ export default function Reports() {
   async function load() {
     const currentRequest = ++requestId.current
     setError(null)
+    setCachedAt(null)
+    setDataSource(null)
     const { start, end } = getRange()
+    let snapshot
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (snapshotError) {
+      if (currentRequest !== requestId.current) return
+      setError(`Gagal membaca snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
+    if (currentRequest !== requestId.current) return
+    if (snapshot) {
+      try {
+        if (!Number.isFinite(Date.parse(snapshot.generated_at))) {
+          throw new Error('Waktu pembuatan snapshot lokal tidak valid')
+        }
+        const analytics = getLocalReportAnalytics(snapshot, start, end)
+        setSummary(analytics.summary)
+        setDailySummary(analytics.dailySummary)
+        setVendorPayments(analytics.vendorPayments)
+        setCachedAt(Date.parse(snapshot.generated_at))
+        setDataSource('local')
+      } catch (snapshotError) {
+        setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
+      }
+      return
+    }
+
     const [
       { data: summaryData, error: summaryError },
       { data: dailyData, error: dailyError },
@@ -114,7 +145,7 @@ export default function Reports() {
     const cacheKey = `reports:${period}:${selectedDate || 'current'}`
     if (summaryError || dailyError || vendorPaymentError) {
       const cached = readOfflineCacheEntry<{ summary: typeof summary; dailySummary: DailySummaryRow[]; vendorPayments: VendorPaymentRow[] }>(cacheKey)
-      if (cached) { setSummary(cached.value.summary); setDailySummary(cached.value.dailySummary); setVendorPayments(cached.value.vendorPayments); setCachedAt(cached.cachedAt); setError(null) }
+      if (cached) { setSummary(cached.value.summary); setDailySummary(cached.value.dailySummary); setVendorPayments(cached.value.vendorPayments); setCachedAt(cached.cachedAt); setDataSource('cache'); setError(null) }
       else setError(summaryError?.message || dailyError?.message || vendorPaymentError?.message || 'Laporan belum tersedia secara offline')
       return
     }
@@ -122,6 +153,7 @@ export default function Reports() {
     const nextDailySummary = (dailyData || []) as DailySummaryRow[]
     const nextVendorPayments = (vendorPaymentData || []) as VendorPaymentRow[]
     setSummary(nextSummary); setDailySummary(nextDailySummary); setVendorPayments(nextVendorPayments); setCachedAt(Date.now())
+    setDataSource('server')
     writeOfflineCache(cacheKey, { summary: nextSummary, dailySummary: nextDailySummary, vendorPayments: nextVendorPayments })
   }
 
@@ -171,9 +203,13 @@ export default function Reports() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Laporan laba rugi</h2>
           <p className="mt-1 text-sm text-accent">
-            {cachedAt
-              ? `${navigator.onLine ? 'Snapshot cache terbaru' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
-              : 'Snapshot cache terbaru · Memuat...'}
+            {cachedAt && dataSource === 'local'
+              ? `Snapshot lokal · dibuat ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
+              : cachedAt && dataSource === 'cache'
+                ? `${navigator.onLine ? 'Snapshot cache terbaru' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
+                : cachedAt
+                  ? `Data server · diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
+                  : 'Laporan · Memuat...'}
           </p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">

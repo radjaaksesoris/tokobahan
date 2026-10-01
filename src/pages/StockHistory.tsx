@@ -4,6 +4,8 @@ import { endOfDay, format, startOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, History, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { UNIT_LABELS, type UnitType } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -40,16 +42,96 @@ export default function StockHistory() {
   const requestId = useRef(0)
 
   useEffect(() => {
-    supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
-      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
-      else setVendors(data || [])
-    })
+    let cancelled = false
+    async function loadVendors() {
+      try {
+        const snapshot = await readOperationalSnapshot()
+        if (snapshot) {
+          const localVendors = await readOperationalTable<{ id: string; name: string }>('vendors')
+          if (!cancelled) setVendors(localVendors.sort((a, b) => a.name.localeCompare(b.name, 'id')))
+          return
+        }
+        const { data, error } = await supabase.from('vendors').select('id, name').order('name')
+        if (cancelled) return
+        if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
+        else setVendors(data || [])
+      } catch (error) {
+        if (!cancelled) toast.error(`Gagal memuat vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      }
+    }
+    void loadVendors()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       const currentRequest = ++requestId.current
       setLoading(true)
+      let snapshot
+      try {
+        snapshot = await readOperationalSnapshot()
+      } catch (error) {
+        if (currentRequest !== requestId.current) return
+        toast.error(`Gagal membaca snapshot stok lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+        setHistory([])
+        setHasNextPage(false)
+        setLoading(false)
+        return
+      }
+
+      if (snapshot) {
+        try {
+          const [batches, vendors, products] = await Promise.all([
+            readOperationalTable<Record<string, unknown>>('product_stock_batches'),
+            readOperationalTable<{ id: string; name: string }>('vendors'),
+            readOperationalTable<{ id: string; name: string; stock_unit: UnitType }>('products'),
+          ])
+          if (currentRequest !== requestId.current) return
+          const vendorMap = new Map(vendors.map((vendor) => [vendor.id, vendor]))
+          const productMap = new Map(products.map((product) => [product.id, product]))
+          const selectedDate = date ? new Date(`${date}T00:00:00`) : null
+          const cursor = cursorHistory[page]
+          const rows = batches
+            .map((batch) => {
+              const product = productMap.get(String(batch.product_id))
+              const vendor = vendorMap.get(String(batch.vendor_id))
+              return {
+                ...batch,
+                id: String(batch.id),
+                quantity_received: Number(batch.quantity_received),
+                unit_cost: Number(batch.unit_cost),
+                received_at: String(batch.received_at),
+                payment_status: batch.payment_status as 'kredit' | 'lunas',
+                due_date: batch.due_date ? String(batch.due_date) : null,
+                vendor: vendor ? { name: vendor.name } : null,
+                product: product ? { name: product.name, stock_unit: product.stock_unit } : null,
+              } as StockReceipt & { vendor_id?: string | null }
+            })
+            .filter((receipt) => !selectedDate || (
+              new Date(receipt.received_at) >= startOfDay(selectedDate) &&
+              new Date(receipt.received_at) <= endOfDay(selectedDate)
+            ))
+            .filter((receipt) => !vendorId || (receipt as StockReceipt & { vendor_id?: string }).vendor_id === vendorId)
+            .sort((a, b) =>
+              b.received_at.localeCompare(a.received_at) || b.id.localeCompare(a.id),
+            )
+            .filter((receipt) => !cursor ||
+              receipt.received_at < cursor.received_at ||
+              (receipt.received_at === cursor.received_at && receipt.id < cursor.id),
+            )
+            .slice(0, PAGE_SIZE + 1)
+          setHistory(rows.slice(0, PAGE_SIZE))
+          setHasNextPage(rows.length > PAGE_SIZE)
+        } catch (error) {
+          if (currentRequest !== requestId.current) return
+          toast.error(`Gagal memuat riwayat stok lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+          setHistory([])
+          setHasNextPage(false)
+        }
+        setLoading(false)
+        return
+      }
+
       let query = supabase
         .from('product_stock_batches')
         .select('id, quantity_received, unit_cost, received_at, payment_status, due_date, vendor:vendors(name), product:products(name, stock_unit)')

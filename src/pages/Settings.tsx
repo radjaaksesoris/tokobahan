@@ -13,6 +13,19 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { clearOfflineOperationalCache } from '@/lib/offlineCache'
 import { clearOfflineOperationalData } from '@/lib/offlineOperationalData'
+import {
+  clearOperationalSnapshot,
+  readOperationalSnapshot,
+  updateOperationalSnapshot,
+  validateOperationalSnapshot,
+  writeOperationalSnapshot,
+} from '@/lib/offlineOperationalSnapshot'
+import { initializeOperationalSnapshot } from '@/lib/offlineOperationalBootstrap'
+import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
+import {
+  deleteOperationalRows,
+  readOperationalTable,
+} from '@/lib/offlineOperationalRepository'
 import { rememberCurrentResetGeneration } from '@/lib/offlineQueueReset'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -34,6 +47,11 @@ export default function Settings() {
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
   const [cloudBackupLoading, setCloudBackupLoading] = useState(false)
+  const [localSnapshotStatus, setLocalSnapshotStatus] = useState<'loading' | 'available' | 'missing' | 'error'>('loading')
+  const [localSnapshotSummary, setLocalSnapshotSummary] = useState<{ tableCount: number; rowCount: number } | null>(null)
+  const [localSnapshotError, setLocalSnapshotError] = useState<string | null>(null)
+  const [initializingLocalData, setInitializingLocalData] = useState(false)
+  const [syncingLocalData, setSyncingLocalData] = useState(false)
   const [cloudBackupError, setCloudBackupError] = useState<string | null>(null)
   const [cloudBackups, setCloudBackups] = useState<Array<{
     id: string
@@ -92,9 +110,19 @@ export default function Settings() {
   )
 
   async function loadVendors() {
-    const { data, error } = await supabase.from('vendors').select('id, name').order('name')
-    if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
-    else setVendors(data || [])
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const rows = await readOperationalTable<{ id: string; name: string }>('vendors')
+        setVendors(rows)
+        return
+      }
+      const { data, error } = await supabase.from('vendors').select('id, name').order('name')
+      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
+      else setVendors(data || [])
+    } catch (error) {
+      toast.error(`Gagal memuat vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
   }
 
   useEffect(() => {
@@ -105,29 +133,84 @@ export default function Settings() {
     const name = vendorName.trim()
     if (!name) return
     setVendorLoading(true)
-    const { error } = await supabase.from('vendors').insert({ name })
-    if (error) toast.error(`Gagal menambah vendor: ${error.message}`)
-    else {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        await updateOperationalSnapshot((current) => {
+          const duplicate = current.tables.vendors.some((vendor) =>
+            String(vendor.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+          )
+          if (duplicate) throw new Error('Vendor tersebut sudah ada')
+          return {
+            snapshot: {
+              ...current,
+              tables: {
+                ...current.tables,
+                vendors: [...current.tables.vendors, {
+                  id: crypto.randomUUID(),
+                  name,
+                  created_at: new Date().toISOString(),
+                }],
+              },
+            },
+            result: undefined,
+          }
+        })
+      } else {
+        const { error } = await supabase.from('vendors').insert({ name })
+        if (error) throw new Error(error.message)
+      }
       toast.success('Vendor ditambahkan')
       setVendorName('')
       await loadVendors()
+    } catch (error) {
+      toast.error(`Gagal menambah vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
     setVendorLoading(false)
   }
 
   async function removeVendor(id: string) {
-    const { error } = await supabase.from('vendors').delete().eq('id', id)
-    if (error) toast.error(`Gagal menghapus vendor: ${error.message}`)
-    else {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        await updateOperationalSnapshot((current) => ({
+          snapshot: {
+            ...current,
+            tables: {
+              ...current.tables,
+              vendors: current.tables.vendors.filter((vendor) => vendor.id !== id),
+              product_stock_batches: current.tables.product_stock_batches.map((batch) =>
+                batch.vendor_id === id ? { ...batch, vendor_id: null } : batch,
+              ),
+            },
+          },
+          result: undefined,
+        }))
+      } else {
+        const { error } = await supabase.from('vendors').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+      }
       toast.success('Vendor dihapus')
       await loadVendors()
+    } catch (error) {
+      toast.error(`Gagal menghapus vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
   }
 
   async function loadUnits() {
-    const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
-    if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
-    else setUnits(data || [])
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const rows = await readOperationalTable<{ id: string; name: string }>('custom_units')
+        setUnits(rows)
+        return
+      }
+      const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
+      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
+      else setUnits(data || [])
+    } catch (error) {
+      toast.error(`Gagal memuat satuan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
   }
 
   useEffect(() => {
@@ -148,9 +231,58 @@ export default function Settings() {
     setCloudBackups((data || []) as typeof cloudBackups)
   }
 
+  async function loadLocalSnapshotStatus() {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (!snapshot) {
+        setLocalSnapshotStatus('missing')
+        setLocalSnapshotSummary(null)
+        setLocalSnapshotError(null)
+        return
+      }
+      setLocalSnapshotStatus('available')
+      setLocalSnapshotSummary({
+        tableCount: Object.keys(snapshot.tables).length,
+        rowCount: Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0),
+      })
+      setLocalSnapshotError(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
+      setLocalSnapshotStatus('error')
+      setLocalSnapshotError(message)
+      console.error('Gagal memeriksa snapshot operasional lokal:', error)
+    }
+  }
+
   useEffect(() => {
     void loadCloudBackups()
+    void loadLocalSnapshotStatus()
   }, [])
+
+  async function initializeLocalData() {
+    setInitializingLocalData(true)
+    try {
+      const result = await initializeOperationalSnapshot()
+      await loadLocalSnapshotStatus()
+      toast.success(`Data awal tersimpan di perangkat (${result.rows} baris dari ${result.tables} tabel)`)
+    } catch (error) {
+      toast.error(`Gagal menyiapkan data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setInitializingLocalData(false)
+    }
+  }
+
+  async function syncLocalData() {
+    setSyncingLocalData(true)
+    try {
+      const result = await syncOperationalSnapshot()
+      toast.success(`Snapshot lokal dikirim ke Supabase (${result.rowCount} baris). Aplikasi tetap memakai data lokal.`)
+    } catch (error) {
+      toast.error(`Sinkronisasi gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setSyncingLocalData(false)
+    }
+  }
 
   async function addUnit() {
     const name = unitName.trim()
@@ -160,22 +292,55 @@ export default function Settings() {
       return
     }
     setUnitLoading(true)
-    const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
-    if (error) toast.error(`Gagal menambah satuan: ${error.message}`)
-    else {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        await updateOperationalSnapshot((current) => {
+          const duplicate = current.tables.custom_units.some((unit) =>
+            String(unit.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+          )
+          if (duplicate) throw new Error('Satuan tersebut sudah ada')
+          return {
+            snapshot: {
+              ...current,
+              tables: {
+                ...current.tables,
+                custom_units: [...current.tables.custom_units, {
+                  id: crypto.randomUUID(),
+                  name,
+                  factor: 1,
+                  created_at: new Date().toISOString(),
+                }],
+              },
+            },
+            result: undefined,
+          }
+        })
+      } else {
+        const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
+        if (error) throw new Error(error.message)
+      }
       toast.success('Satuan ditambahkan')
       setUnitName('')
       await loadUnits()
+    } catch (error) {
+      toast.error(`Gagal menambah satuan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
     setUnitLoading(false)
   }
 
   async function removeUnit(id: string) {
-    const { error } = await supabase.from('custom_units').delete().eq('id', id)
-    if (error) toast.error(`Gagal menghapus satuan: ${error.message}`)
-    else {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) await deleteOperationalRows('custom_units', [id])
+      else {
+        const { error } = await supabase.from('custom_units').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+      }
       toast.success('Satuan dihapus')
       await loadUnits()
+    } catch (error) {
+      toast.error(`Gagal menghapus satuan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
   }
 
@@ -214,10 +379,11 @@ export default function Settings() {
 
     try {
       await clearOfflineOperationalData()
+      await clearOperationalSnapshot()
       clearOfflineOperationalCache()
     } catch (error) {
       console.error('Database reset succeeded, but local offline data could not be cleared:', error)
-      toast.error('Data server sudah direset, tetapi antrean offline perangkat ini gagal dihapus. Jangan sinkronkan antrean lama; hubungi admin.')
+      toast.error('Data server sudah direset, tetapi data offline perangkat ini gagal dihapus. Jangan lanjutkan penggunaan data lokal sebelum masalah ini diperbaiki.')
       setResetting(false)
       return
     }
@@ -266,6 +432,21 @@ export default function Settings() {
     setCloudBackupError(null)
     setBackupLoading(true)
     try {
+      const localSnapshot = await readOperationalSnapshot()
+      if (localSnapshot) {
+        const payload = JSON.parse(JSON.stringify(localSnapshot)) as Json
+        const { data, error } = await supabase.rpc('upload_operational_backup', { p_payload: payload })
+        if (error) throw error
+        const result = data as { id: string; created_at: string } | null
+        if (!result?.id || !result.created_at) throw new Error('Respons backup lokal tidak valid')
+        await uploadBackupObject(result.id, payload)
+        downloadBackup(payload, result.created_at)
+        await loadCloudBackups()
+        const totalRecords = Object.values(localSnapshot.tables).reduce((total, rows) => total + rows.length, 0)
+        toast.success(`Backup data lokal berhasil dibuat (${totalRecords} baris)`)
+        return
+      }
+
       const { data, error } = await supabase.rpc('create_operational_backup')
       if (error) throw error
       const result = data as { id: string; created_at: string; payload: Json; counts?: Record<string, number> } | null
@@ -370,9 +551,8 @@ export default function Settings() {
     setCloudBackupError(null)
     try {
       const payload = await readCloudBackup(backup)
-      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
-      if (error) throw error
-      toast.success('Backup cloud berhasil dipulihkan')
+      const target = await applyOperationalBackup(payload)
+      toast.success(target === 'local' ? 'Backup cloud dipulihkan ke data lokal' : 'Backup cloud berhasil dipulihkan')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Gagal memulihkan backup'
       setCloudBackupError(message)
@@ -390,14 +570,24 @@ export default function Settings() {
     setRestoreLoading(true)
     try {
       const payload = JSON.parse(await file.text())
-      const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload })
-      if (error) throw error
-      toast.success('Backup berhasil dipulihkan')
+      const target = await applyOperationalBackup(payload)
+      toast.success(target === 'local' ? 'Backup dipulihkan ke data lokal' : 'Backup berhasil dipulihkan')
     } catch (error) {
       toast.error(`Restore gagal: ${error instanceof Error ? error.message : 'Format backup tidak valid'}`)
     } finally {
       setRestoreLoading(false)
     }
+  }
+
+  async function applyOperationalBackup(payload: unknown): Promise<'local' | 'server'> {
+    if (await readOperationalSnapshot()) {
+      await writeOperationalSnapshot(validateOperationalSnapshot(payload))
+      await loadLocalSnapshotStatus()
+      return 'local'
+    }
+    const { error } = await supabase.rpc('restore_operational_backup', { p_payload: payload as Json })
+    if (error) throw error
+    return 'server'
   }
 
   async function syncNotifications() {
@@ -620,6 +810,57 @@ export default function Settings() {
         <h3 id="backup-heading" className="text-lg font-bold tracking-tight text-ink">Backup dan pemulihan</h3>
         <p className="mt-1 text-sm text-muted-foreground">Simpan salinan data sebelum melakukan perubahan besar atau pindah perangkat.</p>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Database className="h-5 w-5 text-primary" />
+            Data lokal dan sinkronisasi
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            IndexedDB di perangkat ini adalah sumber data utama. Sinkronkan untuk mengirim seluruh snapshot
+            lokal ke Supabase agar dapat dilihat dari aplikasi mobile; setelah selesai aplikasi tetap bekerja
+            menggunakan data lokal.
+          </p>
+          {localSnapshotStatus === 'loading' ? (
+            <p className="text-sm text-muted-foreground">Memeriksa data lokal...</p>
+          ) : localSnapshotStatus === 'error' ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p>Data lokal tidak dapat diperiksa: {localSnapshotError}</p>
+              <Button className="mt-2" variant="outline" size="sm" onClick={() => void loadLocalSnapshotStatus()}>
+                Coba lagi
+              </Button>
+            </div>
+          ) : localSnapshotStatus === 'available' ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              Data lokal aktif · {localSnapshotSummary?.rowCount ?? 0} baris di {localSnapshotSummary?.tableCount ?? 0} tabel
+            </div>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Data lokal belum disiapkan. Inisialisasi akan menyalin snapshot operasional Supabase ke perangkat ini satu kali.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {localSnapshotStatus === 'missing' && (
+              <Button onClick={() => void initializeLocalData()} disabled={initializingLocalData || syncingLocalData}>
+                {initializingLocalData
+                  ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                  : <Download className="h-4 w-4" />}
+                {initializingLocalData ? 'Menyiapkan data lokal...' : 'Salin data server ke perangkat'}
+              </Button>
+            )}
+            {localSnapshotStatus === 'available' && (
+              <Button onClick={() => void syncLocalData()} disabled={syncingLocalData || initializingLocalData}>
+                {syncingLocalData
+                  ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                  : <Upload className="h-4 w-4" />}
+                {syncingLocalData ? 'Mengirim snapshot...' : 'Sinkronkan snapshot ke Supabase'}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

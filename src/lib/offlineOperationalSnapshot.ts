@@ -5,12 +5,44 @@ export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
 const TRANSACTION_STORE = 'offline-transactions'
 const SETTLEMENT_STORE = 'offline-settlements'
 const SNAPSHOT_KEY = 'current'
+const SYNC_LOCK_KEY = 'sync-lock'
+export const OPERATIONAL_SNAPSHOT_FORMAT = 'tokobahan-operational-backup'
+export const OPERATIONAL_SNAPSHOT_VERSION = '3'
 
-export type OperationalSnapshot = Record<string, unknown>
+export const OPERATIONAL_SNAPSHOT_TABLES = [
+  'categories',
+  'vendors',
+  'custom_units',
+  'products',
+  'product_stock_batches',
+  'customers',
+  'sales',
+  'sale_items',
+  'vendor_debt_payments',
+  'customer_debt_payments',
+  'stock_adjustments',
+  'sale_returns',
+  'settlement_idempotency',
+] as const
+
+export type OperationalSnapshotTable = (typeof OPERATIONAL_SNAPSHOT_TABLES)[number]
+
+export interface OperationalSnapshot extends Record<string, unknown> {
+  format: typeof OPERATIONAL_SNAPSHOT_FORMAT
+  version: typeof OPERATIONAL_SNAPSHOT_VERSION
+  generated_at: string
+  generated_by: string
+  tables: Record<OperationalSnapshotTable, Record<string, unknown>[]>
+}
 
 interface StoredSnapshot {
   id: typeof SNAPSHOT_KEY
   data: OperationalSnapshot
+}
+
+interface SyncLock {
+  id: typeof SYNC_LOCK_KEY
+  locked: boolean
 }
 
 export function ensureOfflineOperationalStores(database: IDBDatabase) {
@@ -43,7 +75,11 @@ function openDatabase(): Promise<IDBDatabase> {
 
 async function withSnapshotStore<T>(
   mode: IDBTransactionMode,
-  run: (store: IDBObjectStore, setResult: (result: T) => void) => void,
+  run: (
+    store: IDBObjectStore,
+    setResult: (result: T) => void,
+    abortWithError: (error: unknown) => void,
+  ) => void,
 ): Promise<T> {
   const database = await openDatabase()
 
@@ -51,35 +87,49 @@ async function withSnapshotStore<T>(
     return await new Promise<T>((resolve, reject) => {
       let result!: T
       let settled = false
-      const fail = (message: string, cause: DOMException | null) => {
+      let operationError: Error | null = null
+      const fail = (error: Error) => {
         if (settled) return
         settled = true
-        reject(new Error(message, { cause }))
+        reject(error)
       }
 
       let transaction: IDBTransaction
       try {
         transaction = database.transaction(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, mode)
-        transaction.onerror = () => fail(
+        transaction.onerror = () => fail(new Error(
           'Gagal mengakses snapshot operasional',
-          transaction.error,
-        )
-        transaction.onabort = () => fail(
+          { cause: transaction.error },
+        ))
+        transaction.onabort = () => fail(operationError || new Error(
           'Transaksi snapshot operasional dibatalkan',
-          transaction.error,
-        )
+          { cause: transaction.error },
+        ))
         transaction.oncomplete = () => {
           if (settled) return
           settled = true
           resolve(result)
         }
-        run(transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE), (value) => {
-          result = value
-        })
+        run(
+          transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE),
+          (value) => { result = value },
+          (error) => {
+            operationError = error instanceof Error
+              ? error
+              : new Error('Operasi snapshot operasional gagal', { cause: error })
+            transaction.abort()
+          },
+        )
       } catch (error) {
         if (settled) return
-        settled = true
-        reject(new Error('Gagal mengakses snapshot operasional', { cause: error }))
+        operationError = error instanceof Error
+          ? error
+          : new Error('Gagal mengakses snapshot operasional', { cause: error })
+        try {
+          transaction!.abort()
+        } catch {
+          fail(operationError)
+        }
       }
     })
   } finally {
@@ -94,7 +144,7 @@ export function readOperationalSnapshot<
     const request = store.get(SNAPSHOT_KEY)
     request.onsuccess = () => {
       const record = request.result as StoredSnapshot | undefined
-      setResult((record?.data ?? null) as TSnapshot | null)
+      setResult(record ? validateOperationalSnapshot(record.data) as TSnapshot : null)
     }
   })
 }
@@ -102,13 +152,136 @@ export function readOperationalSnapshot<
 export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
+  validateOperationalSnapshot(snapshot)
   return withSnapshotStore<void>('readwrite', (store) => {
     store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
   })
 }
 
 export function clearOperationalSnapshot(): Promise<void> {
-  return withSnapshotStore<void>('readwrite', (store) => {
-    store.delete(SNAPSHOT_KEY)
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    lockRequest.onsuccess = () => {
+      if ((lockRequest.result as SyncLock | undefined)?.locked) {
+        abortWithError(new Error('Snapshot sedang disinkronkan dan belum dapat dihapus'))
+        return
+      }
+      store.delete(SNAPSHOT_KEY)
+    }
   })
+}
+
+export function beginOperationalSnapshotSync(): Promise<OperationalSnapshot> {
+  return withSnapshotStore<OperationalSnapshot>('readwrite', (store, setResult, abortWithError) => {
+    const snapshotRequest = store.get(SNAPSHOT_KEY)
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    let snapshotResult: StoredSnapshot | undefined
+    let lockResult: SyncLock | undefined
+    let readyCount = 0
+    const tryLock = () => {
+      readyCount += 1
+      if (readyCount !== 2) return
+      try {
+        if (!snapshotResult) throw new Error('Snapshot lokal belum diinisialisasi')
+        if (lockResult?.locked) throw new Error('Sinkronisasi snapshot sedang berjalan')
+        const snapshot = validateOperationalSnapshot(snapshotResult.data)
+        store.put({ id: SYNC_LOCK_KEY, locked: true } satisfies SyncLock)
+        setResult(snapshot)
+      } catch (error) {
+        abortWithError(error)
+      }
+    }
+    snapshotRequest.onsuccess = () => {
+      snapshotResult = snapshotRequest.result as StoredSnapshot | undefined
+      tryLock()
+    }
+    lockRequest.onsuccess = () => {
+      lockResult = lockRequest.result as SyncLock | undefined
+      tryLock()
+    }
+  })
+}
+
+export function endOperationalSnapshotSync(): Promise<void> {
+  return withSnapshotStore<void>('readwrite', (store) => {
+    store.delete(SYNC_LOCK_KEY)
+  })
+}
+
+export function updateOperationalSnapshot<TResult>(
+  update: (snapshot: OperationalSnapshot) => {
+    snapshot: OperationalSnapshot
+    result: TResult
+  },
+): Promise<TResult> {
+  return withSnapshotStore<TResult>('readwrite', (store, setResult, abortWithError) => {
+    const snapshotRequest = store.get(SNAPSHOT_KEY)
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    let snapshotResult: StoredSnapshot | undefined
+    let lockResult: SyncLock | undefined
+    let readyCount = 0
+    const updateWhenReady = () => {
+      readyCount += 1
+      if (readyCount !== 2) return
+      try {
+        if (lockResult?.locked) {
+          throw new Error('Snapshot sedang disinkronkan dan tidak dapat diubah')
+        }
+        const current = snapshotResult
+        if (!current) throw new Error('Snapshot lokal belum diinisialisasi')
+
+        const next = update(validateOperationalSnapshot(current.data))
+        validateOperationalSnapshot(next.snapshot)
+        store.put({ id: SNAPSHOT_KEY, data: next.snapshot } satisfies StoredSnapshot)
+        setResult(next.result)
+      } catch (error) {
+        abortWithError(error)
+      }
+    }
+    snapshotRequest.onsuccess = () => {
+      snapshotResult = snapshotRequest.result as StoredSnapshot | undefined
+      updateWhenReady()
+    }
+    lockRequest.onsuccess = () => {
+      lockResult = lockRequest.result as SyncLock | undefined
+      updateWhenReady()
+    }
+  })
+}
+
+export function validateOperationalSnapshot(value: unknown): OperationalSnapshot {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Snapshot operasional tidak valid')
+  }
+
+  const snapshot = value as Record<string, unknown>
+  if (
+    snapshot.format !== OPERATIONAL_SNAPSHOT_FORMAT ||
+    snapshot.version !== OPERATIONAL_SNAPSHOT_VERSION ||
+    typeof snapshot.generated_at !== 'string' ||
+    typeof snapshot.generated_by !== 'string' ||
+    !snapshot.tables ||
+    typeof snapshot.tables !== 'object' ||
+    Array.isArray(snapshot.tables)
+  ) {
+    throw new Error('Format atau versi snapshot operasional tidak didukung')
+  }
+
+  const tables = snapshot.tables as Record<string, unknown>
+  const validatedTables = {} as OperationalSnapshot['tables']
+  for (const tableName of OPERATIONAL_SNAPSHOT_TABLES) {
+    const rows = tables[tableName]
+    if (
+      !Array.isArray(rows) ||
+      rows.some((row) => !row || typeof row !== 'object' || Array.isArray(row))
+    ) {
+      throw new Error(`Data tabel ${tableName} tidak lengkap atau tidak valid`)
+    }
+    validatedTables[tableName] = rows as Record<string, unknown>[]
+  }
+
+  return {
+    ...snapshot,
+    tables: validatedTables,
+  } as OperationalSnapshot
 }

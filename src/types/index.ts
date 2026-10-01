@@ -1,5 +1,3 @@
-import type { Json } from './database'
-
 export type UnitType = string
 
 export function isUnitType(value: string): value is UnitType {
@@ -30,14 +28,15 @@ export interface ProductPrice {
   conversion: number // how many base units (pcs) in this unit
 }
 
-export function parseProductPrices(value: Json): ProductPrice[] {
+export function parseProductPrices(value: unknown): ProductPrice[] {
   if (!Array.isArray(value)) return []
 
   return value.flatMap((entry) => {
     if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return []
-    const unit = entry.unit
-    const price = entry.price
-    const conversion = entry.conversion
+    const priceRecord = entry as Record<string, unknown>
+    const unit = priceRecord.unit
+    const price = priceRecord.price
+    const conversion = priceRecord.conversion
     if (
       typeof unit !== 'string' ||
       !isUnitType(unit) ||

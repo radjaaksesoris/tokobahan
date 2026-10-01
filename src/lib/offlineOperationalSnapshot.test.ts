@@ -2,10 +2,27 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearOperationalSnapshot,
+  beginOperationalSnapshotSync,
+  endOperationalSnapshotSync,
   OFFLINE_OPERATIONAL_SNAPSHOT_STORE,
+  OPERATIONAL_SNAPSHOT_TABLES,
   readOperationalSnapshot,
+  updateOperationalSnapshot,
+  type OperationalSnapshot,
+  validateOperationalSnapshot,
   writeOperationalSnapshot,
 } from './offlineOperationalSnapshot'
+
+function createSnapshot(overrides: Partial<OperationalSnapshot['tables']> = {}): OperationalSnapshot {
+  const tables = Object.fromEntries(OPERATIONAL_SNAPSHOT_TABLES.map((table) => [table, []]))
+  return {
+    format: 'tokobahan-operational-backup',
+    version: '3',
+    generated_at: '2026-10-01T00:00:00.000Z',
+    generated_by: 'admin-1',
+    tables: { ...tables, ...overrides } as OperationalSnapshot['tables'],
+  }
+}
 
 function deleteOfflineDatabase() {
   return new Promise<void>((resolve, reject) => {
@@ -24,16 +41,18 @@ describe('offline operational snapshot storage', () => {
   })
 
   it('reads, replaces, and clears the single operational snapshot', async () => {
-    const snapshot = {
+    const snapshot = createSnapshot({
       products: [{ id: 'product-1', name: 'Kain' }],
-      inventory: [{ id: 'batch-1', quantity: 12 }],
-    }
+      product_stock_batches: [{ id: 'batch-1', quantity_remaining: 12 }],
+    })
 
     await expect(readOperationalSnapshot()).resolves.toBeNull()
     await writeOperationalSnapshot(snapshot)
     await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
 
-    const replacement = { products: [{ id: 'product-2', name: 'Benang' }] }
+    const replacement = createSnapshot({
+      products: [{ id: 'product-2', name: 'Benang' }],
+    })
     await writeOperationalSnapshot(replacement)
     await expect(readOperationalSnapshot()).resolves.toEqual(replacement)
 
@@ -96,5 +115,61 @@ describe('offline operational snapshot storage', () => {
     await expect(readOperationalSnapshot()).rejects.toThrow(
       'Penyimpanan offline tidak tersedia di browser ini',
     )
+  })
+
+  it('requires a complete supported backup payload before sync', () => {
+    const snapshot = createSnapshot()
+    const tables = snapshot.tables
+
+    expect(validateOperationalSnapshot(snapshot)).toEqual(snapshot)
+    expect(() => validateOperationalSnapshot({ ...snapshot, tables: { ...tables, sales: undefined } }))
+      .toThrow('Data tabel sales tidak lengkap atau tidak valid')
+    expect(() => validateOperationalSnapshot({ ...snapshot, version: '2' }))
+      .toThrow('Format atau versi snapshot operasional tidak didukung')
+    expect(() => validateOperationalSnapshot({
+      ...snapshot,
+      tables: { ...tables, products: [{ id: 'p1' }, null] },
+    })).toThrow('Data tabel products tidak lengkap atau tidak valid')
+  })
+
+  it('updates a complete snapshot atomically and rejects an uninitialized store', async () => {
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: true,
+    }))).rejects.toThrow('Snapshot lokal belum diinisialisasi')
+
+    await writeOperationalSnapshot(createSnapshot())
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: {
+        ...current,
+        tables: {
+          ...current.tables,
+          products: [{ id: 'product-1', name: 'Benang', stock: 10 }],
+        },
+      },
+      result: 'saved',
+    }))).resolves.toBe('saved')
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: { products: [{ id: 'product-1', name: 'Benang', stock: 10 }] },
+    })
+  })
+
+  it('locks local writes while a snapshot is being synchronized', async () => {
+    const snapshot = createSnapshot()
+    await writeOperationalSnapshot(snapshot)
+
+    await expect(beginOperationalSnapshotSync()).resolves.toEqual(snapshot)
+    await expect(beginOperationalSnapshotSync()).rejects.toThrow('Sinkronisasi snapshot sedang berjalan')
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: undefined,
+    }))).rejects.toThrow('Snapshot sedang disinkronkan dan tidak dapat diubah')
+    await expect(clearOperationalSnapshot()).rejects.toThrow('Snapshot sedang disinkronkan dan belum dapat dihapus')
+
+    await endOperationalSnapshotSync()
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: 'unlocked',
+    }))).resolves.toBe('unlocked')
   })
 })

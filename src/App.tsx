@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { syncQueuedSettlements } from '@/lib/offlineSettlements'
 import { syncQueuedTransactions } from '@/lib/offlineTransactions'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -154,7 +155,14 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
 
-    const syncOfflineQueues = () => {
+    const syncOfflineQueues = async () => {
+      try {
+        if (await readOperationalSnapshot()) return
+      } catch (error) {
+        console.error('Offline snapshot check failed:', error)
+        return
+      }
+
       syncQueuedTransactions().catch((error) => {
         console.error('Offline transaction sync failed:', error)
       })

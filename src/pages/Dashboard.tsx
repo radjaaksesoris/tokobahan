@@ -29,6 +29,8 @@ import { playLowStockSound, registerPushSubscription, showLowStockNotification }
 import { useAuthStore } from '@/store/useAuthStore'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { getUnnotifiedProducts } from '@/lib/lowStockNotifications'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
 
 interface Stats {
   todaySales: number
@@ -69,6 +71,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [cachedAt, setCachedAt] = useState<number | null>(null)
   const [isUsingCache, setIsUsingCache] = useState(false)
+  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
@@ -118,6 +121,56 @@ export default function Dashboard() {
     const requestId = ++statsRequestId.current
     if (!initialLoadComplete.current) setLoading(true)
     setError(null)
+    setSnapshotGeneratedAt(null)
+    setCachedAt(null)
+    setIsUsingCache(false)
+    let snapshot
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (snapshotError) {
+      if (requestId !== statsRequestId.current) return
+      setIsUsingCache(false)
+      setCachedAt(null)
+      setError(`Gagal membaca snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
+      setLoading(false)
+      initialLoadComplete.current = true
+      return
+    }
+    if (requestId !== statsRequestId.current) return
+    if (snapshot) {
+      try {
+        if (!Number.isFinite(Date.parse(snapshot.generated_at))) {
+          throw new Error('Waktu pembuatan snapshot lokal tidak valid')
+        }
+        const analytics = getLocalDashboardAnalytics(snapshot)
+        const nextStats: Stats = {
+          todaySales: analytics.todaySales,
+          todayProfit: analytics.todayProfit,
+          todayOrders: analytics.todayOrders,
+          totalProducts: analytics.totalProducts,
+          lowStock: analytics.lowStock,
+          weekData: analytics.weekData,
+        }
+        setStats(nextStats)
+        setLowStockProducts(analytics.lowStockProducts)
+        if (analytics.lowStock === 0) setLowStockDismissed(false)
+        notifyLowStock(analytics.lowStockProducts)
+        setSnapshotGeneratedAt(snapshot.generated_at)
+        setCachedAt(null)
+        setIsUsingCache(false)
+        setLoading(false)
+        initialLoadComplete.current = true
+      } catch (snapshotError) {
+        setIsUsingCache(false)
+        setCachedAt(null)
+        setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
+        setLoading(false)
+        initialLoadComplete.current = true
+      }
+      return
+    }
+
+    setSnapshotGeneratedAt(null)
     const todayStart = startOfDay(new Date()).toISOString()
     const todayEnd = endOfDay(new Date()).toISOString()
 
@@ -192,6 +245,7 @@ export default function Dashboard() {
     setStats(nextStats)
     setCachedAt(Date.now())
     setIsUsingCache(false)
+    setSnapshotGeneratedAt(null)
     writeOfflineCache(DASHBOARD_CACHE_KEY, { stats: nextStats, lowStockProducts: lowStockRows })
     setLoading(false)
     initialLoadComplete.current = true
@@ -335,6 +389,11 @@ export default function Dashboard() {
           {isUsingCache && cachedAt && (
             <p className="mt-1 text-xs font-medium text-amber-200" role="status">
               Snapshot offline · diperbarui {format(new Date(cachedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
+            </p>
+          )}
+          {snapshotGeneratedAt && (
+            <p className="mt-1 text-xs font-medium text-emerald-200" role="status">
+              Snapshot lokal · dibuat {format(new Date(snapshotGeneratedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
             </p>
           )}
         </div>

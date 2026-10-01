@@ -13,6 +13,8 @@ import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
+import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -140,14 +142,35 @@ export default function Products() {
   const unitFactors = UNIT_FACTORS
 
   useEffect(() => {
-    supabase.from('vendors').select('id, name').order('name').then(({ data, error }) => {
-      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
-      else setVendors(data || [])
-    })
-    supabase.from('custom_units').select('name').order('name').then(({ data, error }) => {
-      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
-      else setCustomUnits((data || []).map((unit) => unit.name))
-    })
+    let cancelled = false
+    async function loadMasterData() {
+      try {
+        const localSnapshot = await readOperationalSnapshot()
+        if (localSnapshot) {
+          const [localVendors, localUnits] = await Promise.all([
+            readOperationalTable<{ id: string; name: string }>('vendors'),
+            readOperationalTable<{ id: string; name: string }>('custom_units'),
+          ])
+          if (cancelled) return
+          setVendors(localVendors)
+          setCustomUnits(localUnits.map((unit) => unit.name as UnitType))
+          return
+        }
+        const [vendorsResult, unitsResult] = await Promise.all([
+          supabase.from('vendors').select('id, name').order('name'),
+          supabase.from('custom_units').select('name').order('name'),
+        ])
+        if (cancelled) return
+        if (vendorsResult.error) toast.error(`Gagal memuat vendor: ${vendorsResult.error.message}`)
+        else setVendors(vendorsResult.data || [])
+        if (unitsResult.error) toast.error(`Gagal memuat satuan: ${unitsResult.error.message}`)
+        else setCustomUnits((unitsResult.data || []).map((unit) => unit.name as UnitType))
+      } catch (error) {
+        if (!cancelled) toast.error(`Gagal memuat data dasar lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      }
+    }
+    void loadMasterData()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -163,6 +186,45 @@ export default function Products() {
     const requestId = ++loadRequestId.current
     const term = search.trim().replace(/[%_,]/g, ' ')
     const cacheKey = `products:${pageSize}:${page}:${term.toLowerCase()}`
+    let localSnapshot
+    try {
+      localSnapshot = await readOperationalSnapshot()
+    } catch (error) {
+      if (signal?.aborted || requestId !== loadRequestId.current) return
+      toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setProducts([])
+      setHasNextPage(false)
+      setLoading(false)
+      initialLoadComplete.current = true
+      return
+    }
+    if (localSnapshot) {
+      try {
+        const localProducts = await readOperationalTable<Product>('products')
+        if (signal?.aborted || requestId !== loadRequestId.current) return
+        const normalizedTerm = term.toLocaleLowerCase()
+        const filteredProducts = localProducts
+          .filter((product) => product.is_active)
+          .filter((product) => !normalizedTerm ||
+            product.name.toLocaleLowerCase().includes(normalizedTerm) ||
+            product.sku?.toLocaleLowerCase().includes(normalizedTerm) ||
+            product.barcode?.toLocaleLowerCase().includes(normalizedTerm))
+          .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))
+        const start = page * pageSize
+        setProducts(filteredProducts.slice(start, start + pageSize))
+        setHasNextPage(filteredProducts.length > start + pageSize)
+        initialLoadComplete.current = true
+        setLoading(false)
+      } catch (error) {
+        if (signal?.aborted || requestId !== loadRequestId.current) return
+        toast.error(`Gagal membaca produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+        setProducts([])
+        setHasNextPage(false)
+        setLoading(false)
+        initialLoadComplete.current = true
+      }
+      return
+    }
     const cached = readOfflineCacheEntry<{ products: Product[]; hasNextPage: boolean }>(cacheKey)
     if (cached) {
       setProducts(cached.value.products)
@@ -287,6 +349,52 @@ export default function Products() {
       toast.error('Tanggal jatuh tempo wajib diisi untuk status kredit')
       return
     }
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const now = new Date().toISOString()
+        await updateOperationalSnapshot((current) => {
+          const product = current.tables.products.find((row) => row.id === stockProduct.id)
+          if (!product) throw new Error('Produk tidak ditemukan di penyimpanan lokal')
+          if (!current.tables.vendors.some((vendor) => vendor.id === stockVendorId)) {
+            throw new Error('Vendor tidak ditemukan di penyimpanan lokal')
+          }
+          return {
+            snapshot: {
+              ...current,
+              tables: {
+                ...current.tables,
+                products: current.tables.products.map((row) => row.id === stockProduct.id
+                  ? { ...row, stock: Number(row.stock) + quantity, cost_price: stockCost, updated_at: now }
+                  : row),
+                product_stock_batches: [...current.tables.product_stock_batches, {
+                  id: crypto.randomUUID(),
+                  product_id: stockProduct.id,
+                  quantity_received: quantity,
+                  quantity_remaining: quantity,
+                  unit_cost: stockCost,
+                  vendor_id: stockVendorId,
+                  payment_status: stockPaymentStatus,
+                  due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
+                  received_at: now,
+                  created_at: now,
+                }],
+              },
+            },
+            result: undefined,
+          }
+        })
+        toast.success(`Stok ${stockProduct.name} berhasil ditambahkan`)
+        setStockProduct(null)
+        await load()
+        setStockSaving(false)
+        return
+      }
+    } catch (error) {
+      toast.error(`Gagal menyimpan stok lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setStockSaving(false)
+      return
+    }
     const { error } = await supabase.rpc('receive_stock_batch', {
       p_product_id: stockProduct.id,
       p_quantity: quantity,
@@ -358,6 +466,23 @@ export default function Products() {
       return true
     }
 
+    try {
+      if (await readOperationalSnapshot()) {
+        const products = await readOperationalTable<Product>('products')
+        const taken = products.some((product) =>
+          product.id !== editing?.id && normalizeProductName(product.name) === normalizedName,
+        )
+        setNameChecking(false)
+        setNameValidationError(taken ? 'Nama produk sudah digunakan.' : '')
+        return !taken
+      }
+    } catch (error) {
+      setNameChecking(false)
+      setNameValidationError('Data lokal tidak dapat diperiksa.')
+      toast.error(`Gagal memeriksa nama produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return false
+    }
+
     const requestId = ++nameCheckRequestId.current
     setNameChecking(true)
     const { data, error } = await supabase.rpc('is_product_name_taken', {
@@ -393,6 +518,23 @@ export default function Products() {
       setSkuValidationError('')
       setSkuChecking(false)
       return true
+    }
+
+    try {
+      if (await readOperationalSnapshot()) {
+        const products = await readOperationalTable<Product>('products')
+        const taken = products.some((product) =>
+          product.id !== editing?.id && product.sku?.trim().toLocaleLowerCase() === normalizedSku,
+        )
+        setSkuChecking(false)
+        setSkuValidationError(taken ? `SKU "${value.trim()}" sudah digunakan produk lain.` : '')
+        return !taken
+      }
+    } catch (error) {
+      setSkuChecking(false)
+      setSkuValidationError('Data lokal tidak dapat diperiksa.')
+      toast.error(`Gagal memeriksa SKU lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return false
     }
 
     const requestId = ++skuCheckRequestId.current
@@ -477,6 +619,109 @@ export default function Products() {
       is_active: true,
     }
 
+    let localSnapshot
+    try {
+      localSnapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal membaca penyimpanan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setSaving(false)
+      return
+    }
+    if (localSnapshot) {
+      try {
+        const now = new Date().toISOString()
+        const productId = editing?.id || crypto.randomUUID()
+        await updateOperationalSnapshot((current) => {
+          const duplicateName = current.tables.products.some((product) =>
+            product.id !== productId &&
+            normalizeProductName(String(product.name)) === normalizeProductName(payload.name),
+          )
+          if (duplicateName) throw new Error('Nama produk sudah digunakan.')
+          const normalizedSku = payload.sku?.toLocaleLowerCase()
+          const duplicateSku = normalizedSku && current.tables.products.some((product) =>
+            product.id !== productId &&
+            String(product.sku || '').trim().toLocaleLowerCase() === normalizedSku,
+          )
+          if (duplicateSku) throw new Error(`SKU "${payload.sku}" sudah digunakan produk lain.`)
+          if (editing && !current.tables.products.some((product) => product.id === productId)) {
+            throw new Error('Produk tidak ditemukan di penyimpanan lokal')
+          }
+          if (!editing && initialStock > 0 && !current.tables.vendors.some((vendor) => vendor.id === stockVendorId)) {
+            throw new Error('Vendor tidak ditemukan di penyimpanan lokal')
+          }
+
+          const nextProduct = {
+            ...payload,
+            id: productId,
+            barcode: editing?.barcode ?? null,
+            category_id: editing?.category_id ?? null,
+            image_url: editing?.image_url ?? null,
+            prices: prices.map((price) => ({ ...price })),
+            stock: editing ? Number(stock) : initialStock,
+            created_at: editing?.created_at ?? now,
+            updated_at: now,
+          }
+          const products = editing
+            ? current.tables.products.map((product) => product.id === productId ? nextProduct : product)
+            : [...current.tables.products, nextProduct]
+          const stockBatches = !editing && initialStock > 0
+            ? [...current.tables.product_stock_batches, {
+                id: crypto.randomUUID(),
+                product_id: productId,
+                quantity_received: initialStock,
+                quantity_remaining: initialStock,
+                unit_cost: costPrice,
+                vendor_id: stockVendorId,
+                payment_status: stockPaymentStatus,
+                due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
+                received_at: now,
+                created_at: now,
+              }]
+            : current.tables.product_stock_batches
+
+          return {
+            snapshot: {
+              ...current,
+              tables: {
+                ...current.tables,
+                products,
+                product_stock_batches: stockBatches,
+              },
+            },
+            result: undefined,
+          }
+        })
+        toast.success(editing ? 'Produk diperbarui' : 'Produk ditambahkan')
+        setModal(false)
+        if (editingPricesOnly && returnToStockProduct) {
+          setStockProduct({
+            ...returnToStockProduct,
+            name: name.trim(),
+            sku: payload.sku,
+            prices: prices.map((price) => ({ ...price })),
+          })
+          setReturnToStockProduct(null)
+        }
+        setEditing(null)
+        setEditingPricesOnly(false)
+        if (!editing) openCreate()
+        await load()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
+        if (message.includes('Nama produk')) {
+          setNameValidationError('Nama produk sudah digunakan.')
+          productNameInputRef.current?.focus()
+        }
+        if (message.includes('SKU')) {
+          setSkuValidationError(`SKU "${sku.trim()}" sudah digunakan produk lain.`)
+          productSkuInputRef.current?.focus()
+        }
+        toast.error(`Gagal menyimpan produk lokal: ${message}`)
+      }
+      setSaving(false)
+      return
+    }
+
     if (editing) {
       const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
       if (error) {
@@ -557,16 +802,40 @@ export default function Products() {
       toast.error('Nama produk tidak cocok')
       return
     }
-    const { error } = await supabase
-      .from('products')
-      .update({ is_active: false })
-      .eq('id', deleteTarget.id)
-    if (error) toast.error(error.message)
-    else {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const updated = await updateOperationalSnapshot((current) => {
+          if (!current.tables.products.some((product) => product.id === deleteTarget.id)) {
+            throw new Error('Produk tidak ditemukan di penyimpanan lokal')
+          }
+          return {
+            snapshot: {
+              ...current,
+              tables: {
+                ...current.tables,
+                products: current.tables.products.map((product) => product.id === deleteTarget.id
+                  ? { ...product, is_active: false, updated_at: new Date().toISOString() }
+                  : product),
+              },
+            },
+            result: true,
+          }
+        })
+        if (!updated) throw new Error('Produk tidak dapat dinonaktifkan')
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('id', deleteTarget.id)
+        if (error) throw new Error(error.message)
+      }
       toast.success('Produk dinonaktifkan')
       setDeleteTarget(null)
       setDeleteName('')
-      load()
+      await load()
+    } catch (error) {
+      toast.error(`Gagal menonaktifkan produk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
   }
 

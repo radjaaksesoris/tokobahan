@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { readOperationalTable } from '@/lib/offlineOperationalRepository'
+import { reconcileStockBatches, type StockBatch } from '@/lib/stockOpname'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -7,6 +10,7 @@ import { UNIT_LABELS } from '@/types'
 import { toTitleCase } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type ProductRow = { id: string; name: string; stock: number; stock_unit: string }
 const PAGE_SIZE = 50
@@ -19,9 +23,37 @@ export default function StockOpname() {
   const [saving, setSaving] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
+  const userId = useAuthStore((state) => state.user?.id ?? null)
 
   async function load() {
     setLoading(true)
+    let snapshot
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal membaca snapshot produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setProducts([])
+      setHasNextPage(false)
+      setLoading(false)
+      return
+    }
+    if (snapshot) {
+      try {
+        const localProducts = await readOperationalTable<ProductRow & { is_active?: boolean }>('products')
+        const activeProducts = localProducts
+          .filter((product) => product.is_active)
+          .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))
+        const start = page * PAGE_SIZE
+        setProducts(activeProducts.slice(start, start + PAGE_SIZE))
+        setHasNextPage(activeProducts.length > start + PAGE_SIZE)
+      } catch (error) {
+        toast.error(`Gagal memuat produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+        setProducts([])
+        setHasNextPage(false)
+      }
+      setLoading(false)
+      return
+    }
     const { data, error } = await supabase
       .from('products')
       .select('id, name, stock, stock_unit')
@@ -38,10 +70,6 @@ export default function StockOpname() {
   useEffect(() => { void load() }, [page])
 
   async function save(product: ProductRow) {
-    if (!navigator.onLine) {
-      toast.error('Stok opname membutuhkan koneksi internet dan tidak dapat disimpan offline')
-      return
-    }
     const value = Number(physical[product.id])
     const reason = reasons[product.id]?.trim() || ''
     if (!Number.isFinite(value) || value < 0 || !reason) {
@@ -49,6 +77,76 @@ export default function StockOpname() {
       return
     }
     setSaving(product.id)
+    let localSnapshot
+    try {
+      localSnapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal memeriksa snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setSaving(null)
+      return
+    }
+    if (localSnapshot) {
+      try {
+        const now = new Date().toISOString()
+        await updateOperationalSnapshot((snapshot) => {
+          const products = snapshot.tables.products
+          const currentProduct = products.find((row) => row.id === product.id)
+          if (!currentProduct || !currentProduct.is_active) {
+            throw new Error('Produk tidak ditemukan atau sudah tidak aktif di snapshot lokal')
+          }
+          const systemStock = Number(currentProduct.stock)
+          const cost = Number(currentProduct.cost_price)
+          if (!Number.isFinite(systemStock) || !Number.isFinite(cost)) {
+            throw new Error('Data stok atau HPP produk lokal tidak valid')
+          }
+          const batches = snapshot.tables.product_stock_batches as StockBatch[]
+          const nextBatches = reconcileStockBatches(
+            batches,
+            product.id,
+            value,
+            cost,
+            now,
+          )
+          const adjustment = {
+            id: crypto.randomUUID(),
+            product_id: product.id,
+            system_stock: systemStock,
+            physical_stock: value,
+            difference: value - systemStock,
+            reason,
+            adjusted_by: userId,
+            created_at: now,
+          }
+          return {
+            snapshot: {
+              ...snapshot,
+              tables: {
+                ...snapshot.tables,
+                products: products.map((row) =>
+                  row.id === product.id ? { ...row, stock: value, updated_at: now } : row,
+                ),
+                product_stock_batches: nextBatches,
+                stock_adjustments: [...snapshot.tables.stock_adjustments, adjustment],
+              },
+            },
+            result: undefined,
+          }
+        })
+        toast.success(`Stok ${product.name} disesuaikan`)
+        setPhysical((current) => ({ ...current, [product.id]: '' }))
+        setReasons((current) => ({ ...current, [product.id]: '' }))
+        await load()
+      } catch (error) {
+        toast.error(`Gagal menyimpan opname lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      }
+      setSaving(null)
+      return
+    }
+    if (!navigator.onLine) {
+      toast.error('Stok opname membutuhkan koneksi internet dan tidak dapat disimpan offline')
+      setSaving(null)
+      return
+    }
     const { error } = await supabase.rpc('adjust_stock', { p_product_id: product.id, p_physical_stock: value, p_reason: reason })
     if (error) toast.error(error.message)
     else {

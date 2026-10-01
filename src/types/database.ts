@@ -452,6 +452,10 @@ export interface Database {
         Args: { p_payload: Json }
         Returns: undefined
       }
+      sync_operational_snapshot: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       pay_vendor_debt: {
         Args: { p_allocations: Json; p_idempotency_key: string }
         Returns: undefined

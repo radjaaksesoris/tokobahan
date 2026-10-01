@@ -18,6 +18,7 @@ import {
 } from '@/lib/offlineSettlements'
 import { isOfflineError } from '@/lib/offlineTransactions'
 import { useAuthStore } from '@/store/useAuthStore'
+import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 
 type Tab = 'vendor' | 'customer' | 'vendor-history' | 'customer-history'
 type VendorPaymentMode = 'nominal' | 'item'
@@ -115,6 +116,167 @@ export default function Settlements() {
 
   async function load() {
     setLoading(true)
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const { tables } = snapshot
+        if (tab === 'vendor-history') {
+          const payments = tables.vendor_debt_payments
+            .filter((payment) => !historyDate || String(payment.paid_at).slice(0, 10) === historyDate)
+            .sort((a, b) => String(b.paid_at).localeCompare(String(a.paid_at)))
+          const rows: VendorPaymentHistory[] = payments.map((payment) => {
+            const batch = tables.product_stock_batches.find((row) => row.id === payment.stock_batch_id)
+            const product = tables.products.find((row) => row.id === batch?.product_id)
+            const vendor = tables.vendors.find((row) => row.id === batch?.vendor_id)
+            return {
+              id: String(payment.id),
+              amount: Number(payment.amount),
+              paid_at: String(payment.paid_at),
+              stock_batch: batch ? {
+                received_at: String(batch.received_at),
+                vendor: vendor ? { name: String(vendor.name) } : null,
+                product: product ? { name: String(product.name) } : null,
+              } : null,
+            }
+          })
+          const start = page * PAGE_SIZE
+          setVendorPaymentHistory(rows.slice(start, start + PAGE_SIZE))
+          setHasNextPage(rows.length > start + PAGE_SIZE)
+          setDebts([])
+        } else if (tab === 'customer-history') {
+          const payments = tables.customer_debt_payments
+            .filter((payment) => !historyDate || String(payment.paid_at).slice(0, 10) === historyDate)
+            .sort((a, b) => String(b.paid_at).localeCompare(String(a.paid_at)))
+          const rows: CustomerPaymentHistory[] = payments.map((payment) => {
+            const sale = tables.sales.find((row) => row.id === payment.sale_id)
+            const customer = sale?.customer_id
+              ? tables.customers.find((row) => row.id === sale.customer_id)
+              : null
+            return {
+              id: String(payment.id),
+              amount: Number(payment.amount),
+              paid_at: String(payment.paid_at),
+              sale: sale ? {
+                invoice_no: String(sale.invoice_no),
+                customer: customer ? { name: String(customer.name) } : null,
+              } : null,
+            }
+          })
+          const start = page * PAGE_SIZE
+          setCustomerPaymentHistory(rows.slice(start, start + PAGE_SIZE))
+          setHasNextPage(rows.length > start + PAGE_SIZE)
+          setDebts([])
+        } else if (tab === 'vendor') {
+          const rows: VendorDebtRow[] = tables.product_stock_batches
+            .filter((batch) => batch.payment_status === 'kredit')
+            .sort((a, b) => String(a.due_date || '').localeCompare(String(b.due_date || '')))
+            .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE + 1)
+            .map((batch) => {
+              const vendor = tables.vendors.find((row) => row.id === batch.vendor_id)
+              const product = tables.products.find((row) => row.id === batch.product_id)
+              return {
+                id: String(batch.id),
+                quantity_received: Number(batch.quantity_received),
+                unit_cost: Number(batch.unit_cost),
+                received_at: String(batch.received_at),
+                due_date: batch.due_date ? String(batch.due_date) : null,
+                vendor_id: batch.vendor_id ? String(batch.vendor_id) : null,
+                vendor: vendor ? { name: String(vendor.name) } : null,
+                product: product ? { name: String(product.name), stock_unit: String(product.stock_unit) } : null,
+                vendor_debt_payments: tables.vendor_debt_payments
+                  .filter((payment) => payment.stock_batch_id === batch.id)
+                  .map((payment) => ({ amount: Number(payment.amount), paid_at: String(payment.paid_at) })),
+              }
+            })
+          setHasNextPage(rows.length > PAGE_SIZE)
+          const grouped = new Map<string, Debt>()
+          for (const row of rows.slice(0, PAGE_SIZE)) {
+            const receivedDate = row.received_at.slice(0, 10)
+            const key = `${row.vendor_id || 'unknown'}:${receivedDate}`
+            const existing = grouped.get(key)
+            const total = Number(row.quantity_received) * Number(row.unit_cost)
+            const paid = row.vendor_debt_payments.reduce((sum, item) => sum + Number(item.amount), 0)
+            const item = {
+              batchId: row.id,
+              name: row.product?.name || 'Produk tidak ditemukan',
+              quantity: Number(row.quantity_received),
+              unit: row.product?.stock_unit || 'satuan',
+              unitPrice: Number(row.unit_cost),
+              subtotal: total,
+              paid,
+            }
+            if (existing) {
+              existing.batchIds.push(row.id)
+              existing.total += total
+              existing.paid += paid
+              existing.payments.push(...row.vendor_debt_payments)
+              existing.items.push(item)
+            } else {
+              grouped.set(key, {
+                id: key,
+                batchIds: [row.id],
+                name: row.vendor?.name || 'Vendor',
+                reference: `Stok masuk · ${receivedDate}`,
+                createdAt: row.received_at,
+                total,
+                paid,
+                due: row.due_date,
+                payments: [...row.vendor_debt_payments],
+                items: [item],
+              })
+            }
+          }
+          const debts = Array.from(grouped.values())
+          setDebts(debts)
+          setSelectedItems(Object.fromEntries(debts.map((debt) => [debt.id, []])))
+        } else {
+          const creditSales = tables.sales
+            .filter((sale) => sale.payment_method === 'credit')
+            .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id)))
+          const pageSales = creditSales.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE + 1)
+          setHasNextPage(pageSales.length > PAGE_SIZE)
+          const debts = pageSales.slice(0, PAGE_SIZE).map((sale): Debt => {
+            const customer = tables.customers.find((row) => row.id === sale.customer_id)
+            const customerPayments = tables.customer_debt_payments
+              .filter((payment) => payment.sale_id === sale.id)
+              .map((payment) => ({ amount: Number(payment.amount), paid_at: String(payment.paid_at) }))
+            const saleItems = tables.sale_items
+              .filter((item) => item.sale_id === sale.id)
+              .map((item) => ({
+                name: String(item.product_name),
+                quantity: Number(item.quantity),
+                unit: String(item.unit),
+                unitPrice: Number(item.unit_price),
+                subtotal: Number(item.line_total),
+                paid: 0,
+              }))
+            return {
+              id: String(sale.id),
+              batchIds: [String(sale.id)],
+              name: customer ? String(customer.name) : 'Pelanggan',
+              reference: String(sale.invoice_no),
+              createdAt: String(sale.created_at),
+              total: Number(sale.total_amount),
+              paid: Number(sale.amount_paid || 0) + customerPayments.reduce((sum, item) => sum + item.amount, 0),
+              due: null,
+              payments: customerPayments,
+              items: saleItems,
+            }
+          })
+          setDebts(debts)
+        }
+        setLoading(false)
+        return
+      }
+    } catch (error) {
+      toast.error(`Gagal memuat data pelunasan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setDebts([])
+      setVendorPaymentHistory([])
+      setCustomerPaymentHistory([])
+      setHasNextPage(false)
+      setLoading(false)
+      return
+    }
     if (tab === 'vendor-history') {
       const { data: rawData, error } = await supabase.from('vendor_debt_payments')
         .select('id, amount, paid_at, stock_batch:product_stock_batches(received_at, vendor:vendors(name), product:products(name))')
@@ -278,6 +440,97 @@ export default function Settlements() {
       const kind = tab === 'vendor' ? 'vendor' : 'customer'
       const payload = kind === 'vendor' ? { allocations } : { sale_id: debt.id, amount }
       if (!administratorId) throw new Error('Akun administrator tidak ditemukan')
+      if (await readOperationalSnapshot()) {
+        const paidAt = new Date().toISOString()
+        await updateOperationalSnapshot((snapshot) => {
+          if (kind === 'vendor') {
+            let remainingAmount = amount
+            const newPayments = []
+            const updatedBatchIds = new Set<string>()
+            for (const allocation of allocations) {
+              const batch = snapshot.tables.product_stock_batches.find((row) => row.id === allocation.stock_batch_id)
+              if (!batch) throw new Error('Batch stok tidak ditemukan di penyimpanan lokal')
+              const alreadyPaid = snapshot.tables.vendor_debt_payments
+                .filter((row) => row.stock_batch_id === batch.id)
+                .reduce((sum, row) => sum + Number(row.amount), 0)
+              const outstanding = Math.max(Number(batch.quantity_received) * Number(batch.unit_cost) - alreadyPaid, 0)
+              if (allocation.amount <= 0 || allocation.amount > outstanding + 0.01) {
+                throw new Error('Nominal pelunasan vendor melebihi sisa hutang')
+              }
+              newPayments.push({
+                id: crypto.randomUUID(),
+                stock_batch_id: batch.id,
+                amount: allocation.amount,
+                paid_at: paidAt,
+                paid_by: administratorId,
+              })
+              remainingAmount -= allocation.amount
+              if (alreadyPaid + allocation.amount >= Number(batch.quantity_received) * Number(batch.unit_cost) - 0.01) {
+                updatedBatchIds.add(String(batch.id))
+              }
+            }
+            if (remainingAmount > 0.01) throw new Error('Alokasi pelunasan vendor tidak mencukupi')
+            return {
+              snapshot: {
+                ...snapshot,
+                tables: {
+                  ...snapshot.tables,
+                  product_stock_batches: snapshot.tables.product_stock_batches.map((batch) =>
+                    updatedBatchIds.has(String(batch.id)) ? { ...batch, payment_status: 'lunas' } : batch,
+                  ),
+                  vendor_debt_payments: [...snapshot.tables.vendor_debt_payments, ...newPayments],
+                },
+              },
+              result: undefined,
+            }
+          }
+
+          const sale = snapshot.tables.sales.find((row) => row.id === debt.id)
+          if (!sale || sale.payment_method !== 'credit') {
+            throw new Error('Transaksi kredit tidak ditemukan di penyimpanan lokal')
+          }
+          const alreadyPaid = snapshot.tables.customer_debt_payments
+            .filter((row) => row.sale_id === sale.id)
+            .reduce((sum, row) => sum + Number(row.amount), 0)
+          const outstanding = Math.max(Number(sale.total_amount) - Number(sale.amount_paid) - alreadyPaid, 0)
+          if (amount > outstanding + 0.01) throw new Error('Nominal pelunasan melebihi sisa hutang pelanggan')
+          return {
+            snapshot: {
+              ...snapshot,
+              tables: {
+                ...snapshot.tables,
+                customer_debt_payments: [...snapshot.tables.customer_debt_payments, {
+                  id: crypto.randomUUID(),
+                  sale_id: sale.id,
+                  amount,
+                  paid_at: paidAt,
+                  paid_by: administratorId,
+                }],
+              },
+            },
+            result: undefined,
+          }
+        })
+        toast.success('Pembayaran berhasil dicatat di perangkat')
+        if (kind === 'customer') {
+          setSettlementReceipt({
+            invoiceNo: debt.reference,
+            customerName: debt.name,
+            createdAt: paidAt,
+            total: debt.total,
+            payment: amount,
+            remainingDebt: Math.max(0, debt.total - debt.paid - amount),
+            pendingSync: false,
+            items: debt.items,
+          })
+        } else {
+          void load()
+        }
+        setPayment((current) => ({ ...current, [debt.id]: '' }))
+        setPendingSettlement(null)
+        await refreshQueue()
+        return
+      }
       const queued = await enqueueSettlement(kind, payload, administratorId)
       let accepted = true
       let pendingSync = !navigator.onLine

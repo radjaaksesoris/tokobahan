@@ -27,6 +27,9 @@ import { toast } from 'sonner'
 import { notifyLowStockPush } from '@/lib/notifications'
 import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
 import { fetchAllPages } from '@/lib/paginateQuery'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { readOperationalTable } from '@/lib/offlineOperationalRepository'
+import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import {
   createOfflineInvoice,
   enqueueTransaction,
@@ -233,20 +236,28 @@ export default function POS() {
   }, [showPaymentModal])
 
   useEffect(() => {
-    if (paymentMethod !== 'credit' || !isOnline) return
+    if (paymentMethod !== 'credit') return
     let cancelled = false
-    supabase
-      .from('customers')
-      .select('id, name')
-      .order('name')
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) {
-          toast.error(error.message || 'Gagal memuat daftar pelanggan')
+    async function loadCustomers() {
+      try {
+        if (await readOperationalSnapshot()) {
+          const rows = await readOperationalTable<{ id: string; name: string }>('customers')
+          if (!cancelled) setCustomers(rows.sort((a, b) => a.name.localeCompare(b.name, 'id')))
           return
         }
-        setCustomers(data || [])
-      })
+        if (!isOnline) return
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, name')
+          .order('name')
+        if (cancelled) return
+        if (error) toast.error(error.message || 'Gagal memuat daftar pelanggan')
+        else setCustomers(data || [])
+      } catch (error) {
+        if (!cancelled) toast.error(`Gagal memuat pelanggan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      }
+    }
+    void loadCustomers()
     return () => {
       cancelled = true
     }
@@ -254,6 +265,34 @@ export default function POS() {
 
   async function loadProducts(signal?: AbortSignal) {
     if (!initialLoadComplete.current) setLoading(true)
+    try {
+      if (await readOperationalSnapshot()) {
+        const localProducts = await readOperationalTable<Product>('products')
+        if (signal?.aborted) return
+        const term = search.trim().toLocaleLowerCase()
+        const rows = localProducts
+          .filter((product) => product.is_active)
+          .filter((product) => !term ||
+            product.name.toLocaleLowerCase().includes(term) ||
+            product.sku?.toLocaleLowerCase().includes(term) ||
+            product.barcode?.toLocaleLowerCase().includes(term))
+          .map((product) => ({
+            ...product,
+            prices: parseProductPrices(product.prices),
+          }))
+        setProducts(sortCatalogProducts(rows))
+        initialLoadComplete.current = true
+        setLoading(false)
+        return
+      }
+    } catch (error) {
+      if (signal?.aborted) return
+      toast.error(`Gagal membaca katalog lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setProducts([])
+      setLoading(false)
+      initialLoadComplete.current = true
+      return
+    }
     let query = supabase
       .from('products')
       .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
@@ -414,8 +453,17 @@ export default function POS() {
       line_profit: i.line_profit,
     }))
 
+    let localFirst = false
+    try {
+      localFirst = Boolean(await readOperationalSnapshot())
+    } catch (error) {
+      toast.error(`Gagal memeriksa data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setCheckoutLoading(false)
+      return
+    }
+
     let invoiceNo: string | null = null
-    if (isOnline) {
+    if (isOnline && !localFirst) {
       const { data, error: invoiceError } = await supabase.rpc('next_invoice_number')
       if (!invoiceError && data) invoiceNo = data
       else if (!isOfflineError(invoiceError)) {
@@ -425,6 +473,30 @@ export default function POS() {
       }
     }
     invoiceNo ||= createOfflineInvoice()
+
+    if (localFirst) {
+      try {
+        await saveOfflineCheckout({
+          invoiceNo,
+          items,
+          paymentMethod,
+          customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
+          amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
+          cashierId: profile?.id || null,
+        })
+        toast.success(`Transaksi ${invoiceNo} tersimpan di perangkat`)
+        if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
+        clearCart()
+        setShowPaymentModal(false)
+        setCashReceived('')
+        setShowCart(false)
+        await loadProducts()
+      } catch (error) {
+        toast.error(`Transaksi lokal gagal disimpan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      }
+      setCheckoutLoading(false)
+      return
+    }
 
     let queuedTransaction: QueuedTransaction
     try {

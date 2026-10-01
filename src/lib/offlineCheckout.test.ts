@@ -1,0 +1,141 @@
+import 'fake-indexeddb/auto'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { CartItem, Product } from '@/types'
+import {
+  readOperationalSnapshot,
+  writeOperationalSnapshot,
+  type OperationalSnapshot,
+} from './offlineOperationalSnapshot'
+import { saveOfflineCheckout } from './offlineCheckout'
+
+const product: Product = {
+  id: 'product-1',
+  name: 'Benang',
+  sku: 'B-1',
+  barcode: null,
+  category_id: null,
+  cost_price: 4,
+  cost_unit: 'satuan',
+  cost_conversion: 1,
+  stock: 10,
+  stock_unit: 'satuan',
+  stock_conversion: 1,
+  min_stock: 1,
+  unit_base: 'pcs',
+  prices: [{ unit: 'satuan', price: 10, conversion: 1 }],
+  image_url: null,
+  is_active: true,
+  created_at: '2026-09-01T00:00:00.000Z',
+  updated_at: '2026-09-01T00:00:00.000Z',
+}
+
+const item: CartItem = {
+  product,
+  unit: 'satuan',
+  quantity: 3,
+  unit_price: 10,
+  conversion: 1,
+  line_total: 30,
+  line_cost: 12,
+  line_profit: 18,
+}
+
+const snapshot: OperationalSnapshot = {
+  format: 'tokobahan-operational-backup',
+  version: '3',
+  generated_at: '2026-10-01T00:00:00.000Z',
+  generated_by: 'admin-1',
+  tables: {
+    categories: [],
+    vendors: [],
+    custom_units: [],
+    products: [{ ...product }],
+    product_stock_batches: [
+      { id: 'batch-1', product_id: product.id, quantity_remaining: 2, quantity_received: 2, unit_cost: 2, received_at: '2026-09-01T00:00:00.000Z' },
+      { id: 'batch-2', product_id: product.id, quantity_remaining: 8, quantity_received: 8, unit_cost: 4, received_at: '2026-09-02T00:00:00.000Z' },
+    ],
+    customers: [],
+    sales: [],
+    sale_items: [],
+    vendor_debt_payments: [],
+    customer_debt_payments: [],
+    stock_adjustments: [],
+    sale_returns: [],
+    settlement_idempotency: [],
+  },
+}
+
+function deleteOfflineDatabase() {
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('konveksi-pos')
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+    request.onblocked = () => reject(new Error('Offline database is still open'))
+  })
+}
+
+describe('offline checkout', () => {
+  beforeEach(async () => {
+    await deleteOfflineDatabase()
+    await writeOperationalSnapshot(snapshot)
+  })
+  afterEach(deleteOfflineDatabase)
+
+  it('saves sales locally and consumes FIFO stock batches atomically', async () => {
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-TEST-1',
+      items: [item],
+      paymentMethod: 'credit',
+      customerName: 'Pelanggan Satu',
+      amountPaid: 10,
+      cashierId: 'admin-1',
+    })
+
+    const updated = await readOperationalSnapshot()
+    expect(updated?.tables.products[0].stock).toBe(7)
+    expect(updated?.tables.product_stock_batches.map((batch) => batch.quantity_remaining)).toEqual([0, 7])
+    expect(updated?.tables.sales[0]).toMatchObject({
+      invoice_no: 'OFF-TEST-1',
+      total_amount: 30,
+      total_cost: 8,
+      total_profit: 22,
+      payment_method: 'credit',
+      amount_paid: 10,
+    })
+    expect(updated?.tables.customers[0]).toMatchObject({
+      name: 'Pelanggan Satu',
+      normalized_name: 'pelanggan satu',
+    })
+    expect(updated?.tables.sale_items[0]).toMatchObject({
+      line_cost: 8,
+      line_profit: 22,
+    })
+  })
+
+  it('does not partially update stock when the FIFO batches are incomplete', async () => {
+    const incomplete = {
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        product_stock_batches: [snapshot.tables.product_stock_batches[0]],
+      },
+    }
+    await writeOperationalSnapshot(incomplete)
+
+    await expect(saveOfflineCheckout({
+      invoiceNo: 'OFF-TEST-2',
+      items: [item],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })).rejects.toThrow('Batch HPP untuk Benang tidak mencukupi')
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        products: [{ stock: 10 }],
+        product_stock_batches: [{ quantity_remaining: 2 }],
+        sales: [],
+      },
+    })
+  })
+})
