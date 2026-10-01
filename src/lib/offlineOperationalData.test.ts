@@ -1,10 +1,11 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { clearOfflineOperationalData } from './offlineOperationalData'
+import { OFFLINE_DB_VERSION } from './offlineOperationalSnapshot'
 
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open('konveksi-pos', 3)
+    const request = indexedDB.open('konveksi-pos', OFFLINE_DB_VERSION)
     request.onupgradeneeded = () => {
       const database = request.result
       if (!database.objectStoreNames.contains('offline-transactions')) {

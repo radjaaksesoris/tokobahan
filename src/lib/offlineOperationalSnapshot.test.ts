@@ -7,6 +7,7 @@ import {
   endOperationalSnapshotSync,
   initializeOperationalSnapshotIfMissing,
   OFFLINE_OPERATIONAL_SNAPSHOT_STORE,
+  OFFLINE_DB_VERSION,
   OPERATIONAL_SNAPSHOT_TABLES,
   readOperationalSnapshot,
   replaceOperationalSnapshotAfterRefresh,
@@ -112,7 +113,7 @@ describe('offline operational snapshot storage', () => {
 
     await expect(readOperationalSnapshot()).resolves.toBeNull()
     const upgraded = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('konveksi-pos', 3)
+      const request = indexedDB.open('konveksi-pos', OFFLINE_DB_VERSION)
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
