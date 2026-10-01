@@ -775,7 +775,7 @@ export default function Settings() {
             onClick={toggleStockSound}
           >
             <Bell className="h-4 w-4" />
-            {soundEnabled ? 'Suara aktif' : 'Aktifkan suara'}
+            {soundEnabled ? 'Suara aktif' : 'Aktifkan'}
           </Button>
         </CardContent>
       </Card>
