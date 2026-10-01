@@ -8,6 +8,7 @@ import {
   Package,
   DollarSign,
   PackageSearch,
+  RefreshCw,
   X,
 } from 'lucide-react'
 import {
@@ -29,6 +30,10 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { getUnnotifiedProducts } from '@/lib/lowStockNotifications'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
+import {
+  initializeOperationalSnapshot,
+  refreshOperationalSnapshotFromServer,
+} from '@/lib/offlineOperationalBootstrap'
 
 interface Stats {
   todaySales: number
@@ -64,6 +69,7 @@ export default function Dashboard() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const statsRequestId = useRef(0)
   const initialLoadComplete = useRef(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
@@ -128,6 +134,25 @@ export default function Dashboard() {
     setError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
     setLoading(false)
     initialLoadComplete.current = true
+  }
+
+  async function refreshMobileData() {
+    if (!navigator.onLine) {
+      toast.error('Refresh membutuhkan koneksi internet')
+      return
+    }
+
+    setRefreshing(true)
+    try {
+      if (await readOperationalSnapshot()) await refreshOperationalSnapshotFromServer()
+      else await initializeOperationalSnapshot()
+      await loadStats()
+      toast.success('Data transaksi berhasil diperbarui')
+    } catch (refreshError) {
+      toast.error(`Refresh gagal: ${refreshError instanceof Error ? refreshError.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   function notifyLowStock(products: LowStockProduct[]) {
@@ -272,6 +297,17 @@ export default function Dashboard() {
           )}
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
+          <button
+            type="button"
+            onClick={() => void refreshMobileData()}
+            disabled={refreshing}
+            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-ink px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 lg:hidden"
+            aria-label="Refresh data transaksi dari Supabase"
+            title="Refresh data transaksi dari Supabase"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            Refresh
+          </button>
           <button
             type="button"
             onClick={handleMobileStatusLogout}
