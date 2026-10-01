@@ -315,7 +315,7 @@ export default function Dashboard() {
             aria-label="Keluar dari aplikasi"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
-            <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Operasional aktif</p>
+            <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
           </button>
           {stats.lowStock > 0 && !lowStockDismissed && (
             <div
