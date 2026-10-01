@@ -57,33 +57,13 @@ body {
   color: #202a2e;
   user-select: none;
   -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(rgba(32, 42, 46, 0.025) 0.7px, transparent 0.7px);
+  background-size: 14px 14px;
 }
 
 .mobile-page-background {
-  background-color: transparent;
+  background-color: #fbfaf5;
   color: #202a2e;
-}
-
-.app-background-media {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.app-background-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.app-background-media::after {
-  position: absolute;
-  inset: 0;
-  content: '';
-  background: rgba(21, 31, 34, 0.48);
 }
 
 @media (max-width: 1023px) {

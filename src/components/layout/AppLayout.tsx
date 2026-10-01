@@ -113,10 +113,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="app-background relative isolate flex min-h-dvh">
-      <div className="app-background-media" aria-hidden="true">
-        <img src={`${import.meta.env.BASE_URL}login-background.jpg`} alt="" />
-      </div>
+    <div className="mobile-page-background flex min-h-dvh bg-canvas">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
         Lewati ke konten utama
       </a>
@@ -201,7 +198,7 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-[rgba(251,250,245,0.88)] px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
+        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
           <Outlet />
         </main>
         <div
