@@ -5,53 +5,22 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public
-AS $$
+AS $function$
 DECLARE
   tables_payload JSONB;
-  table_name TEXT;
-  required_tables CONSTANT TEXT[] := ARRAY[
-    'categories', 'vendors', 'custom_units', 'products', 'product_stock_batches',
-    'customers', 'sales', 'sale_items', 'vendor_debt_payments',
-    'customer_debt_payments', 'stock_adjustments', 'sale_returns',
-    'settlement_idempotency'
-  ];
 BEGIN
   IF NOT public.current_user_has_role(ARRAY['admin']) THEN
     RAISE EXCEPTION 'Hanya admin yang dapat memulihkan backup';
   END IF;
-  IF p_payload IS NULL OR pg_catalog.jsonb_typeof(p_payload) IS DISTINCT FROM 'object'
+
+  IF p_payload IS NULL
      OR p_payload->>'format' IS DISTINCT FROM 'tokobahan-operational-backup'
-     OR p_payload->>'version' IS DISTINCT FROM '3' THEN
+     OR p_payload->>'version' IS DISTINCT FROM '3'
+     OR pg_catalog.jsonb_typeof(p_payload->'tables') IS DISTINCT FROM 'object' THEN
     RAISE EXCEPTION 'Format atau versi backup tidak valid';
   END IF;
 
   tables_payload := p_payload->'tables';
-  IF pg_catalog.jsonb_typeof(tables_payload) IS DISTINCT FROM 'object' THEN
-    RAISE EXCEPTION 'Backup harus memuat objek tabel';
-  END IF;
-
-  FOREACH table_name IN ARRAY required_tables
-  LOOP
-    IF NOT (tables_payload ? table_name)
-       OR pg_catalog.jsonb_typeof(tables_payload->table_name) IS DISTINCT FROM 'array' THEN
-      RAISE EXCEPTION 'Data tabel % tidak lengkap atau tidak valid', table_name;
-    END IF;
-    IF EXISTS (
-      SELECT 1
-      FROM pg_catalog.jsonb_array_elements(tables_payload->table_name) AS row_data(item)
-      WHERE pg_catalog.jsonb_typeof(row_data.item) IS DISTINCT FROM 'object'
-    ) THEN
-      RAISE EXCEPTION 'Data tabel % memuat baris yang tidak valid', table_name;
-    END IF;
-  END LOOP;
-
-  IF EXISTS (
-    SELECT 1
-    FROM pg_catalog.jsonb_object_keys(tables_payload) AS table_key(key)
-    WHERE NOT (table_key.key = ANY(required_tables))
-  ) THEN
-    RAISE EXCEPTION 'Backup memuat kunci tabel yang tidak dikenal';
-  END IF;
 
   DELETE FROM public.settlement_idempotency WHERE TRUE;
   DELETE FROM public.vendor_debt_payments WHERE TRUE;
@@ -60,6 +29,8 @@ BEGIN
   DELETE FROM public.stock_adjustments WHERE TRUE;
   DELETE FROM public.sale_items WHERE TRUE;
   DELETE FROM public.sales WHERE TRUE;
+  DELETE FROM public.checkout_idempotency WHERE TRUE;
+  DELETE FROM public.low_stock_notification_log WHERE TRUE;
   DELETE FROM public.product_stock_batches WHERE TRUE;
   DELETE FROM public.products WHERE TRUE;
   DELETE FROM public.customers WHERE TRUE;
@@ -67,27 +38,72 @@ BEGIN
   DELETE FROM public.vendors WHERE TRUE;
   DELETE FROM public.categories WHERE TRUE;
 
-  INSERT INTO public.categories SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.categories, COALESCE(tables_payload->'categories', '[]'::JSONB));
-  INSERT INTO public.vendors SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.vendors, COALESCE(tables_payload->'vendors', '[]'::JSONB));
-  INSERT INTO public.custom_units SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.custom_units, COALESCE(tables_payload->'custom_units', '[]'::JSONB));
-  INSERT INTO public.products SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.products, COALESCE(tables_payload->'products', '[]'::JSONB));
-  INSERT INTO public.product_stock_batches SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.product_stock_batches, COALESCE(tables_payload->'product_stock_batches', '[]'::JSONB));
+  INSERT INTO public.categories
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.categories,
+    COALESCE(tables_payload->'categories', '[]'::JSONB)
+  );
+  INSERT INTO public.vendors
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.vendors,
+    COALESCE(tables_payload->'vendors', '[]'::JSONB)
+  );
+  INSERT INTO public.custom_units
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.custom_units,
+    COALESCE(tables_payload->'custom_units', '[]'::JSONB)
+  );
+  INSERT INTO public.products
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.products,
+    COALESCE(tables_payload->'products', '[]'::JSONB)
+  );
+  INSERT INTO public.product_stock_batches
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.product_stock_batches,
+    COALESCE(tables_payload->'product_stock_batches', '[]'::JSONB)
+  );
   INSERT INTO public.customers (id, name, created_at)
   SELECT customer_rows.id, customer_rows.name, customer_rows.created_at
-  FROM pg_catalog.jsonb_to_recordset(COALESCE(tables_payload->'customers', '[]'::JSONB))
-    AS customer_rows(id UUID, name TEXT, created_at TIMESTAMPTZ);
-  INSERT INTO public.sales SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.sales, COALESCE(tables_payload->'sales', '[]'::JSONB));
-  INSERT INTO public.sale_items SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.sale_items, COALESCE(tables_payload->'sale_items', '[]'::JSONB));
-  INSERT INTO public.vendor_debt_payments SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.vendor_debt_payments, COALESCE(tables_payload->'vendor_debt_payments', '[]'::JSONB));
-  INSERT INTO public.customer_debt_payments SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.customer_debt_payments, COALESCE(tables_payload->'customer_debt_payments', '[]'::JSONB));
-  INSERT INTO public.stock_adjustments SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.stock_adjustments, COALESCE(tables_payload->'stock_adjustments', '[]'::JSONB));
+  FROM pg_catalog.jsonb_to_recordset(
+    COALESCE(tables_payload->'customers', '[]'::JSONB)
+  ) AS customer_rows(id UUID, name TEXT, created_at TIMESTAMPTZ);
+  INSERT INTO public.sales
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.sales,
+    COALESCE(tables_payload->'sales', '[]'::JSONB)
+  );
+  INSERT INTO public.sale_items
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.sale_items,
+    COALESCE(tables_payload->'sale_items', '[]'::JSONB)
+  );
+  INSERT INTO public.vendor_debt_payments
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.vendor_debt_payments,
+    COALESCE(tables_payload->'vendor_debt_payments', '[]'::JSONB)
+  );
+  INSERT INTO public.customer_debt_payments
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.customer_debt_payments,
+    COALESCE(tables_payload->'customer_debt_payments', '[]'::JSONB)
+  );
+  INSERT INTO public.stock_adjustments
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.stock_adjustments,
+    COALESCE(tables_payload->'stock_adjustments', '[]'::JSONB)
+  );
   INSERT INTO public.sale_returns(
-    id, sale_id, sale_item_id, quantity, refund_amount, reason, returned_by, created_at, cash_refund_amount
+    id, sale_id, sale_item_id, quantity, refund_amount, reason,
+    returned_by, created_at, cash_refund_amount
   )
   SELECT
-    id, sale_id, sale_item_id, quantity, refund_amount, reason, returned_by, created_at,
-    COALESCE(cash_refund_amount, 0)
-  FROM pg_catalog.jsonb_populate_recordset(NULL::public.sale_returns, COALESCE(tables_payload->'sale_returns', '[]'::JSONB));
+    id, sale_id, sale_item_id, quantity, refund_amount, reason,
+    returned_by, created_at, COALESCE(cash_refund_amount, 0)
+  FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.sale_returns,
+    COALESCE(tables_payload->'sale_returns', '[]'::JSONB)
+  );
 
   WITH return_totals AS (
     SELECT sale_id, SUM(refund_amount) AS total_refunds
@@ -132,33 +148,42 @@ BEGIN
   WHERE ranked.id = r.id
     AND NOT EXISTS (
       SELECT 1
-      FROM pg_catalog.jsonb_array_elements(COALESCE(tables_payload->'sale_returns', '[]'::JSONB)) AS saved_return(item)
+      FROM pg_catalog.jsonb_array_elements(
+        COALESCE(tables_payload->'sale_returns', '[]'::JSONB)
+      ) AS saved_return(item)
       WHERE saved_return.item->>'id' = r.id::TEXT
         AND saved_return.item ? 'cash_refund_amount'
     );
 
   INSERT INTO public.settlement_idempotency
-  SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.settlement_idempotency, COALESCE(tables_payload->'settlement_idempotency', '[]'::JSONB));
+  SELECT * FROM pg_catalog.jsonb_populate_recordset(
+    NULL::public.settlement_idempotency,
+    COALESCE(tables_payload->'settlement_idempotency', '[]'::JSONB)
+  );
 
   UPDATE public.invoice_sequences
   SET next_number = GREATEST(
     1,
-    COALESCE((
-      SELECT MAX(
-        CASE
-          WHEN invoice_no ~ '^RJA-[0-9]+$' THEN substring(invoice_no FROM 5)::BIGINT
-          ELSE 0
-        END
-      ) + 1
-      FROM public.sales
-    ),
-    1
+    COALESCE(
+      (
+        SELECT MAX(
+          CASE
+            WHEN invoice_no ~ '^RJA-[0-9]+$'
+              THEN substring(invoice_no FROM 5)::BIGINT
+            ELSE 0
+          END
+        ) + 1
+        FROM public.sales
+      ),
+      1
+    )
   )
   WHERE id = 1;
 END;
-$$;
+$function$;
 
-REVOKE ALL ON FUNCTION public.restore_operational_backup_impl(JSONB) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.restore_operational_backup_impl(JSONB)
+FROM PUBLIC, anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;
