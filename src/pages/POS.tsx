@@ -411,6 +411,7 @@ export default function POS() {
       clearCart()
       setShowPaymentModal(false)
       setCashReceived('')
+      setCustomerName('')
       setShowCart(false)
       await loadProducts()
     } catch (error) {
