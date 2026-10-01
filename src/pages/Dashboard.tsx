@@ -356,7 +356,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="sr-only" role="status">{error}</p>}
       </div>
 
       {/* KPI Cards */}
