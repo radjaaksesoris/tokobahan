@@ -20,7 +20,11 @@ import {
   validateOperationalSnapshot,
   writeOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
-import { initializeOperationalSnapshot } from '@/lib/offlineOperationalBootstrap'
+import { validateOperationalSnapshotIntegrity } from '@/lib/validateOperationalSnapshotIntegrity'
+import {
+  initializeOperationalSnapshot,
+  refreshOperationalSnapshotFromServer,
+} from '@/lib/offlineOperationalBootstrap'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import {
   deleteOperationalRows,
@@ -267,6 +271,23 @@ export default function Settings() {
       toast.success(`Data awal tersimpan di perangkat (${result.rows} baris dari ${result.tables} tabel)`)
     } catch (error) {
       toast.error(`Gagal menyiapkan data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setInitializingLocalData(false)
+    }
+  }
+
+  async function refreshLocalDataFromServer() {
+    if (!window.confirm(
+      'Data lokal di perangkat ini akan diganti dengan data terbaru dari server. ' +
+      'Perubahan lokal yang belum disinkronkan akan hilang. Lanjutkan?',
+    )) return
+    setInitializingLocalData(true)
+    try {
+      const result = await refreshOperationalSnapshotFromServer()
+      await loadLocalSnapshotStatus()
+      toast.success(`Data lokal diperbarui dari server (${result.rows} baris dari ${result.tables} tabel)`)
+    } catch (error) {
+      toast.error(`Gagal memperbarui data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     } finally {
       setInitializingLocalData(false)
     }
@@ -581,7 +602,13 @@ export default function Settings() {
 
   async function applyOperationalBackup(payload: unknown): Promise<'local' | 'server'> {
     if (await readOperationalSnapshot()) {
-      await writeOperationalSnapshot(validateOperationalSnapshot(payload))
+      const snapshot = validateOperationalSnapshotIntegrity(validateOperationalSnapshot(payload))
+      const { data: revision, error } = await supabase.rpc('get_operational_data_revision')
+      if (error) throw new Error(`Gagal memeriksa versi data server: ${error.message}`)
+      if (typeof revision !== 'string' || !/^\d+$/.test(revision)) {
+        throw new Error('Server tidak mengembalikan versi data yang valid')
+      }
+      await writeOperationalSnapshot({ ...snapshot, server_revision: revision })
       await loadLocalSnapshotStatus()
       return 'local'
     }
@@ -821,7 +848,8 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground">
             IndexedDB di perangkat ini adalah sumber data utama. Sinkronkan untuk mengirim seluruh snapshot
             lokal ke Supabase agar dapat dilihat dari aplikasi mobile; setelah selesai aplikasi tetap bekerja
-            menggunakan data lokal.
+            menggunakan data lokal. Jika data server berubah sejak snapshot diambil, sinkronisasi akan ditolak
+            agar perubahan server tidak tertimpa.
           </p>
           {localSnapshotStatus === 'loading' ? (
             <p className="text-sm text-muted-foreground">Memeriksa data lokal...</p>
@@ -851,12 +879,24 @@ export default function Settings() {
               </Button>
             )}
             {localSnapshotStatus === 'available' && (
-              <Button onClick={() => void syncLocalData()} disabled={syncingLocalData || initializingLocalData}>
-                {syncingLocalData
-                  ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
-                  : <Upload className="h-4 w-4" />}
-                {syncingLocalData ? 'Mengirim snapshot...' : 'Sinkronkan snapshot ke Supabase'}
-              </Button>
+              <>
+                <Button onClick={() => void syncLocalData()} disabled={syncingLocalData || initializingLocalData}>
+                  {syncingLocalData
+                    ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                    : <Upload className="h-4 w-4" />}
+                  {syncingLocalData ? 'Mengirim snapshot...' : 'Sinkronkan snapshot ke Supabase'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void refreshLocalDataFromServer()}
+                  disabled={syncingLocalData || initializingLocalData}
+                >
+                  {initializingLocalData
+                    ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                    : <Download className="h-4 w-4" />}
+                  Ambil ulang data server
+                </Button>
+              </>
             )}
           </div>
         </CardContent>

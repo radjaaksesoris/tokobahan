@@ -45,6 +45,11 @@ describe('offline operational analytics', () => {
       customer_debt_payments: [
         { id: 'customer-payment-1', paid_at: '2026-10-01T03:00:00.000Z', amount: 25 },
       ],
+      sale_returns: [
+        { id: 'cash-return', created_at: '2026-10-01T07:00:00.000Z', refund_amount: 20, cash_refund_amount: 12 },
+        { id: 'credit-return', created_at: '2026-10-01T08:00:00.000Z', refund_amount: 15, cash_refund_amount: 0 },
+        { id: 'return-outside', created_at: '2026-09-30T16:59:59.000Z', cash_refund_amount: 100 },
+      ],
       vendor_debt_payments: [
         { id: 'vendor-payment-1', paid_at: '2026-10-01T05:00:00.000Z', amount: 15 },
         { id: 'vendor-payment-2', paid_at: '2026-10-01T06:00:00.000Z', amount: 5 },
@@ -58,7 +63,7 @@ describe('offline operational analytics', () => {
     )
 
     expect(analytics.summary).toEqual({
-      total_revenue: 75,
+      total_revenue: 63,
       total_credit: 100,
       total_cost: 30,
       total_profit: 70,
@@ -66,7 +71,7 @@ describe('offline operational analytics', () => {
     })
     expect(analytics.dailySummary).toEqual([{
       sale_date: '2026-10-01',
-      total_revenue: 75,
+      total_revenue: 63,
       total_credit: 100,
       total_cost: 30,
       total_profit: 70,

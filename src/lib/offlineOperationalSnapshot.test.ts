@@ -1,12 +1,15 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  completeOperationalSnapshotSync,
   clearOperationalSnapshot,
   beginOperationalSnapshotSync,
   endOperationalSnapshotSync,
+  initializeOperationalSnapshotIfMissing,
   OFFLINE_OPERATIONAL_SNAPSHOT_STORE,
   OPERATIONAL_SNAPSHOT_TABLES,
   readOperationalSnapshot,
+  replaceOperationalSnapshotAfterRefresh,
   updateOperationalSnapshot,
   type OperationalSnapshot,
   validateOperationalSnapshot,
@@ -58,6 +61,16 @@ describe('offline operational snapshot storage', () => {
 
     await clearOperationalSnapshot()
     await expect(readOperationalSnapshot()).resolves.toBeNull()
+  })
+
+  it('does not replace a snapshot created by a concurrent bootstrap', async () => {
+    const existing = createSnapshot({ products: [{ id: 'existing', name: 'Local' }] })
+    const incoming = createSnapshot({ products: [{ id: 'incoming', name: 'Server' }] })
+    await initializeOperationalSnapshotIfMissing(existing)
+
+    await expect(initializeOperationalSnapshotIfMissing(incoming))
+      .rejects.toThrow('Snapshot lokal sudah tersedia')
+    await expect(readOperationalSnapshot()).resolves.toEqual(existing)
   })
 
   it('upgrades a version 2 database without losing its existing queues', async () => {
@@ -169,6 +182,49 @@ describe('offline operational snapshot storage', () => {
     await endOperationalSnapshotSync()
     await expect(updateOperationalSnapshot((current) => ({
       snapshot: current,
+      result: 'unlocked',
+    }))).resolves.toBe('unlocked')
+  })
+
+  it('prevents snapshot replacement while a sync is in progress', async () => {
+    const snapshot = createSnapshot()
+    await writeOperationalSnapshot(snapshot)
+    await beginOperationalSnapshotSync()
+
+    await expect(writeOperationalSnapshot(createSnapshot({
+      products: [{ id: 'replacement', name: 'Produk' }],
+    }))).rejects.toThrow('Snapshot sedang disinkronkan dan tidak dapat diganti')
+
+    await endOperationalSnapshotSync()
+    await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
+  })
+
+  it('updates the server revision and releases the lock atomically after sync', async () => {
+    await writeOperationalSnapshot(createSnapshot())
+    await beginOperationalSnapshotSync()
+    await completeOperationalSnapshotSync('12')
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({ server_revision: '12' })
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: 'unlocked',
+    }))).resolves.toBe('unlocked')
+  })
+
+  it('replaces a stale local snapshot only while holding the refresh lock', async () => {
+    const current = createSnapshot()
+    const refreshed = createSnapshot({
+      products: [{ id: 'from-server', name: 'Produk', stock: 3 }],
+    })
+    await writeOperationalSnapshot(current)
+    await expect(replaceOperationalSnapshotAfterRefresh(refreshed))
+      .rejects.toThrow('Snapshot lokal tidak terkunci untuk penyegaran')
+
+    await beginOperationalSnapshotSync()
+    await replaceOperationalSnapshotAfterRefresh(refreshed)
+    await expect(readOperationalSnapshot()).resolves.toEqual(refreshed)
+    await expect(updateOperationalSnapshot((snapshot) => ({
+      snapshot,
       result: 'unlocked',
     }))).resolves.toBe('unlocked')
   })

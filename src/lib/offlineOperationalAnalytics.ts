@@ -127,6 +127,13 @@ function summarizeSales(
     getDay(dateInJakarta(payment.paid_at)).total_revenue += amount
   }
 
+  for (const saleReturn of asRows(snapshot, 'sale_returns')) {
+    if (!inRange(saleReturn.created_at, start, end)) continue
+    const cashRefund = asNumber(saleReturn.cash_refund_amount)
+    summary.total_revenue -= cashRefund
+    getDay(dateInJakarta(saleReturn.created_at)).total_revenue -= cashRefund
+  }
+
   return {
     summary,
     dailySummary: [...daily.values()].sort((left, right) => left.sale_date.localeCompare(right.sale_date)),

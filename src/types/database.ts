@@ -428,6 +428,25 @@ export interface Database {
         }
         Returns: undefined
       }
+      create_product_with_initial_stock: {
+        Args: {
+          p_name: string
+          p_sku: string
+          p_cost_price: number
+          p_cost_unit: string
+          p_cost_conversion: number
+          p_stock_unit: string
+          p_stock_conversion: number
+          p_min_stock: number
+          p_unit_base: string
+          p_prices: Json
+          p_initial_stock: number
+          p_vendor_id: string | null
+          p_payment_status: 'kredit' | 'lunas'
+          p_due_date?: string | null
+        }
+        Returns: string
+      }
       create_operational_backup: {
         Args: Record<string, never>
         Returns: Json
@@ -455,6 +474,10 @@ export interface Database {
       sync_operational_snapshot: {
         Args: { p_payload: Json }
         Returns: Json
+      }
+      get_operational_data_revision: {
+        Args: Record<string, never>
+        Returns: string
       }
       pay_vendor_debt: {
         Args: { p_allocations: Json; p_idempotency_key: string }

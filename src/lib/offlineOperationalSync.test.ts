@@ -21,11 +21,18 @@ const snapshot: OperationalSnapshot = {
   version: '3',
   generated_at: '2026-10-01T00:00:00.000Z',
   generated_by: 'admin-1',
+  server_revision: '0',
   tables: {
     categories: [],
     vendors: [],
     custom_units: [],
-    products: [{ id: 'product-1', name: 'Benang', stock: 5 }],
+    products: [{
+      id: 'product-1',
+      name: 'Benang',
+      stock: 5,
+      cost_price: 10,
+      category_id: null,
+    }],
     product_stock_batches: [],
     customers: [],
     sales: [],
@@ -53,7 +60,7 @@ describe('operational snapshot sync', () => {
     await deleteOfflineDatabase()
     vi.clearAllMocks()
     rpc.mockResolvedValue({
-      data: { id: 'backup-1', created_at: '2026-10-01T01:00:00.000Z' },
+      data: { id: 'backup-1', created_at: '2026-10-01T01:00:00.000Z', server_revision: '8' },
       error: null,
     })
     await writeOperationalSnapshot(snapshot)
@@ -74,8 +81,9 @@ describe('operational snapshot sync', () => {
     expect(rpc).toHaveBeenCalledWith('sync_operational_snapshot', {
       p_payload: expect.objectContaining({
         format: 'tokobahan-operational-backup',
+        server_revision: '0',
         tables: expect.objectContaining({
-          products: [{ id: 'product-1', name: 'Benang', stock: 5 }],
+          products: [expect.objectContaining({ id: 'product-1', name: 'Benang', stock: 5 })],
         }),
       }),
     })
@@ -83,6 +91,7 @@ describe('operational snapshot sync', () => {
       snapshot: current,
       result: 'unlocked',
     }))).resolves.toBe('unlocked')
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({ server_revision: '8' })
   })
 
   it('preserves local data and unlocks when the server rejects the snapshot', async () => {
@@ -101,5 +110,16 @@ describe('operational snapshot sync', () => {
 
     await expect(syncOperationalSnapshot()).rejects.toThrow('Perangkat tidak terhubung ke internet')
     expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('does not contact the server when the local snapshot is out of date', async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'Data server berubah sejak snapshot lokal dibuat' },
+    })
+
+    await expect(syncOperationalSnapshot()).rejects.toThrow('Data server berubah')
+    expect(rpc).toHaveBeenCalledTimes(1)
+    await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
   })
 })

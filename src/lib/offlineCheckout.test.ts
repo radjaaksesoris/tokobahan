@@ -22,7 +22,10 @@ const product: Product = {
   stock_conversion: 1,
   min_stock: 1,
   unit_base: 'pcs',
-  prices: [{ unit: 'satuan', price: 10, conversion: 1 }],
+  prices: [
+    { unit: 'satuan', price: 10, conversion: 1 },
+    { unit: 'lusin', price: 120, conversion: 12 },
+  ],
   image_url: null,
   is_active: true,
   created_at: '2026-09-01T00:00:00.000Z',
@@ -109,6 +112,65 @@ describe('offline checkout', () => {
     expect(updated?.tables.sale_items[0]).toMatchObject({
       line_cost: 8,
       line_profit: 22,
+    })
+  })
+
+  it('deducts one stock unit for one sold unit regardless of its conversion value', async () => {
+    const dozen: CartItem = {
+      ...item,
+      unit: 'lusin',
+      quantity: 1,
+      unit_price: 120,
+      conversion: 12,
+      line_total: 120,
+      line_cost: 4,
+      line_profit: 116,
+    }
+
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-DOZEN-1',
+      items: [dozen],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 120,
+      cashierId: 'admin-1',
+    })
+
+    const updated = await readOperationalSnapshot()
+    expect(updated?.tables.products[0].stock).toBe(9)
+    expect(updated?.tables.product_stock_batches.map((batch) => batch.quantity_remaining)).toEqual([1, 8])
+    expect(updated?.tables.sale_items[0]).toMatchObject({
+      quantity: 1,
+      unit: 'lusin',
+      conversion: 12,
+    })
+  })
+
+  it('rejects stale catalog prices and conversions without changing stock', async () => {
+    await expect(saveOfflineCheckout({
+      invoiceNo: 'OFF-STALE-PRICE',
+      items: [{ ...item, unit_price: 11, line_total: 33 }],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 33,
+      cashierId: 'admin-1',
+    })).rejects.toThrow('melebihi harga katalog')
+
+    await expect(saveOfflineCheckout({
+      invoiceNo: 'OFF-STALE-CONVERSION',
+      items: [{ ...item, conversion: 12 }],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })).rejects.toThrow('Konversi satuan')
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        products: [{ stock: 10 }],
+        product_stock_batches: [{ quantity_remaining: 2 }, { quantity_remaining: 8 }],
+        sales: [],
+      },
     })
   })
 

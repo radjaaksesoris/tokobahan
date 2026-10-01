@@ -752,7 +752,22 @@ export default function Products() {
         load()
       }
     } else {
-      const { data: createdProduct, error } = await supabase.from('products').insert(payload).select('id').single()
+      const { error } = await supabase.rpc('create_product_with_initial_stock', {
+        p_name: payload.name,
+        p_sku: payload.sku || '',
+        p_cost_price: payload.cost_price,
+        p_cost_unit: payload.cost_unit,
+        p_cost_conversion: payload.cost_conversion,
+        p_stock_unit: payload.stock_unit,
+        p_stock_conversion: payload.stock_conversion,
+        p_min_stock: payload.min_stock,
+        p_unit_base: payload.unit_base,
+        p_prices: payload.prices,
+        p_initial_stock: initialStock,
+        p_vendor_id: stockVendorId || null,
+        p_payment_status: stockPaymentStatus,
+        p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
+      })
       if (error) {
         if (error.code === '23505' && error.message.includes('Nama produk')) {
           setNameValidationError('Nama produk sudah digunakan.')
@@ -765,23 +780,6 @@ export default function Products() {
           : error.message)
       }
       else {
-        if (initialStock > 0) {
-          const { error: receiptError } = await supabase.rpc('receive_stock_batch', {
-            p_product_id: createdProduct.id,
-            p_quantity: initialStock,
-            p_unit_cost: costPrice,
-            p_vendor_id: stockVendorId,
-            p_payment_status: stockPaymentStatus,
-            p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
-          })
-          if (receiptError) {
-            toast.error(`Produk dibuat, tetapi stok awal gagal disimpan: ${receiptError.message}`)
-            setModal(false)
-            load()
-            setSaving(false)
-            return
-          }
-        }
         toast.success('Produk ditambahkan')
         openCreate()
         window.setTimeout(() => productNameInputRef.current?.focus(), 0)
@@ -929,7 +927,7 @@ export default function Products() {
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
-                        {Math.floor(p.stock / (p.stock_conversion || 1))}
+                        {p.stock}
                       </span>{' '}
                       {getUnitLabel(p.stock_unit)}
                     </td>

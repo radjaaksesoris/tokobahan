@@ -32,6 +32,7 @@ export interface OperationalSnapshot extends Record<string, unknown> {
   version: typeof OPERATIONAL_SNAPSHOT_VERSION
   generated_at: string
   generated_by: string
+  server_revision?: string
   tables: Record<OperationalSnapshotTable, Record<string, unknown>[]>
 }
 
@@ -153,8 +154,47 @@ export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
   validateOperationalSnapshot(snapshot)
-  return withSnapshotStore<void>('readwrite', (store) => {
-    store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    lockRequest.onsuccess = () => {
+      if ((lockRequest.result as SyncLock | undefined)?.locked) {
+        abortWithError(new Error('Snapshot sedang disinkronkan dan tidak dapat diganti'))
+        return
+      }
+      store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+    }
+  })
+}
+
+export function initializeOperationalSnapshotIfMissing<TSnapshot extends OperationalSnapshot>(
+  snapshot: TSnapshot,
+): Promise<void> {
+  validateOperationalSnapshot(snapshot)
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    const snapshotRequest = store.get(SNAPSHOT_KEY)
+    let readyCount = 0
+    let locked = false
+    let existingSnapshot = false
+    const initialize = () => {
+      readyCount += 1
+      if (readyCount !== 2) return
+      if (locked) {
+        abortWithError(new Error('Snapshot sedang disinkronkan dan tidak dapat diganti'))
+      } else if (existingSnapshot) {
+        abortWithError(new Error('Snapshot lokal sudah tersedia; inisialisasi tidak dijalankan'))
+      } else {
+        store.add({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+      }
+    }
+    lockRequest.onsuccess = () => {
+      locked = Boolean((lockRequest.result as SyncLock | undefined)?.locked)
+      initialize()
+    }
+    snapshotRequest.onsuccess = () => {
+      existingSnapshot = Boolean(snapshotRequest.result)
+      initialize()
+    }
   })
 }
 
@@ -205,6 +245,52 @@ export function beginOperationalSnapshotSync(): Promise<OperationalSnapshot> {
 export function endOperationalSnapshotSync(): Promise<void> {
   return withSnapshotStore<void>('readwrite', (store) => {
     store.delete(SYNC_LOCK_KEY)
+  })
+}
+
+export function completeOperationalSnapshotSync(serverRevision: string): Promise<void> {
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const snapshotRequest = store.get(SNAPSHOT_KEY)
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    let snapshotResult: StoredSnapshot | undefined
+    let lockResult: SyncLock | undefined
+    let readyCount = 0
+    const finish = () => {
+      readyCount += 1
+      if (readyCount !== 2) return
+      if (!snapshotResult || !lockResult?.locked) {
+        abortWithError(new Error('Status sinkronisasi snapshot lokal tidak valid'))
+        return
+      }
+      store.put({
+        ...snapshotResult,
+        data: { ...snapshotResult.data, server_revision: serverRevision },
+      } satisfies StoredSnapshot)
+      store.delete(SYNC_LOCK_KEY)
+    }
+    snapshotRequest.onsuccess = () => {
+      snapshotResult = snapshotRequest.result as StoredSnapshot | undefined
+      finish()
+    }
+    lockRequest.onsuccess = () => {
+      lockResult = lockRequest.result as SyncLock | undefined
+      finish()
+    }
+  })
+}
+
+export function replaceOperationalSnapshotAfterRefresh(snapshot: OperationalSnapshot): Promise<void> {
+  validateOperationalSnapshot(snapshot)
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    lockRequest.onsuccess = () => {
+      if (!(lockRequest.result as SyncLock | undefined)?.locked) {
+        abortWithError(new Error('Snapshot lokal tidak terkunci untuk penyegaran'))
+        return
+      }
+      store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+      store.delete(SYNC_LOCK_KEY)
+    }
   })
 }
 
@@ -265,6 +351,12 @@ export function validateOperationalSnapshot(value: unknown): OperationalSnapshot
     Array.isArray(snapshot.tables)
   ) {
     throw new Error('Format atau versi snapshot operasional tidak didukung')
+  }
+  if (snapshot.server_revision !== undefined && (
+    typeof snapshot.server_revision !== 'string' ||
+    !/^\d+$/.test(snapshot.server_revision)
+  )) {
+    throw new Error('Versi dasar server pada snapshot lokal tidak valid')
   }
 
   const tables = snapshot.tables as Record<string, unknown>

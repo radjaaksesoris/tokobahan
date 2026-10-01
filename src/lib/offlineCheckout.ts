@@ -62,6 +62,39 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       if (!product || product.is_active !== true) {
         throw new Error(`Produk ${item.product.name} tidak ditemukan atau tidak aktif`)
       }
+      if (
+        !Number.isFinite(item.quantity) ||
+        item.quantity <= 0 ||
+        !Number.isFinite(item.unit_price) ||
+        item.unit_price <= 0
+      ) {
+        throw new Error(`Jumlah atau harga ${product.name} tidak valid`)
+      }
+      const configuredPrice = Array.isArray(product.prices)
+        ? product.prices.find((price) =>
+          price !== null &&
+          typeof price === 'object' &&
+          !Array.isArray(price) &&
+          price.unit === item.unit,
+        )
+        : undefined
+      const configuredConversion = Number(configuredPrice?.conversion)
+      const configuredUnitPrice = Number(configuredPrice?.price)
+      if (
+        !configuredPrice ||
+        !Number.isFinite(configuredConversion) ||
+        configuredConversion <= 0 ||
+        !Number.isFinite(configuredUnitPrice) ||
+        configuredUnitPrice <= 0
+      ) {
+        throw new Error(`Satuan ${item.unit} untuk ${product.name} tidak tersedia di katalog`)
+      }
+      if (item.conversion !== configuredConversion) {
+        throw new Error(`Konversi satuan ${product.name} berubah, muat ulang katalog`)
+      }
+      if (item.unit_price > configuredUnitPrice) {
+        throw new Error(`Harga jual ${product.name} melebihi harga katalog`)
+      }
       if (!Number.isFinite(item.quantity) || item.quantity <= 0 || Number(product.stock) < item.quantity) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }
@@ -88,17 +121,20 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       }
       if (remaining > 0) throw new Error(`Batch HPP untuk ${item.product.name} tidak mencukupi`)
 
-      const lineTotal = roundMoney(Number(item.line_total))
+      const lineTotal = roundMoney(item.unit_price * item.quantity)
       lineCost = roundMoney(lineCost)
+      if (lineTotal <= lineCost) {
+        throw new Error(`Harga jual ${product.name} harus lebih besar dari HPP FIFO`)
+      }
       const lineProfit = roundMoney(lineTotal - lineCost)
       saleItems.push({
         id: crypto.randomUUID(),
         sale_id: saleId,
         product_id: item.product.id,
-        product_name: item.product.name,
+        product_name: String(product.name),
         unit: item.unit,
         quantity: item.quantity,
-        conversion: item.conversion,
+        conversion: configuredConversion,
         unit_price: item.unit_price,
         line_total: lineTotal,
         line_cost: lineCost,
