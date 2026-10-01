@@ -139,6 +139,22 @@ BEGIN
 
   INSERT INTO public.settlement_idempotency
   SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.settlement_idempotency, COALESCE(tables_payload->'settlement_idempotency', '[]'::JSONB));
+
+  UPDATE public.invoice_sequences
+  SET next_number = GREATEST(
+    1,
+    COALESCE((
+      SELECT MAX(
+        CASE
+          WHEN invoice_no ~ '^RJA-[0-9]+$' THEN substring(invoice_no FROM 5)::BIGINT
+          ELSE 0
+        END
+      ) + 1
+      FROM public.sales
+    ),
+    1
+  )
+  WHERE id = 1;
 END;
 $$;
 

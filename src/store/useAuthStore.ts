@@ -152,9 +152,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut()
-    removeOfflineCache(AUTH_CACHE_KEY)
-    if (get().user) removeOfflineCache(profileCacheKey(get().user!.id))
-    set({ user: null, profile: null })
+    const userId = get().user?.id
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.warn('Remote sign-out failed; clearing local session anyway:', error)
+    } finally {
+      removeOfflineCache(AUTH_CACHE_KEY)
+      if (userId) removeOfflineCache(profileCacheKey(userId))
+      set({ user: null, profile: null })
+    }
   },
 }))

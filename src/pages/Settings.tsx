@@ -666,7 +666,11 @@ export default function Settings() {
   }
 
   async function applyOperationalBackup(payload: unknown): Promise<'local' | 'server'> {
-    if (await readOperationalSnapshot()) {
+    const localSnapshot = await readOperationalSnapshot()
+    if (localSnapshot) {
+      if (localSnapshot.synced_generated_at && localSnapshot.synced_generated_at !== localSnapshot.generated_at) {
+        throw new Error('Restore dibatalkan karena ada perubahan lokal yang belum tersinkron. Sinkronkan data terlebih dahulu.')
+      }
       const snapshot = validateOperationalSnapshotIntegrity(validateOperationalSnapshot(payload))
       const { data: revision, error } = await supabase.rpc('get_operational_data_revision')
       if (error) throw new Error(`Gagal memeriksa versi data server: ${error.message}`)
