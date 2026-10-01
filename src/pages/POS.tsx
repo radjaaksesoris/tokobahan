@@ -17,6 +17,7 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
+  Upload,
   X,
   Delete,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
+import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 
 type PaymentMethod = 'cash' | 'qris' | 'credit'
 function sortCatalogProducts(products: Product[]) {
@@ -82,6 +84,8 @@ export default function POS() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
+  const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'error'>('loading')
+  const [syncingSnapshot, setSyncingSnapshot] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -120,6 +124,32 @@ export default function POS() {
     return () => {
       window.removeEventListener('online', updateOnlineState)
       window.removeEventListener('offline', updateOnlineState)
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const refreshSnapshotSyncStatus = async () => {
+      try {
+        const snapshot = await readOperationalSnapshot()
+        if (cancelled) return
+        setSnapshotSyncStatus(
+          snapshot && snapshot.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at
+            ? 'pending'
+            : snapshot
+              ? 'synced'
+              : 'error',
+        )
+      } catch {
+        if (!cancelled) setSnapshotSyncStatus('error')
+      }
+    }
+
+    void refreshSnapshotSyncStatus()
+    const timer = window.setInterval(() => void refreshSnapshotSyncStatus(), 3000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
     }
   }, [])
 
@@ -324,6 +354,20 @@ export default function POS() {
     processCheckout()
   }
 
+  async function syncSnapshotFromHeader() {
+    setSyncingSnapshot(true)
+    try {
+      const result = await syncOperationalSnapshot()
+      setSnapshotSyncStatus('synced')
+      toast.success(`Data terbaru tersimpan ke Supabase (${result.rowCount} baris)`)
+    } catch (error) {
+      setSnapshotSyncStatus('error')
+      toast.error(`Sinkronisasi gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setSyncingSnapshot(false)
+    }
+  }
+
   async function processCheckout() {
     if (items.length === 0) return
     setCheckoutLoading(true)
@@ -390,6 +434,31 @@ export default function POS() {
             <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
             Data lokal
           </span>
+          <Button
+            type="button"
+            variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => void syncSnapshotFromHeader()}
+            disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
+            className={`min-h-9 shrink-0 rounded-xl px-2.5 text-xs lg:min-h-10 lg:px-3 ${
+              snapshotSyncStatus === 'pending'
+                ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+                : snapshotSyncStatus === 'error'
+                  ? 'border-red-300 text-red-700 hover:bg-red-50'
+                  : ''
+            }`}
+            aria-label={snapshotSyncStatus === 'pending' ? 'Sinkronkan data terbaru ke Supabase' : 'Status sinkronisasi data'}
+            title={snapshotSyncStatus === 'pending'
+              ? 'Data terbaru belum tersimpan di Supabase. Klik untuk sinkronisasi.'
+              : snapshotSyncStatus === 'synced'
+                ? 'Data lokal sudah tersinkron ke Supabase'
+                : 'Sinkronisasi belum tersedia'}
+          >
+            {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
+            <span className="hidden sm:inline">
+              {syncingSnapshot ? 'Mengirim...' : snapshotSyncStatus === 'pending' ? 'Belum sinkron' : 'Tersinkron'}
+            </span>
+          </Button>
           <button
             type="button"
             onClick={() => navigate('/')}

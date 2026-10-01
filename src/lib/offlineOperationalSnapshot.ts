@@ -32,6 +32,7 @@ export interface OperationalSnapshot extends Record<string, unknown> {
   version: typeof OPERATIONAL_SNAPSHOT_VERSION
   generated_at: string
   generated_by: string
+  synced_generated_at?: string
   server_revision?: string
   tables: Record<OperationalSnapshotTable, Record<string, unknown>[]>
 }
@@ -296,7 +297,11 @@ export function completeOperationalSnapshotSync(serverRevision: string, lockToke
       }
       store.put({
         ...snapshotResult,
-        data: { ...snapshotResult.data, server_revision: serverRevision },
+        data: {
+          ...snapshotResult.data,
+          server_revision: serverRevision,
+          synced_generated_at: snapshotResult.data.generated_at,
+        },
       } satisfies StoredSnapshot)
       store.delete(SYNC_LOCK_KEY)
     }
@@ -354,7 +359,14 @@ export function updateOperationalSnapshot<TResult>(
 
         const next = update(validateOperationalSnapshot(current.data))
         validateOperationalSnapshot(next.snapshot)
-        store.put({ id: SNAPSHOT_KEY, data: next.snapshot } satisfies StoredSnapshot)
+        const snapshot = next.snapshot === current.data
+          ? next.snapshot
+          : {
+              ...next.snapshot,
+              generated_at: new Date().toISOString(),
+              synced_generated_at: next.snapshot.synced_generated_at ?? current.data.generated_at,
+            }
+                store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
         setResult(next.result)
       } catch (error) {
         abortWithError(error)
