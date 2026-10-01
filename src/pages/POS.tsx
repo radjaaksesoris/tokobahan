@@ -177,6 +177,13 @@ export default function POS() {
     return () => document.removeEventListener('pointerdown', closeKeypadOnOutsideClick)
   }, [showKeypadPanel])
 
+  useEffect(() => {
+    if (items.length === 0 && !showPaymentModal) {
+      setCustomerName('')
+      setCashReceived('')
+    }
+  }, [items.length, showPaymentModal])
+
   function openSearchKeypad() {
     if (window.matchMedia('(max-width: 1023px)').matches) {
       setShowKeypadPanel(true)
@@ -354,6 +361,12 @@ export default function POS() {
       return
     }
     processCheckout()
+  }
+
+  function closePaymentModal() {
+    setShowPaymentModal(false)
+    setCustomerName('')
+    setCashReceived('')
   }
 
   async function syncSnapshotFromHeader() {
@@ -863,7 +876,7 @@ export default function POS() {
                   value={cashReceived}
                   title="Nominal pembayaran"
                   onChange={setCashReceived}
-                  onClose={() => setShowPaymentModal(false)}
+                  onClose={closePaymentModal}
                 />
               </div>
               <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface px-3 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5">
@@ -881,7 +894,7 @@ export default function POS() {
                 </span>
               </label>
               <div className="mt-3 flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setShowPaymentModal(false)}>
+                <Button variant="outline" className="flex-1" onClick={closePaymentModal}>
                   Batal
                 </Button>
                 <Button
