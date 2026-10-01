@@ -75,7 +75,7 @@ export default function Settings() {
           onClick={() => setActiveTab(tab)}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             isDesktop
-              ? 'shrink-0 px-3'
+              ? 'w-full shrink-0 px-3 text-center'
               : 'w-full min-w-0 px-1 text-center text-[clamp(0.65rem,3.1vw,0.875rem)]'
           } ${
             activeTab === tab
@@ -432,7 +432,7 @@ export default function Settings() {
         <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
         {renderTabNavigation('mt-4 -mx-1 grid w-full grid-cols-4 gap-1 pb-1 lg:hidden')}
       </div>
-      {renderTabNavigation('page-header-tabs hidden gap-1 overflow-x-auto border-b border-border pb-1 lg:!mt-0 lg:sticky lg:z-20 lg:flex lg:bg-canvas', true)}
+      {renderTabNavigation('page-header-tabs hidden w-full grid-cols-4 gap-2 overflow-x-auto border-b border-border pb-1 lg:!mt-4 lg:sticky lg:z-20 lg:grid lg:bg-canvas', true)}
 
       {activeTab === 'master' && <section aria-labelledby="master-data-heading" className="space-y-3">
         <div>
