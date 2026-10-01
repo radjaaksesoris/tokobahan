@@ -98,6 +98,13 @@ export default function Products() {
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
+  const initialStockVendorSelectRef = useRef<HTMLButtonElement>(null)
+  const initialPaymentStatusSelectRef = useRef<HTMLButtonElement>(null)
+  const costPriceInputRef = useRef<HTMLInputElement>(null)
+  const initialDueDateInputRef = useRef<HTMLInputElement>(null)
+  const costUnitSelectRef = useRef<HTMLButtonElement>(null)
+  const minStockInputRef = useRef<HTMLInputElement>(null)
+  const firstSalePriceInputRef = useRef<HTMLInputElement>(null)
   const productNameInputRef = useRef<HTMLInputElement>(null)
   const productSkuInputRef = useRef<HTMLInputElement>(null)
   const skuCheckRequestId = useRef(0)
@@ -1126,6 +1133,12 @@ export default function Products() {
                       options={unitOptions}
                       onChange={handleStockUnitChange}
                       focusRef={stockUnitSelectRef}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey && !editing) {
+                          event.preventDefault()
+                          initialStockVendorSelectRef.current?.focus()
+                        }
+                      }}
                       disabled={Boolean(editing)}
                       aria-label="Satuan stok"
                     />
@@ -1140,6 +1153,13 @@ export default function Products() {
                       id="initial-stock-vendor"
                       value={stockVendorId}
                       onChange={setStockVendorId}
+                      focusRef={initialStockVendorSelectRef}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey) {
+                          event.preventDefault()
+                          initialPaymentStatusSelectRef.current?.focus()
+                        }
+                      }}
                       className="w-full"
                       options={[
                         { value: '', label: 'Vendor' },
@@ -1153,6 +1173,17 @@ export default function Products() {
                       id="initial-payment-status"
                       value={stockPaymentStatus}
                       onChange={(value) => setStockPaymentStatus(value as 'lunas' | 'kredit')}
+                      focusRef={initialPaymentStatusSelectRef}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey) {
+                          event.preventDefault()
+                          if (stockPaymentStatus === 'kredit' && Number(stock) > 0) {
+                            initialDueDateInputRef.current?.focus()
+                          } else {
+                            costPriceInputRef.current?.focus()
+                          }
+                        }
+                      }}
                       className="w-full"
                       options={[
                         { value: 'lunas', label: 'Lunas' },
@@ -1163,7 +1194,19 @@ export default function Products() {
                   {stockPaymentStatus === 'kredit' && Number(stock) > 0 && (
                     <div className="min-w-0 sm:col-span-2">
                       <label htmlFor="initial-due-date" className="mb-1 block text-sm font-medium">Tanggal jatuh tempo stok awal</label>
-                      <Input id="initial-due-date" type="date" value={stockDueDate} onChange={(event) => setStockDueDate(event.target.value)} />
+                      <Input
+                        ref={initialDueDateInputRef}
+                        id="initial-due-date"
+                        type="date"
+                        value={stockDueDate}
+                        onChange={(event) => setStockDueDate(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Tab' && !event.shiftKey) {
+                            event.preventDefault()
+                            costPriceInputRef.current?.focus()
+                          }
+                        }}
+                      />
                     </div>
                   )}
                 </div>
@@ -1173,11 +1216,18 @@ export default function Products() {
                   <label htmlFor="product-cost" className="mb-1 block text-sm font-medium">Harga Modal</label>
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
                     <Input
+                      ref={costPriceInputRef}
                       id="product-cost"
                       className="min-w-0"
                       inputMode="numeric"
                       value={formatCurrencyInput(costPrice)}
                       onChange={(e) => setCostPrice(parseCurrencyInput(e.target.value))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey) {
+                          event.preventDefault()
+                          costUnitSelectRef.current?.focus()
+                        }
+                      }}
                       readOnly={Boolean(editing)}
                       title={editing ? 'Gunakan Tambah Stok untuk mengubah HPP batch baru' : undefined}
                     />
@@ -1185,6 +1235,13 @@ export default function Products() {
                       className="min-w-0"
                       value={costUnit}
                       options={unitOptions}
+                      focusRef={costUnitSelectRef}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && !event.shiftKey && !editingPricesOnly) {
+                          event.preventDefault()
+                          minStockInputRef.current?.focus()
+                        }
+                      }}
                       onChange={(value) => {
                         const nextUnit = value as UnitType
                         setCostUnit(nextUnit)
@@ -1207,10 +1264,17 @@ export default function Products() {
                 <div>
                   <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">Min. Stok</label>
                   <Input
+                    ref={minStockInputRef}
                     id="product-min-stock"
                     type="number"
                     value={minStock}
                     onChange={(e) => setMinStock(Number(e.target.value))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Tab' && !event.shiftKey) {
+                        event.preventDefault()
+                        firstSalePriceInputRef.current?.focus()
+                      }
+                    }}
                     readOnly={editingPricesOnly}
                   />
                 </div>
@@ -1227,6 +1291,7 @@ export default function Products() {
                   {prices.map((pr, idx) => (
                     <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_auto] items-center gap-2">
                       <Input
+                        ref={idx === 0 ? firstSalePriceInputRef : undefined}
                         className="flex-1"
                         placeholder="Harga"
                         inputMode="numeric"

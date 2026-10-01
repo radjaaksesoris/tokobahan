@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type KeyboardEventHandler, type RefObject } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,7 @@ interface SelectProps {
   disabled?: boolean
   id?: string
   focusRef?: RefObject<HTMLButtonElement | null>
+  onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
   'aria-label'?: string
 }
 
@@ -30,6 +31,7 @@ export function Select({
   disabled = false,
   id,
   focusRef,
+  onKeyDown,
   'aria-label': ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false)
@@ -101,6 +103,8 @@ export function Select({
           setOpen((current) => !current)
         }}
         onKeyDown={(event) => {
+          onKeyDown?.(event)
+          if (event.defaultPrevented) return
           if (event.key === 'Escape' && open) {
             event.preventDefault()
             setOpen(false)
