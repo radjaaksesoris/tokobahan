@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { createOfflineInvoice } from './offlineInvoice'
+import { createOfflineInvoice, resetOfflineInvoiceSequence } from './offlineInvoice'
 import { getQueuedTransactions } from './offlineTransactions'
 
 function deleteOfflineDatabase() {
@@ -44,6 +44,22 @@ async function storeLegacyTransaction() {
   database.close()
 }
 
+async function setInvoiceSequence(nextNumber: number) {
+  await getQueuedTransactions()
+  const database = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open('konveksi-pos')
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction('offline-invoice-sequence', 'readwrite')
+    transaction.objectStore('offline-invoice-sequence').put({ id: 'current', nextNumber })
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+  database.close()
+}
+
 describe('legacy offline transactions', () => {
   beforeEach(async () => {
     await deleteOfflineDatabase()
@@ -54,9 +70,17 @@ describe('legacy offline transactions', () => {
   })
 
   it('creates sequential five-digit local invoice numbers', async () => {
-    const invoice = await createOfflineInvoice()
-    expect(invoice).toMatch(/^RJA-\d{5}$/)
-    expect(invoice).toHaveLength(9)
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-00001')
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-00002')
+  })
+
+  it('expands invoice digits and resets only through the reset sequence action', async () => {
+    await setInvoiceSequence(99999)
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-99999')
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-100000')
+
+    await resetOfflineInvoiceSequence()
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-00001')
   })
 
   it('keeps legacy queued checkouts readable without syncing or deleting them', async () => {

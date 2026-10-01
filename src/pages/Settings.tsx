@@ -33,6 +33,7 @@ import {
   readOperationalTable,
 } from '@/lib/offlineOperationalRepository'
 import { rememberCurrentResetGeneration } from '@/lib/offlineQueueReset'
+import { resetOfflineInvoiceSequence } from '@/lib/offlineInvoice'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -464,6 +465,7 @@ export default function Settings() {
     try {
       await clearOfflineOperationalData()
       await clearOperationalSnapshot()
+      await resetOfflineInvoiceSequence()
       clearOfflineOperationalCache()
     } catch (error) {
       console.error('Database reset succeeded, but local offline data could not be cleared:', error)

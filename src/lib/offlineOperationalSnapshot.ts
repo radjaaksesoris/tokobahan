@@ -1,6 +1,7 @@
 export const OFFLINE_DB_NAME = 'konveksi-pos'
 export const OFFLINE_DB_VERSION = 4
 export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
+export const OFFLINE_INVOICE_SEQUENCE_STORE = 'offline-invoice-sequence'
 
 const TRANSACTION_STORE = 'offline-transactions'
 const SETTLEMENT_STORE = 'offline-settlements'
@@ -76,6 +77,9 @@ export function ensureOfflineOperationalStores(database: IDBDatabase) {
   }
   if (!database.objectStoreNames.contains(OFFLINE_OPERATIONAL_SNAPSHOT_STORE)) {
     database.createObjectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, { keyPath: 'id' })
+  }
+  if (!database.objectStoreNames.contains(OFFLINE_INVOICE_SEQUENCE_STORE)) {
+    database.createObjectStore(OFFLINE_INVOICE_SEQUENCE_STORE, { keyPath: 'id' })
   }
 }
 
