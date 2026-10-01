@@ -54,7 +54,9 @@ describe('legacy offline transactions', () => {
   })
 
   it('creates short local invoice numbers with a unique suffix', () => {
-    expect(createOfflineInvoice()).toMatch(/^RJA-\d{6}-[A-F0-9]{8}$/)
+    const invoice = createOfflineInvoice()
+    expect(invoice).toMatch(/^RJA-[A-Z0-9]{9}$/)
+    expect(invoice).toHaveLength(13)
   })
 
   it('keeps legacy queued checkouts readable without syncing or deleting them', async () => {
