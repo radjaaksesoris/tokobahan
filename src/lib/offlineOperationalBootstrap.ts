@@ -28,7 +28,10 @@ async function ensureNoQueuedTransactions() {
     getQueuedSettlements(),
   ])
   if (queuedTransactions.length > 0 || queuedSettlements.length > 0) {
-    throw new Error('Sinkronkan antrean transaksi dan pelunasan sebelum mengganti snapshot lokal')
+    throw new Error(
+      'Antrean transaksi lama masih tersimpan di perangkat. Antrean tidak dikirim otomatis; ' +
+      'ekspor dan tinjau melalui Pengaturan > Backup sebelum menghapus antrean dan menyiapkan snapshot lokal.',
+    )
   }
 }
 
@@ -54,10 +57,10 @@ export async function initializeOperationalSnapshot() {
 
 export async function refreshOperationalSnapshotFromServer() {
   await ensureNoQueuedTransactions()
-  await beginOperationalSnapshotSync()
+  const { lockToken } = await beginOperationalSnapshotSync()
   try {
     const snapshot = await fetchServerSnapshot()
-    await replaceOperationalSnapshotAfterRefresh(snapshot)
+    await replaceOperationalSnapshotAfterRefresh(snapshot, lockToken)
     return {
       tables: Object.keys(snapshot.tables).length,
       rows: Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0),
@@ -65,7 +68,7 @@ export async function refreshOperationalSnapshotFromServer() {
     }
   } catch (error) {
     try {
-      await endOperationalSnapshotSync()
+      await endOperationalSnapshotSync(lockToken)
     } catch (unlockError) {
       throw new AggregateError(
         [error, unlockError],

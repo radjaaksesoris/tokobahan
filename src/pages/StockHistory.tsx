@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { endOfDay, format, startOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, History, X } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { UNIT_LABELS, type UnitType } from '@/types'
@@ -46,15 +45,16 @@ export default function StockHistory() {
     async function loadVendors() {
       try {
         const snapshot = await readOperationalSnapshot()
-        if (snapshot) {
-          const localVendors = await readOperationalTable<{ id: string; name: string }>('vendors')
-          if (!cancelled) setVendors(localVendors.sort((a, b) => a.name.localeCompare(b.name, 'id')))
+        if (!snapshot) {
+          if (!cancelled) {
+            setVendors([])
+            toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+          }
           return
         }
-        const { data, error } = await supabase.from('vendors').select('id, name').order('name')
+        const localVendors = await readOperationalTable<{ id: string; name: string }>('vendors')
         if (cancelled) return
-        if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
-        else setVendors(data || [])
+        setVendors(localVendors.sort((a, b) => a.name.localeCompare(b.name, 'id')))
       } catch (error) {
         if (!cancelled) toast.error(`Gagal memuat vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       }
@@ -79,7 +79,15 @@ export default function StockHistory() {
         return
       }
 
-      if (snapshot) {
+      if (!snapshot) {
+        if (currentRequest !== requestId.current) return
+        toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+        setHistory([])
+        setHasNextPage(false)
+        setLoading(false)
+        return
+      }
+      {
         try {
           const [batches, vendors, products] = await Promise.all([
             readOperationalTable<Record<string, unknown>>('product_stock_batches'),
@@ -132,38 +140,6 @@ export default function StockHistory() {
         return
       }
 
-      let query = supabase
-        .from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, received_at, payment_status, due_date, vendor:vendors(name), product:products(name, stock_unit)')
-        .order('received_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(PAGE_SIZE + 1)
-
-      const cursor = cursorHistory[page]
-      if (cursor) {
-        query = query.or(`received_at.lt.${cursor.received_at},and(received_at.eq.${cursor.received_at},id.lt.${cursor.id})`)
-      }
-
-      if (date) {
-        const selectedDate = new Date(`${date}T00:00:00`)
-        query = query
-          .gte('received_at', startOfDay(selectedDate).toISOString())
-          .lte('received_at', endOfDay(selectedDate).toISOString())
-      }
-      if (vendorId) query = query.eq('vendor_id', vendorId)
-
-      const { data, error } = await query
-      if (currentRequest !== requestId.current) return
-      if (error) {
-        toast.error(`Gagal memuat riwayat stok: ${error.message}`)
-        setHistory([])
-        setHasNextPage(false)
-      } else {
-        const rows = (data || []) as unknown as StockReceipt[]
-        setHistory(rows.slice(0, PAGE_SIZE))
-        setHasNextPage(rows.length > PAGE_SIZE)
-      }
-      setLoading(false)
     }, 200)
 
     return () => window.clearTimeout(timer)

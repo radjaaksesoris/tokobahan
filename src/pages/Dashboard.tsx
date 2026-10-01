@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import {
@@ -22,12 +21,11 @@ import {
   AreaChart,
   Area,
 } from 'recharts'
-import { format, subDays, startOfDay, endOfDay } from 'date-fns'
+import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { playLowStockSound, registerPushSubscription, showLowStockNotification } from '@/lib/notifications'
 import { useAuthStore } from '@/store/useAuthStore'
-import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { getUnnotifiedProducts } from '@/lib/lowStockNotifications'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
@@ -49,13 +47,6 @@ interface LowStockProduct {
 }
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
-const DASHBOARD_CACHE_KEY = 'dashboard-stats'
-
-interface DashboardSnapshot {
-  stats: Stats
-  lowStockProducts: LowStockProduct[]
-}
-
 export default function Dashboard() {
   const signOut = useAuthStore((state) => state.signOut)
   const navigate = useNavigate()
@@ -69,8 +60,6 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [cachedAt, setCachedAt] = useState<number | null>(null)
-  const [isUsingCache, setIsUsingCache] = useState(false)
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
@@ -88,33 +77,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    let refreshTimer: number | null = null
-    const scheduleRefresh = () => {
-      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
-      refreshTimer = window.setTimeout(() => {
-        refreshTimer = null
-        void loadStats()
-      }, 750)
-    }
-
     void loadStats()
-
-    // Realtime subscription for sales
-    const channel = supabase
-      .channel('dashboard-sales')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'sales' },
-        () => scheduleRefresh()
-      )
-      .subscribe()
-    window.addEventListener('online', scheduleRefresh)
-
-    return () => {
-      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
-      window.removeEventListener('online', scheduleRefresh)
-      supabase.removeChannel(channel)
-    }
   }, [])
 
   async function loadStats() {
@@ -122,15 +85,11 @@ export default function Dashboard() {
     if (!initialLoadComplete.current) setLoading(true)
     setError(null)
     setSnapshotGeneratedAt(null)
-    setCachedAt(null)
-    setIsUsingCache(false)
     let snapshot
     try {
       snapshot = await readOperationalSnapshot()
     } catch (snapshotError) {
       if (requestId !== statsRequestId.current) return
-      setIsUsingCache(false)
-      setCachedAt(null)
       setError(`Gagal membaca snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
       setLoading(false)
       initialLoadComplete.current = true
@@ -156,13 +115,9 @@ export default function Dashboard() {
         if (analytics.lowStock === 0) setLowStockDismissed(false)
         notifyLowStock(analytics.lowStockProducts)
         setSnapshotGeneratedAt(snapshot.generated_at)
-        setCachedAt(null)
-        setIsUsingCache(false)
         setLoading(false)
         initialLoadComplete.current = true
       } catch (snapshotError) {
-        setIsUsingCache(false)
-        setCachedAt(null)
         setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
         setLoading(false)
         initialLoadComplete.current = true
@@ -170,83 +125,7 @@ export default function Dashboard() {
       return
     }
 
-    setSnapshotGeneratedAt(null)
-    const todayStart = startOfDay(new Date()).toISOString()
-    const todayEnd = endOfDay(new Date()).toISOString()
-
-    const [todaySummaryRes, inventoryRes, weekSales] = await Promise.all([
-      supabase
-        .rpc('sales_summary', {
-          p_start: todayStart,
-          p_end: todayEnd,
-        }),
-      supabase.rpc('inventory_summary'),
-      supabase.rpc('sales_daily_summary', {
-        p_start: startOfDay(subDays(new Date(), 6)).toISOString(),
-        p_end: endOfDay(new Date()).toISOString(),
-      }),
-    ])
-
-    const queryError = todaySummaryRes.error || inventoryRes.error || weekSales.error
-    if (requestId !== statsRequestId.current) return
-    if (queryError) {
-      const cached = readOfflineCacheEntry<DashboardSnapshot>(DASHBOARD_CACHE_KEY)
-      if (cached) {
-        setStats(cached.value.stats)
-        setLowStockProducts(cached.value.lowStockProducts)
-        setCachedAt(cached.cachedAt)
-        setIsUsingCache(true)
-        setError(null)
-      } else {
-        setError(queryError.message)
-      }
-      setLoading(false)
-      initialLoadComplete.current = true
-      return
-    }
-
-    const todaySummary = todaySummaryRes.data?.[0]
-    const todaySales = Number(todaySummary?.total_revenue ?? 0)
-    const todayProfit = Number(todaySummary?.total_profit ?? 0)
-    const todayOrders = Number(todaySummary?.transaction_count ?? 0)
-    const inventory = (inventoryRes.data || {}) as {
-      total_products?: number
-      low_stock_count?: number
-      low_stock_products?: LowStockProduct[]
-    }
-    const totalProducts = Number(inventory.total_products || 0)
-    const lowStockRows = inventory.low_stock_products || []
-    const lowStock = Number(inventory.low_stock_count || 0)
-    setLowStockProducts(lowStockRows)
-    if (lowStock === 0) setLowStockDismissed(false)
-    notifyLowStock(lowStockRows)
-
-    // Aggregate week
-    const days: Record<string, { sales: number; profit: number }> = {}
-    for (let i = 6; i >= 0; i--) {
-      const d = format(subDays(new Date(), i), 'yyyy-MM-dd')
-      days[d] = { sales: 0, profit: 0 }
-    }
-    weekSales.data?.forEach((s) => {
-      const d = s.sale_date
-      if (days[d]) {
-        days[d].sales += Number(s.total_revenue)
-        days[d].profit += Number(s.total_profit)
-      }
-    })
-
-    const weekData = Object.entries(days).map(([date, v]) => ({
-      date: format(new Date(date), 'EEE', { locale: localeId }),
-      sales: v.sales,
-      profit: v.profit,
-    }))
-
-    const nextStats = { todaySales, todayProfit, todayOrders, totalProducts, lowStock, weekData }
-    setStats(nextStats)
-    setCachedAt(Date.now())
-    setIsUsingCache(false)
-    setSnapshotGeneratedAt(null)
-    writeOfflineCache(DASHBOARD_CACHE_KEY, { stats: nextStats, lowStockProducts: lowStockRows })
+    setError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
     setLoading(false)
     initialLoadComplete.current = true
   }
@@ -386,11 +265,6 @@ export default function Dashboard() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
-          {isUsingCache && cachedAt && (
-            <p className="mt-1 text-xs font-medium text-amber-200" role="status">
-              Snapshot offline · diperbarui {format(new Date(cachedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
-            </p>
-          )}
           {snapshotGeneratedAt && (
             <p className="mt-1 text-xs font-medium text-emerald-200" role="status">
               Snapshot lokal · dibuat {format(new Date(snapshotGeneratedAt), 'd MMM yyyy HH:mm', { locale: localeId })}

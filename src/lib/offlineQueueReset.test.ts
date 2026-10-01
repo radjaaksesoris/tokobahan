@@ -1,4 +1,3 @@
-import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }))
@@ -7,21 +6,9 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { rpc },
 }))
 
-import { readOfflineCache, writeOfflineCache } from './offlineCache'
-import { enqueueSettlement, getQueuedSettlements } from './offlineSettlements'
-import { enqueueTransaction, getQueuedTransactions } from './offlineTransactions'
-import { prepareOfflineQueuesForSync } from './offlineQueueReset'
+import { rememberCurrentResetGeneration } from './offlineQueueReset'
 
 const RESET_GENERATION_KEY = 'konveksi-pos:operational-reset-generation'
-
-function deleteOfflineDatabase() {
-  return new Promise<void>((resolve, reject) => {
-    const request = indexedDB.deleteDatabase('konveksi-pos')
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-    request.onblocked = () => reject(new Error('Offline database is still open'))
-  })
-}
 
 function createStorage(): Storage {
   const values = new Map<string, string>()
@@ -35,73 +22,30 @@ function createStorage(): Storage {
   }
 }
 
-describe('offline queue reset generation', () => {
-  beforeEach(async () => {
-    vi.stubGlobal('navigator', { onLine: true })
-    const storage = createStorage()
-    vi.stubGlobal('localStorage', storage)
-    vi.stubGlobal('window', { localStorage: storage })
-    await deleteOfflineDatabase()
-    window.localStorage.clear()
+describe('explicit reset generation tracking', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createStorage())
     vi.clearAllMocks()
-    rpc.mockResolvedValue({ data: 0, error: null })
+    rpc.mockResolvedValue({ data: 1, error: null })
   })
 
-  afterEach(async () => {
-    window.localStorage.clear()
-    await deleteOfflineDatabase()
+  afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('discards offline data when the server reset generation changes', async () => {
-    window.localStorage.setItem(RESET_GENERATION_KEY, '0')
-    await enqueueTransaction({
-      invoiceNo: 'OFF-TEST',
-      totalAmount: 1200,
-      totalCost: 800,
-      totalProfit: 400,
-      paymentMethod: 'cash',
-      customerName: null,
-      amountPaid: 1200,
-      cashierId: 'admin-1',
-      items: [],
-    })
-    await enqueueSettlement('customer', { sale_id: 'sale-1', amount: 100 }, 'admin-1')
-    writeOfflineCache('products', [{ id: 'product-1' }])
-    rpc.mockResolvedValue({ data: 1, error: null })
+  it('stores the server reset generation after an explicit reset', async () => {
+    await rememberCurrentResetGeneration()
 
-    await expect(prepareOfflineQueuesForSync()).resolves.toBe(true)
-
-    expect(await getQueuedTransactions()).toEqual([])
-    expect(await getQueuedSettlements()).toEqual([])
-    expect(readOfflineCache('products')).toBeNull()
-    expect(window.localStorage.getItem(RESET_GENERATION_KEY)).toBe('1')
+    expect(rpc).toHaveBeenCalledWith('get_operational_reset_generation')
+    expect(localStorage.getItem(RESET_GENERATION_KEY)).toBe('1')
   })
 
-  it('preserves existing queues before the first server reset', async () => {
-    await enqueueTransaction({
-      invoiceNo: 'OFF-TEST',
-      totalAmount: 1200,
-      totalCost: 800,
-      totalProfit: 400,
-      paymentMethod: 'cash',
-      customerName: null,
-      amountPaid: 1200,
-      cashierId: 'admin-1',
-      items: [],
-    })
+  it('does not store an invalid server reset generation', async () => {
+    rpc.mockResolvedValue({ data: 'invalid', error: null })
 
-    await expect(prepareOfflineQueuesForSync()).resolves.toBe(true)
-
-    expect(await getQueuedTransactions()).toHaveLength(1)
-    expect(window.localStorage.getItem(RESET_GENERATION_KEY)).toBe('0')
-  })
-
-  it('does not check or sync queues while offline', async () => {
-    vi.stubGlobal('navigator', { onLine: false })
-
-    await expect(prepareOfflineQueuesForSync()).resolves.toBe(false)
-
-    expect(rpc).not.toHaveBeenCalled()
+    await expect(rememberCurrentResetGeneration()).rejects.toThrow(
+      'Status reset data dari server tidak valid',
+    )
+    expect(localStorage.getItem(RESET_GENERATION_KEY)).toBeNull()
   })
 })

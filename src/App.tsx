@@ -3,9 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
-import { syncQueuedSettlements } from '@/lib/offlineSettlements'
-import { syncQueuedTransactions } from '@/lib/offlineTransactions'
-import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -150,43 +147,6 @@ export default function App() {
     if (authLoading || !user || !isAdmin) return
 
     preloadPageChunks()
-  }, [authLoading, isAdmin, user])
-
-  useEffect(() => {
-    if (authLoading || !user || !isAdmin) return
-
-    const syncOfflineQueues = async () => {
-      try {
-        if (await readOperationalSnapshot()) return
-      } catch (error) {
-        console.error('Offline snapshot check failed:', error)
-        return
-      }
-
-      syncQueuedTransactions().catch((error) => {
-        console.error('Offline transaction sync failed:', error)
-      })
-      syncQueuedSettlements(user.id).catch((error) => {
-        console.error('Offline settlement sync failed:', error)
-      })
-    }
-    const syncWhenVisible = () => {
-      if (document.visibilityState === 'visible') syncOfflineQueues()
-    }
-    const interval = window.setInterval(syncOfflineQueues, 30_000)
-    window.addEventListener('online', syncOfflineQueues)
-    window.addEventListener('offline', syncOfflineQueues)
-    window.addEventListener('focus', syncWhenVisible)
-    document.addEventListener('visibilitychange', syncWhenVisible)
-    syncOfflineQueues()
-
-    return () => {
-      window.clearInterval(interval)
-      window.removeEventListener('online', syncOfflineQueues)
-      window.removeEventListener('offline', syncOfflineQueues)
-      window.removeEventListener('focus', syncWhenVisible)
-      document.removeEventListener('visibilitychange', syncWhenVisible)
-    }
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {

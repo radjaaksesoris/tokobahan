@@ -36,6 +36,21 @@ function deleteOfflineDatabase() {
   })
 }
 
+async function writeSyncLock(lock: Record<string, unknown>) {
+  const database = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open('konveksi-pos')
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, 'readwrite')
+    transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE).put({ id: 'sync-lock', ...lock })
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+  database.close()
+}
+
 describe('offline operational snapshot storage', () => {
   beforeEach(deleteOfflineDatabase)
   afterEach(async () => {
@@ -171,7 +186,8 @@ describe('offline operational snapshot storage', () => {
     const snapshot = createSnapshot()
     await writeOperationalSnapshot(snapshot)
 
-    await expect(beginOperationalSnapshotSync()).resolves.toEqual(snapshot)
+    const session = await beginOperationalSnapshotSync()
+    expect(session.snapshot).toEqual(snapshot)
     await expect(beginOperationalSnapshotSync()).rejects.toThrow('Sinkronisasi snapshot sedang berjalan')
     await expect(updateOperationalSnapshot((current) => ({
       snapshot: current,
@@ -179,7 +195,7 @@ describe('offline operational snapshot storage', () => {
     }))).rejects.toThrow('Snapshot sedang disinkronkan dan tidak dapat diubah')
     await expect(clearOperationalSnapshot()).rejects.toThrow('Snapshot sedang disinkronkan dan belum dapat dihapus')
 
-    await endOperationalSnapshotSync()
+    await endOperationalSnapshotSync(session.lockToken)
     await expect(updateOperationalSnapshot((current) => ({
       snapshot: current,
       result: 'unlocked',
@@ -189,20 +205,20 @@ describe('offline operational snapshot storage', () => {
   it('prevents snapshot replacement while a sync is in progress', async () => {
     const snapshot = createSnapshot()
     await writeOperationalSnapshot(snapshot)
-    await beginOperationalSnapshotSync()
+    const session = await beginOperationalSnapshotSync()
 
     await expect(writeOperationalSnapshot(createSnapshot({
       products: [{ id: 'replacement', name: 'Produk' }],
     }))).rejects.toThrow('Snapshot sedang disinkronkan dan tidak dapat diganti')
 
-    await endOperationalSnapshotSync()
+    await endOperationalSnapshotSync(session.lockToken)
     await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
   })
 
   it('updates the server revision and releases the lock atomically after sync', async () => {
     await writeOperationalSnapshot(createSnapshot())
-    await beginOperationalSnapshotSync()
-    await completeOperationalSnapshotSync('12')
+    const session = await beginOperationalSnapshotSync()
+    await completeOperationalSnapshotSync('12', session.lockToken)
 
     await expect(readOperationalSnapshot()).resolves.toMatchObject({ server_revision: '12' })
     await expect(updateOperationalSnapshot((current) => ({
@@ -217,15 +233,54 @@ describe('offline operational snapshot storage', () => {
       products: [{ id: 'from-server', name: 'Produk', stock: 3 }],
     })
     await writeOperationalSnapshot(current)
-    await expect(replaceOperationalSnapshotAfterRefresh(refreshed))
+    await expect(replaceOperationalSnapshotAfterRefresh(refreshed, 'no-lock'))
       .rejects.toThrow('Snapshot lokal tidak terkunci untuk penyegaran')
 
-    await beginOperationalSnapshotSync()
-    await replaceOperationalSnapshotAfterRefresh(refreshed)
+    const session = await beginOperationalSnapshotSync()
+    await replaceOperationalSnapshotAfterRefresh(refreshed, session.lockToken)
     await expect(readOperationalSnapshot()).resolves.toEqual(refreshed)
     await expect(updateOperationalSnapshot((snapshot) => ({
       snapshot,
       result: 'unlocked',
     }))).resolves.toBe('unlocked')
+  })
+
+  it('recovers an expired or legacy sync lock without releasing a newer session', async () => {
+    await writeOperationalSnapshot(createSnapshot())
+    await writeSyncLock({
+      locked: true,
+      lockedAt: Date.now() - 16 * 60_000,
+      token: 'expired-session',
+    })
+
+    const session = await beginOperationalSnapshotSync()
+    expect(session.lockToken).not.toBe('expired-session')
+    await expect(endOperationalSnapshotSync('expired-session'))
+      .rejects.toThrow('Kunci sinkronisasi telah berubah')
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: 'still-locked',
+    }))).rejects.toThrow('Snapshot sedang disinkronkan dan tidak dapat diubah')
+    await endOperationalSnapshotSync(session.lockToken)
+
+    await writeSyncLock({ locked: true })
+    const recoveredLegacySession = await beginOperationalSnapshotSync()
+    expect(recoveredLegacySession.lockToken).toBeTruthy()
+    await endOperationalSnapshotSync(recoveredLegacySession.lockToken)
+  })
+
+  it('does not let an expired owner complete a newer sync session', async () => {
+    await writeOperationalSnapshot(createSnapshot())
+    const oldSession = await beginOperationalSnapshotSync()
+    await writeSyncLock({
+      locked: true,
+      lockedAt: Date.now(),
+      token: 'new-session',
+    })
+
+    await expect(completeOperationalSnapshotSync('12', oldSession.lockToken))
+      .rejects.toThrow('Status sinkronisasi snapshot lokal tidak valid')
+    await expect(endOperationalSnapshotSync(oldSession.lockToken))
+      .rejects.toThrow('Kunci sinkronisasi telah berubah')
   })
 })

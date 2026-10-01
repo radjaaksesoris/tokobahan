@@ -13,6 +13,8 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { clearOfflineOperationalCache } from '@/lib/offlineCache'
 import { clearOfflineOperationalData } from '@/lib/offlineOperationalData'
+import { getQueuedTransactions } from '@/lib/offlineTransactions'
+import { getQueuedSettlements } from '@/lib/offlineSettlements'
 import {
   clearOperationalSnapshot,
   readOperationalSnapshot,
@@ -56,6 +58,10 @@ export default function Settings() {
   const [localSnapshotError, setLocalSnapshotError] = useState<string | null>(null)
   const [initializingLocalData, setInitializingLocalData] = useState(false)
   const [syncingLocalData, setSyncingLocalData] = useState(false)
+  const [legacyQueueCounts, setLegacyQueueCounts] = useState({ transactions: 0, settlements: 0 })
+  const [legacyQueueStatus, setLegacyQueueStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [legacyQueueExported, setLegacyQueueExported] = useState(false)
+  const [legacyQueueActionLoading, setLegacyQueueActionLoading] = useState(false)
   const [cloudBackupError, setCloudBackupError] = useState<string | null>(null)
   const [cloudBackups, setCloudBackups] = useState<Array<{
     id: string
@@ -116,14 +122,13 @@ export default function Settings() {
   async function loadVendors() {
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        const rows = await readOperationalTable<{ id: string; name: string }>('vendors')
-        setVendors(rows)
+      if (!snapshot) {
+        setVendors([])
+        toast.error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
         return
       }
-      const { data, error } = await supabase.from('vendors').select('id, name').order('name')
-      if (error) toast.error(`Gagal memuat vendor: ${error.message}`)
-      else setVendors(data || [])
+      const rows = await readOperationalTable<{ id: string; name: string }>('vendors')
+      setVendors(rows)
     } catch (error) {
       toast.error(`Gagal memuat vendor: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
@@ -139,31 +144,27 @@ export default function Settings() {
     setVendorLoading(true)
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        await updateOperationalSnapshot((current) => {
-          const duplicate = current.tables.vendors.some((vendor) =>
-            String(vendor.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
-          )
-          if (duplicate) throw new Error('Vendor tersebut sudah ada')
-          return {
-            snapshot: {
-              ...current,
-              tables: {
-                ...current.tables,
-                vendors: [...current.tables.vendors, {
-                  id: crypto.randomUUID(),
-                  name,
-                  created_at: new Date().toISOString(),
-                }],
-              },
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
+      await updateOperationalSnapshot((current) => {
+        const duplicate = current.tables.vendors.some((vendor) =>
+          String(vendor.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+        )
+        if (duplicate) throw new Error('Vendor tersebut sudah ada')
+        return {
+          snapshot: {
+            ...current,
+            tables: {
+              ...current.tables,
+              vendors: [...current.tables.vendors, {
+                id: crypto.randomUUID(),
+                name,
+                created_at: new Date().toISOString(),
+              }],
             },
-            result: undefined,
-          }
-        })
-      } else {
-        const { error } = await supabase.from('vendors').insert({ name })
-        if (error) throw new Error(error.message)
-      }
+          },
+          result: undefined,
+        }
+      })
       toast.success('Vendor ditambahkan')
       setVendorName('')
       await loadVendors()
@@ -176,24 +177,20 @@ export default function Settings() {
   async function removeVendor(id: string) {
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        await updateOperationalSnapshot((current) => ({
-          snapshot: {
-            ...current,
-            tables: {
-              ...current.tables,
-              vendors: current.tables.vendors.filter((vendor) => vendor.id !== id),
-              product_stock_batches: current.tables.product_stock_batches.map((batch) =>
-                batch.vendor_id === id ? { ...batch, vendor_id: null } : batch,
-              ),
-            },
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
+      await updateOperationalSnapshot((current) => ({
+        snapshot: {
+          ...current,
+          tables: {
+            ...current.tables,
+            vendors: current.tables.vendors.filter((vendor) => vendor.id !== id),
+            product_stock_batches: current.tables.product_stock_batches.map((batch) =>
+              batch.vendor_id === id ? { ...batch, vendor_id: null } : batch,
+            ),
           },
-          result: undefined,
-        }))
-      } else {
-        const { error } = await supabase.from('vendors').delete().eq('id', id)
-        if (error) throw new Error(error.message)
-      }
+        },
+        result: undefined,
+      }))
       toast.success('Vendor dihapus')
       await loadVendors()
     } catch (error) {
@@ -204,14 +201,13 @@ export default function Settings() {
   async function loadUnits() {
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        const rows = await readOperationalTable<{ id: string; name: string }>('custom_units')
-        setUnits(rows)
+      if (!snapshot) {
+        setUnits([])
+        toast.error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
         return
       }
-      const { data, error } = await supabase.from('custom_units').select('id, name').order('name')
-      if (error) toast.error(`Gagal memuat satuan: ${error.message}`)
-      else setUnits(data || [])
+      const rows = await readOperationalTable<{ id: string; name: string }>('custom_units')
+      setUnits(rows)
     } catch (error) {
       toast.error(`Gagal memuat satuan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
@@ -258,10 +254,84 @@ export default function Settings() {
     }
   }
 
+  async function loadLegacyQueueStatus() {
+    try {
+      const [transactions, settlements] = await Promise.all([
+        getQueuedTransactions(),
+        getQueuedSettlements(),
+      ])
+      setLegacyQueueCounts({ transactions: transactions.length, settlements: settlements.length })
+      setLegacyQueueStatus('ready')
+      setLegacyQueueExported(false)
+    } catch (error) {
+      setLegacyQueueStatus('error')
+      toast.error(`Gagal memeriksa antrean lama: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
+  }
+
   useEffect(() => {
     void loadCloudBackups()
     void loadLocalSnapshotStatus()
+    void loadLegacyQueueStatus()
   }, [])
+
+  async function exportLegacyQueues() {
+    setLegacyQueueActionLoading(true)
+    try {
+      const [transactions, settlements] = await Promise.all([
+        getQueuedTransactions(),
+        getQueuedSettlements(),
+      ])
+      if (transactions.length === 0 && settlements.length === 0) {
+        setLegacyQueueCounts({ transactions: 0, settlements: 0 })
+        setLegacyQueueExported(false)
+        toast.info('Tidak ada antrean transaksi lama untuk diekspor')
+        return
+      }
+      const payload = {
+        format: 'tokobahan-legacy-offline-queues',
+        exported_at: new Date().toISOString(),
+        transactions,
+        settlements,
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `tokobahan-antrean-lama-${new Date().toISOString().slice(0, 10)}.json`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setLegacyQueueCounts({ transactions: transactions.length, settlements: settlements.length })
+      setLegacyQueueExported(true)
+      toast.success('File antrean lama diunduh. Simpan file ini sebelum menghapus antrean.')
+    } catch (error) {
+      toast.error(`Gagal mengekspor antrean lama: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setLegacyQueueActionLoading(false)
+    }
+  }
+
+  async function discardLegacyQueues() {
+    if (!legacyQueueExported) {
+      toast.error('Ekspor antrean lama terlebih dahulu')
+      return
+    }
+    if (!window.confirm(
+      'Antrean lama tidak akan diproses otomatis. Pastikan file JSON hasil ekspor sudah tersimpan dan antrean tidak lagi diperlukan. Hapus antrean dari perangkat ini?',
+    )) return
+    setLegacyQueueActionLoading(true)
+    try {
+      await clearOfflineOperationalData()
+      setLegacyQueueCounts({ transactions: 0, settlements: 0 })
+      setLegacyQueueExported(false)
+      toast.success('Antrean lama dihapus dari perangkat')
+    } catch (error) {
+      toast.error(`Gagal menghapus antrean lama: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setLegacyQueueActionLoading(false)
+      await loadLegacyQueueStatus()
+    }
+  }
 
   async function initializeLocalData() {
     setInitializingLocalData(true)
@@ -315,32 +385,28 @@ export default function Settings() {
     setUnitLoading(true)
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        await updateOperationalSnapshot((current) => {
-          const duplicate = current.tables.custom_units.some((unit) =>
-            String(unit.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
-          )
-          if (duplicate) throw new Error('Satuan tersebut sudah ada')
-          return {
-            snapshot: {
-              ...current,
-              tables: {
-                ...current.tables,
-                custom_units: [...current.tables.custom_units, {
-                  id: crypto.randomUUID(),
-                  name,
-                  factor: 1,
-                  created_at: new Date().toISOString(),
-                }],
-              },
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
+      await updateOperationalSnapshot((current) => {
+        const duplicate = current.tables.custom_units.some((unit) =>
+          String(unit.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+        )
+        if (duplicate) throw new Error('Satuan tersebut sudah ada')
+        return {
+          snapshot: {
+            ...current,
+            tables: {
+              ...current.tables,
+              custom_units: [...current.tables.custom_units, {
+                id: crypto.randomUUID(),
+                name,
+                factor: 1,
+                created_at: new Date().toISOString(),
+              }],
             },
-            result: undefined,
-          }
-        })
-      } else {
-        const { error } = await supabase.from('custom_units').insert({ name, factor: 1 })
-        if (error) throw new Error(error.message)
-      }
+          },
+          result: undefined,
+        }
+      })
       toast.success('Satuan ditambahkan')
       setUnitName('')
       await loadUnits()
@@ -353,11 +419,8 @@ export default function Settings() {
   async function removeUnit(id: string) {
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) await deleteOperationalRows('custom_units', [id])
-      else {
-        const { error } = await supabase.from('custom_units').delete().eq('id', id)
-        if (error) throw new Error(error.message)
-      }
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
+      await deleteOperationalRows('custom_units', [id])
       toast.success('Satuan dihapus')
       await loadUnits()
     } catch (error) {
@@ -413,7 +476,7 @@ export default function Settings() {
       await rememberCurrentResetGeneration()
     } catch (error) {
       console.error('Database reset succeeded, but the local reset generation could not be saved:', error)
-      toast.warning('Data server dan antrean perangkat ini sudah direset, tetapi status sinkronisasi belum tersimpan. Perangkat ini akan memeriksa ulang sebelum mengirim antrean.')
+      toast.warning('Data server dan antrean perangkat ini sudah direset, tetapi status reset belum tersimpan. Antrean lama tidak akan diproses otomatis; tinjau data lokal pada perangkat lain sebelum digunakan.')
     }
 
     toast.success('Data operasional dikosongkan. Backup, akun admin, dan pengaturan tetap tersimpan.')
@@ -688,10 +751,10 @@ export default function Settings() {
                   ID data memakai UUID dan tidak diurutkan ulang. Reset tidak dapat dibatalkan.
                 </p>
                 <p className="mt-2 text-xs text-red-700">
-                  Pastikan antrean offline sudah disinkronkan atau tidak lagi diperlukan. Perangkat
-                  lain akan menghapus antrean dan cache lama otomatis saat kembali online. Jangan
-                  mencatat transaksi offline di perangkat yang belum tersambung setelah reset karena
-                  antrean tersebut akan ikut dibuang.
+                  Ekspor dan tinjau antrean offline pada perangkat ini sebelum reset, atau pastikan
+                  antrean tersebut tidak lagi diperlukan. Perangkat lain mungkin masih menyimpan
+                  snapshot lokalnya dan harus ditinjau secara manual sebelum digunakan. Jangan
+                  mencatat transaksi pada perangkat lain sebelum kondisi data lokalnya diperiksa.
                 </p>
               </div>
             </div>
@@ -837,6 +900,50 @@ export default function Settings() {
         <h3 id="backup-heading" className="text-lg font-bold tracking-tight text-ink">Backup dan pemulihan</h3>
         <p className="mt-1 text-sm text-muted-foreground">Simpan salinan data sebelum melakukan perubahan besar atau pindah perangkat.</p>
       </div>
+      {legacyQueueStatus === 'error' ? (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          Gagal memeriksa antrean transaksi lama. Inisialisasi data lokal mungkin tertahan sampai antrean dapat diperiksa.
+          <Button className="ml-2" variant="outline" size="sm" onClick={() => void loadLegacyQueueStatus()}>
+            Coba lagi
+          </Button>
+        </div>
+      ) : (legacyQueueCounts.transactions > 0 || legacyQueueCounts.settlements > 0) && (
+        <Card className="border-amber-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-amber-900">
+              <AlertTriangle className="h-5 w-5" />
+              Antrean dari versi lama
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-amber-900">
+              Ditemukan {legacyQueueCounts.transactions} transaksi dan {legacyQueueCounts.settlements} pelunasan lama.
+              Antrean ini tidak akan dikirim otomatis, dan harus ditinjau sebelum aplikasi dapat menyiapkan atau
+              mengambil ulang snapshot lokal. Ekspor file JSON untuk ditinjau atau diarsipkan; penghapusan tidak
+              memasukkan transaksi tersebut ke snapshot.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => void exportLegacyQueues()}
+                disabled={legacyQueueActionLoading || legacyQueueStatus !== 'ready'}
+              >
+                <Download className="h-4 w-4" />
+                {legacyQueueActionLoading ? 'Memproses...' : 'Ekspor antrean JSON'}
+              </Button>
+              <Button
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+                onClick={() => void discardLegacyQueues()}
+                disabled={legacyQueueActionLoading || !legacyQueueExported}
+              >
+                <Trash2 className="h-4 w-4" />
+                Hapus antrean setelah ekspor
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

@@ -1,36 +1,8 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const { eq, from, maybeSingle, rpc, select } = vi.hoisted(() => ({
-  eq: vi.fn(),
-  from: vi.fn(),
-  maybeSingle: vi.fn(),
-  rpc: vi.fn(),
-  select: vi.fn(),
-}))
-
-vi.mock('@/lib/supabase', () => ({
-  supabase: { from, rpc },
-}))
-
-import {
-  enqueueTransaction,
-  getQueuedTransactions,
-  retryFailedTransactions,
-  syncQueuedTransactions,
-} from './offlineTransactions'
-
-const transaction = {
-  invoiceNo: 'OFF-20260926193000-TEST0001',
-  totalAmount: 1200,
-  totalCost: 800,
-  totalProfit: 400,
-  paymentMethod: 'cash',
-  customerName: null,
-  amountPaid: 1200,
-  cashierId: 'cashier-1',
-  items: [{ product_id: 'product-1', quantity: 2 }],
-}
+import { createOfflineInvoice } from './offlineInvoice'
+import { getQueuedTransactions } from './offlineTransactions'
 
 function deleteOfflineDatabase() {
   return new Promise<void>((resolve, reject) => {
@@ -41,95 +13,55 @@ function deleteOfflineDatabase() {
   })
 }
 
-function createStorage(): Storage {
-  const values = new Map<string, string>()
-  return {
-    get length() { return values.size },
-    clear: () => values.clear(),
-    getItem: (key) => values.get(key) ?? null,
-    key: (index) => Array.from(values.keys())[index] ?? null,
-    removeItem: (key) => { values.delete(key) },
-    setItem: (key, value) => { values.set(key, String(value)) },
-  }
+async function storeLegacyTransaction() {
+  await getQueuedTransactions()
+  const database = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open('konveksi-pos')
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction('offline-transactions', 'readwrite')
+    transaction.objectStore('offline-transactions').put({
+      id: 'legacy-transaction',
+      invoiceNo: 'RJA-260101-12345678',
+      totalAmount: 1200,
+      totalCost: 800,
+      totalProfit: 400,
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 1200,
+      cashierId: 'cashier-1',
+      items: [],
+      status: 'pending',
+      attempts: 0,
+      lastError: null,
+      createdAt: new Date().toISOString(),
+    })
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+  database.close()
 }
 
-describe('offline transaction synchronization', () => {
+describe('legacy offline transactions', () => {
   beforeEach(async () => {
-    vi.stubGlobal('navigator', { onLine: true })
-    vi.stubGlobal('localStorage', createStorage())
     await deleteOfflineDatabase()
-    vi.clearAllMocks()
-    from.mockReturnValue({ select })
-    select.mockReturnValue({ eq })
-    eq.mockReturnValue({ maybeSingle })
-    maybeSingle.mockResolvedValue({ data: null, error: null })
-    rpc.mockImplementation((name: string) => Promise.resolve(
-      name === 'get_operational_reset_generation'
-        ? { data: 0, error: null }
-        : { data: null, error: null },
-    ))
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
+  afterEach(async () => {
+    await deleteOfflineDatabase()
   })
 
-  it('sends queued checkouts through the atomic checkout RPC', async () => {
-    await enqueueTransaction(transaction)
-
-    const result = await syncQueuedTransactions()
-
-    expect(result).toEqual({ synced: 1, failed: 0 })
-    expect(rpc).toHaveBeenCalledWith('checkout_sale', {
-      p_invoice_no: transaction.invoiceNo,
-      p_total_amount: transaction.totalAmount,
-      p_total_cost: transaction.totalCost,
-      p_total_profit: transaction.totalProfit,
-      p_payment_method: transaction.paymentMethod,
-      p_cashier_id: transaction.cashierId,
-      p_items: transaction.items,
-      p_customer_name: transaction.customerName,
-      p_amount_paid: transaction.amountPaid,
-    })
-    expect(await getQueuedTransactions()).toEqual([])
+  it('creates short local invoice numbers with a unique suffix', () => {
+    expect(createOfflineInvoice()).toMatch(/^RJA-\d{6}-[A-F0-9]{8}$/)
   })
 
-  it('retries failed checkouts and removes them after success', async () => {
-    await enqueueTransaction(transaction)
-    rpc.mockImplementation((name: string) => Promise.resolve(
-      name === 'get_operational_reset_generation'
-        ? { data: 0, error: null }
-        : { data: null, error: { message: 'temporary failure' } },
-    ))
+  it('keeps legacy queued checkouts readable without syncing or deleting them', async () => {
+    await storeLegacyTransaction()
 
-    const firstAttempt = await syncQueuedTransactions()
-    expect(firstAttempt).toEqual({ synced: 0, failed: 1 })
-    expect((await getQueuedTransactions())[0]).toMatchObject({
-      status: 'failed',
-      attempts: 1,
-      lastError: 'temporary failure',
-    })
-
-    rpc.mockImplementation((name: string) => Promise.resolve(
-      name === 'get_operational_reset_generation'
-        ? { data: 0, error: null }
-        : { data: null, error: null },
-    ))
-    const retryResult = await retryFailedTransactions()
-
-    expect(retryResult).toEqual({ synced: 1, failed: 0 })
-    expect(await getQueuedTransactions()).toEqual([])
-    expect(rpc).toHaveBeenCalledTimes(4)
-  })
-
-  it('does not submit a checkout already committed with the same invoice', async () => {
-    await enqueueTransaction(transaction)
-    maybeSingle.mockResolvedValue({ data: { id: 'sale-1' }, error: null })
-
-    const result = await syncQueuedTransactions()
-
-    expect(result).toEqual({ synced: 1, failed: 0 })
-    expect(rpc).not.toHaveBeenCalledWith('checkout_sale', expect.anything())
-    expect(await getQueuedTransactions()).toEqual([])
+    expect(await getQueuedTransactions()).toMatchObject([
+      { id: 'legacy-transaction', status: 'pending' },
+    ])
   })
 })

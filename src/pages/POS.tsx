@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useRef, type KeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
@@ -20,30 +19,15 @@ import {
   CheckCircle2,
   X,
   Delete,
-  LoaderCircle,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
-import { notifyLowStockPush } from '@/lib/notifications'
-import { readOfflineCache, writeOfflineCache } from '@/lib/offlineCache'
-import { fetchAllPages } from '@/lib/paginateQuery'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
-import {
-  createOfflineInvoice,
-  enqueueTransaction,
-  getQueuedTransactions,
-  isOfflineError,
-  removeQueuedTransaction,
-  retryFailedTransactions,
-  subscribeOfflineTransactions,
-  type QueuedTransaction,
-} from '@/lib/offlineTransactions'
+import { createOfflineInvoice } from '@/lib/offlineInvoice'
 
 type PaymentMethod = 'cash' | 'qris' | 'credit'
-const POS_CATALOG_CACHE_KEY = 'pos-catalog'
-
 function sortCatalogProducts(products: Product[]) {
   return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0))
 }
@@ -96,15 +80,12 @@ export default function POS() {
   const finishPaymentButtonRef = useRef<HTMLButtonElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
-  const [queuedTransactions, setQueuedTransactions] = useState<QueuedTransaction[]>([])
-  const [isSyncing, setIsSyncing] = useState(false)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
-  const failedQueueCount = queuedTransactions.filter((transaction) => transaction.status === 'failed').length
   const getReservedQuantity = (productId: string) =>
     items
       .filter((item) => item.product.id === productId)
@@ -132,58 +113,13 @@ export default function POS() {
     }
   }
 
-  async function loadSavedReceipt(saleId: string | null, invoiceNo: string) {
-    let query = supabase
-      .from('sales')
-      .select('invoice_no, total_amount, payment_method, amount_paid, created_at, customer:customers(name), sale_items(product_name, unit, quantity, unit_price, line_total)')
-      .order('created_at', { ascending: false })
-      .limit(1)
-    query = saleId ? query.eq('id', saleId) : query.eq('invoice_no', invoiceNo)
-    const { data, error } = await query.maybeSingle()
-    if (error || !data) return null
-    const sale = data as unknown as {
-      invoice_no: string
-      total_amount: number
-      payment_method: string
-      amount_paid: number
-      created_at: string
-      customer: { name: string } | null
-      sale_items: Array<{ product_name: string; unit: string; quantity: number; unit_price: number; line_total: number }>
-    }
-    return {
-      invoiceNo: sale.invoice_no,
-      createdAt: sale.created_at,
-      paymentMethod: sale.payment_method as PaymentMethod,
-      customerName: sale.customer?.name || null,
-      amountPaid: Number(sale.amount_paid) || 0,
-      change: sale.payment_method === 'cash' ? Math.max(0, Number(sale.amount_paid) - Number(sale.total_amount)) : 0,
-      total: Number(sale.total_amount),
-      items: (sale.sale_items || []).map((item) => ({
-        name: item.product_name,
-        unit: UNIT_LABELS[item.unit] || item.unit,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unit_price),
-        lineTotal: Number(item.line_total),
-      })),
-    } satisfies ReceiptData
-  }
-
-  async function refreshQueue() {
-    const transactions = await getQueuedTransactions()
-    setQueuedTransactions(transactions)
-    setIsSyncing(transactions.some((transaction) => transaction.status === 'syncing'))
-  }
-
   useEffect(() => {
     const updateOnlineState = () => setIsOnline(navigator.onLine)
-    refreshQueue().catch((error) => console.error('Failed to load offline transaction queue:', error))
     window.addEventListener('online', updateOnlineState)
     window.addEventListener('offline', updateOnlineState)
-    const unsubscribe = subscribeOfflineTransactions(() => refreshQueue().catch(console.error))
     return () => {
       window.removeEventListener('online', updateOnlineState)
       window.removeEventListener('offline', updateOnlineState)
-      unsubscribe()
     }
   }, [])
 
@@ -245,14 +181,10 @@ export default function POS() {
           if (!cancelled) setCustomers(rows.sort((a, b) => a.name.localeCompare(b.name, 'id')))
           return
         }
-        if (!isOnline) return
-        const { data, error } = await supabase
-          .from('customers')
-          .select('id, name')
-          .order('name')
-        if (cancelled) return
-        if (error) toast.error(error.message || 'Gagal memuat daftar pelanggan')
-        else setCustomers(data || [])
+        if (!cancelled) {
+          setCustomers([])
+          toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
+        }
       } catch (error) {
         if (!cancelled) toast.error(`Gagal memuat pelanggan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       }
@@ -261,7 +193,7 @@ export default function POS() {
     return () => {
       cancelled = true
     }
-  }, [isOnline, paymentMethod])
+  }, [paymentMethod])
 
   async function loadProducts(signal?: AbortSignal) {
     if (!initialLoadComplete.current) setLoading(true)
@@ -293,42 +225,8 @@ export default function POS() {
       initialLoadComplete.current = true
       return
     }
-    let query = supabase
-      .from('products')
-      .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
-      .eq('is_active', true)
-      .order('name')
-      .order('id')
-    const term = search.trim().replace(/[%_,]/g, ' ')
-    if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data, error } = await fetchAllPages(async (from, to) =>
-      await query.range(from, to).abortSignal(signal || new AbortController().signal),
-    )
-    if (signal?.aborted) return
-    if (error) {
-      const cachedProducts = readOfflineCache<Product[]>(POS_CATALOG_CACHE_KEY)
-      if (cachedProducts) {
-        const normalizedTerm = search.trim().toLowerCase()
-        setProducts(sortCatalogProducts(normalizedTerm
-          ? cachedProducts.filter((product) =>
-            product.name.toLowerCase().includes(normalizedTerm) ||
-            product.sku?.toLowerCase().includes(normalizedTerm) ||
-            product.barcode?.toLowerCase().includes(normalizedTerm))
-          : cachedProducts))
-        toast.info('Katalog lokal digunakan karena katalog online gagal dimuat')
-      } else {
-        toast.error(navigator.onLine ? error.message : 'Katalog belum pernah disimpan untuk penggunaan offline')
-        setProducts([])
-      }
-    }
-    else {
-      const normalizedProducts = (data || []).map((p) => ({
-          ...p,
-          prices: parseProductPrices(p.prices),
-        })) as Product[]
-      setProducts(sortCatalogProducts(normalizedProducts))
-      if (!search.trim()) writeOfflineCache(POS_CATALOG_CACHE_KEY, normalizedProducts)
-    }
+    toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
+    setProducts([])
     initialLoadComplete.current = true
     setLoading(false)
   }
@@ -441,173 +339,30 @@ export default function POS() {
       return
     }
 
-    const saleItems = items.map((i) => ({
-      product_id: i.product.id,
-      product_name: i.product.name,
-      unit: i.unit,
-      quantity: i.quantity,
-      conversion: i.conversion,
-      unit_price: i.unit_price,
-      line_total: i.line_total,
-      line_cost: i.line_cost,
-      line_profit: i.line_profit,
-    }))
-
-    let localFirst = false
     try {
-      localFirst = Boolean(await readOperationalSnapshot())
-    } catch (error) {
-      toast.error(`Gagal memeriksa data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      setCheckoutLoading(false)
-      return
-    }
-
-    let invoiceNo: string | null = null
-    if (isOnline && !localFirst) {
-      const { data, error: invoiceError } = await supabase.rpc('next_invoice_number')
-      if (!invoiceError && data) invoiceNo = data
-      else if (!isOfflineError(invoiceError)) {
-        toast.error(invoiceError?.message || 'Gagal membuat nomor transaksi')
-        setCheckoutLoading(false)
-        return
+      if (!await readOperationalSnapshot()) {
+        throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
       }
-    }
-    invoiceNo ||= createOfflineInvoice()
-
-    if (localFirst) {
-      try {
-        await saveOfflineCheckout({
-          invoiceNo,
-          items,
-          paymentMethod,
-          customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
-          amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
-          cashierId: profile?.id || null,
-        })
-        toast.success(`Transaksi ${invoiceNo} tersimpan di perangkat`)
-        if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
-        clearCart()
-        setShowPaymentModal(false)
-        setCashReceived('')
-        setShowCart(false)
-        await loadProducts()
-      } catch (error) {
-        toast.error(`Transaksi lokal gagal disimpan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      }
-      setCheckoutLoading(false)
-      return
-    }
-
-    let queuedTransaction: QueuedTransaction
-    try {
-      queuedTransaction = await enqueueTransaction({
+      const invoiceNo = createOfflineInvoice()
+      await saveOfflineCheckout({
         invoiceNo,
-        totalAmount: totals.subtotal,
-        totalCost: totals.totalCost,
-        totalProfit: totals.totalProfit,
+        items,
         paymentMethod,
         customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
         amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
         cashierId: profile?.id || null,
-        items: saleItems,
       })
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gagal menyimpan transaksi lokal')
-      setCheckoutLoading(false)
-      return
-    }
-    if (!isOnline) {
-      toast.info(`Transaksi disimpan offline (${invoiceNo})`)
+      toast.success(`Transaksi ${invoiceNo} tersimpan di perangkat`)
       if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
-      setProducts((current) => current.map((product) => {
-        const sold = items.filter((item) => item.product.id === product.id)
-          .reduce((sum, item) => sum + item.quantity, 0)
-        return sold ? { ...product, stock: Math.max(0, product.stock - sold) } : product
-      }))
       clearCart()
       setShowPaymentModal(false)
       setCashReceived('')
       setShowCart(false)
-      setCheckoutLoading(false)
-      return
-    }
-
-    const { data: checkoutSaleId, error: checkoutError } = await supabase.rpc('checkout_sale', {
-          p_invoice_no: invoiceNo,
-          p_total_amount: totals.subtotal,
-          p_total_cost: totals.totalCost,
-          p_total_profit: totals.totalProfit,
-          p_payment_method: paymentMethod,
-          p_cashier_id: profile?.id || null,
-          p_items: saleItems,
-          p_customer_name: paymentMethod === 'credit' ? customerName.trim() : null,
-          p_amount_paid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
-    })
-    if (checkoutError) {
-      if (isOfflineError(checkoutError)) {
-        toast.info(`Transaksi disimpan offline (${invoiceNo})`)
-        if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
-        setProducts((current) => current.map((product) => {
-          const sold = items.filter((item) => item.product.id === product.id)
-            .reduce((sum, item) => sum + item.quantity, 0)
-          return sold ? { ...product, stock: Math.max(0, product.stock - sold) } : product
-        }))
-        clearCart()
-        setShowPaymentModal(false)
-        setCashReceived('')
-        setShowCart(false)
-        setCheckoutLoading(false)
-        return
-      }
-      await removeQueuedTransaction(queuedTransaction.id)
-      const isMissingCheckoutFunction =
-        checkoutError.code === 'PGRST202' ||
-        checkoutError.message.includes('Could not find the function public.checkout_sale')
-      const isInsufficientStock = checkoutError.message.toLowerCase().includes('tidak mencukupi')
-      toast.error(
-        isMissingCheckoutFunction
-          ? 'Fitur pembayaran belum aktif. Jalankan migration checkout_sale di Supabase.'
-          : isInsufficientStock
-            ? 'Transaksi dibatalkan: stok barang habis atau tidak mencukupi.'
-          : checkoutError.message
-      )
-      setCheckoutLoading(false)
-      return
-    }
-
-    await removeQueuedTransaction(queuedTransaction.id)
-    const savedReceipt = await loadSavedReceipt(checkoutSaleId, invoiceNo)
-    toast.success(`Transaksi ${savedReceipt?.invoiceNo || invoiceNo} berhasil!`)
-    if (showReceiptPreview) {
-      const receipt = savedReceipt || createReceipt(invoiceNo)
-      setReceipt(paymentMethod === 'cash'
-        ? {
-            ...receipt,
-            amountPaid: Number(cashReceived) || 0,
-            change: Math.max(0, (Number(cashReceived) || 0) - receipt.total),
-          }
-        : receipt)
-    }
-    clearCart()
-    setShowPaymentModal(false)
-    setCashReceived('')
-    setShowCart(false)
-    loadProducts()
-    notifyLowStockPush().catch((error) => {
-      console.error('Failed to send low-stock push notifications:', error)
-    })
-    setCheckoutLoading(false)
-  }
-
-  async function retryOfflineTransactions() {
-    setIsSyncing(true)
-    try {
-      await retryFailedTransactions()
-      await refreshQueue()
+      await loadProducts()
     } catch (error) {
-      console.error('Retry offline transaction sync failed:', error)
+      toast.error(`Transaksi lokal gagal disimpan: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     } finally {
-      setIsSyncing(false)
+      setCheckoutLoading(false)
     }
   }
 
@@ -624,29 +379,17 @@ export default function POS() {
             />
             <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RAJA AKSESORIS</h2>
           </div>
-          {(queuedTransactions.length > 0 || !isOnline || isSyncing) && (
-            <button
-              type="button"
-              onClick={isSyncing ? undefined : queuedTransactions.some((transaction) => transaction.status === 'failed') ? retryOfflineTransactions : undefined}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                isSyncing
-                  ? 'border-blue-200 bg-blue-50 text-blue-800'
-                  : !isOnline
-                  ? 'border-amber-300 bg-amber-50 text-amber-800'
-                  : queuedTransactions.some((transaction) => transaction.status === 'failed')
-                    ? 'border-red-200 bg-red-50 text-red-700'
-                    : 'border-teal-200 bg-teal-50 text-teal-800'
-              }`}
-              title={isSyncing ? 'Sinkronisasi transaksi sedang berjalan' : !isOnline ? 'Offline' : 'Klik untuk mencoba ulang transaksi gagal'}
-            >
-              {isSyncing ? (
-                <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-              ) : (
-                <span className={`h-1.5 w-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : queuedTransactions.some((transaction) => transaction.status === 'failed') ? 'bg-red-500' : 'bg-teal-500'}`} />
-              )}
-              {isSyncing ? 'Menyinkronkan...' : !isOnline ? 'Offline' : failedQueueCount > 0 ? `${failedQueueCount} gagal` : `${queuedTransactions.length} tersimpan`}
-            </button>
-          )}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+              isOnline ? 'border-teal-200 bg-teal-50 text-teal-800' : 'border-amber-300 bg-amber-50 text-amber-800'
+            }`}
+            title={isOnline
+              ? 'Transaksi tetap disimpan lokal. Sinkronisasi ke Supabase dilakukan dari Pengaturan.'
+              : 'Offline. Transaksi tetap disimpan lokal.'}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
+            Data lokal
+          </span>
           <button
             type="button"
             onClick={() => navigate('/')}

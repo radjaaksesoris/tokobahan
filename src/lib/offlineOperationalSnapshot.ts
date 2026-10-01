@@ -44,6 +44,26 @@ interface StoredSnapshot {
 interface SyncLock {
   id: typeof SYNC_LOCK_KEY
   locked: boolean
+  lockedAt?: number
+  token?: string
+}
+
+const STALE_SYNC_LOCK_TIMEOUT_MS = 15 * 60_000
+
+function isActiveSyncLock(lock: SyncLock | undefined, now = Date.now()) {
+  if (
+    !lock?.locked ||
+    typeof lock.token !== 'string' ||
+    typeof lock.lockedAt !== 'number' ||
+    !Number.isFinite(lock.lockedAt)
+  ) {
+    return false
+  }
+  return now >= lock.lockedAt && now - lock.lockedAt < STALE_SYNC_LOCK_TIMEOUT_MS
+}
+
+function hasSyncLock(lock: SyncLock | undefined, token: string, now = Date.now()) {
+  return isActiveSyncLock(lock, now) && lock?.token === token
 }
 
 export function ensureOfflineOperationalStores(database: IDBDatabase) {
@@ -98,7 +118,7 @@ async function withSnapshotStore<T>(
       let transaction: IDBTransaction
       try {
         transaction = database.transaction(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, mode)
-        transaction.onerror = () => fail(new Error(
+        transaction.onerror = () => fail(operationError || new Error(
           'Gagal mengakses snapshot operasional',
           { cause: transaction.error },
         ))
@@ -157,10 +177,11 @@ export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
-      if ((lockRequest.result as SyncLock | undefined)?.locked) {
+      if (isActiveSyncLock(lockRequest.result as SyncLock | undefined)) {
         abortWithError(new Error('Snapshot sedang disinkronkan dan tidak dapat diganti'))
         return
       }
+      store.delete(SYNC_LOCK_KEY)
       store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
     }
   })
@@ -174,21 +195,20 @@ export function initializeOperationalSnapshotIfMissing<TSnapshot extends Operati
     const lockRequest = store.get(SYNC_LOCK_KEY)
     const snapshotRequest = store.get(SNAPSHOT_KEY)
     let readyCount = 0
-    let locked = false
     let existingSnapshot = false
     const initialize = () => {
       readyCount += 1
       if (readyCount !== 2) return
-      if (locked) {
+      if (isActiveSyncLock(lockRequest.result as SyncLock | undefined)) {
         abortWithError(new Error('Snapshot sedang disinkronkan dan tidak dapat diganti'))
       } else if (existingSnapshot) {
         abortWithError(new Error('Snapshot lokal sudah tersedia; inisialisasi tidak dijalankan'))
       } else {
+        store.delete(SYNC_LOCK_KEY)
         store.add({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
       }
     }
     lockRequest.onsuccess = () => {
-      locked = Boolean((lockRequest.result as SyncLock | undefined)?.locked)
       initialize()
     }
     snapshotRequest.onsuccess = () => {
@@ -202,17 +222,23 @@ export function clearOperationalSnapshot(): Promise<void> {
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
-      if ((lockRequest.result as SyncLock | undefined)?.locked) {
+      if (isActiveSyncLock(lockRequest.result as SyncLock | undefined)) {
         abortWithError(new Error('Snapshot sedang disinkronkan dan belum dapat dihapus'))
         return
       }
+      store.delete(SYNC_LOCK_KEY)
       store.delete(SNAPSHOT_KEY)
     }
   })
 }
 
-export function beginOperationalSnapshotSync(): Promise<OperationalSnapshot> {
-  return withSnapshotStore<OperationalSnapshot>('readwrite', (store, setResult, abortWithError) => {
+export interface OperationalSnapshotSyncSession {
+  snapshot: OperationalSnapshot
+  lockToken: string
+}
+
+export function beginOperationalSnapshotSync(): Promise<OperationalSnapshotSyncSession> {
+  return withSnapshotStore<OperationalSnapshotSyncSession>('readwrite', (store, setResult, abortWithError) => {
     const snapshotRequest = store.get(SNAPSHOT_KEY)
     const lockRequest = store.get(SYNC_LOCK_KEY)
     let snapshotResult: StoredSnapshot | undefined
@@ -223,10 +249,11 @@ export function beginOperationalSnapshotSync(): Promise<OperationalSnapshot> {
       if (readyCount !== 2) return
       try {
         if (!snapshotResult) throw new Error('Snapshot lokal belum diinisialisasi')
-        if (lockResult?.locked) throw new Error('Sinkronisasi snapshot sedang berjalan')
+        if (isActiveSyncLock(lockResult)) throw new Error('Sinkronisasi snapshot sedang berjalan')
         const snapshot = validateOperationalSnapshot(snapshotResult.data)
-        store.put({ id: SYNC_LOCK_KEY, locked: true } satisfies SyncLock)
-        setResult(snapshot)
+        const lockToken = crypto.randomUUID()
+        store.put({ id: SYNC_LOCK_KEY, locked: true, lockedAt: Date.now(), token: lockToken } satisfies SyncLock)
+        setResult({ snapshot, lockToken })
       } catch (error) {
         abortWithError(error)
       }
@@ -242,13 +269,18 @@ export function beginOperationalSnapshotSync(): Promise<OperationalSnapshot> {
   })
 }
 
-export function endOperationalSnapshotSync(): Promise<void> {
-  return withSnapshotStore<void>('readwrite', (store) => {
-    store.delete(SYNC_LOCK_KEY)
+export function endOperationalSnapshotSync(lockToken: string): Promise<void> {
+  return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    lockRequest.onsuccess = () => {
+      const lock = lockRequest.result as SyncLock | undefined
+      if (lock?.token === lockToken) store.delete(SYNC_LOCK_KEY)
+      else abortWithError(new Error('Kunci sinkronisasi telah berubah; tidak dapat membuka kunci operasi lain'))
+    }
   })
 }
 
-export function completeOperationalSnapshotSync(serverRevision: string): Promise<void> {
+export function completeOperationalSnapshotSync(serverRevision: string, lockToken: string): Promise<void> {
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const snapshotRequest = store.get(SNAPSHOT_KEY)
     const lockRequest = store.get(SYNC_LOCK_KEY)
@@ -258,7 +290,7 @@ export function completeOperationalSnapshotSync(serverRevision: string): Promise
     const finish = () => {
       readyCount += 1
       if (readyCount !== 2) return
-      if (!snapshotResult || !lockResult?.locked) {
+      if (!snapshotResult || !hasSyncLock(lockResult, lockToken)) {
         abortWithError(new Error('Status sinkronisasi snapshot lokal tidak valid'))
         return
       }
@@ -279,12 +311,15 @@ export function completeOperationalSnapshotSync(serverRevision: string): Promise
   })
 }
 
-export function replaceOperationalSnapshotAfterRefresh(snapshot: OperationalSnapshot): Promise<void> {
+export function replaceOperationalSnapshotAfterRefresh(
+  snapshot: OperationalSnapshot,
+  lockToken: string,
+): Promise<void> {
   validateOperationalSnapshot(snapshot)
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
-      if (!(lockRequest.result as SyncLock | undefined)?.locked) {
+      if (!hasSyncLock(lockRequest.result as SyncLock | undefined, lockToken)) {
         abortWithError(new Error('Snapshot lokal tidak terkunci untuk penyegaran'))
         return
       }
@@ -310,9 +345,10 @@ export function updateOperationalSnapshot<TResult>(
       readyCount += 1
       if (readyCount !== 2) return
       try {
-        if (lockResult?.locked) {
+        if (isActiveSyncLock(lockResult)) {
           throw new Error('Snapshot sedang disinkronkan dan tidak dapat diubah')
         }
+        store.delete(SYNC_LOCK_KEY)
         const current = snapshotResult
         if (!current) throw new Error('Snapshot lokal belum diinisialisasi')
 

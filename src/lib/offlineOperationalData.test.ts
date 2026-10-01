@@ -43,11 +43,15 @@ describe('clear offline operational data', () => {
   it('clears transaction and settlement queues together', async () => {
     const database = await openDatabase()
     const transaction = database.transaction(
-      ['offline-transactions', 'offline-settlements'],
+      ['offline-transactions', 'offline-settlements', 'offline-operational-snapshot'],
       'readwrite',
     )
     transaction.objectStore('offline-transactions').put({ id: 'transaction-1' })
     transaction.objectStore('offline-settlements').put({ id: 'settlement-1' })
+    transaction.objectStore('offline-operational-snapshot').put({
+      id: 'current',
+      data: { generated_at: '2026-10-01T00:00:00.000Z' },
+    })
     await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve()
       transaction.onerror = () => reject(transaction.error)
@@ -58,7 +62,7 @@ describe('clear offline operational data', () => {
 
     const result = await openDatabase()
     const read = result.transaction(
-      ['offline-transactions', 'offline-settlements'],
+      ['offline-transactions', 'offline-settlements', 'offline-operational-snapshot'],
       'readonly',
     )
     const transactionRows = await new Promise<unknown[]>((resolve, reject) => {
@@ -71,9 +75,15 @@ describe('clear offline operational data', () => {
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
+    const snapshots = await new Promise<unknown[]>((resolve, reject) => {
+      const request = read.objectStore('offline-operational-snapshot').getAll()
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
     result.close()
 
     expect(transactionRows).toEqual([])
     expect(settlementRows).toEqual([])
+    expect(snapshots).toEqual([{ id: 'current', data: { generated_at: '2026-10-01T00:00:00.000Z' } }])
   })
 })

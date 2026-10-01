@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { reconcileStockBatches, type StockBatch } from '@/lib/stockOpname'
@@ -54,17 +53,9 @@ export default function StockOpname() {
       setLoading(false)
       return
     }
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, stock, stock_unit')
-      .eq('is_active', true)
-      .order('name')
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-    if (error) toast.error(error.message)
-    else {
-      setProducts((data || []).slice(0, PAGE_SIZE) as ProductRow[])
-      setHasNextPage((data || []).length > PAGE_SIZE)
-    }
+    toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+    setProducts([])
+    setHasNextPage(false)
     setLoading(false)
   }
   useEffect(() => { void load() }, [page])
@@ -82,6 +73,11 @@ export default function StockOpname() {
       localSnapshot = await readOperationalSnapshot()
     } catch (error) {
       toast.error(`Gagal memeriksa snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setSaving(null)
+      return
+    }
+    if (!localSnapshot) {
+      toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       setSaving(null)
       return
     }
@@ -142,20 +138,6 @@ export default function StockOpname() {
       setSaving(null)
       return
     }
-    if (!navigator.onLine) {
-      toast.error('Stok opname membutuhkan koneksi internet dan tidak dapat disimpan offline')
-      setSaving(null)
-      return
-    }
-    const { error } = await supabase.rpc('adjust_stock', { p_product_id: product.id, p_physical_stock: value, p_reason: reason })
-    if (error) toast.error(error.message)
-    else {
-      toast.success(`Stok ${product.name} disesuaikan`)
-      setPhysical((current) => ({ ...current, [product.id]: '' }))
-      setReasons((current) => ({ ...current, [product.id]: '' }))
-      await load()
-    }
-    setSaving(null)
   }
 
   return (

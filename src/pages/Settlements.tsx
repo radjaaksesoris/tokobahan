@@ -1,22 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
-import { WalletCards, RefreshCw, CloudOff, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
-import {
-  enqueueSettlement,
-  getQueuedSettlements,
-  removeQueuedSettlement,
-  retryFailedSettlements,
-  subscribeOfflineSettlements,
-  syncQueuedSettlements,
-} from '@/lib/offlineSettlements'
-import { isOfflineError } from '@/lib/offlineTransactions'
+import { WalletCards, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 
@@ -49,7 +39,6 @@ type CustomerDebtReceipt = {
   total: number
   payment: number
   remainingDebt: number
-  pendingSync: boolean
   items: DebtItem[]
 }
 type VendorDebtRow = {
@@ -95,31 +84,19 @@ export default function Settlements() {
   const [vendorPaymentHistory, setVendorPaymentHistory] = useState<VendorPaymentHistory[]>([])
   const [customerPaymentHistory, setCustomerPaymentHistory] = useState<CustomerPaymentHistory[]>([])
   const [loading, setLoading] = useState(true)
-  const [pendingSettlements, setPendingSettlements] = useState(0)
-  const [unmatchedSettlements, setUnmatchedSettlements] = useState(0)
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [pendingSettlement, setPendingSettlement] = useState<PendingSettlement | null>(null)
   const [settlementReceipt, setSettlementReceipt] = useState<CustomerDebtReceipt | null>(null)
 
-  async function refreshQueue() {
-    const records = await getQueuedSettlements()
-    setPendingSettlements(records.filter((item) => item.userId === administratorId && item.status !== 'syncing').length)
-    setUnmatchedSettlements(records.filter((item) => item.userId !== administratorId).length)
-  }
-
-  useEffect(() => {
-    void refreshQueue()
-    const unsubscribe = subscribeOfflineSettlements(() => { void refreshQueue() })
-    return () => { unsubscribe() }
-  }, [administratorId])
-
   async function load() {
     setLoading(true)
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot) {
-        const { tables } = snapshot
+      if (!snapshot) {
+        throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      }
+      const { tables } = snapshot
         if (tab === 'vendor-history') {
           const payments = tables.vendor_debt_payments
             .filter((payment) => !historyDate || String(payment.paid_at).slice(0, 10) === historyDate)
@@ -267,7 +244,6 @@ export default function Settlements() {
         }
         setLoading(false)
         return
-      }
     } catch (error) {
       toast.error(`Gagal memuat data pelunasan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setDebts([])
@@ -277,97 +253,6 @@ export default function Settlements() {
       setLoading(false)
       return
     }
-    if (tab === 'vendor-history') {
-      const { data: rawData, error } = await supabase.from('vendor_debt_payments')
-        .select('id, amount, paid_at, stock_batch:product_stock_batches(received_at, vendor:vendors(name), product:products(name))')
-        .order('paid_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-      if (error) toast.error(error.message)
-      setVendorPaymentHistory((rawData || []).slice(0, PAGE_SIZE) as unknown as VendorPaymentHistory[])
-      setHasNextPage((rawData || []).length > PAGE_SIZE)
-      setDebts([])
-    } else if (tab === 'customer-history') {
-      const { data: rawData, error } = await supabase.from('customer_debt_payments')
-        .select('id, amount, paid_at, sale:sales(invoice_no, customer:customers(name))')
-        .order('paid_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-      if (error) toast.error(error.message)
-      setCustomerPaymentHistory((rawData || []).slice(0, PAGE_SIZE) as unknown as CustomerPaymentHistory[])
-      setHasNextPage((rawData || []).length > PAGE_SIZE)
-      setDebts([])
-    } else if (tab === 'vendor') {
-      const { data: rawData, error } = await supabase.from('product_stock_batches')
-        .select('id, quantity_received, unit_cost, received_at, due_date, vendor_id, vendor:vendors(name), product:products(name, stock_unit), vendor_debt_payments(amount, paid_at)')
-        .eq('payment_status', 'kredit').order('due_date').range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-      if (error) toast.error(error.message)
-      setHasNextPage((rawData || []).length > PAGE_SIZE)
-      const data = rawData as unknown as VendorDebtRow[] | null
-      const grouped = new Map<string, Debt>()
-      for (const row of data || []) {
-        const receivedDate = row.received_at.slice(0, 10)
-        const key = `${row.vendor_id || 'unknown'}:${receivedDate}`
-        const existing = grouped.get(key)
-        const total = Number(row.quantity_received) * Number(row.unit_cost)
-        const payments = (row.vendor_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at }))
-        const paid = payments.reduce((sum: number, p: DebtPayment) => sum + p.amount, 0)
-        const item = {
-          batchId: row.id,
-          name: row.product?.name || 'Produk tidak ditemukan',
-          quantity: Number(row.quantity_received),
-          unit: row.product?.stock_unit || 'satuan',
-          unitPrice: Number(row.unit_cost),
-          subtotal: total,
-          paid,
-        }
-        if (existing) {
-          existing.batchIds.push(row.id)
-          existing.total += total
-          existing.paid += paid
-          existing.payments.push(...payments)
-          existing.items.push(item)
-          continue
-        }
-        grouped.set(key, {
-          id: key,
-          batchIds: [row.id],
-          name: row.vendor?.name || 'Vendor',
-          reference: `Stok masuk · ${receivedDate}`,
-          createdAt: row.received_at,
-          total,
-          paid,
-          due: row.due_date,
-          payments,
-          items: [item],
-        })
-      }
-      setDebts(Array.from(grouped.values()))
-      setSelectedItems(Object.fromEntries(Array.from(grouped.values()).map((debt) => [debt.id, []])))
-    } else {
-      const { data, error } = await supabase.from('sales')
-        .select('id, invoice_no, total_amount, amount_paid, created_at, customer:customers(name), sale_items(product_name, quantity, unit, unit_price, line_total), customer_debt_payments(amount, paid_at)')
-        .eq('payment_method', 'credit')
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-      if (error) toast.error(error.message)
-      setHasNextPage((data || []).length > PAGE_SIZE)
-      setDebts((data || []).map((row: any) => ({
-        id: row.id, batchIds: [row.id], name: row.customer?.name || 'Pelanggan', reference: row.invoice_no,
-        createdAt: row.created_at,
-        total: Number(row.total_amount), paid: Number(row.amount_paid || 0) + (row.customer_debt_payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0),
-        due: null,
-        payments: (row.customer_debt_payments || []).map((p: any) => ({ amount: Number(p.amount), paid_at: p.paid_at })),
-        items: (row.sale_items || []).map((item: any) => ({
-          name: item.product_name,
-          quantity: Number(item.quantity),
-          unit: item.unit,
-          unitPrice: Number(item.unit_price),
-          subtotal: Number(item.line_total),
-          paid: 0,
-        })),
-      })))
-    }
-    setLoading(false)
   }
   useEffect(() => {
     setCustomerSearch('')
@@ -438,9 +323,12 @@ export default function Settlements() {
     }
     try {
       const kind = tab === 'vendor' ? 'vendor' : 'customer'
-      const payload = kind === 'vendor' ? { allocations } : { sale_id: debt.id, amount }
       if (!administratorId) throw new Error('Akun administrator tidak ditemukan')
-      if (await readOperationalSnapshot()) {
+      const localSnapshot = await readOperationalSnapshot()
+      if (!localSnapshot) {
+        throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      }
+      {
         const paidAt = new Date().toISOString()
         await updateOperationalSnapshot((snapshot) => {
           if (kind === 'vendor') {
@@ -520,7 +408,6 @@ export default function Settlements() {
             total: debt.total,
             payment: amount,
             remainingDebt: Math.max(0, debt.total - debt.paid - amount),
-            pendingSync: false,
             items: debt.items,
           })
         } else {
@@ -528,53 +415,8 @@ export default function Settlements() {
         }
         setPayment((current) => ({ ...current, [debt.id]: '' }))
         setPendingSettlement(null)
-        await refreshQueue()
         return
       }
-      const queued = await enqueueSettlement(kind, payload, administratorId)
-      let accepted = true
-      let pendingSync = !navigator.onLine
-
-      if (navigator.onLine) {
-        try {
-          await syncQueuedSettlements(administratorId)
-        } catch (error) {
-          console.error('Immediate settlement sync failed:', error)
-        }
-        const stillQueued = (await getQueuedSettlements()).find((record) => record.id === queued.id)
-        pendingSync = Boolean(stillQueued)
-        if (!stillQueued) {
-          toast.success('Pembayaran berhasil dicatat')
-        } else if (stillQueued.status === 'failed' && !isOfflineError({ message: stillQueued.lastError || '' })) {
-          await removeQueuedSettlement(stillQueued.id)
-          accepted = false
-          toast.error(stillQueued.lastError || 'Pelunasan ditolak')
-        } else {
-          toast.info('Pelunasan tersimpan dan akan disinkronkan otomatis')
-        }
-      } else {
-        toast.info('Pelunasan disimpan dan akan disinkronkan saat online')
-      }
-
-      const showReceiptPreview = accepted && kind === 'customer'
-      if (accepted) {
-        if (showReceiptPreview) {
-          setSettlementReceipt({
-            invoiceNo: debt.reference,
-            customerName: debt.name,
-            createdAt: new Date().toISOString(),
-            total: debt.total,
-            payment: amount,
-            remainingDebt: Math.max(0, debt.total - debt.paid - amount),
-            pendingSync,
-            items: debt.items,
-          })
-        }
-        setPayment((current) => ({ ...current, [debt.id]: '' }))
-        setPendingSettlement(null)
-      }
-      await refreshQueue()
-      if (accepted && !showReceiptPreview) void load()
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Pelunasan gagal dicatat') }
   }
 
@@ -595,18 +437,8 @@ export default function Settlements() {
       total: debt.total,
       payment: latestPayment?.amount ?? debt.paid,
       remainingDebt: Math.max(0, debt.total - debt.paid),
-      pendingSync: false,
       items: debt.items,
     })
-  }
-
-  async function retrySettlements() {
-    if (!administratorId) {
-      toast.error('Akun administrator tidak ditemukan')
-      return
-    }
-    const result = await retryFailedSettlements(administratorId)
-    await refreshQueue(); if (result.failed === 0 && result.synced > 0) { toast.success(`${result.synced} pelunasan berhasil disinkronkan`); void load() }
   }
 
   return <div className="space-y-6">
@@ -614,8 +446,6 @@ export default function Settlements() {
       <div>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Pelunasan Hutang</h1>
         <p className="mt-1 text-sm text-accent">Catat pembayaran bertahap untuk vendor dan pelanggan.</p>
-        {pendingSettlements > 0 && <div className="mt-3 flex items-center gap-2 text-xs text-amber-700"><CloudOff className="h-4 w-4" />{pendingSettlements} pelunasan menunggu sinkronisasi <button className="inline-flex items-center gap-1 underline" onClick={() => void retrySettlements()}><RefreshCw className="h-3 w-3" />Coba lagi</button></div>}
-        {unmatchedSettlements > 0 && <p className="mt-3 text-xs text-amber-700">{unmatchedSettlements} antrean pelunasan lama tidak dikirim otomatis karena akun pembuatnya tidak cocok atau tidak tercatat. Periksa transaksi tersebut secara manual.</p>}
       </div>
       {(tab === 'vendor-history' || tab === 'customer-history') && (
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
@@ -939,12 +769,6 @@ function SettlementReceiptPreview({
           <span>Sisa hutang</span>
           <span>{formatCurrency(receipt.remainingDebt)}</span>
         </div>
-        {receipt.pendingSync && (
-          <div className="receipt-summary">
-            <span>Status</span>
-            <span>Menunggu sinkronisasi</span>
-          </div>
-        )}
         <footer className="receipt-center receipt-footer">Terima kasih</footer>
       </article>
     )

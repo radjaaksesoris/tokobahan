@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import type { Product, UnitType, ProductPrice } from '@/types'
-import { parseProductPrices, isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
+import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -12,7 +11,6 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
-import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 
@@ -146,25 +144,21 @@ export default function Products() {
     async function loadMasterData() {
       try {
         const localSnapshot = await readOperationalSnapshot()
-        if (localSnapshot) {
-          const [localVendors, localUnits] = await Promise.all([
-            readOperationalTable<{ id: string; name: string }>('vendors'),
-            readOperationalTable<{ id: string; name: string }>('custom_units'),
-          ])
-          if (cancelled) return
-          setVendors(localVendors)
-          setCustomUnits(localUnits.map((unit) => unit.name as UnitType))
+        if (!localSnapshot) {
+          if (!cancelled) {
+            setVendors([])
+            setCustomUnits([])
+            toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+          }
           return
         }
-        const [vendorsResult, unitsResult] = await Promise.all([
-          supabase.from('vendors').select('id, name').order('name'),
-          supabase.from('custom_units').select('name').order('name'),
+        const [localVendors, localUnits] = await Promise.all([
+          readOperationalTable<{ id: string; name: string }>('vendors'),
+          readOperationalTable<{ id: string; name: string }>('custom_units'),
         ])
         if (cancelled) return
-        if (vendorsResult.error) toast.error(`Gagal memuat vendor: ${vendorsResult.error.message}`)
-        else setVendors(vendorsResult.data || [])
-        if (unitsResult.error) toast.error(`Gagal memuat satuan: ${unitsResult.error.message}`)
-        else setCustomUnits((unitsResult.data || []).map((unit) => unit.name as UnitType))
+        setVendors(localVendors)
+        setCustomUnits(localUnits.map((unit) => unit.name as UnitType))
       } catch (error) {
         if (!cancelled) toast.error(`Gagal memuat data dasar lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       }
@@ -185,7 +179,6 @@ export default function Products() {
   async function load(signal?: AbortSignal) {
     const requestId = ++loadRequestId.current
     const term = search.trim().replace(/[%_,]/g, ' ')
-    const cacheKey = `products:${pageSize}:${page}:${term.toLowerCase()}`
     let localSnapshot
     try {
       localSnapshot = await readOperationalSnapshot()
@@ -225,46 +218,14 @@ export default function Products() {
       }
       return
     }
-    const cached = readOfflineCacheEntry<{ products: Product[]; hasNextPage: boolean }>(cacheKey)
-    if (cached) {
-      setProducts(cached.value.products)
-      setHasNextPage(cached.value.hasNextPage)
-      initialLoadComplete.current = true
-      setLoading(false)
-    } else if (!initialLoadComplete.current) {
-      setLoading(true)
-    }
-    let query = supabase
-      .from('products')
-      .select('id, name, sku, barcode, category_id, cost_price, cost_unit, cost_conversion, stock_unit, stock_conversion, stock, min_stock, unit_base, prices, image_url, is_active, created_at, updated_at')
-      .eq('is_active', true)
-      .order('name')
-      .range(page * pageSize, (page + 1) * pageSize)
-    if (term) query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
-    const { data, error } = await query.abortSignal(signal || new AbortController().signal)
-    if (signal?.aborted) return
-    if (requestId !== loadRequestId.current) return
-    if (error) {
-      toast.error(error.message)
-      if (!cached) {
-        setProducts([])
-        setHasNextPage(false)
-      }
+    if (!localSnapshot) {
+      toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      setProducts([])
+      setHasNextPage(false)
       initialLoadComplete.current = true
       setLoading(false)
       return
     }
-    const rows = data || []
-    const visibleProducts = rows.slice(0, pageSize).map((p) => ({
-      ...p,
-      prices: parseProductPrices(p.prices),
-    })) as Product[]
-    const nextPageExists = rows.length > pageSize
-    setHasNextPage(nextPageExists)
-    setProducts(visibleProducts)
-    writeOfflineCache(cacheKey, { products: visibleProducts, hasNextPage: nextPageExists })
-    initialLoadComplete.current = true
-    setLoading(false)
   }
 
   function openCreate() {
@@ -340,7 +301,6 @@ export default function Products() {
       toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
       return
     }
-    setStockSaving(true)
     if (!stockVendorId) {
       toast.error('Pilih vendor terlebih dahulu')
       return
@@ -349,8 +309,10 @@ export default function Products() {
       toast.error('Tanggal jatuh tempo wajib diisi untuk status kredit')
       return
     }
+    setStockSaving(true)
     try {
       const snapshot = await readOperationalSnapshot()
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       if (snapshot) {
         const now = new Date().toISOString()
         await updateOperationalSnapshot((current) => {
@@ -395,22 +357,6 @@ export default function Products() {
       setStockSaving(false)
       return
     }
-    const { error } = await supabase.rpc('receive_stock_batch', {
-      p_product_id: stockProduct.id,
-      p_quantity: quantity,
-      p_unit_cost: stockCost,
-      p_vendor_id: stockVendorId,
-      p_payment_status: stockPaymentStatus,
-      p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
-    })
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success(`Stok ${stockProduct.name} berhasil ditambahkan`)
-      setStockProduct(null)
-      load()
-    }
-    setStockSaving(false)
   }
 
   function addPriceRow() {
@@ -483,27 +429,9 @@ export default function Products() {
       return false
     }
 
-    const requestId = ++nameCheckRequestId.current
-    setNameChecking(true)
-    const { data, error } = await supabase.rpc('is_product_name_taken', {
-      p_name: value.trim(),
-      p_product_id: editing?.id ?? null,
-    })
-    if (requestId !== nameCheckRequestId.current) return false
     setNameChecking(false)
-
-    if (error) {
-      console.error('Failed to check product name:', error)
-      setNameValidationError('Nama produk tidak dapat diperiksa. Periksa koneksi lalu coba lagi.')
-      return false
-    }
-    if (data) {
-      setNameValidationError('Nama produk sudah digunakan.')
-      return false
-    }
-
-    setNameValidationError('')
-    return true
+    setNameValidationError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+    return false
   }
 
   async function checkSkuAvailability(value: string) {
@@ -537,27 +465,9 @@ export default function Products() {
       return false
     }
 
-    const requestId = ++skuCheckRequestId.current
-    setSkuChecking(true)
-    const { data, error } = await supabase.rpc('is_product_sku_taken', {
-      p_sku: value.trim(),
-      p_product_id: editing?.id ?? null,
-    })
-    if (requestId !== skuCheckRequestId.current) return false
     setSkuChecking(false)
-
-    if (error) {
-      console.error('Failed to check product SKU:', error)
-      setSkuValidationError('SKU tidak dapat diperiksa. Periksa koneksi lalu coba lagi.')
-      return false
-    }
-    if (data) {
-      setSkuValidationError(`SKU "${value.trim()}" sudah digunakan produk lain.`)
-      return false
-    }
-
-    setSkuValidationError('')
-    return true
+    setSkuValidationError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+    return false
   }
 
   async function handleSave() {
@@ -627,7 +537,12 @@ export default function Products() {
       setSaving(false)
       return
     }
-    if (localSnapshot) {
+    if (!localSnapshot) {
+      toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      setSaving(false)
+      return
+    }
+    {
       try {
         const now = new Date().toISOString()
         const productId = editing?.id || crypto.randomUUID()
@@ -719,74 +634,7 @@ export default function Products() {
         toast.error(`Gagal menyimpan produk lokal: ${message}`)
       }
       setSaving(false)
-      return
     }
-
-    if (editing) {
-      const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
-      if (error) {
-        if (error.code === '23505' && error.message.includes('Nama produk')) {
-          setNameValidationError('Nama produk sudah digunakan.')
-          productNameInputRef.current?.focus()
-        }
-        toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? error.message.includes('Nama produk')
-            ? 'Nama produk sudah digunakan.'
-            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
-          : error.message)
-      }
-      else {
-        toast.success('Produk diperbarui')
-        setModal(false)
-        if (editingPricesOnly && returnToStockProduct) {
-          setStockProduct({
-            ...returnToStockProduct,
-            name: name.trim(),
-            sku: sku || null,
-            prices: prices.map((price) => ({ ...price })),
-          })
-          setReturnToStockProduct(null)
-        }
-        setEditing(null)
-        setEditingPricesOnly(false)
-        load()
-      }
-    } else {
-      const { error } = await supabase.rpc('create_product_with_initial_stock', {
-        p_name: payload.name,
-        p_sku: payload.sku || '',
-        p_cost_price: payload.cost_price,
-        p_cost_unit: payload.cost_unit,
-        p_cost_conversion: payload.cost_conversion,
-        p_stock_unit: payload.stock_unit,
-        p_stock_conversion: payload.stock_conversion,
-        p_min_stock: payload.min_stock,
-        p_unit_base: payload.unit_base,
-        p_prices: payload.prices,
-        p_initial_stock: initialStock,
-        p_vendor_id: stockVendorId || null,
-        p_payment_status: stockPaymentStatus,
-        p_due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
-      })
-      if (error) {
-        if (error.code === '23505' && error.message.includes('Nama produk')) {
-          setNameValidationError('Nama produk sudah digunakan.')
-          productNameInputRef.current?.focus()
-        }
-        toast.error(error.code === '23505' || error.message.includes('SKU')
-          ? error.message.includes('Nama produk')
-            ? 'Nama produk sudah digunakan.'
-            : `SKU "${sku.trim()}" sudah digunakan produk lain.`
-          : error.message)
-      }
-      else {
-        toast.success('Produk ditambahkan')
-        openCreate()
-        window.setTimeout(() => productNameInputRef.current?.focus(), 0)
-        load()
-      }
-    }
-    setSaving(false)
   }
 
   function requestDelete(product: Product) {
@@ -822,11 +670,7 @@ export default function Products() {
         })
         if (!updated) throw new Error('Produk tidak dapat dinonaktifkan')
       } else {
-        const { error } = await supabase
-          .from('products')
-          .update({ is_active: false })
-          .eq('id', deleteTarget.id)
-        if (error) throw new Error(error.message)
+        throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       }
       toast.success('Produk dinonaktifkan')
       setDeleteTarget(null)

@@ -29,7 +29,7 @@ function toJson(value: unknown): Json {
 export async function syncOperationalSnapshot(): Promise<SyncResult> {
   if (!navigator.onLine) throw new Error('Perangkat tidak terhubung ke internet')
 
-  const snapshot = await beginOperationalSnapshotSync()
+  const { snapshot, lockToken } = await beginOperationalSnapshotSync()
   try {
     if (!snapshot.server_revision || !/^\d+$/.test(snapshot.server_revision)) {
       throw new Error('Snapshot lokal belum memiliki versi dasar server. Salin ulang data server atau pulihkan backup lokal terlebih dahulu.')
@@ -53,7 +53,7 @@ export async function syncOperationalSnapshot(): Promise<SyncResult> {
       (total, table) => total + snapshot.tables[table].length,
       0,
     )
-    await completeOperationalSnapshotSync(result.server_revision)
+    await completeOperationalSnapshotSync(result.server_revision, lockToken)
     return {
       backupId: result.id,
       backupCreatedAt: result.created_at,
@@ -62,7 +62,7 @@ export async function syncOperationalSnapshot(): Promise<SyncResult> {
     }
   } catch (error) {
     try {
-      await endOperationalSnapshotSync()
+      await endOperationalSnapshotSync(lockToken)
     } catch (unlockError) {
       throw new AggregateError(
         [error, unlockError],

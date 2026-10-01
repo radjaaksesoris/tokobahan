@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
@@ -23,7 +22,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalReportAnalytics } from '@/lib/offlineOperationalAnalytics'
 
@@ -65,7 +63,7 @@ export default function Reports() {
   })
   const [error, setError] = useState<string | null>(null)
   const [cachedAt, setCachedAt] = useState<number | null>(null)
-  const [dataSource, setDataSource] = useState<'server' | 'local' | 'cache' | null>(null)
+  const [dataSource, setDataSource] = useState<'local' | null>(null)
   const requestId = useRef(0)
 
   useEffect(() => {
@@ -105,56 +103,23 @@ export default function Reports() {
       return
     }
     if (currentRequest !== requestId.current) return
-    if (snapshot) {
-      try {
-        if (!Number.isFinite(Date.parse(snapshot.generated_at))) {
-          throw new Error('Waktu pembuatan snapshot lokal tidak valid')
-        }
-        const analytics = getLocalReportAnalytics(snapshot, start, end)
-        setSummary(analytics.summary)
-        setDailySummary(analytics.dailySummary)
-        setVendorPayments(analytics.vendorPayments)
-        setCachedAt(Date.parse(snapshot.generated_at))
-        setDataSource('local')
-      } catch (snapshotError) {
-        setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
+    if (!snapshot) {
+      setError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      return
+    }
+    try {
+      if (!Number.isFinite(Date.parse(snapshot.generated_at))) {
+        throw new Error('Waktu pembuatan snapshot lokal tidak valid')
       }
-      return
+      const analytics = getLocalReportAnalytics(snapshot, start, end)
+      setSummary(analytics.summary)
+      setDailySummary(analytics.dailySummary)
+      setVendorPayments(analytics.vendorPayments)
+      setCachedAt(Date.parse(snapshot.generated_at))
+      setDataSource('local')
+    } catch (snapshotError) {
+      setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
     }
-
-    const [
-      { data: summaryData, error: summaryError },
-      { data: dailyData, error: dailyError },
-      { data: vendorPaymentData, error: vendorPaymentError },
-    ] = await Promise.all([
-      supabase.rpc('sales_summary', {
-        p_start: start.toISOString(),
-        p_end: end.toISOString(),
-      }),
-      supabase.rpc('sales_daily_summary', {
-        p_start: start.toISOString(),
-        p_end: end.toISOString(),
-      }),
-      supabase.rpc('vendor_payment_daily_summary', {
-        p_start: start.toISOString(),
-        p_end: end.toISOString(),
-      }),
-    ])
-    if (currentRequest !== requestId.current) return
-
-    const cacheKey = `reports:${period}:${selectedDate || 'current'}`
-    if (summaryError || dailyError || vendorPaymentError) {
-      const cached = readOfflineCacheEntry<{ summary: typeof summary; dailySummary: DailySummaryRow[]; vendorPayments: VendorPaymentRow[] }>(cacheKey)
-      if (cached) { setSummary(cached.value.summary); setDailySummary(cached.value.dailySummary); setVendorPayments(cached.value.vendorPayments); setCachedAt(cached.cachedAt); setDataSource('cache'); setError(null) }
-      else setError(summaryError?.message || dailyError?.message || vendorPaymentError?.message || 'Laporan belum tersedia secara offline')
-      return
-    }
-    const nextSummary = summaryData?.[0] || { total_revenue: 0, total_credit: 0, total_cost: 0, total_profit: 0, transaction_count: 0 }
-    const nextDailySummary = (dailyData || []) as DailySummaryRow[]
-    const nextVendorPayments = (vendorPaymentData || []) as VendorPaymentRow[]
-    setSummary(nextSummary); setDailySummary(nextDailySummary); setVendorPayments(nextVendorPayments); setCachedAt(Date.now())
-    setDataSource('server')
-    writeOfflineCache(cacheKey, { summary: nextSummary, dailySummary: nextDailySummary, vendorPayments: nextVendorPayments })
   }
 
   const totalRevenue = Number(summary.total_revenue)
@@ -205,11 +170,7 @@ export default function Reports() {
           <p className="mt-1 text-sm text-accent">
             {cachedAt && dataSource === 'local'
               ? `Snapshot lokal · dibuat ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
-              : cachedAt && dataSource === 'cache'
-                ? `${navigator.onLine ? 'Snapshot cache terbaru' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
-                : cachedAt
-                  ? `Data server · diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
-                  : 'Laporan · Memuat...'}
+              : 'Laporan · Memuat...'}
           </p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">

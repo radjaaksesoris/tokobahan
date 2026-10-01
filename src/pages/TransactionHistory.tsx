@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -9,7 +8,6 @@ import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Printer, Search, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
-import { readOfflineCacheEntry, writeOfflineCache } from '@/lib/offlineCache'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { toast } from 'sonner'
@@ -102,7 +100,6 @@ export default function TransactionHistory() {
   const [reprint, setReprint] = useState<ReprintData | null>(null)
   const [paymentMethodSaving, setPaymentMethodSaving] = useState(false)
   const [creditCustomerName, setCreditCustomerName] = useState('')
-  const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
 
   useEffect(() => {
@@ -112,170 +109,81 @@ export default function TransactionHistory() {
 
   async function loadSales() {
     const requestId = ++loadRequestId.current
-    const term = search.trim().replace(/[%_,]/g, ' ')
+    const term = search.trim().toLocaleLowerCase()
     const cursor = cursorHistory[page]
-    const cursorKey = cursor ? `${cursor.created_at}:${cursor.id}` : 'first'
-    const cacheKey = `transaction-history:${date || 'all'}:${page}:${cursorKey}:${search.trim().toLowerCase()}`
-    const cached = readOfflineCacheEntry<{ rows: SaleRow[]; total: number; hasNextPage: boolean }>(cacheKey)
-    if (cached) {
-      setSales(cached.value.rows)
-      setHasNextPage(cached.value.hasNextPage)
-      setCachedAt(cached.cachedAt)
-      initialLoadComplete.current = true
-      setLoading(false)
-    } else if (!initialLoadComplete.current) {
-      setLoading(true)
-    }
+    setLoading(true)
     try {
-      if (await readOperationalSnapshot()) {
-        const localSales = await readOperationalTable<SaleRow>('sales')
-        if (requestId !== loadRequestId.current) return
-        const lowerTerm = term.toLocaleLowerCase()
-        const filtered = localSales
-          .filter((sale) => !date || sale.created_at >= startOfDay(new Date(`${date}T00:00:00`)).toISOString() &&
-            sale.created_at <= endOfDay(new Date(`${date}T00:00:00`)).toISOString())
-          .filter((sale) => !lowerTerm ||
-            sale.invoice_no.toLocaleLowerCase().includes(lowerTerm) ||
-            sale.payment_method.toLocaleLowerCase().includes(lowerTerm))
-          .sort((a, b) =>
-            b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
-          )
-        const cursor = cursorHistory[page]
-        const afterCursor = cursor
-          ? filtered.filter((sale) =>
-            sale.created_at < cursor.created_at ||
-            sale.created_at === cursor.created_at && sale.id < cursor.id,
-          )
-          : filtered
-        const visibleRows = afterCursor.slice(0, PAGE_SIZE)
-        setSales(visibleRows)
-        setHasNextPage(afterCursor.length > PAGE_SIZE)
-        setCachedAt(Date.now())
-        writeOfflineCache(cacheKey, {
-          rows: visibleRows,
-          total: filtered.reduce((total, sale) => total + Number(sale.total_amount), 0),
-          hasNextPage: afterCursor.length > PAGE_SIZE,
-        })
-        initialLoadComplete.current = true
-        setLoading(false)
-        return
-      }
+      const snapshot = await readOperationalSnapshot()
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      const localSales = await readOperationalTable<SaleRow>('sales')
+      if (requestId !== loadRequestId.current) return
+      const filtered = localSales
+        .filter((sale) => !date || sale.created_at >= startOfDay(new Date(`${date}T00:00:00`)).toISOString() &&
+          sale.created_at <= endOfDay(new Date(`${date}T00:00:00`)).toISOString())
+        .filter((sale) => !term ||
+          sale.invoice_no.toLocaleLowerCase().includes(term) ||
+          sale.payment_method.toLocaleLowerCase().includes(term))
+        .sort((a, b) =>
+          b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
+        )
+      const afterCursor = cursor
+        ? filtered.filter((sale) =>
+          sale.created_at < cursor.created_at ||
+          sale.created_at === cursor.created_at && sale.id < cursor.id,
+        )
+        : filtered
+      const visibleRows = afterCursor.slice(0, PAGE_SIZE)
+      setSales(visibleRows)
+      setHasNextPage(afterCursor.length > PAGE_SIZE)
+      setCachedAt(Date.now())
+      setLoading(false)
+      return
     } catch (error) {
       if (requestId !== loadRequestId.current) return
       toast.error(`Gagal membaca riwayat lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setSales([])
       setHasNextPage(false)
-      initialLoadComplete.current = true
       setLoading(false)
       return
     }
-    let query = supabase
-      .from('sales')
-      .select('id, invoice_no, total_amount, total_cost, total_profit, payment_method, cashier_id, customer_id, amount_paid, created_at')
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(PAGE_SIZE + 1)
-
-    if (cursor) {
-      query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`)
-    }
-
-    if (term) {
-      query = query.or(`invoice_no.ilike.%${term}%,payment_method.ilike.%${term}%`)
-    }
-
-    if (date) {
-      const selectedDate = new Date(`${date}T00:00:00`)
-      query = query
-        .gte('created_at', startOfDay(selectedDate).toISOString())
-        .lte('created_at', endOfDay(selectedDate).toISOString())
-    }
-
-    const totalStart = date ? startOfDay(new Date(`${date}T00:00:00`)) : new Date(0)
-    const totalEnd = date ? endOfDay(new Date(`${date}T00:00:00`)) : new Date('9999-12-31T23:59:59.999Z')
-    const [{ data, error }, { data: totalData, error: totalError }] = await Promise.all([
-      query,
-      supabase.rpc('sales_total_amount', {
-        p_start: totalStart.toISOString(),
-        p_end: totalEnd.toISOString(),
-        p_search: term || null,
-      }),
-    ])
-    if (requestId !== loadRequestId.current) return
-    if (error || totalError) {
-      if (!cached) {
-        toast.error(navigator.onLine ? (error?.message || totalError?.message || 'Gagal memuat riwayat') : 'Riwayat belum tersedia secara offline')
-        setSales([])
-        setHasNextPage(false)
-      }
-    } else {
-      const rows = (data || []) as SaleRow[]
-      const total = Number(totalData?.[0]?.total_amount || 0)
-      const visibleRows = rows.slice(0, PAGE_SIZE)
-      setHasNextPage(rows.length > PAGE_SIZE); setSales(visibleRows); setCachedAt(Date.now())
-      writeOfflineCache(cacheKey, { rows: visibleRows, total, hasNextPage: rows.length > PAGE_SIZE })
-    }
-    initialLoadComplete.current = true
-    setLoading(false)
   }
 
   async function openDetails(sale: SaleRow) {
     setSelectedSale(sale)
     setItemsLoading(true)
     try {
-      if (await readOperationalSnapshot()) {
-        const [saleItems, saleReturns] = await Promise.all([
-          readOperationalTable<SaleItemWithReturns & { sale_id: string }>('sale_items'),
-          readOperationalTable<{ sale_item_id: string; quantity: number; refund_amount: number }>('sale_returns'),
-        ])
-        const rows = saleItems.filter((item) => item.sale_id === sale.id)
-        setItems(rows.map((item) => {
-          const returns = saleReturns.filter((returned) => returned.sale_item_id === item.id)
-          return {
-            id: item.id,
-            product_name: item.product_name,
-            unit: item.unit,
-            quantity: Number(item.quantity),
-            returned_quantity: returns.reduce((sum, returned) => sum + Number(returned.quantity), 0),
-            returned_amount: returns.reduce((sum, returned) => sum + Number(returned.refund_amount), 0),
-            unit_price: Number(item.unit_price),
-            line_total: Number(item.line_total),
-          }
-        }))
-        setItemsLoading(false)
-        return
-      }
+      const snapshot = await readOperationalSnapshot()
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      const [saleItems, saleReturns] = await Promise.all([
+        readOperationalTable<SaleItemWithReturns & { sale_id: string }>('sale_items'),
+        readOperationalTable<{
+          sale_item_id: string
+          quantity: number
+          refund_amount: number
+        }>('sale_returns'),
+      ])
+      const rows = saleItems.filter((item) => item.sale_id === sale.id)
+      setItems(rows.map((item) => {
+        const returns = saleReturns.filter((returned) => returned.sale_item_id === item.id)
+        return {
+          id: item.id,
+          product_name: item.product_name,
+          unit: item.unit,
+          quantity: Number(item.quantity),
+          returned_quantity: returns.reduce((sum, returned) => sum + Number(returned.quantity), 0),
+          returned_amount: returns.reduce((sum, returned) => sum + Number(returned.refund_amount), 0),
+          unit_price: Number(item.unit_price),
+          line_total: Number(item.line_total),
+        }
+      }))
+      setItemsLoading(false)
+      return
     } catch (error) {
       toast.error(`Gagal membaca rincian transaksi lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setItems([])
       setItemsLoading(false)
       return
     }
-    const { data, error } = await supabase
-      .from('sale_items')
-      .select('id, product_name, unit, quantity, unit_price, line_total, sale_returns(quantity, refund_amount)')
-      .eq('sale_id', sale.id)
-      .order('id')
-
-    if (error) {
-      toast.error(error.message)
-      setItems([])
-    } else {
-      setItems((data || []).map((row) => {
-        const item = row as unknown as SaleItemWithReturns
-        return {
-          id: item.id,
-          product_name: item.product_name,
-          unit: item.unit,
-          quantity: Number(item.quantity),
-          returned_quantity: (item.sale_returns || []).reduce((sum, returned) => sum + Number(returned.quantity), 0),
-          returned_amount: (item.sale_returns || []).reduce((sum, returned) => sum + Number(returned.refund_amount), 0),
-          unit_price: Number(item.unit_price),
-          line_total: Number(item.line_total),
-        }
-      }))
-    }
-    setItemsLoading(false)
   }
 
   async function submitReturn() {
@@ -287,8 +195,8 @@ export default function TransactionHistory() {
       toast.error(`Gagal memeriksa penyimpanan lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       return
     }
-    if (!localSnapshot && !navigator.onLine) {
-      toast.error('Retur membutuhkan koneksi internet dan tidak dapat diproses offline')
+    if (!localSnapshot) {
+      toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       return
     }
     const quantity = Number(returnQuantity)
@@ -297,7 +205,7 @@ export default function TransactionHistory() {
       return
     }
     setReturnSaving(true)
-    if (localSnapshot) {
+    {
       try {
         await updateOperationalSnapshot((snapshot) => {
           const item = snapshot.tables.sale_items.find((row) => row.id === returningItem.id)
@@ -382,15 +290,6 @@ export default function TransactionHistory() {
       setReturnSaving(false)
       return
     }
-    const { error } = await supabase.rpc('return_sale_item', { p_sale_item_id: returningItem.id, p_quantity: quantity, p_reason: returnReason.trim() })
-    if (error) toast.error(error.message)
-    else {
-      toast.success('Retur berhasil diproses')
-      setReturningItem(null)
-      setSelectedSale(null)
-      void loadSales()
-    }
-    setReturnSaving(false)
   }
 
   async function reprintSale() {
@@ -398,13 +297,8 @@ export default function TransactionHistory() {
     let customerName: string | null = null
     if (selectedSale.customer_id) {
       try {
-        if (await readOperationalSnapshot()) {
-          const customers = await readOperationalTable<{ id: string; name: string }>('customers')
-          customerName = customers.find((customer) => customer.id === selectedSale.customer_id)?.name || null
-        } else {
-          const { data } = await supabase.from('customers').select('name').eq('id', selectedSale.customer_id).maybeSingle()
-          customerName = data?.name || null
-        }
+        const customers = await readOperationalTable<{ id: string; name: string }>('customers')
+        customerName = customers.find((customer) => customer.id === selectedSale.customer_id)?.name || null
       } catch (error) {
         toast.error(`Gagal membaca pelanggan transaksi: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
         return
@@ -439,7 +333,10 @@ export default function TransactionHistory() {
     }
     setPaymentMethodSaving(true)
     try {
-      if (await readOperationalSnapshot()) {
+      if (!await readOperationalSnapshot()) {
+        throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      }
+      {
         let localCustomerId: string | null = null
         await updateOperationalSnapshot((snapshot) => {
           const sale = snapshot.tables.sales.find((row) => row.id === selectedSale.id)
@@ -508,35 +405,6 @@ export default function TransactionHistory() {
       setPaymentMethodSaving(false)
       return
     }
-    const { error } = await supabase.rpc('change_sale_payment_method', {
-      p_sale_id: selectedSale.id,
-      p_payment_method: method,
-      p_customer_name: method === 'credit' ? customerName : null,
-    })
-    if (error) {
-      toast.error(error.message)
-    } else {
-      let customerId = selectedSale.customer_id
-      if (method === 'credit') {
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('name', customerName)
-          .maybeSingle()
-        customerId = customer?.id || customerId
-      }
-      const updatedSale = {
-        ...selectedSale,
-        payment_method: method,
-        customer_id: method === 'credit' ? customerId : null,
-        amount_paid: method === 'credit' ? 0 : Number(selectedSale.total_amount),
-      }
-      setSelectedSale(updatedSale)
-      setSales((current) => current.map((sale) => sale.id === updatedSale.id ? updatedSale : sale))
-      setCreditCustomerName('')
-      toast.success(`Metode pembayaran diubah menjadi ${method === 'credit' ? 'kredit' : 'tunai'}`)
-    }
-    setPaymentMethodSaving(false)
   }
 
   const filteredSales = useMemo(() => {
@@ -556,8 +424,8 @@ export default function TransactionHistory() {
           <h2 className="text-3xl font-bold tracking-tight text-white">Riwayat Transaksi</h2>
           <p className="mt-1 text-sm text-accent">
             {cachedAt
-              ? `${navigator.onLine ? 'Cache terbaru · ' : 'Offline · '}Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
-              : 'Cache terbaru · Memuat...'}
+              ? `Data lokal · Diperbarui ${format(new Date(cachedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}`
+              : 'Data lokal · Memuat...'}
           </p>
         </div>
         <div className="flex w-full items-center gap-2 sm:gap-3 lg:w-auto">
