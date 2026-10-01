@@ -1,9 +1,11 @@
-import { Component, lazy, Suspense, useEffect, type ErrorInfo, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, type ErrorInfo, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -130,6 +132,8 @@ export default function App() {
   const profile = useAuthStore((s) => s.profile)
   const authLoading = useAuthStore((s) => s.loading)
   const isAdmin = profile?.role === 'admin'
+  const hasPendingLocalChangesRef = useRef(false)
+  const syncInFlightRef = useRef<Promise<unknown> | null>(null)
 
   useEffect(() => {
     initialize()
@@ -147,6 +151,49 @@ export default function App() {
     if (authLoading || !user || !isAdmin) return
 
     preloadPageChunks()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
+
+    const updatePendingState = async () => {
+      try {
+        const snapshot = await readOperationalSnapshot()
+        hasPendingLocalChangesRef.current = Boolean(
+          snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
+        )
+      } catch {
+        hasPendingLocalChangesRef.current = false
+      }
+    }
+
+    const syncBeforeClose = () => {
+      if (!navigator.onLine || !hasPendingLocalChangesRef.current || syncInFlightRef.current) return
+      const syncPromise = syncOperationalSnapshot()
+        .catch((error) => {
+          console.warn('Sinkronisasi otomatis sebelum aplikasi ditutup gagal:', error)
+        })
+        .finally(() => {
+          if (syncInFlightRef.current === syncPromise) syncInFlightRef.current = null
+        })
+      syncInFlightRef.current = syncPromise
+    }
+    const warnBeforeOfflineClose = (event: BeforeUnloadEvent) => {
+      if (navigator.onLine || !hasPendingLocalChangesRef.current) return
+      event.preventDefault()
+      event.returnValue = 'Ada data lokal yang belum tersinkron ke Supabase.'
+    }
+
+    void updatePendingState()
+    const timer = window.setInterval(() => void updatePendingState(), 2000)
+    window.addEventListener('pagehide', syncBeforeClose)
+    window.addEventListener('beforeunload', warnBeforeOfflineClose)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('pagehide', syncBeforeClose)
+      window.removeEventListener('beforeunload', warnBeforeOfflineClose)
+      hasPendingLocalChangesRef.current = false
+    }
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {
