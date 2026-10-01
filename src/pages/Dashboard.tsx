@@ -332,7 +332,7 @@ export default function Dashboard() {
                   <PackageSearch className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
+                  <span className="block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
                   <span className="mt-1 block truncate text-sm font-semibold">{stats.lowStock} produk</span>
                 </span>
               </button>
