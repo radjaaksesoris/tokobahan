@@ -397,7 +397,7 @@ export default function POS() {
       if (!await readOperationalSnapshot()) {
         throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
       }
-      const invoiceNo = createOfflineInvoice()
+      const invoiceNo = await createOfflineInvoice()
       await saveOfflineCheckout({
         invoiceNo,
         items,

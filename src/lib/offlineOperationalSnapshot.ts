@@ -1,5 +1,5 @@
 export const OFFLINE_DB_NAME = 'konveksi-pos'
-export const OFFLINE_DB_VERSION = 3
+export const OFFLINE_DB_VERSION = 4
 export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
 
 const TRANSACTION_STORE = 'offline-transactions'

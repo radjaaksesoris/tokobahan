@@ -1,15 +1,59 @@
-export function createOfflineInvoice() {
-  const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  const suffix: string[] = []
+import {
+  ensureOfflineOperationalStores,
+  OFFLINE_DB_NAME,
+  OFFLINE_DB_VERSION,
+} from '@/lib/offlineOperationalSnapshot'
 
-  while (suffix.length < 9) {
-    const randomValues = crypto.getRandomValues(new Uint8Array(16))
-    for (const value of randomValues) {
-      if (value >= 252) continue
-      suffix.push(alphabet[value % alphabet.length])
-      if (suffix.length === 9) break
+const INVOICE_SEQUENCE_STORE = 'offline-invoice-sequence'
+const INVOICE_SEQUENCE_KEY = 'current'
+const MAX_INVOICE_NUMBER = 99999
+
+export function createOfflineInvoice(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION)
+    request.onupgradeneeded = () => {
+      const database = request.result
+      ensureOfflineOperationalStores(database)
+      if (!database.objectStoreNames.contains(INVOICE_SEQUENCE_STORE)) {
+        database.createObjectStore(INVOICE_SEQUENCE_STORE, { keyPath: 'id' })
+      }
     }
-  }
+    request.onerror = () => reject(request.error || new Error('Gagal membuka penyimpanan nomor invoice'))
+    request.onsuccess = () => {
+      const database = request.result
+      const transaction = database.transaction(INVOICE_SEQUENCE_STORE, 'readwrite')
+      const store = transaction.objectStore(INVOICE_SEQUENCE_STORE)
+      const readRequest = store.get(INVOICE_SEQUENCE_KEY)
+      let invoiceNumber: number | null = null
 
-  return `RJA-${suffix.join('')}`
+      readRequest.onerror = () => {
+        transaction.abort()
+      }
+      readRequest.onsuccess = () => {
+        const current = Number(readRequest.result?.nextNumber || 1)
+        if (!Number.isInteger(current) || current < 1 || current > MAX_INVOICE_NUMBER) {
+          transaction.abort()
+          return
+        }
+        invoiceNumber = current
+        store.put({ id: INVOICE_SEQUENCE_KEY, nextNumber: current + 1 })
+      }
+      transaction.oncomplete = () => {
+        database.close()
+        if (invoiceNumber === null) {
+          reject(new Error('Nomor invoice tidak dapat dibuat'))
+          return
+        }
+        resolve(`RJA-${String(invoiceNumber).padStart(5, '0')}`)
+      }
+      transaction.onerror = () => {
+        database.close()
+        reject(transaction.error || new Error('Gagal menyimpan nomor invoice'))
+      }
+      transaction.onabort = () => {
+        database.close()
+        reject(new Error('Nomor invoice sudah mencapai batas RJA-99999'))
+      }
+    }
+  })
 }
