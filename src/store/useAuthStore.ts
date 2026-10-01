@@ -38,6 +38,8 @@ function cacheAuth(user: User, expiresAt?: number | null) {
 }
 
 async function loadProfile(user: User) {
+  if (!navigator.onLine) return readOfflineCache<Profile>(profileCacheKey(user.id))
+
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('id, full_name, role, avatar_url, created_at')
