@@ -423,42 +423,41 @@ export default function POS() {
             />
             <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RAJA AKSESORIS</h2>
           </div>
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-              isOnline ? 'border-teal-200 bg-teal-50 text-teal-800' : 'border-amber-300 bg-amber-50 text-amber-800'
-            }`}
-            title={isOnline
-              ? 'Transaksi tetap disimpan lokal. Sinkronisasi ke Supabase dilakukan dari Pengaturan.'
-              : 'Offline. Transaksi tetap disimpan lokal.'}
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
-            Data lokal
-          </span>
-          <Button
-            type="button"
-            variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => void syncSnapshotFromHeader()}
-            disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
-            className={`min-h-9 shrink-0 rounded-xl px-2.5 text-xs lg:min-h-10 lg:px-3 ${
-              snapshotSyncStatus === 'pending'
-                ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
-                : snapshotSyncStatus === 'error'
-                  ? 'border-red-300 text-red-700 hover:bg-red-50'
-                  : ''
-            }`}
-            aria-label={snapshotSyncStatus === 'pending' ? 'Sinkronkan data terbaru ke Supabase' : 'Status sinkronisasi data'}
-            title={snapshotSyncStatus === 'pending'
-              ? 'Data terbaru belum tersimpan di Supabase. Klik untuk sinkronisasi.'
-              : snapshotSyncStatus === 'synced'
-                ? 'Data lokal sudah tersinkron ke Supabase'
-                : 'Sinkronisasi belum tersedia'}
-          >
-            {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
-            <span className="hidden sm:inline">
-              {syncingSnapshot ? 'Mengirim...' : snapshotSyncStatus === 'pending' ? 'Belum sinkron' : 'Tersinkron'}
+          <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
+            <span
+              className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
+                isOnline ? 'text-teal-800' : 'text-amber-800'
+              }`}
+              title={isOnline
+                ? 'Transaksi tersimpan di perangkat. Sinkronisasi ke Supabase dilakukan manual.'
+                : 'Offline. Transaksi tetap tersimpan di perangkat.'}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
+              Data lokal
             </span>
-          </Button>
+            <Button
+              type="button"
+              variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => void syncSnapshotFromHeader()}
+              disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
+              className={`h-7 w-7 min-h-0 shrink-0 rounded-lg p-0 ${
+                snapshotSyncStatus === 'pending'
+                  ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+                  : snapshotSyncStatus === 'error'
+                    ? 'border-red-300 text-red-700 hover:bg-red-50'
+                    : ''
+              }`}
+              aria-label={snapshotSyncStatus === 'pending' ? 'Sinkronkan data terbaru ke Supabase' : 'Status sinkronisasi data'}
+              title={snapshotSyncStatus === 'pending'
+                ? 'Sinkronkan data terbaru ke Supabase'
+                : snapshotSyncStatus === 'synced'
+                  ? 'Data lokal sudah tersinkron ke Supabase'
+                  : 'Sinkronisasi belum tersedia'}
+            >
+              {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
+            </Button>
+          </div>
           <button
             type="button"
             onClick={() => navigate('/')}
