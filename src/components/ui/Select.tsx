@@ -34,6 +34,7 @@ export function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const selected = options.find((option) => option.value === value)
   const selectedIndex = Math.max(
@@ -85,7 +86,10 @@ export function Select({
     <div ref={rootRef} className={cn('relative', className)}>
       <button
         id={id}
-        ref={focusRef}
+        ref={(element) => {
+          triggerRef.current = element
+          if (focusRef) focusRef.current = element
+        }}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="listbox"
@@ -145,6 +149,7 @@ export function Select({
               onClick={() => {
                 onChange(option.value)
                 setOpen(false)
+                window.requestAnimationFrame(() => triggerRef.current?.focus())
               }}
               onKeyDown={(event) => {
                 if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
