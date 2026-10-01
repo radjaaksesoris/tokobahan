@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import { prepareOfflineQueuesForSync } from '@/lib/offlineQueueReset'
+import {
+  ensureOfflineOperationalStores,
+  OFFLINE_DB_NAME,
+  OFFLINE_DB_VERSION,
+} from '@/lib/offlineOperationalSnapshot'
 
 export type SettlementKind = 'vendor' | 'customer'
 export type QueuedSettlementStatus = 'pending' | 'syncing' | 'failed'
@@ -19,9 +24,7 @@ export interface QueuedSettlement {
   syncStartedAt?: string
 }
 
-const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-settlements'
-const DB_VERSION = 2
 const BATCH_SIZE = 5
 const STALE_SYNC_TIMEOUT_MS = 5 * 60_000
 const listeners = new Set<() => void>()
@@ -34,12 +37,8 @@ export function subscribeOfflineSettlements(listener: () => void) { listeners.ad
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (!('indexedDB' in globalThis)) { reject(new Error('Penyimpanan offline tidak tersedia di browser ini')); return }
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.onupgradeneeded = () => {
-      const database = request.result
-      if (!database.objectStoreNames.contains('offline-transactions')) database.createObjectStore('offline-transactions', { keyPath: 'id' })
-      if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME, { keyPath: 'id' })
-    }
+    const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION)
+    request.onupgradeneeded = () => ensureOfflineOperationalStores(request.result)
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Gagal membuka penyimpanan offline'))
   })

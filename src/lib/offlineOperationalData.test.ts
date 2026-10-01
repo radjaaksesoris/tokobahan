@@ -4,7 +4,7 @@ import { clearOfflineOperationalData } from './offlineOperationalData'
 
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open('konveksi-pos', 2)
+    const request = indexedDB.open('konveksi-pos', 3)
     request.onupgradeneeded = () => {
       const database = request.result
       if (!database.objectStoreNames.contains('offline-transactions')) {
@@ -12,6 +12,9 @@ function openDatabase() {
       }
       if (!database.objectStoreNames.contains('offline-settlements')) {
         database.createObjectStore('offline-settlements', { keyPath: 'id' })
+      }
+      if (!database.objectStoreNames.contains('offline-operational-snapshot')) {
+        database.createObjectStore('offline-operational-snapshot', { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)

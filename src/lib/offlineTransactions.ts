@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import { prepareOfflineQueuesForSync } from '@/lib/offlineQueueReset'
+import {
+  ensureOfflineOperationalStores,
+  OFFLINE_DB_NAME,
+  OFFLINE_DB_VERSION,
+} from '@/lib/offlineOperationalSnapshot'
 
 export type QueuedTransactionStatus = 'pending' | 'syncing' | 'failed'
 
@@ -21,9 +26,7 @@ export interface QueuedTransaction {
   syncStartedAt?: string
 }
 
-const DB_NAME = 'konveksi-pos'
 const STORE_NAME = 'offline-transactions'
-const DB_VERSION = 2
 const BATCH_SIZE = 5
 const STALE_SYNC_TIMEOUT_MS = 5 * 60_000
 let syncPromise: Promise<SyncResult> | null = null
@@ -49,11 +52,8 @@ function openDatabase(): Promise<IDBDatabase> {
       reject(new Error('Penyimpanan offline tidak tersedia di browser ini'))
       return
     }
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME, { keyPath: 'id' })
-      if (!request.result.objectStoreNames.contains('offline-settlements')) request.result.createObjectStore('offline-settlements', { keyPath: 'id' })
-    }
+    const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION)
+    request.onupgradeneeded = () => ensureOfflineOperationalStores(request.result)
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Gagal membuka penyimpanan offline'))
   })

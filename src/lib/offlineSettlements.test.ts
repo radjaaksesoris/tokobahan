@@ -119,7 +119,7 @@ describe('offline settlement synchronization', () => {
       userId: undefined,
     }
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('konveksi-pos', 2)
+      const request = indexedDB.open('konveksi-pos', 3)
       request.onsuccess = () => {
         const database = request.result
         const transaction = database.transaction('offline-settlements', 'readwrite')
