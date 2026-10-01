@@ -8,12 +8,49 @@ SET search_path = pg_catalog, public
 AS $$
 DECLARE
   tables_payload JSONB;
+  table_name TEXT;
+  required_tables CONSTANT TEXT[] := ARRAY[
+    'categories', 'vendors', 'custom_units', 'products', 'product_stock_batches',
+    'customers', 'sales', 'sale_items', 'vendor_debt_payments',
+    'customer_debt_payments', 'stock_adjustments', 'sale_returns',
+    'settlement_idempotency'
+  ];
 BEGIN
   IF NOT public.current_user_has_role(ARRAY['admin']) THEN
     RAISE EXCEPTION 'Hanya admin yang dapat memulihkan backup';
   END IF;
-  IF p_payload->>'format' <> 'tokobahan-operational-backup' THEN
-    RAISE EXCEPTION 'Format backup tidak valid';
+  IF p_payload IS NULL OR pg_catalog.jsonb_typeof(p_payload) IS DISTINCT FROM 'object'
+     OR p_payload->>'format' IS DISTINCT FROM 'tokobahan-operational-backup'
+     OR p_payload->>'version' IS DISTINCT FROM '3' THEN
+    RAISE EXCEPTION 'Format atau versi backup tidak valid';
+  END IF;
+
+  tables_payload := p_payload->'tables';
+  IF pg_catalog.jsonb_typeof(tables_payload) IS DISTINCT FROM 'object' THEN
+    RAISE EXCEPTION 'Backup harus memuat objek tabel';
+  END IF;
+
+  FOREACH table_name IN ARRAY required_tables
+  LOOP
+    IF NOT (tables_payload ? table_name)
+       OR pg_catalog.jsonb_typeof(tables_payload->table_name) IS DISTINCT FROM 'array' THEN
+      RAISE EXCEPTION 'Data tabel % tidak lengkap atau tidak valid', table_name;
+    END IF;
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.jsonb_array_elements(tables_payload->table_name) AS row_data(item)
+      WHERE pg_catalog.jsonb_typeof(row_data.item) IS DISTINCT FROM 'object'
+    ) THEN
+      RAISE EXCEPTION 'Data tabel % memuat baris yang tidak valid', table_name;
+    END IF;
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.jsonb_object_keys(tables_payload) AS table_key(key)
+    WHERE NOT (table_key.key = ANY(required_tables))
+  ) THEN
+    RAISE EXCEPTION 'Backup memuat kunci tabel yang tidak dikenal';
   END IF;
 
   DELETE FROM public.settlement_idempotency WHERE TRUE;
@@ -30,7 +67,6 @@ BEGIN
   DELETE FROM public.vendors WHERE TRUE;
   DELETE FROM public.categories WHERE TRUE;
 
-  tables_payload := p_payload->'tables';
   INSERT INTO public.categories SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.categories, COALESCE(tables_payload->'categories', '[]'::JSONB));
   INSERT INTO public.vendors SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.vendors, COALESCE(tables_payload->'vendors', '[]'::JSONB));
   INSERT INTO public.custom_units SELECT * FROM pg_catalog.jsonb_populate_recordset(NULL::public.custom_units, COALESCE(tables_payload->'custom_units', '[]'::JSONB));

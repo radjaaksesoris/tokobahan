@@ -34,6 +34,7 @@ import {
   initializeOperationalSnapshot,
   refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
+import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 
 interface Stats {
   todaySales: number
@@ -78,6 +79,19 @@ export default function Dashboard() {
 
   async function handleMobileStatusLogout() {
     if (!window.matchMedia('(max-width: 1023px)').matches) return
+    try {
+      const snapshot = await readOperationalSnapshot()
+      const hasPendingChanges = Boolean(
+        snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
+      )
+      if (hasPendingChanges) {
+        if (navigator.onLine) await syncOperationalSnapshot()
+        else toast.warning('Ada data yang belum tersinkron. Sambungkan internet sebelum keluar untuk mengirim data ke Supabase.')
+      }
+    } catch (error) {
+      toast.error(`Sinkronisasi sebelum keluar gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
     await signOut()
     navigate('/login', { replace: true })
   }
@@ -144,7 +158,15 @@ export default function Dashboard() {
 
     setRefreshing(true)
     try {
-      if (await readOperationalSnapshot()) await refreshOperationalSnapshotFromServer()
+      const localSnapshot = await readOperationalSnapshot()
+      const hasPendingChanges = Boolean(
+        localSnapshot?.synced_generated_at && localSnapshot.synced_generated_at !== localSnapshot.generated_at,
+      )
+      if (hasPendingChanges) {
+        toast.warning('Data lokal belum tersinkron. Lakukan sinkronisasi dari PC sebelum refresh mobile.')
+        return
+      }
+      if (localSnapshot) await refreshOperationalSnapshotFromServer()
       else await initializeOperationalSnapshot()
       await loadStats()
       toast.success('Data transaksi berhasil diperbarui')
