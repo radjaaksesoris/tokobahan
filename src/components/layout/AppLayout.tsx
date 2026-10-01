@@ -15,6 +15,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { CurrentDate } from '@/components/layout/CurrentDate'
+import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
+import { toast } from 'sonner'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -108,6 +111,23 @@ export function AppLayout() {
   }
 
   const handleLogout = async () => {
+    try {
+      const snapshot = await readOperationalSnapshot()
+      const hasPendingChanges = Boolean(
+        snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
+      )
+      if (hasPendingChanges) {
+        if (!navigator.onLine) {
+          toast.warning('Ada data yang belum tersinkron. Sambungkan internet sebelum keluar untuk mengirim data ke Supabase.')
+        } else {
+          await syncOperationalSnapshot()
+          toast.success('Data terbaru berhasil disinkronkan sebelum keluar')
+        }
+      }
+    } catch (error) {
+      toast.error(`Sinkronisasi sebelum keluar gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
     await signOut()
     navigate('/login')
   }
