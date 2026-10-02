@@ -1,23 +1,17 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   ShoppingCart,
   Package,
   BarChart3,
   History,
-  LogOut,
   Menu,
   Settings,
   WalletCards,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
-import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/Button'
 import { CurrentDate } from '@/components/layout/CurrentDate'
-import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
-import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
-import { toast } from 'sonner'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -35,8 +29,6 @@ export function AppLayout() {
   const scrollTrackRef = useRef<HTMLDivElement>(null)
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
-  const signOut = useAuthStore((s) => s.signOut)
-  const navigate = useNavigate()
   const location = useLocation()
   const isPosRoute = location.pathname.endsWith('/pos')
   const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
@@ -110,28 +102,6 @@ export function AppLayout() {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      const snapshot = await readOperationalSnapshot()
-      const hasPendingChanges = Boolean(
-        snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
-      )
-      if (hasPendingChanges) {
-        if (!navigator.onLine) {
-          toast.warning('Ada data yang belum tersinkron. Sambungkan internet sebelum keluar untuk mengirim data ke Supabase.')
-        } else {
-          await syncOperationalSnapshot()
-          toast.success('Data terbaru berhasil disinkronkan sebelum keluar')
-        }
-      }
-    } catch (error) {
-      toast.error(`Sinkronisasi sebelum keluar gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      return
-    }
-    await signOut()
-    navigate('/login')
-  }
-
   return (
     <div className="mobile-page-background flex min-h-dvh bg-canvas">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink">
@@ -193,18 +163,6 @@ export function AppLayout() {
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
             <CurrentDate className="text-left text-stone-300" />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              'border-white/20 bg-transparent text-stone-300 transition-colors hover:bg-white/10 hover:text-white',
-              'w-full'
-            )}
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Keluar</span>
-          </Button>
           <button
             className="mt-2 flex w-full items-center justify-center rounded-lg border border-white/20 p-2 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
             onClick={() => setSidebarOpen(false)}

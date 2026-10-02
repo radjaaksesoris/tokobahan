@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import {
@@ -26,7 +25,6 @@ import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { playLowStockSound, registerPushSubscription, showLowStockNotification } from '@/lib/notifications'
-import { useAuthStore } from '@/store/useAuthStore'
 import { getUnnotifiedProducts } from '@/lib/lowStockNotifications'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
@@ -34,7 +32,6 @@ import {
   initializeOperationalSnapshot,
   refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
-import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 
 interface Stats {
   todaySales: number
@@ -54,8 +51,6 @@ interface LowStockProduct {
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 export default function Dashboard() {
-  const signOut = useAuthStore((state) => state.signOut)
-  const navigate = useNavigate()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
     todayProfit: 0,
@@ -76,25 +71,6 @@ export default function Dashboard() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
-
-  async function handleMobileStatusLogout() {
-    if (!window.matchMedia('(max-width: 1023px)').matches) return
-    try {
-      const snapshot = await readOperationalSnapshot()
-      const hasPendingChanges = Boolean(
-        snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
-      )
-      if (hasPendingChanges) {
-        if (navigator.onLine) await syncOperationalSnapshot()
-        else toast.warning('Ada data yang belum tersinkron. Sambungkan internet sebelum keluar untuk mengirim data ke Supabase.')
-      }
-    } catch (error) {
-      toast.error(`Sinkronisasi sebelum keluar gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      return
-    }
-    await signOut()
-    navigate('/login', { replace: true })
-  }
 
   useEffect(() => {
     void loadStats()
@@ -330,15 +306,13 @@ export default function Dashboard() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             Refresh
           </button>
-          <button
-            type="button"
-            onClick={handleMobileStatusLogout}
-            className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white transition-transform active:scale-[0.98] lg:pointer-events-none lg:flex-none lg:px-4 lg:text-left"
-            aria-label="Keluar dari aplikasi"
+          <div
+            className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left"
+            aria-label="Status toko aktif"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
             <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
-          </button>
+          </div>
           {stats.lowStock > 0 && !lowStockDismissed && (
             <div
               role="alert"

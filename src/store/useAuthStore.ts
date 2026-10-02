@@ -18,6 +18,7 @@ let authInitialized = false
 let authInitializationPromise: Promise<void> | null = null
 const AUTH_CACHE_KEY = 'auth-session'
 const PROFILE_CACHE_PREFIX = 'profile:'
+const OFFLINE_ACCESS_DAYS = 30
 
 function profileCacheKey(userId: string) {
   return `${PROFILE_CACHE_PREFIX}${userId}`
@@ -34,7 +35,11 @@ function readValidCachedAuth() {
 }
 
 function cacheAuth(user: User, expiresAt?: number | null) {
-  writeOfflineCache(AUTH_CACHE_KEY, { user, expiresAt: expiresAt || null })
+  writeOfflineCache(AUTH_CACHE_KEY, {
+    user,
+    expiresAt: expiresAt || null,
+    offlineExpiresAt: (Date.now() + OFFLINE_ACCESS_DAYS * 24 * 60 * 60 * 1000) / 1000,
+  })
 }
 
 async function loadProfile(user: User) {
@@ -66,40 +71,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     authInitializationPromise = (async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        const hasValidOfflineSession = session?.user
-          && isOfflineAuthSessionValid({
-            user: session.user,
-            expiresAt: session.expires_at ?? null,
-          })
-        if (session?.user && (navigator.onLine || hasValidOfflineSession)) {
+        const { data: { session } } = await supabase.auth.getSession()
+        const cached = readValidCachedAuth()
+        if (session?.user && navigator.onLine) {
           cacheAuth(session.user, session.expires_at)
           set({ user: session.user, profile: await loadProfile(session.user), loading: false })
+        } else if (cached?.user && isOfflineAuthSessionValid(cached)) {
+          set({ user: cached.user, profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)), loading: false })
+        } else if (session?.user && isOfflineAuthSessionValid({ user: session.user, expiresAt: session.expires_at ?? null })) {
+          set({ user: session.user, profile: readOfflineCache<Profile>(profileCacheKey(session.user.id)), loading: false })
         } else {
-          const cached = (error || !navigator.onLine)
-            ? readValidCachedAuth()
-            : null
-          if (cached?.user) {
-            set({ user: cached.user, profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)), loading: false })
-          } else {
-            set({ user: null, profile: null, loading: false })
-          }
+          set({ user: null, profile: null, loading: false })
         }
 
         supabase.auth.onAuthStateChange((event, session) => {
-          const hasValidOfflineSession = session?.user
-            && isOfflineAuthSessionValid({
-              user: session.user,
-              expiresAt: session.expires_at ?? null,
-            })
-          if (!session?.user || (!navigator.onLine && !hasValidOfflineSession)) {
-            if (!navigator.onLine) {
-              const cached = readValidCachedAuth()
-              if (cached?.user) {
-                set({ user: cached.user, profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)), loading: false })
-                return
-              }
+          if (!navigator.onLine) {
+            const cached = readValidCachedAuth()
+            if (cached?.user) {
+              set({ user: cached.user, profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)), loading: false })
+              return
             }
+          }
+          if (!session?.user) {
             set({ user: null, profile: null })
             return
           }

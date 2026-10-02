@@ -46,6 +46,8 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 - **Backup HDD otomatis**: Di Chrome/Edge desktop, admin dapat memilih folder HDD dari Pengaturan → Backup.
   Backup penuh disimpan ke `tokobahan-backup-latest.json` dan file arsip bertimestamp setiap hari pukul 16.00.
   Fitur ini berjalan selama aplikasi/browser terbuka.
+- **Akses offline**: Perangkat yang pernah berhasil login menyimpan sesi admin dan profil lokal hingga 30 hari
+  untuk tetap dapat membuka aplikasi tanpa koneksi. Logout tetap menghapus akses offline dari perangkat tersebut.
 
 ## Setup Lokal
 

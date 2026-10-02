@@ -1,5 +1,7 @@
 const CACHE_PREFIX = 'konveksi-pos:offline:'
-const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000
+// Auth/profile cache must survive ordinary offline periods. Operational data is
+// stored separately in IndexedDB and does not use this TTL.
+const MAX_CACHE_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
 interface CacheEnvelope<T> {
   value: T
