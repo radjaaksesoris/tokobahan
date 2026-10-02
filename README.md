@@ -43,6 +43,9 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 - **Offline checkout**: Transaksi kasir disimpan lebih dulu di IndexedDB dan dikirim ulang
   otomatis saat online (maksimal 5 transaksi per batch). Status pending/gagal terlihat di POS;
   transaksi gagal dapat dicoba ulang dari indikator status.
+- **Backup HDD otomatis**: Di Chrome/Edge desktop, admin dapat memilih folder HDD dari Pengaturan → Backup.
+  Backup penuh disimpan ke `tokobahan-backup-latest.json` dan file arsip bertimestamp setiap hari pukul 16.00.
+  Fitur ini berjalan selama aplikasi/browser terbuka.
 
 ## Setup Lokal
 
@@ -122,6 +125,17 @@ Build production (`npm run build`) sudah menghasilkan aplikasi yang bisa dipasan
 Checkout offline membutuhkan browser dengan IndexedDB dan sesi kasir yang masih valid. Nomor
 invoice offline memakai prefix `OFF-`; RPC `checkout_sale` tetap menjadi satu-satunya jalur
 penyimpanan server dan validasi stok.
+
+### Backup ke HDD saat offline
+
+Pada PC, buka **Pengaturan → Backup → Backup otomatis ke HDD PC**, lalu pilih folder pada HDD. Browser akan
+meminta izin folder satu kali. Selama aplikasi terbuka, perubahan snapshot lokal dicadangkan otomatis ke folder
+tersebut. File `tokobahan-backup-latest.json` adalah salinan terbaru dan file bertimestamp yang dibuat pukul 16.00
+dapat dipakai sebagai riwayat backup penuh.
+
+Penulisan langsung ke folder HDD menggunakan File System Access API, sehingga Chrome atau Edge desktop diperlukan.
+Browser tidak dapat menjalankan backup ketika aplikasi benar-benar ditutup atau PC mati; untuk jadwal tersebut
+gunakan service desktop atau Windows Task Scheduler sebagai lapisan tambahan.
 
 ## Deploy ke GitHub + Vercel (Recommended)
 

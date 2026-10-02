@@ -6,6 +6,7 @@ import { registerPushSubscription } from '@/lib/notifications'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
+import { startAutomaticLocalBackup } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -151,6 +152,11 @@ export default function App() {
     if (authLoading || !user || !isAdmin) return
 
     preloadPageChunks()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
+    return startAutomaticLocalBackup()
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {

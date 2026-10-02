@@ -41,6 +41,7 @@ import { UNIT_LABELS } from '@/types'
 import type { Json } from '@/types/database'
 import { toTitleCase } from '@/lib/utils'
 import StockOpname from '@/pages/StockOpname'
+import { chooseLocalBackupFolder, getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -88,6 +89,8 @@ export default function Settings() {
   const [unitLoading, setUnitLoading] = useState(false)
   const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
+  const [localBackupStatus, setLocalBackupStatus] = useState<{ supported: boolean; configured: boolean; folderName?: string }>({ supported: true, configured: false })
+  const [localBackupLoading, setLocalBackupLoading] = useState(false)
   const renderTabNavigation = (className: string, isDesktop = false) => (
     <nav className={className} aria-label="Bagian pengaturan" role="tablist">
       {([
@@ -274,7 +277,33 @@ export default function Settings() {
     void loadCloudBackups()
     void loadLocalSnapshotStatus()
     void loadLegacyQueueStatus()
+    void getLocalBackupStatus().then(setLocalBackupStatus).catch(() => undefined)
   }, [])
+
+  async function configureLocalBackup() {
+    setLocalBackupLoading(true)
+    try {
+      const folderName = await chooseLocalBackupFolder()
+      setLocalBackupStatus({ supported: true, configured: true, folderName })
+      toast.success(`Backup otomatis aktif di folder ${folderName}`)
+    } catch (error) {
+      if ((error as DOMException)?.name !== 'AbortError') toast.error(error instanceof Error ? error.message : 'Gagal memilih folder backup')
+    } finally {
+      setLocalBackupLoading(false)
+    }
+  }
+
+  async function backupToLocalFolderNow() {
+    setLocalBackupLoading(true)
+    try {
+      if (await saveLocalBackup({ archive: true })) toast.success('Backup penuh berhasil disimpan ke HDD')
+      else toast.error('Folder backup belum dipilih atau data lokal belum tersedia')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Backup lokal gagal')
+    } finally {
+      setLocalBackupLoading(false)
+    }
+  }
 
   async function exportLegacyQueues() {
     setLegacyQueueActionLoading(true)
@@ -1012,6 +1041,42 @@ export default function Settings() {
               </>
             )}
           </div>
+        </CardContent>
+      </Card>
+      <Card className="border-emerald-200 bg-emerald-50/30">
+        <CardHeader>
+          <CardTitle className="text-base">Backup otomatis ke HDD PC</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Pilih folder di HDD satu kali. Selama aplikasi terbuka, backup penuh dibuat otomatis setiap hari
+            pukul 16.00 waktu komputer. File <strong>tokobahan-backup-latest.json</strong> selalu diperbarui,
+            ditambah satu file bertimestamp sebagai arsip.
+          </p>
+          {!localBackupStatus.supported ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Browser ini tidak mendukung penulisan otomatis ke folder. Gunakan Chrome atau Edge di PC, atau gunakan
+              tombol download backup JSON di bawah.
+            </p>
+          ) : (
+            <>
+              <p className={`rounded-xl p-3 text-sm ${localBackupStatus.configured ? 'border border-emerald-200 bg-emerald-100 text-emerald-800' : 'border border-amber-200 bg-amber-50 text-amber-800'}`}>
+                {localBackupStatus.configured
+                  ? `Aktif · folder: ${localBackupStatus.folderName}`
+                  : 'Belum aktif. Pilih folder HDD untuk mengaktifkan backup otomatis.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => void configureLocalBackup()} disabled={localBackupLoading}>
+                  {localBackupLoading ? 'Memproses...' : localBackupStatus.configured ? 'Ganti folder backup' : 'Pilih folder HDD'}
+                </Button>
+                {localBackupStatus.configured && (
+                  <Button variant="outline" onClick={() => void backupToLocalFolderNow()} disabled={localBackupLoading}>
+                    Backup sekarang
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
       <Card>
