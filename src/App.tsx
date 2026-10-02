@@ -23,7 +23,7 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
       return module
     } catch (error) {
       const reloadKey = `chunk-reload:${key}`
-      if (!sessionStorage.getItem(reloadKey)) {
+      if (navigator.onLine && !sessionStorage.getItem(reloadKey)) {
         sessionStorage.setItem(reloadKey, '1')
         window.location.reload()
       }

@@ -1,4 +1,6 @@
-const CACHE_NAME = 'konveksipos-v3'
+// Bump this value when the app shell or caching strategy changes. Old caches
+// are removed during activate so lazy-loaded pages do not resolve stale chunks.
+const CACHE_NAME = 'konveksipos-v4'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -80,16 +82,17 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // Network-first keeps deployed hashed JS/CSS chunks current while retaining
+  // offline support when the network is unavailable.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached
-      return fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
         if (response.ok) {
           const copy = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
         }
         return response
       })
-    }),
+      .catch(() => caches.match(event.request).then((cached) => cached || Response.error())),
   )
 })

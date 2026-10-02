@@ -3,21 +3,29 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-function recoverFromStaleBuild() {
+async function recoverFromStaleBuild() {
+  if (!navigator.onLine) return
   const reloadKey = 'vite-build-reload'
   if (sessionStorage.getItem(reloadKey)) return
   sessionStorage.setItem(reloadKey, '1')
-  window.location.reload()
+  try {
+    const registration = await navigator.serviceWorker?.ready
+    await registration?.update()
+  } catch (error) {
+    console.warn('Gagal memperbarui service worker setelah asset gagal dimuat:', error)
+  } finally {
+    window.location.reload()
+  }
 }
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
-  recoverFromStaleBuild()
+  void recoverFromStaleBuild()
 })
 
 window.addEventListener('error', (event) => {
   if (event.error instanceof TypeError && /dynamically imported module|importing a module script/i.test(event.error.message)) {
-    recoverFromStaleBuild()
+    void recoverFromStaleBuild()
   }
 })
 
