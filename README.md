@@ -44,7 +44,7 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
   otomatis saat online (maksimal 5 transaksi per batch). Status pending/gagal terlihat di POS;
   transaksi gagal dapat dicoba ulang dari indikator status.
 - **Backup HDD otomatis**: Di Chrome/Edge desktop, admin dapat memilih folder HDD dari Pengaturan → Backup.
-  Backup penuh disimpan ke `tokobahan-backup-latest.json` dan file arsip bertimestamp setiap hari pukul 16.00.
+  Backup penuh disimpan ke `tokobahan-backup-latest.json` dan file arsip bertimestamp setiap hari pukul 17.00.
   Fitur ini berjalan selama aplikasi/browser terbuka.
 - **Akses offline**: Perangkat yang pernah berhasil login menyimpan sesi admin dan profil lokal hingga 30 hari
   untuk tetap dapat membuka aplikasi tanpa koneksi. Logout tetap menghapus akses offline dari perangkat tersebut.
@@ -132,7 +132,7 @@ penyimpanan server dan validasi stok.
 
 Pada PC, buka **Pengaturan → Backup → Backup otomatis ke HDD PC**, lalu pilih folder pada HDD. Browser akan
 meminta izin folder satu kali. Selama aplikasi terbuka, perubahan snapshot lokal dicadangkan otomatis ke folder
-tersebut. File `tokobahan-backup-latest.json` adalah salinan terbaru dan file bertimestamp yang dibuat pukul 16.00
+tersebut. File `tokobahan-backup-latest.json` adalah salinan terbaru dan file bertimestamp yang dibuat pukul 17.00
 dapat dipakai sebagai riwayat backup penuh.
 
 Penulisan langsung ke folder HDD menggunakan File System Access API, sehingga Chrome atau Edge desktop diperlukan.
@@ -140,6 +140,13 @@ Browser tidak dapat menjalankan backup ketika aplikasi benar-benar ditutup atau 
 gunakan service desktop atau Windows Task Scheduler sebagai lapisan tambahan.
 
 ## Deploy ke GitHub + Vercel (Recommended)
+
+## Aplikasi desktop Tauri
+
+Proyek ini juga memiliki wrapper Tauri untuk aplikasi desktop. Jalankan `npm run tauri:dev` untuk pengembangan
+desktop atau `npm run tauri:build` untuk membuat paket pada sistem operasi pengembang. Workflow **Build Tauri
+Windows** dapat dijalankan manual dari GitHub Actions untuk menghasilkan installer Windows `.exe` pada artifact
+workflow. Versi desktop menggunakan alur React dan Supabase yang sama dengan PWA.
 
 ### 1. Push ke GitHub
 

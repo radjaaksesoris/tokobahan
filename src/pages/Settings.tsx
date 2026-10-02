@@ -1068,7 +1068,7 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Pilih folder di HDD satu kali. Selama aplikasi terbuka, backup penuh dibuat otomatis setiap hari
-            pukul 16.00 waktu komputer. File <strong>tokobahan-backup-latest.json</strong> selalu diperbarui,
+            pukul 17.00 waktu komputer. File <strong>tokobahan-backup-latest.json</strong> selalu diperbarui,
             ditambah satu file bertimestamp sebagai arsip.
           </p>
           {!localBackupStatus.supported ? (
@@ -1089,7 +1089,7 @@ export default function Settings() {
                 </Button>
                 {localBackupStatus.configured && (
                   <Button variant="outline" onClick={() => void backupToLocalFolderNow()} disabled={localBackupLoading}>
-                    Backup sekarang
+                    Backup sebelum menutup
                   </Button>
                 )}
               </div>

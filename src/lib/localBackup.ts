@@ -4,7 +4,9 @@ const BACKUP_DB_NAME = 'konveksi-pos-local-backup'
 const BACKUP_DB_VERSION = 1
 const BACKUP_STORE = 'settings'
 const BACKUP_HANDLE_KEY = 'directory'
-const DAILY_BACKUP_HOUR = 16
+export const LOCAL_BACKUP_LAST_GENERATED_KEY = 'tokobahan.local-backup-last-generated-at'
+const TAURI_BACKUP_PATH_KEY = 'tokobahan.tauri-backup-folder'
+const DAILY_BACKUP_HOUR = 17
 
 type DirectoryHandle = {
   kind: 'directory'
@@ -22,6 +24,39 @@ type BackupWindow = Window & {
 
 function supportsDirectoryBackup() {
   return typeof window !== 'undefined' && typeof (window as BackupWindow).showDirectoryPicker === 'function'
+}
+
+function isTauriRuntime() {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+}
+
+function readTauriBackupPath() {
+  try {
+    return window.localStorage.getItem(TAURI_BACKUP_PATH_KEY)
+  } catch {
+    return null
+  }
+}
+
+function filePath(folder: string, filename: string) {
+  const separator = folder.includes('\\') ? '\\' : '/'
+  return `${folder.replace(/[\\/]$/, '')}${separator}${filename}`
+}
+
+async function saveTauriBackup(folder: string, snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>, archive: boolean) {
+  if (!snapshot) return false
+  const { writeTextFile } = await import('@tauri-apps/plugin-fs')
+  const content = JSON.stringify(snapshot, null, 2)
+  const filenames = archive
+    ? ['tokobahan-backup-latest.json', `tokobahan-backup-${timestampForFilename(new Date())}.json`]
+    : ['tokobahan-backup-latest.json']
+  for (const filename of filenames) await writeTextFile(filePath(folder, filename), content)
+  try {
+    window.localStorage.setItem(LOCAL_BACKUP_LAST_GENERATED_KEY, snapshot.generated_at)
+  } catch {
+    // The files are already safely written; localStorage is only the close-warning marker.
+  }
+  return true
 }
 
 function openBackupDatabase(): Promise<IDBDatabase> {
@@ -75,6 +110,13 @@ function timestampForFilename(date: Date) {
 }
 
 export async function chooseLocalBackupFolder() {
+  if (isTauriRuntime()) {
+    const { open } = await import('@tauri-apps/plugin-dialog')
+    const selected = await open({ directory: true, multiple: false })
+    if (typeof selected !== 'string') throw new DOMException('Pemilihan folder dibatalkan', 'AbortError')
+    window.localStorage.setItem(TAURI_BACKUP_PATH_KEY, selected)
+    return selected.split(/[\\/]/).filter(Boolean).pop() || selected
+  }
   if (!supportsDirectoryBackup()) throw new Error('Browser ini belum mendukung penyimpanan langsung ke folder HDD. Gunakan Chrome atau Edge di PC.')
   const handle = await (window as BackupWindow).showDirectoryPicker?.({ mode: 'readwrite' })
   if (!handle || !(await ensurePermission(handle, true))) throw new Error('Izin ke folder backup ditolak')
@@ -83,6 +125,10 @@ export async function chooseLocalBackupFolder() {
 }
 
 export async function getLocalBackupStatus(): Promise<{ supported: boolean; configured: boolean; folderName?: string }> {
+  if (isTauriRuntime()) {
+    const folder = readTauriBackupPath()
+    return { supported: true, configured: Boolean(folder), folderName: folder?.split(/[\\/]/).filter(Boolean).pop() }
+  }
   if (!supportsDirectoryBackup()) return { supported: false, configured: false }
   const handle = await readDirectoryHandle()
   if (!handle) return { supported: true, configured: false }
@@ -90,9 +136,13 @@ export async function getLocalBackupStatus(): Promise<{ supported: boolean; conf
 }
 
 export async function saveLocalBackup(options: { archive?: boolean } = {}) {
+  const snapshot = await readOperationalSnapshot()
+  if (isTauriRuntime()) {
+    const folder = readTauriBackupPath()
+    return folder ? saveTauriBackup(folder, snapshot, Boolean(options.archive)) : false
+  }
   const handle = await readDirectoryHandle()
   if (!handle || !(await ensurePermission(handle))) return false
-  const snapshot = await readOperationalSnapshot()
   if (!snapshot) return false
   const content = JSON.stringify(snapshot, null, 2)
   const filenames = options.archive
@@ -104,7 +154,38 @@ export async function saveLocalBackup(options: { archive?: boolean } = {}) {
     await writable.write(content)
     await writable.close()
   }
+  try {
+    window.localStorage.setItem(LOCAL_BACKUP_LAST_GENERATED_KEY, snapshot.generated_at)
+  } catch {
+    // The files are already safely written; localStorage is only the close-warning marker.
+  }
   return true
+}
+
+export async function startTauriCloseGuard() {
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    const currentWindow = getCurrentWindow()
+    let closeAllowed = false
+    const unlisten = await currentWindow.onCloseRequested(async (event) => {
+      if (closeAllowed) return
+      event.preventDefault()
+      try {
+        if (!await saveLocalBackup({ archive: true })) {
+          window.alert('Pilih folder backup HDD terlebih dahulu sebelum menutup aplikasi.')
+          return
+        }
+        closeAllowed = true
+        await currentWindow.close()
+      } catch (error) {
+        window.alert(`Backup gagal. Aplikasi belum ditutup. ${error instanceof Error ? error.message : ''}`)
+      }
+    })
+    return unlisten
+  } catch {
+    // Running as a normal PWA/browser: native close events are unavailable.
+    return () => undefined
+  }
 }
 
 export function startAutomaticLocalBackup() {

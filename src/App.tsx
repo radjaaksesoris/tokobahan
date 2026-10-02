@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
-import { startAutomaticLocalBackup } from '@/lib/localBackup'
+import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -159,12 +159,21 @@ export default function App() {
 
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
+    let cleanup: (() => void) | undefined
+    void startTauriCloseGuard().then((unlisten) => {
+      cleanup = unlisten
+    })
+    return () => cleanup?.()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
 
     const updatePendingState = async () => {
       try {
         const snapshot = await readOperationalSnapshot()
         hasPendingLocalChangesRef.current = Boolean(
-          snapshot?.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at,
+          snapshot && window.localStorage.getItem(LOCAL_BACKUP_LAST_GENERATED_KEY) !== snapshot.generated_at,
         )
       } catch {
         hasPendingLocalChangesRef.current = false
@@ -172,9 +181,9 @@ export default function App() {
     }
 
     const warnBeforeOfflineClose = (event: BeforeUnloadEvent) => {
-      if (navigator.onLine || !hasPendingLocalChangesRef.current) return
+      if (!hasPendingLocalChangesRef.current) return
       event.preventDefault()
-      event.returnValue = 'Ada data lokal yang belum tersinkron ke Supabase.'
+      event.returnValue = 'Ada perubahan data lokal. Buat backup terlebih dahulu sebelum menutup aplikasi.'
     }
 
     void updatePendingState()
