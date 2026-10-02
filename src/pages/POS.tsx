@@ -17,6 +17,7 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
+  HardDriveDownload,
   Upload,
   X,
   Delete,
@@ -28,6 +29,7 @@ import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
+import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 
 type PaymentMethod = 'cash' | 'qris' | 'credit'
 function sortCatalogProducts(products: Product[]) {
@@ -86,6 +88,7 @@ export default function POS() {
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
   const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'setup' | 'error'>('loading')
   const [syncingSnapshot, setSyncingSnapshot] = useState(false)
+  const [backingUpLocal, setBackingUpLocal] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -397,6 +400,27 @@ export default function POS() {
     }
   }
 
+  async function backupFromHeader() {
+    setBackingUpLocal(true)
+    try {
+      const status = await getLocalBackupStatus()
+      if (!status.configured) {
+        toast.info('Pilih folder backup HDD terlebih dahulu di Pengaturan → Backup.')
+        navigate('/settings')
+        return
+      }
+      if (await saveLocalBackup({ archive: true })) {
+        toast.success('Backup penuh berhasil disimpan ke HDD')
+      } else {
+        toast.error('Backup gagal. Periksa izin folder HDD dan data lokal.')
+      }
+    } catch (error) {
+      toast.error(`Backup gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setBackingUpLocal(false)
+    }
+  }
+
   async function processCheckout() {
     if (items.length === 0) return
     setCheckoutLoading(true)
@@ -465,6 +489,19 @@ export default function POS() {
               <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
               Data lokal
             </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void backupFromHeader()}
+              disabled={backingUpLocal}
+              className="h-7 w-7 min-h-0 shrink-0 rounded-lg p-0"
+              aria-label="Backup data lokal ke HDD"
+              title="Backup data lokal ke HDD"
+              aria-busy={backingUpLocal}
+            >
+              {backingUpLocal ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <HardDriveDownload className="h-4 w-4" />}
+            </Button>
             <Button
               type="button"
               variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
