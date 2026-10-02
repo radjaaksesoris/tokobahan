@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
-import { AlertTriangle, Bell, ChevronDown, ClipboardCheck, Database, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, ClipboardCheck, Database, Download, RefreshCw, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -42,6 +42,7 @@ import type { Json } from '@/types/database'
 import { toTitleCase } from '@/lib/utils'
 import StockOpname from '@/pages/StockOpname'
 import { chooseLocalBackupFolder, getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
+import { checkTauriUpdate, installTauriUpdate, isTauriRuntime } from '@/lib/tauriUpdater'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -91,6 +92,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
   const [localBackupStatus, setLocalBackupStatus] = useState<{ supported: boolean; configured: boolean; folderName?: string }>({ supported: true, configured: false })
   const [localBackupLoading, setLocalBackupLoading] = useState(false)
+  const [updateLoading, setUpdateLoading] = useState(false)
   const renderTabNavigation = (className: string, isDesktop = false) => (
     <nav className={className} aria-label="Bagian pengaturan" role="tablist">
       {([
@@ -302,6 +304,25 @@ export default function Settings() {
       toast.error(error instanceof Error ? error.message : 'Backup lokal gagal')
     } finally {
       setLocalBackupLoading(false)
+    }
+  }
+
+  async function updateApplication() {
+    setUpdateLoading(true)
+    try {
+      const update = await checkTauriUpdate()
+      if (!update) {
+        toast.success('Aplikasi sudah menggunakan versi terbaru')
+        return
+      }
+      if (!window.confirm(`Versi ${update.version} tersedia. Pasang dan restart aplikasi sekarang?`)) return
+      await installTauriUpdate((percent) => {
+        if (percent !== null) toast.info(`Mengunduh pembaruan ${percent}%`, { id: 'tauri-update-progress' })
+      })
+    } catch (error) {
+      toast.error(`Pembaruan gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setUpdateLoading(false)
     }
   }
 
@@ -1061,6 +1082,25 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+      {isTauriRuntime() && (
+        <Card className="border-sky-200 bg-sky-50/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-sky-900">
+              <RefreshCw className="h-5 w-5" />
+              Pembaruan aplikasi
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Versi desktop akan memeriksa pembaruan dari GitHub. Data lokal tidak dihapus saat aplikasi diperbarui.
+            </p>
+            <Button variant="outline" onClick={() => void updateApplication()} disabled={updateLoading}>
+              <RefreshCw className={`h-4 w-4 ${updateLoading ? 'animate-spin' : ''}`} />
+              {updateLoading ? 'Memeriksa pembaruan...' : 'Cek pembaruan aplikasi'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <Card className="border-emerald-200 bg-emerald-50/30">
         <CardHeader>
           <CardTitle className="text-base">Backup otomatis ke HDD PC</CardTitle>

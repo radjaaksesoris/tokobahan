@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
+import { checkTauriUpdate, installTauriUpdate } from '@/lib/tauriUpdater'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -150,6 +151,24 @@ export default function App() {
     if (authLoading || !user || !isAdmin) return
 
     preloadPageChunks()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
+
+    void checkTauriUpdate().then((update) => {
+      if (!update) return
+      const promptKey = `tauri-update-prompted:${update.version}`
+      if (window.sessionStorage.getItem(promptKey)) return
+      window.sessionStorage.setItem(promptKey, '1')
+      const notes = update.notes ? `\n\nCatatan: ${update.notes}` : ''
+      if (!window.confirm(`Versi aplikasi baru tersedia: ${update.version}.${notes}\n\nPasang sekarang?`)) return
+      void installTauriUpdate().catch((error) => {
+        window.alert(`Pembaruan gagal dipasang: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      })
+    }).catch((error) => {
+      console.info('Pemeriksaan pembaruan Tauri dilewati:', error)
+    })
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {

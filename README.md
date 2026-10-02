@@ -144,9 +144,30 @@ gunakan service desktop atau Windows Task Scheduler sebagai lapisan tambahan.
 ## Aplikasi desktop Tauri
 
 Proyek ini juga memiliki wrapper Tauri untuk aplikasi desktop. Jalankan `npm run tauri:dev` untuk pengembangan
-desktop atau `npm run tauri:build` untuk membuat paket pada sistem operasi pengembang. Workflow **Build Tauri
-Windows** dapat dijalankan manual dari GitHub Actions untuk menghasilkan installer Windows `.exe` pada artifact
-workflow. Versi desktop menggunakan alur React dan Supabase yang sama dengan PWA.
+ desktop atau `npm run tauri:build` untuk membuat paket pada sistem operasi pengembang. Workflow **Publish Tauri
+Windows Update** membuat GitHub Release berisi installer Windows dan berkas updater yang sudah ditandatangani.
+Versi desktop menggunakan alur React dan Supabase yang sama dengan PWA.
+
+### Auto-update Tauri
+
+Updater hanya berlaku untuk aplikasi desktop Tauri; PWA tetap diperbarui melalui deploy web.
+
+1. Signing key sudah disiapkan lokal di `.tauri-secrets/raja-aksesoris.key`. Jangan commit atau membagikan file ini.
+2. Di GitHub buka **Settings → Secrets and variables → Actions → New repository secret**:
+   - Nama: `TAURI_SIGNING_PRIVATE_KEY`
+   - Nilai: seluruh isi file `.tauri-secrets/raja-aksesoris.key`
+   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` tidak perlu dibuat karena key ini tidak memakai password.
+3. Saat akan merilis pembaruan, naikkan `version` di `src-tauri/tauri.conf.json`, misalnya `0.1.0` menjadi `0.1.1`, lalu commit dan push.
+4. Buka **Actions → Publish Tauri Windows Update → Run workflow**. Workflow akan membuat tag dan Release secara otomatis.
+
+```bash
+# contoh versi yang ditulis di src-tauri/tauri.conf.json
+"version": "0.1.1"
+```
+
+GitHub Actions akan membuat Release publik dengan `latest.json`, installer, dan signature. Aplikasi desktop memeriksa
+versi baru saat dibuka dan menyediakan tombol **Cek pembaruan aplikasi** di **Pengaturan → Backup**. Admin tetap harus
+menyetujui pemasangan; data lokal tidak dihapus saat update.
 
 ### 1. Push ke GitHub
 
