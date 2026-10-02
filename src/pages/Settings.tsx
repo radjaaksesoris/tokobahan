@@ -394,6 +394,20 @@ export default function Settings() {
   }
 
   async function syncLocalData() {
+    const snapshot = await readOperationalSnapshot()
+    if (!snapshot) {
+      toast.error('Data lokal belum disiapkan. Ambil data server ke perangkat terlebih dahulu.')
+      return
+    }
+    if (!snapshot.server_revision) {
+      toast.error('Snapshot lokal belum memiliki versi dasar server. Ambil ulang data server sebelum mengirim.')
+      return
+    }
+    const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
+    if (!window.confirm(
+      `PERINGATAN: seluruh data lokal (${rowCount} baris) akan dikirim ke Supabase dan dapat menggantikan data server. ` +
+      'Pastikan data lokal ini lengkap dan merupakan sumber data yang benar. Lanjutkan?',
+    )) return
     setSyncingLocalData(true)
     try {
       const result = await syncOperationalSnapshot()
@@ -1030,7 +1044,7 @@ export default function Settings() {
                   {syncingLocalData
                     ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
                     : <Upload className="h-4 w-4" />}
-                  {syncingLocalData ? 'Mengirim snapshot...' : 'Sinkronkan snapshot ke Supabase'}
+                  {syncingLocalData ? 'Mengirim seluruh data aplikasi...' : 'Kirim seluruh data aplikasi ke Server'}
                 </Button>
                 <Button
                   variant="outline"

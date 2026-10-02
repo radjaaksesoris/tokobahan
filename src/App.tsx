@@ -5,7 +5,6 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
-import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { startAutomaticLocalBackup } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -134,7 +133,6 @@ export default function App() {
   const authLoading = useAuthStore((s) => s.loading)
   const isAdmin = profile?.role === 'admin'
   const hasPendingLocalChangesRef = useRef(false)
-  const syncInFlightRef = useRef<Promise<unknown> | null>(null)
 
   useEffect(() => {
     initialize()
@@ -173,17 +171,6 @@ export default function App() {
       }
     }
 
-    const syncBeforeClose = () => {
-      if (!navigator.onLine || !hasPendingLocalChangesRef.current || syncInFlightRef.current) return
-      const syncPromise = syncOperationalSnapshot()
-        .catch((error) => {
-          console.warn('Sinkronisasi otomatis sebelum aplikasi ditutup gagal:', error)
-        })
-        .finally(() => {
-          if (syncInFlightRef.current === syncPromise) syncInFlightRef.current = null
-        })
-      syncInFlightRef.current = syncPromise
-    }
     const warnBeforeOfflineClose = (event: BeforeUnloadEvent) => {
       if (navigator.onLine || !hasPendingLocalChangesRef.current) return
       event.preventDefault()
@@ -192,11 +179,9 @@ export default function App() {
 
     void updatePendingState()
     const timer = window.setInterval(() => void updatePendingState(), 2000)
-    window.addEventListener('pagehide', syncBeforeClose)
     window.addEventListener('beforeunload', warnBeforeOfflineClose)
     return () => {
       window.clearInterval(timer)
-      window.removeEventListener('pagehide', syncBeforeClose)
       window.removeEventListener('beforeunload', warnBeforeOfflineClose)
       hasPendingLocalChangesRef.current = false
     }

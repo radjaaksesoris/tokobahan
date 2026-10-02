@@ -378,6 +378,12 @@ export default function POS() {
       return
     }
 
+    const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
+    if (!window.confirm(
+      `PERINGATAN: seluruh data lokal (${rowCount} baris) akan dikirim ke Supabase. ` +
+      'Pastikan data lokal ini lengkap sebelum melanjutkan. Lanjutkan?',
+    )) return
+
     setSyncingSnapshot(true)
     try {
       const result = await syncOperationalSnapshot()
@@ -473,7 +479,7 @@ export default function POS() {
                     : ''
               }`}
               aria-label={snapshotSyncStatus === 'pending'
-                ? 'Sinkronkan data terbaru ke Supabase'
+                ? 'Kirim seluruh data aplikasi ke Server'
                 : snapshotSyncStatus === 'setup'
                   ? 'Siapkan data lokal untuk sinkronisasi'
                   : 'Status sinkronisasi data'}
