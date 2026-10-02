@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { CartItem, Product, UnitType } from '@/types'
 import { UNIT_FACTORS } from '@/types'
+import { getStockConversion, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 
 interface CartState {
   items: CartItem[]
@@ -23,8 +24,12 @@ export function getPriceForUnit(product: Product, unit: UnitType): { price: numb
   return { price: Math.round(basePrice * conversion), conversion }
 }
 
-function getCostForUnit(product: Product) {
-  return product.cost_price
+function getAvailableQuantity(product: Product, unit: UnitType, items: CartItem[], currentItem?: CartItem) {
+  const reservedBaseUnits = items
+    .filter((item) => item.product.id === product.id && item !== currentItem)
+    .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
+  const availableBaseUnits = Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
+  return availableBaseUnits / getUnitConversion(product, unit)
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -37,8 +42,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       const existing = state.items.find(
         (i) => i.product.id === product.id && i.unit === unit
       )
+      const availableQuantity = getAvailableQuantity(product, unit, state.items, existing)
+      const safeQuantity = Math.min(quantity, availableQuantity)
+      if (safeQuantity <= 0) return state
       if (existing) {
-        const newQty = Math.min(existing.quantity + quantity, product.stock)
+        const newQty = Math.min(existing.quantity + safeQuantity, existing.quantity + availableQuantity)
         return {
           items: state.items.map((i) =>
             i.product.id === product.id && i.unit === unit
@@ -46,27 +54,27 @@ export const useCartStore = create<CartState>((set, get) => ({
                   ...i,
                   quantity: newQty,
                   line_total: newQty * price,
-                  line_cost: newQty * getCostForUnit(product),
-                  line_profit: newQty * price - newQty * getCostForUnit(product),
+                  line_cost: newQty * getUnitCost(product, unit),
+                  line_profit: newQty * price - newQty * getUnitCost(product, unit),
                 }
               : i
           ),
         }
       }
-      const line_total = quantity * price
-      const line_cost = quantity * getCostForUnit(product)
+      const line_total_safe = safeQuantity * price
+      const line_cost = safeQuantity * getUnitCost(product, unit)
       return {
         items: [
           ...state.items,
           {
             product,
             unit,
-            quantity,
+            quantity: safeQuantity,
             unit_price: price,
             conversion,
-            line_total,
+            line_total: line_total_safe,
             line_cost,
-            line_profit: line_total - line_cost,
+            line_profit: line_total_safe - line_cost,
           },
         ],
       }
@@ -81,13 +89,13 @@ export const useCartStore = create<CartState>((set, get) => ({
     set((state) => ({
       items: state.items.map((i) => {
         if (i.product.id === productId && i.unit === unit) {
-          const safeQuantity = Math.min(quantity, i.product.stock)
+          const safeQuantity = Math.min(quantity, getAvailableQuantity(i.product, i.unit, state.items, i))
           return {
             ...i,
             quantity: safeQuantity,
             line_total: safeQuantity * i.unit_price,
-            line_cost: safeQuantity * getCostForUnit(i.product),
-            line_profit: safeQuantity * i.unit_price - safeQuantity * getCostForUnit(i.product),
+            line_cost: safeQuantity * getUnitCost(i.product, i.unit),
+            line_profit: safeQuantity * i.unit_price - safeQuantity * getUnitCost(i.product, i.unit),
           }
         }
         return i

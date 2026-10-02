@@ -13,6 +13,7 @@ import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
+import { getPriceConversion } from '@/lib/productUnits'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -280,7 +281,7 @@ export default function Products() {
     const productPrices: ProductPrice[] = p.prices?.length
       ? p.prices.map((price, index) => (
         index === 0
-          ? { ...price, unit: savedStockUnit, conversion: unitFactors[savedStockUnit] || 1 }
+          ? { ...price, unit: savedStockUnit, conversion: Number(price.conversion) > 0 ? price.conversion : unitFactors[savedStockUnit] || 1 }
           : price
       ))
       : [{ unit: savedStockUnit, price: 0, conversion: unitFactors[savedStockUnit] || 1 }]
@@ -504,6 +505,10 @@ export default function Products() {
       toast.error('Semua harga jual wajib diisi')
       return
     }
+    if (prices.some((price) => !Number.isFinite(price.conversion) || price.conversion <= 0)) {
+      toast.error('Isi per satuan jual harus lebih besar dari 0')
+      return
+    }
     if (!editing && !stockVendorId) {
       toast.error('Nama vendor wajib dipilih')
       return
@@ -526,10 +531,10 @@ export default function Products() {
       sku: sku.trim().toUpperCase() || null,
       cost_price: costPrice,
       cost_unit: costUnit,
-      cost_conversion: unitFactors[costUnit] || 1,
+      cost_conversion: getPriceConversion(prices, costUnit),
       stock: editing ? Number(stock) : 0,
       stock_unit: stockUnit,
-      stock_conversion: 1,
+      stock_conversion: getPriceConversion(prices, stockUnit),
       min_stock: minStock,
       unit_base: unitBase,
       prices: prices.map((price) => ({ ...price })) as Json,
@@ -1289,7 +1294,7 @@ export default function Products() {
                 </div>
                 <div className="space-y-2">
                   {prices.map((pr, idx) => (
-                    <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_auto] items-center gap-2">
+                    <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_auto] items-center gap-2">
                       <Input
                         ref={idx === 0 ? firstSalePriceInputRef : undefined}
                         className="flex-1"
@@ -1311,6 +1316,17 @@ export default function Products() {
                         onChange={(value) => updatePrice(idx, 'unit', value)}
                         disabled={editingPricesOnly}
                         aria-label={`Satuan harga jual ${idx + 1}`}
+                      />
+                      <Input
+                        type="number"
+                        min="0.0001"
+                        step="any"
+                        inputMode="decimal"
+                        value={pr.conversion}
+                        onChange={(event) => updatePrice(idx, 'conversion', Number(event.target.value))}
+                        placeholder="Isi dasar"
+                        aria-label={`Isi unit dasar untuk harga jual ${idx + 1}`}
+                        title="Jumlah unit dasar dalam satu satuan jual. Contoh: 1 Roll = 50 Meter, isi 50."
                       />
                       {prices.length > 1 && (
                         <button
@@ -1371,7 +1387,7 @@ export default function Products() {
                   ))}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Kolom ketiga = jumlah unit dasar (pcs/meter) per satuan jual
+                  Isi dasar = jumlah unit dasar per satuan jual. Contoh: 1 Roll = 50 Meter, isi Roll 50 dan Meter 1.
                 </p>
               </div>
             </CardContent>

@@ -2,6 +2,7 @@ import type { CartItem } from '@/types'
 import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
+import { getStockConversion } from '@/lib/productUnits'
 
 export type OfflinePaymentMethod = 'cash' | 'qris' | 'credit'
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100
@@ -95,11 +96,12 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       if (item.unit_price > configuredUnitPrice) {
         throw new Error(`Harga jual ${product.name} melebihi harga katalog`)
       }
-      if (!Number.isFinite(item.quantity) || item.quantity <= 0 || Number(product.stock) < item.quantity) {
+      const stockQuantity = item.quantity * configuredConversion / getStockConversion(product)
+      if (!Number.isFinite(stockQuantity) || stockQuantity <= 0 || Number(product.stock) < stockQuantity) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }
 
-      let remaining = item.quantity
+      let remaining = stockQuantity
       let lineCost = 0
       const fifoBatches = [...nextBatches.values()]
         .filter((batch) => batch.product_id === item.product.id && Number(batch.quantity_remaining) > 0)
@@ -143,7 +145,7 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       })
       nextProducts.set(item.product.id, {
         ...product,
-        stock: Number(product.stock) - item.quantity,
+          stock: Number(product.stock) - stockQuantity,
         updated_at: createdAt,
       })
     }

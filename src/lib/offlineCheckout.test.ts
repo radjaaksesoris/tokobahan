@@ -115,7 +115,7 @@ describe('offline checkout', () => {
     })
   })
 
-  it('deducts one stock unit for one sold unit regardless of its conversion value', async () => {
+  it('deducts stock proportionally to the selected unit conversion', async () => {
     const dozen: CartItem = {
       ...item,
       unit: 'lusin',
@@ -127,6 +127,18 @@ describe('offline checkout', () => {
       line_profit: 116,
     }
 
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...product, stock: 24 }],
+        product_stock_batches: [
+          { id: 'batch-1', product_id: product.id, quantity_remaining: 2, quantity_received: 2, unit_cost: 2, received_at: '2026-09-01T00:00:00.000Z' },
+          { id: 'batch-2', product_id: product.id, quantity_remaining: 22, quantity_received: 22, unit_cost: 4, received_at: '2026-09-02T00:00:00.000Z' },
+        ],
+      },
+    })
+
     await saveOfflineCheckout({
       invoiceNo: 'OFF-DOZEN-1',
       items: [dozen],
@@ -137,8 +149,8 @@ describe('offline checkout', () => {
     })
 
     const updated = await readOperationalSnapshot()
-    expect(updated?.tables.products[0].stock).toBe(9)
-    expect(updated?.tables.product_stock_batches.map((batch) => batch.quantity_remaining)).toEqual([1, 8])
+    expect(updated?.tables.products[0].stock).toBe(12)
+    expect(updated?.tables.product_stock_batches.map((batch) => batch.quantity_remaining)).toEqual([0, 12])
     expect(updated?.tables.sale_items[0]).toMatchObject({
       quantity: 1,
       unit: 'lusin',
