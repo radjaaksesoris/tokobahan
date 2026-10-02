@@ -29,7 +29,7 @@ import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
-import { getStockConversion, getUnitConversion, getUnitCost } from '@/lib/productUnits'
+import { getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 
 type PaymentMethod = 'cash' | 'qris' | 'credit'
@@ -428,12 +428,21 @@ export default function POS() {
     if (items.length === 0) return
     setCheckoutLoading(true)
 
-    const insufficientStock = items.find((item) => item.quantity > item.product.stock)
+    const requestedStockByProduct = new Map<string, number>()
+    items.forEach((item) => {
+      requestedStockByProduct.set(
+        item.product.id,
+        (requestedStockByProduct.get(item.product.id) || 0) + getStockUnitsForSale(item.product, item.unit, item.quantity),
+      )
+    })
+    const insufficientStock = items.find((item) => (requestedStockByProduct.get(item.product.id) || 0) > Number(item.product.stock))
     if (insufficientStock) {
+      const availableInSelectedUnit = Number(insufficientStock.product.stock) * getStockConversion(insufficientStock.product) /
+        getUnitConversion(insufficientStock.product, insufficientStock.unit)
       toast.error(
-        insufficientStock.product.stock <= 0
+        availableInSelectedUnit <= 0
           ? `${insufficientStock.product.name} habis`
-          : `Stok ${insufficientStock.product.name} hanya tersisa ${insufficientStock.product.stock}`
+          : `Stok ${insufficientStock.product.name} hanya tersisa ${availableInSelectedUnit} ${UNIT_LABELS[insufficientStock.unit] || insufficientStock.unit}`
       )
       setCheckoutLoading(false)
       return
