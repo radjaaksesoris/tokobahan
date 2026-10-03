@@ -43,7 +43,8 @@ function cacheAuth(user: User, expiresAt?: number | null) {
 }
 
 async function loadProfile(user: User) {
-  if (!navigator.onLine) return readOfflineCache<Profile>(profileCacheKey(user.id))
+  const cachedProfile = readOfflineCache<Profile>(profileCacheKey(user.id))
+  if (!navigator.onLine) return cachedProfile
 
   const { data: profile, error } = await supabase
     .from('profiles')
@@ -53,7 +54,7 @@ async function loadProfile(user: User) {
 
   if (error) {
     console.error('Failed to load user profile:', error)
-    return navigator.onLine ? null : readOfflineCache<Profile>(profileCacheKey(user.id))
+    return cachedProfile
   }
 
   if (profile) writeOfflineCache(profileCacheKey(user.id), profile)

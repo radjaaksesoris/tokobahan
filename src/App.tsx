@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
-import { startInactivityLogout } from '@/lib/inactivityLogout'
 import { checkTauriUpdate, installTauriUpdate } from '@/lib/tauriUpdater'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
@@ -213,14 +212,6 @@ export default function App() {
       window.removeEventListener('beforeunload', warnBeforeOfflineClose)
       hasPendingLocalChangesRef.current = false
     }
-  }, [authLoading, isAdmin, user])
-
-  useEffect(() => {
-    if (authLoading || !user || !isAdmin || !window.matchMedia('(max-width: 1023px)').matches) return
-
-    return startInactivityLogout(() => {
-      void useAuthStore.getState().signOut()
-    }, 10 * 60 * 1000)
   }, [authLoading, isAdmin, user])
 
   if (!isSupabaseConfigured) {
