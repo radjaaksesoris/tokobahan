@@ -16,6 +16,7 @@ interface AuthState {
 
 let authInitialized = false
 let authInitializationPromise: Promise<void> | null = null
+let explicitSignOutInProgress = false
 const AUTH_CACHE_KEY = 'auth-session'
 const PROFILE_CACHE_PREFIX = 'profile:'
 const OFFLINE_ACCESS_DAYS = 30
@@ -39,6 +40,14 @@ function cacheAuth(user: User, expiresAt?: number | null) {
     user,
     expiresAt: expiresAt || null,
     offlineExpiresAt: (Date.now() + OFFLINE_ACCESS_DAYS * 24 * 60 * 60 * 1000) / 1000,
+  })
+}
+
+function applyCachedAuth(set: (state: Partial<AuthState>) => void, cached: CachedAuthSession<User>) {
+  set({
+    user: cached.user,
+    profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)),
+    loading: false,
   })
 }
 
@@ -86,14 +95,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         supabase.auth.onAuthStateChange((event, session) => {
+          console.info('[auth] Supabase auth event:', event, { hasSession: Boolean(session?.user) })
           if (!navigator.onLine) {
             const cached = readValidCachedAuth()
             if (cached?.user) {
-              set({ user: cached.user, profile: readOfflineCache<Profile>(profileCacheKey(cached.user.id)), loading: false })
+              applyCachedAuth(set, cached)
               return
             }
           }
           if (!session?.user) {
+            // Supabase can temporarily remove its session after a refresh/network
+            // failure. Keep the current admin session available while the local
+            // cache is still valid. Explicit logout clears the cache first, so it
+            // still takes effect immediately.
+            const cached = readValidCachedAuth()
+            const currentUser = get().user
+            if (!explicitSignOutInProgress && cached?.user && currentUser?.id === cached.user.id) {
+              applyCachedAuth(set, cached)
+              return
+            }
             set({ user: null, profile: null })
             return
           }
@@ -132,7 +152,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .eq('id', data.user.id)
       .maybeSingle()
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError) {
+      console.error('Failed to verify admin profile after sign-in:', profileError)
+      const cachedProfile = readOfflineCache<Profile>(profileCacheKey(data.user.id))
+      if (cachedProfile?.role === 'admin') {
+        cacheAuth(data.user, data.session?.expires_at)
+        set({ user: data.user, profile: cachedProfile, loading: false })
+        return { error: null }
+      }
+      return { error: 'Login berhasil, tetapi profil admin belum dapat diperiksa. Periksa koneksi lalu coba lagi.' }
+    }
+
+    if (!profile || profile.role !== 'admin') {
       const { error: signOutError } = await supabase.auth.signOut()
       if (signOutError) console.error('Failed to sign out non-admin user:', signOutError)
       return { error: 'Aplikasi ini hanya menerima akun administrator.' }
@@ -147,13 +178,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     const userId = get().user?.id
+    explicitSignOutInProgress = true
+    removeOfflineCache(AUTH_CACHE_KEY)
+    if (userId) removeOfflineCache(profileCacheKey(userId))
     try {
       await supabase.auth.signOut()
     } catch (error) {
       console.warn('Remote sign-out failed; clearing local session anyway:', error)
     } finally {
-      removeOfflineCache(AUTH_CACHE_KEY)
-      if (userId) removeOfflineCache(profileCacheKey(userId))
+      explicitSignOutInProgress = false
       set({ user: null, profile: null })
     }
   },
