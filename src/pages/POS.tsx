@@ -980,40 +980,15 @@ export default function POS() {
 
 function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
-  const [firstCopyPrinted, setFirstCopyPrinted] = useState(false)
-  const requiresSecondCopy = receipt.paymentMethod === 'transfer' || receipt.paymentMethod === 'qris'
-  const [autoPrintPending, setAutoPrintPending] = useState(requiresSecondCopy)
-  const autoPrintStarted = useRef(false)
-  const isMounted = useRef(false)
 
   useEffect(() => {
-    isMounted.current = true
-    const focusTimer = window.setTimeout(() => {
-      if (!requiresSecondCopy) printButtonRef.current?.focus()
-    }, 0)
-    const autoPrintTimer = requiresSecondCopy
-      ? window.setTimeout(() => {
-          if (!isMounted.current || autoPrintStarted.current) return
-          autoPrintStarted.current = true
-          window.print()
-          setFirstCopyPrinted(true)
-          setAutoPrintPending(false)
-        }, 0)
-      : undefined
-    return () => {
-      isMounted.current = false
-      window.clearTimeout(focusTimer)
-      if (autoPrintTimer !== undefined) window.clearTimeout(autoPrintTimer)
-    }
-  }, [requiresSecondCopy])
+    const focusTimer = window.setTimeout(() => printButtonRef.current?.focus(), 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [])
 
   function printReceipt() {
     window.print()
-    if (!requiresSecondCopy || firstCopyPrinted) {
-      onClose()
-    } else {
-      setFirstCopyPrinted(true)
-    }
+    onClose()
   }
 
   return (
@@ -1023,38 +998,20 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
           <CardContent className="space-y-4 p-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preview struk 58 mm</p>
-              <h3 className="mt-1 text-xl font-bold text-ink">
-                {autoPrintPending
-                  ? 'Menyiapkan cetakan pertama'
-                  : firstCopyPrinted
-                    ? 'Cetakan pertama selesai'
-                    : 'Siap dicetak'}
-              </h3>
+              <h3 className="mt-1 text-xl font-bold text-ink">Siap dicetak</h3>
               <p className="mt-1 text-sm text-muted-foreground">{receipt.invoiceNo} · {formatCurrency(receipt.total)}</p>
-              {requiresSecondCopy && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {autoPrintPending
-                    ? 'Struk pertama akan dicetak otomatis.'
-                    : firstCopyPrinted
-                    ? 'Cetak salinan kedua jika diperlukan.'
-                    : 'Setelah cetakan pertama, salinan kedua menunggu konfirmasi admin.'}
-                </p>
-              )}
             </div>
             <div className="receipt-preview-frame">
               <ReceiptDocument receipt={receipt} />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={onClose}>
-                {firstCopyPrinted ? 'Selesai' : 'Nanti'}
-              </Button>
+              <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                disabled={autoPrintPending}
                 onClick={printReceipt}
               >
-                {firstCopyPrinted ? 'Cetak salinan kedua' : 'Cetak struk'}
+                Cetak struk
               </Button>
             </div>
           </CardContent>
