@@ -32,6 +32,12 @@ interface Stats {
     transfer: number
     qris: number
   }
+  todayPaymentTotals: {
+    cash: number
+    credit: number
+    transfer: number
+    qris: number
+  }
   totalProducts: number
   lowStock: number
 }
@@ -50,6 +56,7 @@ export default function Dashboard() {
     todayProfit: 0,
     todayOrders: 0,
     todayPaymentCounts: { cash: 0, credit: 0, transfer: 0, qris: 0 },
+    todayPaymentTotals: { cash: 0, credit: 0, transfer: 0, qris: 0 },
     totalProducts: 0,
     lowStock: 0,
   })
@@ -97,6 +104,7 @@ export default function Dashboard() {
           todayProfit: analytics.todayProfit,
           todayOrders: analytics.todayOrders,
           todayPaymentCounts: analytics.todayPaymentCounts,
+          todayPaymentTotals: analytics.todayPaymentTotals,
           totalProducts: analytics.totalProducts,
           lowStock: analytics.lowStock,
         }
@@ -381,14 +389,15 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentCounts.cash, 'bg-teal-50 text-teal-800'],
-            ['KREDIT', stats.todayPaymentCounts.credit, 'bg-amber-50 text-amber-800'],
-            ['TRANSFER', stats.todayPaymentCounts.transfer, 'bg-blue-50 text-blue-800'],
-            ['QR', stats.todayPaymentCounts.qris, 'bg-violet-50 text-violet-800'],
-          ] as const).map(([label, count, color]) => (
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'bg-teal-50 text-teal-800'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'bg-amber-50 text-amber-800'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'bg-blue-50 text-blue-800'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'bg-violet-50 text-violet-800'],
+          ] as const).map(([label, total, count, color]) => (
             <div key={label} className={`rounded-xl px-4 py-3 ${color}`}>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">{label}</p>
-              <p className="mt-1 text-xl font-bold">{loading ? '...' : formatNumber(count)}</p>
+              <p className="mt-1 text-lg font-bold">{loading ? '...' : formatCurrency(total)}</p>
+              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
           ))}
         </CardContent>

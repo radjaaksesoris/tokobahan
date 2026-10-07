@@ -35,6 +35,12 @@ export interface DashboardAnalytics {
     transfer: number
     qris: number
   }
+  todayPaymentTotals: {
+    cash: number
+    credit: number
+    transfer: number
+    qris: number
+  }
   totalProducts: number
   lowStock: number
   lowStockProducts: LowStockProduct[]
@@ -173,13 +179,16 @@ export function getLocalDashboardAnalytics(
   const todayEnd = endOfDay(now)
   const { summary: todaySummary } = summarizeSales(snapshot, todayStart, todayEnd)
   const todayPaymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
+  const todayPaymentTotals = { cash: 0, credit: 0, transfer: 0, qris: 0 }
   for (const sale of asRows(snapshot, 'sales')) {
     if (!inRange(sale.created_at, todayStart, todayEnd)) continue
     const method = String(sale.payment_method || '').toLowerCase()
-    if (method === 'cash') todayPaymentCounts.cash += 1
-    else if (method === 'credit') todayPaymentCounts.credit += 1
-    else if (method === 'transfer') todayPaymentCounts.transfer += 1
-    else if (method === 'qris' || method === 'qr') todayPaymentCounts.qris += 1
+    const total = asNumber(sale.total_amount)
+    const paymentKey = method === 'qr' ? 'qris' : method
+    if (paymentKey === 'cash' || paymentKey === 'credit' || paymentKey === 'transfer' || paymentKey === 'qris') {
+      todayPaymentCounts[paymentKey] += 1
+      todayPaymentTotals[paymentKey] += total
+    }
   }
   const activeProducts = asRows(snapshot, 'products')
     .filter((product) => product.is_active === true)
@@ -193,6 +202,7 @@ export function getLocalDashboardAnalytics(
     todayProfit: todaySummary.total_profit,
     todayOrders: todaySummary.transaction_count,
     todayPaymentCounts,
+    todayPaymentTotals,
     totalProducts: activeProducts.length,
     lowStock,
     lowStockProducts: lowStockProducts.slice(0, 100).map((product) => ({
