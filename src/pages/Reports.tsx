@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
@@ -12,48 +12,29 @@ import {
   X,
   WalletCards,
 } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
-import { getLocalReportAnalytics } from '@/lib/offlineOperationalAnalytics'
+import {
+  getLocalReportAnalytics,
+  type PaymentMethodSummaries,
+} from '@/lib/offlineOperationalAnalytics'
 
 type Period = 'today' | 'week' | 'month' | 'year' | 'custom'
 
-interface DailySummaryRow {
-  sale_date: string
-  total_revenue: number
-  total_credit: number
-  total_cost: number
-  total_profit: number
-  transaction_count: number
-}
 interface VendorPaymentRow {
   total_amount: number
   paid_date: string
 }
 
-const chartColors = {
-  revenue: '#0f766e',
-  credit: '#b45309',
-  profit: '#d97706',
-  vendorPayments: '#c2410c',
-  axis: '#526064',
-  grid: '#d9e1df',
-} as const
-
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('today')
   const [selectedDate, setSelectedDate] = useState('')
-  const [dailySummary, setDailySummary] = useState<DailySummaryRow[]>([])
   const [vendorPayments, setVendorPayments] = useState<VendorPaymentRow[]>([])
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSummaries>({
+    cash: { amount: 0, transaction_count: 0 },
+    credit: { amount: 0, transaction_count: 0 },
+    transfer: { amount: 0, transaction_count: 0 },
+    qris: { amount: 0, transaction_count: 0 },
+  })
   const [summary, setSummary] = useState({
     total_revenue: 0,
     total_credit: 0,
@@ -113,7 +94,7 @@ export default function Reports() {
       }
       const analytics = getLocalReportAnalytics(snapshot, start, end)
       setSummary(analytics.summary)
-      setDailySummary(analytics.dailySummary)
+      setPaymentMethods(analytics.paymentMethods)
       setVendorPayments(analytics.vendorPayments)
       setCachedAt(Date.parse(snapshot.generated_at))
       setDataSource('local')
@@ -123,37 +104,12 @@ export default function Reports() {
   }
 
   const totalRevenue = Number(summary.total_revenue)
-  const totalCredit = Number(summary.total_credit || 0)
   const totalCost = Number(summary.total_cost)
   const totalProfit = Number(summary.total_profit)
   const zakatAmount = Math.max(0, totalProfit) * 0.025
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
   const totalVendorPayments = vendorPayments.reduce((sum, payment) => sum + Number(payment.total_amount), 0)
   const netCash = totalRevenue - totalVendorPayments
-
-  // daily breakdown for chart
-  const dailyMap: Record<string, { revenue: number; credit: number; cost: number; profit: number; vendorPayments: number }> = {}
-  dailySummary.forEach((s) => {
-    const d = s.sale_date
-    dailyMap[d] = {
-      revenue: Number(s.total_revenue),
-      credit: Number(s.total_credit || 0),
-      cost: Number(s.total_cost),
-      profit: Number(s.total_profit),
-      vendorPayments: 0,
-    }
-  })
-  vendorPayments.forEach((payment) => {
-    const date = payment.paid_date
-    if (!dailyMap[date]) dailyMap[date] = { revenue: 0, credit: 0, cost: 0, profit: 0, vendorPayments: 0 }
-    dailyMap[date].vendorPayments += Number(payment.total_amount)
-  })
-  const chartData = Object.entries(dailyMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, v]) => ({
-      date,
-      ...v,
-    }))
 
   const periods: { key: Period; label: string }[] = [
     { key: 'today', label: 'Hari Ini' },
@@ -270,12 +226,31 @@ export default function Reports() {
       <section aria-labelledby="sales-result-heading">
         <div className="mb-3">
           <h3 id="sales-result-heading" className="text-lg font-bold text-ink">Hasil penjualan</h3>
-          <p className="text-sm text-muted-foreground">Angka yang menjelaskan apakah penjualan menghasilkan keuntungan.</p>
+          <p className="text-sm text-muted-foreground">Rincian nilai dan jumlah transaksi berdasarkan metode pembayaran.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {([
+            { key: 'cash', label: 'Tunai', tone: 'border-emerald-200 bg-emerald-50' },
+            { key: 'credit', label: 'Kredit', tone: 'border-amber-200 bg-amber-50' },
+            { key: 'transfer', label: 'Transfer', tone: 'border-sky-200 bg-sky-50' },
+            { key: 'qris', label: 'QR', tone: 'border-violet-200 bg-violet-50' },
+          ] as const).map((method) => (
+            <Card key={method.key} className={`border ${method.tone}`}>
+              <CardContent className="p-3 sm:p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground sm:text-sm">{method.label}</p>
+                <p className="mt-2 break-words text-base font-bold tabular-nums text-ink sm:text-xl">
+                  {formatCurrency(paymentMethods[method.key].amount)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatNumber(paymentMethods[method.key].transaction_count)} transaksi
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             { label: 'Modal barang (HPP)', value: totalCost, note: 'Modal yang melekat pada barang terjual', icon: TrendingDown },
-            { label: 'Penjualan kredit', value: totalCredit, note: 'Belum seluruhnya diterima tunai', icon: WalletCards },
             { label: 'Jumlah transaksi', value: formatNumber(summary.transaction_count), note: 'Transaksi yang tercatat', icon: Calendar },
             { label: 'Perkiraan zakat 2,5%', value: zakatAmount, note: '2,5% dari laba bersih positif', icon: Coins },
           ].map((item) => (
@@ -293,88 +268,6 @@ export default function Reports() {
           ))}
         </div>
       </section>
-
-      {/* Chart */}
-      {chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Arus Kas dan Laba</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 lg:h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={{ stroke: chartColors.axis }}
-                    tickLine={{ stroke: chartColors.axis }}
-                    tick={{ fontSize: 11, fill: chartColors.axis }}
-                  />
-                  <YAxis
-                    axisLine={{ stroke: chartColors.axis }}
-                    tickLine={{ stroke: chartColors.axis }}
-                    tick={{ fontSize: 11, fill: chartColors.axis }}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    formatter={(v: number) => formatCurrency(v)}
-                    contentStyle={{
-                      borderRadius: 10,
-                      border: `1px solid ${chartColors.grid}`,
-                      backgroundColor: '#202a2e',
-                      color: '#fffdf8',
-                      boxShadow: '0 8px 24px rgba(32,42,46,0.18)',
-                    }}
-                    labelStyle={{ color: '#e4a853', fontWeight: 700 }}
-                    itemStyle={{ color: '#fffdf8' }}
-                  />
-                  <Legend
-                    wrapperStyle={{ color: chartColors.axis, fontSize: 13, paddingTop: 8 }}
-                    formatter={(value) => <span className="font-semibold text-ink">{value}</span>}
-                  />
-                  <Bar
-                    dataKey="revenue"
-                    name="Uang Masuk"
-                    fill={chartColors.revenue}
-                    fillOpacity={1}
-                    stroke={chartColors.revenue}
-                    strokeWidth={1}
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="credit"
-                    name="Kredit"
-                    fill={chartColors.credit}
-                    fillOpacity={1}
-                    stroke={chartColors.credit}
-                    strokeWidth={1}
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="profit"
-                    name="Laba"
-                    fill={chartColors.profit}
-                    fillOpacity={1}
-                    stroke={chartColors.profit}
-                    strokeWidth={1}
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="vendorPayments"
-                    name="Bayar Vendor"
-                    fill={chartColors.vendorPayments}
-                    fillOpacity={1}
-                    stroke={chartColors.vendorPayments}
-                    strokeWidth={1}
-                    radius={[3, 3, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Transaction list */}
     </div>

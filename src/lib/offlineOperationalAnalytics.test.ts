@@ -80,6 +80,37 @@ describe('offline operational analytics', () => {
     expect(analytics.vendorPayments).toEqual([
       { paid_date: '2026-10-01', total_amount: 20 },
     ])
+    expect(analytics.paymentMethods).toEqual({
+      cash: { amount: 0, transaction_count: 0 },
+      credit: { amount: 100, transaction_count: 1 },
+      transfer: { amount: 0, transaction_count: 0 },
+      qris: { amount: 0, transaction_count: 0 },
+    })
+  })
+
+  it('breaks report sales down by cash, credit, transfer, and QR', () => {
+    const snapshot = createSnapshot({
+      sales: [
+        { id: 'cash', created_at: '2026-10-01T04:00:00.000Z', total_amount: 10, payment_method: 'cash' },
+        { id: 'credit', created_at: '2026-10-01T05:00:00.000Z', total_amount: 20, payment_method: 'credit' },
+        { id: 'transfer', created_at: '2026-10-01T06:00:00.000Z', total_amount: 30, payment_method: 'transfer' },
+        { id: 'qr', created_at: '2026-10-01T07:00:00.000Z', total_amount: 40, payment_method: 'qr' },
+        { id: 'outside', created_at: '2026-10-02T04:00:00.000Z', total_amount: 500, payment_method: 'transfer' },
+      ],
+    })
+
+    const analytics = getLocalReportAnalytics(
+      snapshot,
+      new Date('2026-10-01T00:00:00.000Z'),
+      new Date('2026-10-01T23:59:59.999Z'),
+    )
+
+    expect(analytics.paymentMethods).toEqual({
+      cash: { amount: 10, transaction_count: 1 },
+      credit: { amount: 20, transaction_count: 1 },
+      transfer: { amount: 30, transaction_count: 1 },
+      qris: { amount: 40, transaction_count: 1 },
+    })
   })
 
   it('summarizes active products, low stock, sales, and payment method counts', () => {

@@ -18,6 +18,13 @@ export interface VendorPaymentRow {
   paid_date: string
 }
 
+export interface PaymentMethodSummary {
+  amount: number
+  transaction_count: number
+}
+
+export type PaymentMethodSummaries = Record<'cash' | 'credit' | 'transfer' | 'qris', PaymentMethodSummary>
+
 export interface LowStockProduct {
   id: string
   name: string
@@ -156,6 +163,20 @@ export function getLocalReportAnalytics(
   end: Date,
 ) {
   const { summary, dailySummary } = summarizeSales(snapshot, start, end)
+  const paymentMethods: PaymentMethodSummaries = {
+    cash: { amount: 0, transaction_count: 0 },
+    credit: { amount: 0, transaction_count: 0 },
+    transfer: { amount: 0, transaction_count: 0 },
+    qris: { amount: 0, transaction_count: 0 },
+  }
+  for (const sale of asRows(snapshot, 'sales')) {
+    if (!inRange(sale.created_at, start, end)) continue
+    const method = String(sale.payment_method || '').toLowerCase()
+    const key = method === 'qr' ? 'qris' : method
+    if (key !== 'cash' && key !== 'credit' && key !== 'transfer' && key !== 'qris') continue
+    paymentMethods[key].amount += asNumber(sale.total_amount)
+    paymentMethods[key].transaction_count += 1
+  }
   const vendorPayments = new Map<string, number>()
   for (const payment of asRows(snapshot, 'vendor_debt_payments')) {
     if (!inRange(payment.paid_at, start, end)) continue
@@ -165,6 +186,7 @@ export function getLocalReportAnalytics(
   return {
     summary,
     dailySummary,
+    paymentMethods,
     vendorPayments: [...vendorPayments.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([paid_date, total_amount]) => ({ paid_date, total_amount })),
