@@ -3,6 +3,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { createOfflineInvoice, resetOfflineInvoiceSequence } from './offlineInvoice'
 import { getQueuedTransactions } from './offlineTransactions'
+import {
+  OPERATIONAL_SNAPSHOT_FORMAT,
+  OPERATIONAL_SNAPSHOT_VERSION,
+  writeOperationalSnapshot,
+} from './offlineOperationalSnapshot'
 
 function deleteOfflineDatabase() {
   return new Promise<void>((resolve, reject) => {
@@ -72,6 +77,36 @@ describe('legacy offline transactions', () => {
   it('creates sequential five-digit local invoice numbers', async () => {
     await expect(createOfflineInvoice()).resolves.toBe('RJA-00001')
     await expect(createOfflineInvoice()).resolves.toBe('RJA-00002')
+  })
+
+  it('starts after the highest invoice number in the server snapshot', async () => {
+    await writeOperationalSnapshot({
+      format: OPERATIONAL_SNAPSHOT_FORMAT,
+      version: OPERATIONAL_SNAPSHOT_VERSION,
+      generated_at: new Date().toISOString(),
+      generated_by: 'admin-1',
+      tables: {
+        categories: [],
+        vendors: [],
+        custom_units: [],
+        products: [],
+        product_stock_batches: [],
+        customers: [],
+        sales: [
+          { id: 'sale-1', invoice_no: 'RJA-00001' },
+          { id: 'sale-2', invoice_no: 'RJA-00003' },
+        ],
+        sale_items: [],
+        vendor_debt_payments: [],
+        customer_debt_payments: [],
+        stock_adjustments: [],
+        sale_returns: [],
+        settlement_idempotency: [],
+      },
+    })
+
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-00004')
+    await expect(createOfflineInvoice()).resolves.toBe('RJA-00005')
   })
 
   it('expands invoice digits and resets only through the reset sequence action', async () => {
