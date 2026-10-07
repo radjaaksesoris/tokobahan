@@ -543,7 +543,7 @@ export default function TransactionHistory() {
                         <span className="hidden lg:inline">{format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}</span>
                       </td>
                       <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize lg:table-cell">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 font-semibold ${
+                        <span className={`inline-flex w-20 justify-center rounded-full px-2.5 py-1 font-semibold ${
                           sale.payment_method.toLowerCase() === 'credit'
                             ? 'bg-amber-100 text-amber-800'
                             : 'bg-emerald-100 text-emerald-800'
