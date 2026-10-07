@@ -31,8 +31,8 @@ import { createOfflineInvoice } from '@/lib/offlineInvoice'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
+import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 
-type PaymentMethod = 'cash' | 'qris' | 'credit'
 function sortCatalogProducts(products: Product[]) {
   return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0))
 }
@@ -103,7 +103,9 @@ export default function POS() {
   }
 
   function createReceipt(invoiceNo: string): ReceiptData {
-    const amountPaid = paymentMethod === 'qris' ? totals.subtotal : Number(cashReceived) || 0
+    const amountPaid = paymentMethod === 'cash' || paymentMethod === 'credit'
+      ? Number(cashReceived) || 0
+      : totals.subtotal
     return {
       invoiceNo,
       createdAt: new Date().toISOString(),
@@ -977,15 +979,40 @@ export default function POS() {
 
 function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
+  const [firstCopyPrinted, setFirstCopyPrinted] = useState(false)
+  const requiresSecondCopy = receipt.paymentMethod === 'transfer' || receipt.paymentMethod === 'qris'
+  const [autoPrintPending, setAutoPrintPending] = useState(requiresSecondCopy)
+  const autoPrintStarted = useRef(false)
+  const isMounted = useRef(false)
 
   useEffect(() => {
-    const focusTimer = window.setTimeout(() => printButtonRef.current?.focus(), 0)
-    return () => window.clearTimeout(focusTimer)
-  }, [])
+    isMounted.current = true
+    const focusTimer = window.setTimeout(() => {
+      if (!requiresSecondCopy) printButtonRef.current?.focus()
+    }, 0)
+    const autoPrintTimer = requiresSecondCopy
+      ? window.setTimeout(() => {
+          if (!isMounted.current || autoPrintStarted.current) return
+          autoPrintStarted.current = true
+          window.print()
+          setFirstCopyPrinted(true)
+          setAutoPrintPending(false)
+        }, 0)
+      : undefined
+    return () => {
+      isMounted.current = false
+      window.clearTimeout(focusTimer)
+      if (autoPrintTimer !== undefined) window.clearTimeout(autoPrintTimer)
+    }
+  }, [requiresSecondCopy])
 
   function printReceipt() {
     window.print()
-    onClose()
+    if (!requiresSecondCopy || firstCopyPrinted) {
+      onClose()
+    } else {
+      setFirstCopyPrinted(true)
+    }
   }
 
   return (
@@ -995,20 +1022,38 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
           <CardContent className="space-y-4 p-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preview struk 58 mm</p>
-              <h3 className="mt-1 text-xl font-bold text-ink">Siap dicetak</h3>
+              <h3 className="mt-1 text-xl font-bold text-ink">
+                {autoPrintPending
+                  ? 'Menyiapkan cetakan pertama'
+                  : firstCopyPrinted
+                    ? 'Cetakan pertama selesai'
+                    : 'Siap dicetak'}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">{receipt.invoiceNo} · {formatCurrency(receipt.total)}</p>
+              {requiresSecondCopy && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {autoPrintPending
+                    ? 'Struk pertama akan dicetak otomatis.'
+                    : firstCopyPrinted
+                    ? 'Cetak salinan kedua jika diperlukan.'
+                    : 'Setelah cetakan pertama, salinan kedua menunggu konfirmasi admin.'}
+                </p>
+              )}
             </div>
             <div className="receipt-preview-frame">
               <ReceiptDocument receipt={receipt} />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={onClose}>Nanti</Button>
+              <Button variant="outline" className="flex-1" onClick={onClose}>
+                {firstCopyPrinted ? 'Selesai' : 'Nanti'}
+              </Button>
               <Button
                 ref={printButtonRef}
                 className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                disabled={autoPrintPending}
                 onClick={printReceipt}
               >
-                Cetak struk
+                {firstCopyPrinted ? 'Cetak salinan kedua' : 'Cetak struk'}
               </Button>
             </div>
           </CardContent>
@@ -1025,12 +1070,6 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
 }
 
 function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
-  const paymentLabels: Record<PaymentMethod, string> = {
-    cash: 'Tunai',
-    qris: 'QRIS',
-    credit: 'Hutang',
-  }
-
   return (
     <article className="receipt-document">
       <header className="receipt-header">
@@ -1063,7 +1102,7 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
       </div>
       <div className="receipt-rule" />
       <div className="receipt-total receipt-total-highlight"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
-      <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      <div className="receipt-summary"><span>Pembayaran</span><span>{PAYMENT_METHOD_LABELS[receipt.paymentMethod]}</span></div>
       {receipt.paymentMethod === 'cash' && (
         <>
           <div className="receipt-summary"><span>Dibayar</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
@@ -1351,7 +1390,7 @@ function CartPanel({
         </div>
 
         <div className="flex gap-1.5">
-          {(['cash', 'credit'] as const).map((m) => (
+          {(['cash', 'credit', 'transfer', 'qris'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPaymentMethod(m)}
@@ -1361,7 +1400,7 @@ function CartPanel({
                   : 'border-white/15 text-stone-300 hover:border-white/30'
               }`}
             >
-              {m === 'cash' ? 'Tunai' : 'Kredit'}
+              {PAYMENT_METHOD_LABELS[m]}
             </button>
           ))}
         </div>

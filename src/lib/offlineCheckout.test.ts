@@ -115,6 +115,31 @@ describe('offline checkout', () => {
     })
   })
 
+  it.each(['transfer', 'qris'] as const)(
+    'saves a fully-paid %s transaction without creating a credit customer',
+    async (paymentMethod) => {
+      await saveOfflineCheckout({
+        invoiceNo: `OFF-${paymentMethod.toUpperCase()}-1`,
+        items: [item],
+        paymentMethod,
+        customerName: null,
+        amountPaid: 30,
+        cashierId: 'admin-1',
+      })
+
+      await expect(readOperationalSnapshot()).resolves.toMatchObject({
+        tables: {
+          sales: [{
+            payment_method: paymentMethod,
+            amount_paid: 30,
+            customer_id: null,
+          }],
+          customers: [],
+        },
+      })
+    },
+  )
+
   it('deducts stock proportionally to the selected unit conversion', async () => {
     const dozen: CartItem = {
       ...item,

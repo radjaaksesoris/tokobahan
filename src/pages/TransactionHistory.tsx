@@ -12,6 +12,7 @@ import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlin
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 
 interface SaleRow {
   id: string
@@ -44,7 +45,7 @@ interface SaleItemWithReturns extends Omit<SaleItemRow, 'returned_quantity'> {
 interface ReprintData {
   invoiceNo: string
   createdAt: string
-  paymentMethod: 'cash' | 'qris' | 'credit'
+  paymentMethod: string
   customerName: string | null
   total: number
   amountPaid: number
@@ -308,7 +309,7 @@ export default function TransactionHistory() {
     const receipt = {
       invoiceNo: selectedSale.invoice_no,
       createdAt: selectedSale.created_at,
-      paymentMethod: selectedSale.payment_method.toLowerCase() as ReprintData['paymentMethod'],
+      paymentMethod: selectedSale.payment_method,
       customerName,
       total: Number(selectedSale.total_amount),
       amountPaid: Number(selectedSale.amount_paid) || 0,
@@ -533,7 +534,7 @@ export default function TransactionHistory() {
                             ? 'bg-amber-100 text-amber-800'
                             : 'bg-emerald-100 text-emerald-800'
                         }`}>
-                          {sale.payment_method}
+                          {getPaymentMethodLabel(sale.payment_method)}
                         </span>
                       </td>
                       <td className="truncate px-1 py-2.5 text-center text-xs font-semibold text-ink lg:px-4 lg:text-sm">
@@ -709,7 +710,6 @@ export default function TransactionHistory() {
 }
 
 function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
-  const paymentLabels = { cash: 'Tunai', qris: 'QRIS', credit: 'Hutang' }
   return (
     <article className="receipt-document">
       <header className="receipt-header">
@@ -745,7 +745,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
         <span>TOTAL</span>
         <strong>{formatCurrency(receipt.total)}</strong>
       </div>
-      <div className="receipt-summary"><span>Pembayaran</span><span>{paymentLabels[receipt.paymentMethod]}</span></div>
+      <div className="receipt-summary"><span>Pembayaran</span><span>{getPaymentMethodLabel(receipt.paymentMethod)}</span></div>
       {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
         <>
           <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>

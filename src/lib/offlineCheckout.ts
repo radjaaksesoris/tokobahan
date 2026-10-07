@@ -3,8 +3,9 @@ import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
 import { getStockConversion } from '@/lib/productUnits'
+import type { PaymentMethod } from '@/lib/paymentMethods'
 
-export type OfflinePaymentMethod = 'cash' | 'qris' | 'credit'
+export type OfflinePaymentMethod = PaymentMethod
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100
 
 interface OfflineCheckoutInput {
