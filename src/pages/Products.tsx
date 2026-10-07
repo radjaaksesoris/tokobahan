@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
-import { formatCurrency, formatCurrencyInput, formatNumber, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, formatStockQuantity, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -783,7 +783,7 @@ export default function Products() {
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
-                        {formatNumber(p.stock)}
+                        {formatStockQuantity(p.stock)}
                       </span>{' '}
                       {getUnitLabel(p.stock_unit)}
                     </td>
@@ -843,7 +843,7 @@ export default function Products() {
                 </CardHeader>
                 <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                    Stok saat ini: <strong>{formatNumber(stockProduct.stock)} {getUnitLabel(stockProduct.stock_unit)}</strong>
+                    Stok saat ini: <strong>{formatStockQuantity(stockProduct.stock)} {getUnitLabel(stockProduct.stock_unit)}</strong>
                   </div>
                   <div>
                     <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>

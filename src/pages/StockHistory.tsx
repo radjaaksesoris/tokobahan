@@ -6,7 +6,7 @@ import { Calendar, ChevronLeft, ChevronRight, History, X } from 'lucide-react'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { UNIT_LABELS, type UnitType } from '@/types'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -245,7 +245,7 @@ export default function StockHistory() {
                         </td>
                         <td className="truncate px-1 py-2 text-center font-medium text-ink/90 sm:px-3">{receipt.product?.name || 'Produk tidak ditemukan'}</td>
                         <td className="truncate px-1 py-2 text-center text-muted-foreground sm:px-3">{receipt.vendor?.name || '-'}</td>
-                        <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatNumber(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
+                        <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatStockQuantity(Number(receipt.quantity_received))} {UNIT_LABELS[receipt.product?.stock_unit || 'satuan']}</td>
                         <td className="whitespace-nowrap px-1 py-2 text-center text-muted-foreground sm:px-3">{formatCurrency(Number(receipt.unit_cost))}</td>
                         <td className="px-1 py-2 text-center sm:px-3">
                           <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${receipt.payment_status === 'kredit' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>

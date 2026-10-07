@@ -18,6 +18,10 @@ export function formatNumber(num: number): string {
   return new Intl.NumberFormat('id-ID').format(num)
 }
 
+export function formatStockQuantity(num: number): string {
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(num)
+}
+
 export function formatCurrencyInput(amount: number): string {
   return amount > 0 ? formatCurrency(amount) : ''
 }

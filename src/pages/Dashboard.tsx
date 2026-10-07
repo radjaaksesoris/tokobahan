@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
 import {
   TrendingUp,
   ShoppingBag,
@@ -436,8 +436,8 @@ export default function Dashboard() {
                   <li key={product.id} className="flex items-center justify-between gap-4 px-6 py-4">
                     <span className="min-w-0 truncate font-medium text-ink/90">{product.name}</span>
                     <span className="shrink-0 text-right text-sm">
-                      <strong className="text-amber-700">{formatNumber(product.stock)}</strong>
-                      <span className="text-muted-foreground"> / min. {formatNumber(product.min_stock)}</span>
+                      <strong className="text-amber-700">{formatStockQuantity(product.stock)}</strong>
+                      <span className="text-muted-foreground"> / min. {formatStockQuantity(product.min_stock)}</span>
                     </span>
                   </li>
                 ))}
