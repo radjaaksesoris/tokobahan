@@ -5,7 +5,7 @@ import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
 import { parseProductPrices, UNIT_LABELS } from '@/types'
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, formatNumber, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -630,7 +630,7 @@ export default function POS() {
                           ? 'text-teal-700'
                           : 'text-muted-foreground'
                     }`}>
-                      {availableStock <= 0 ? 'Barang habis' : `Stok: ${availableStock}`}
+                      {availableStock <= 0 ? 'Barang habis'                       : `Stok: ${formatNumber(availableStock)}`}
                     </p>
                   </div>
                   <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${

@@ -1,5 +1,7 @@
+import { roundStockQuantity } from './productUnits'
+
 export const OFFLINE_DB_NAME = 'konveksi-pos'
-export const OFFLINE_DB_VERSION = 4
+export const OFFLINE_DB_VERSION = 5
 export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
 export const OFFLINE_INVOICE_SEQUENCE_STORE = 'offline-invoice-sequence'
 
@@ -7,6 +9,7 @@ const TRANSACTION_STORE = 'offline-transactions'
 const SETTLEMENT_STORE = 'offline-settlements'
 const SNAPSHOT_KEY = 'current'
 const SYNC_LOCK_KEY = 'sync-lock'
+const STOCK_PRECISION_MIGRATION_KEY = 'stock-precision-3'
 export const OPERATIONAL_SNAPSHOT_FORMAT = 'tokobahan-operational-backup'
 export const OPERATIONAL_SNAPSHOT_VERSION = '3'
 
@@ -83,6 +86,99 @@ export function ensureOfflineOperationalStores(database: IDBDatabase) {
   }
 }
 
+function normalizeSnapshotStockPrecision(snapshot: OperationalSnapshot): OperationalSnapshot {
+  let changed = false
+  const products = snapshot.tables.products.map((product) => {
+    if (typeof product.stock !== 'number' || !Number.isFinite(product.stock)) return product
+    const stock = roundStockQuantity(product.stock)
+    if (stock === product.stock) return product
+    changed = true
+    return { ...product, stock }
+  })
+  const batches = snapshot.tables.product_stock_batches.map((batch) => {
+    let normalized = batch
+    for (const field of ['quantity_received', 'quantity_remaining'] as const) {
+      const quantity = batch[field]
+      if (typeof quantity !== 'number' || !Number.isFinite(quantity)) continue
+      const value = roundStockQuantity(quantity)
+      if (value !== quantity) {
+        normalized = { ...normalized, [field]: value }
+        changed = true
+      }
+    }
+    return normalized
+  })
+  return changed
+    ? { ...snapshot, tables: { ...snapshot.tables, products, product_stock_batches: batches } }
+    : snapshot
+}
+
+function migrateStoredStockPrecision(database: IDBDatabase): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let transaction: IDBTransaction
+    try {
+      transaction = database.transaction(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, 'readwrite')
+    } catch (error) {
+      reject(new Error('Gagal memulai normalisasi presisi stok lokal', { cause: error }))
+      return
+    }
+
+    const store = transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE)
+    const migrationRequest = store.get(STOCK_PRECISION_MIGRATION_KEY)
+    const lockRequest = store.get(SYNC_LOCK_KEY)
+    const snapshotRequest = store.get(SNAPSHOT_KEY)
+    let readyCount = 0
+    const migrate = () => {
+      readyCount += 1
+      if (readyCount !== 3) return
+      if (migrationRequest.result || isActiveSyncLock(lockRequest.result as SyncLock | undefined)) return
+
+      const stored = snapshotRequest.result as StoredSnapshot | undefined
+      const products = stored?.data?.tables?.products
+      const batches = stored?.data?.tables?.product_stock_batches
+      let changed = false
+
+      for (const product of Array.isArray(products) ? products : []) {
+        if (!product || typeof product !== 'object') continue
+        if (typeof product.stock !== 'number' || !Number.isFinite(product.stock)) continue
+        const normalizedStock = roundStockQuantity(product.stock)
+        if (normalizedStock !== product.stock) {
+          product.stock = normalizedStock
+          changed = true
+        }
+      }
+      for (const batch of Array.isArray(batches) ? batches : []) {
+        if (!batch || typeof batch !== 'object') continue
+        for (const field of ['quantity_received', 'quantity_remaining'] as const) {
+          const quantity = batch[field]
+          if (typeof quantity !== 'number' || !Number.isFinite(quantity)) continue
+          const normalizedQuantity = roundStockQuantity(quantity)
+          if (normalizedQuantity !== quantity) {
+            batch[field] = normalizedQuantity
+            changed = true
+          }
+        }
+      }
+
+      if (changed && stored) store.put(stored)
+      store.put({ id: STOCK_PRECISION_MIGRATION_KEY, completed: true })
+    }
+    migrationRequest.onsuccess = migrate
+    lockRequest.onsuccess = migrate
+    snapshotRequest.onsuccess = migrate
+
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(new Error(
+      'Gagal menormalisasi presisi stok lokal',
+      { cause: transaction.error },
+    ))
+    transaction.onabort = () => reject(new Error(
+      'Normalisasi presisi stok lokal dibatalkan',
+      { cause: transaction.error },
+    ))
+  })
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
@@ -92,7 +188,16 @@ function openDatabase(): Promise<IDBDatabase> {
 
     const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION)
     request.onupgradeneeded = () => ensureOfflineOperationalStores(request.result)
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const database = request.result
+      void migrateStoredStockPrecision(database).then(
+        () => resolve(database),
+        (error: unknown) => {
+          database.close()
+          reject(error)
+        },
+      )
+    }
     request.onerror = () => reject(
       new Error('Gagal membuka penyimpanan snapshot operasional', { cause: request.error }),
     )
@@ -178,7 +283,7 @@ export function readOperationalSnapshot<
 export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
-  validateOperationalSnapshot(snapshot)
+  const normalizedSnapshot = normalizeSnapshotStockPrecision(validateOperationalSnapshot(snapshot))
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
@@ -187,7 +292,7 @@ export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
         return
       }
       store.delete(SYNC_LOCK_KEY)
-      store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+      store.put({ id: SNAPSHOT_KEY, data: normalizedSnapshot } satisfies StoredSnapshot)
     }
   })
 }
@@ -195,7 +300,7 @@ export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
 export function initializeOperationalSnapshotIfMissing<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
-  validateOperationalSnapshot(snapshot)
+  const normalizedSnapshot = normalizeSnapshotStockPrecision(validateOperationalSnapshot(snapshot))
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     const snapshotRequest = store.get(SNAPSHOT_KEY)
@@ -210,7 +315,7 @@ export function initializeOperationalSnapshotIfMissing<TSnapshot extends Operati
         abortWithError(new Error('Snapshot lokal sudah tersedia; inisialisasi tidak dijalankan'))
       } else {
         store.delete(SYNC_LOCK_KEY)
-        store.add({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+        store.add({ id: SNAPSHOT_KEY, data: normalizedSnapshot } satisfies StoredSnapshot)
       }
     }
     lockRequest.onsuccess = () => {
@@ -324,7 +429,7 @@ export function replaceOperationalSnapshotAfterRefresh(
   snapshot: OperationalSnapshot,
   lockToken: string,
 ): Promise<void> {
-  validateOperationalSnapshot(snapshot)
+  const normalizedSnapshot = normalizeSnapshotStockPrecision(validateOperationalSnapshot(snapshot))
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
@@ -332,7 +437,7 @@ export function replaceOperationalSnapshotAfterRefresh(
         abortWithError(new Error('Snapshot lokal tidak terkunci untuk penyegaran'))
         return
       }
-      store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+      store.put({ id: SNAPSHOT_KEY, data: normalizedSnapshot } satisfies StoredSnapshot)
       store.delete(SYNC_LOCK_KEY)
     }
   })
@@ -362,15 +467,17 @@ export function updateOperationalSnapshot<TResult>(
         if (!current) throw new Error('Snapshot lokal belum diinisialisasi')
 
         const next = update(validateOperationalSnapshot(current.data))
-        validateOperationalSnapshot(next.snapshot)
-        const snapshot = next.snapshot === current.data
-          ? next.snapshot
+        const normalizedSnapshot = normalizeSnapshotStockPrecision(
+          validateOperationalSnapshot(next.snapshot),
+        )
+        const snapshot = normalizedSnapshot === current.data
+          ? normalizedSnapshot
           : {
-              ...next.snapshot,
+              ...normalizedSnapshot,
               generated_at: new Date().toISOString(),
-              synced_generated_at: next.snapshot.synced_generated_at ?? current.data.generated_at,
+              synced_generated_at: normalizedSnapshot.synced_generated_at ?? current.data.generated_at,
             }
-                store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+        store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
         setResult(next.result)
       } catch (error) {
         abortWithError(error)

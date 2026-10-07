@@ -183,6 +183,58 @@ describe('offline checkout', () => {
     })
   })
 
+  it('keeps repeated fractional stock deductions at three-decimal precision', async () => {
+    const convertedProduct = {
+      ...product,
+      stock: 10,
+      stock_conversion: 2.54,
+    }
+    const convertedItem: CartItem = {
+      ...item,
+      product: convertedProduct,
+      unit: 'lusin',
+      quantity: 0.1,
+      unit_price: 120,
+      conversion: 12,
+      line_total: 12,
+      line_cost: 0.4,
+      line_profit: 11.6,
+    }
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [convertedProduct],
+        product_stock_batches: [{
+          id: 'batch-1',
+          product_id: product.id,
+          quantity_remaining: 10,
+          quantity_received: 10,
+          unit_cost: 1,
+          received_at: '2026-09-01T00:00:00.000Z',
+        }],
+      },
+    })
+
+    for (const invoiceNo of ['OFF-FRACTIONAL-1', 'OFF-FRACTIONAL-2']) {
+      await saveOfflineCheckout({
+        invoiceNo,
+        items: [convertedItem],
+        paymentMethod: 'cash',
+        customerName: null,
+        amountPaid: 12,
+        cashierId: 'admin-1',
+      })
+    }
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        products: [{ stock: 9.056 }],
+        product_stock_batches: [{ quantity_remaining: 9.056 }],
+      },
+    })
+  })
+
   it('rejects stale catalog prices and conversions without changing stock', async () => {
     await expect(saveOfflineCheckout({
       invoiceNo: 'OFF-STALE-PRICE',

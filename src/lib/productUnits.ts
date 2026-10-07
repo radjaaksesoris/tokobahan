@@ -6,6 +6,10 @@ function positiveNumber(value: unknown) {
   return Number.isFinite(number) && number > 0 ? number : null
 }
 
+export function roundStockQuantity(value: number) {
+  return Math.sign(value) * Math.round((Math.abs(value) + Number.EPSILON) * 1000) / 1000
+}
+
 export function getConfiguredPrice(product: Pick<Product, 'prices'>, unit: UnitType): ProductPrice | undefined {
   return product.prices?.find((price) => price.unit === unit)
 }

@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
+import { getStockConversion, roundStockQuantity } from '@/lib/productUnits'
 
 interface SaleRow {
   id: string
@@ -30,9 +31,11 @@ interface SaleRow {
 
 interface SaleItemRow {
   id: string
+  product_id: string
   product_name: string
   unit: string
   quantity: number
+  conversion: number
   returned_quantity: number
   returned_amount: number
   unit_price: number
@@ -157,7 +160,7 @@ export default function TransactionHistory() {
       const snapshot = await readOperationalSnapshot()
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       const [saleItems, saleReturns] = await Promise.all([
-        readOperationalTable<SaleItemWithReturns & { sale_id: string }>('sale_items'),
+        readOperationalTable<SaleItemWithReturns & { sale_id: string; product_id: string; conversion: number }>('sale_items'),
         readOperationalTable<{
           sale_item_id: string
           quantity: number
@@ -169,9 +172,11 @@ export default function TransactionHistory() {
         const returns = saleReturns.filter((returned) => returned.sale_item_id === item.id)
         return {
           id: item.id,
+          product_id: item.product_id,
           product_name: item.product_name,
           unit: item.unit,
           quantity: Number(item.quantity),
+          conversion: Number(item.conversion),
           returned_quantity: returns.reduce((sum, returned) => sum + Number(returned.quantity), 0),
           returned_amount: returns.reduce((sum, returned) => sum + Number(returned.refund_amount), 0),
           unit_price: Number(item.unit_price),
@@ -224,6 +229,14 @@ export default function TransactionHistory() {
 
           const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100
           const refund = roundMoney((quantity / itemQuantity) * Number(item.line_total))
+          const conversion = Number(item.conversion)
+          if (!Number.isFinite(conversion) || conversion <= 0) {
+            throw new Error('Konversi satuan pada barang transaksi tidak valid')
+          }
+          const stockQuantity = roundStockQuantity(quantity * conversion / getStockConversion(product))
+          if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) {
+            throw new Error('Jumlah stok retur terlalu kecil untuk dicatat dengan presisi stok saat ini')
+          }
           const priorPayments = snapshot.tables.customer_debt_payments
             .filter((payment) => payment.sale_id === sale.id)
             .reduce((sum, payment) => sum + Number(payment.amount), 0)
@@ -257,8 +270,8 @@ export default function TransactionHistory() {
                 product_stock_batches: [...snapshot.tables.product_stock_batches, {
                   id: crypto.randomUUID(),
                   product_id: product.id,
-                  quantity_received: quantity,
-                  quantity_remaining: quantity,
+                  quantity_received: stockQuantity,
+                  quantity_remaining: stockQuantity,
                   unit_cost: restoredUnitCost,
                   vendor_id: null,
                   payment_status: 'lunas',
@@ -267,7 +280,7 @@ export default function TransactionHistory() {
                   created_at: now,
                 }],
                 products: snapshot.tables.products.map((row) => row.id === product.id
-                  ? { ...row, stock: Number(row.stock) + quantity, updated_at: now }
+                  ? { ...row, stock: roundStockQuantity(Number(row.stock) + stockQuantity), updated_at: now }
                   : row),
                 sales: snapshot.tables.sales.map((row) => row.id === sale.id
                   ? {

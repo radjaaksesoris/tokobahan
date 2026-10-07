@@ -70,10 +70,12 @@ describe('offline operational snapshot storage', () => {
     await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
 
     const replacement = createSnapshot({
-      products: [{ id: 'product-2', name: 'Benang' }],
+      products: [{ id: 'product-2', name: 'Benang', stock: 3.9400000000000004 }],
     })
     await writeOperationalSnapshot(replacement)
-    await expect(readOperationalSnapshot()).resolves.toEqual(replacement)
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: { products: [{ id: 'product-2', name: 'Benang', stock: 3.94 }] },
+    })
 
     await clearOperationalSnapshot()
     await expect(readOperationalSnapshot()).resolves.toBeNull()
@@ -136,6 +138,44 @@ describe('offline operational snapshot storage', () => {
 
     expect(transactionRows).toEqual([{ id: 'transaction-1' }])
     expect(settlementRows).toEqual([{ id: 'settlement-1' }])
+  })
+
+  it('normalizes existing product and batch stock to the server precision', async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('konveksi-pos', 4)
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, { keyPath: 'id' })
+      }
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const transaction = database.transaction(OFFLINE_OPERATIONAL_SNAPSHOT_STORE, 'readwrite')
+    transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE).put({
+      id: 'current',
+      data: createSnapshot({
+        products: [{ id: 'product-1', stock: 3.9400000000000004 }],
+        product_stock_batches: [{
+          id: 'batch-1',
+          quantity_received: 3.9400000000000004,
+          quantity_remaining: 3.9400000000000004,
+        }],
+      }),
+    })
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error)
+    })
+    database.close()
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        products: [{ stock: 3.94 }],
+        product_stock_batches: [{
+          quantity_received: 3.94,
+          quantity_remaining: 3.94,
+        }],
+      },
+    })
   })
 
   it('rejects with an explicit error when IndexedDB is unavailable', async () => {

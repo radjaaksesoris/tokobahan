@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, formatNumber, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -13,7 +13,7 @@ import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
-import { getPriceConversion } from '@/lib/productUnits'
+import { getPriceConversion, roundStockQuantity } from '@/lib/productUnits'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -304,7 +304,7 @@ export default function Products() {
 
   async function handleStockReceipt() {
     if (!stockProduct) return
-    const quantity = Number(stockQuantity)
+    const quantity = roundStockQuantity(Number(stockQuantity))
     if (quantity <= 0 || stockCost < 0) {
       toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
       return
@@ -335,7 +335,7 @@ export default function Products() {
               tables: {
                 ...current.tables,
                 products: current.tables.products.map((row) => row.id === stockProduct.id
-                  ? { ...row, stock: Number(row.stock) + quantity, cost_price: stockCost, updated_at: now }
+                  ? { ...row, stock: roundStockQuantity(Number(row.stock) + quantity), cost_price: stockCost, updated_at: now }
                   : row),
                 product_stock_batches: [...current.tables.product_stock_batches, {
                   id: crypto.randomUUID(),
@@ -532,7 +532,7 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: getPriceConversion(prices, costUnit),
-      stock: editing ? Number(stock) : 0,
+      stock: editing ? roundStockQuantity(Number(stock)) : 0,
       stock_unit: stockUnit,
       stock_conversion: getPriceConversion(prices, stockUnit),
       min_stock: minStock,
@@ -584,7 +584,7 @@ export default function Products() {
             category_id: editing?.category_id ?? null,
             image_url: editing?.image_url ?? null,
             prices: prices.map((price) => ({ ...price })),
-            stock: editing ? Number(stock) : initialStock,
+            stock: editing ? roundStockQuantity(Number(stock)) : roundStockQuantity(initialStock),
             created_at: editing?.created_at ?? now,
             updated_at: now,
           }
@@ -783,7 +783,7 @@ export default function Products() {
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
-                        {p.stock}
+                        {formatNumber(p.stock)}
                       </span>{' '}
                       {getUnitLabel(p.stock_unit)}
                     </td>
@@ -843,7 +843,7 @@ export default function Products() {
                 </CardHeader>
                 <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                    Stok saat ini: <strong>{stockProduct.stock} {getUnitLabel(stockProduct.stock_unit)}</strong>
+                    Stok saat ini: <strong>{formatNumber(stockProduct.stock)} {getUnitLabel(stockProduct.stock_unit)}</strong>
                   </div>
                   <div>
                     <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>

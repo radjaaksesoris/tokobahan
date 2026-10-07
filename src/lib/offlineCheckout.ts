@@ -2,7 +2,7 @@ import type { CartItem } from '@/types'
 import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
-import { getStockConversion } from '@/lib/productUnits'
+import { getStockConversion, roundStockQuantity } from '@/lib/productUnits'
 import type { PaymentMethod } from '@/lib/paymentMethods'
 
 export type OfflinePaymentMethod = PaymentMethod
@@ -97,7 +97,7 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       if (item.unit_price > configuredUnitPrice) {
         throw new Error(`Harga jual ${product.name} melebihi harga katalog`)
       }
-      const stockQuantity = item.quantity * configuredConversion / getStockConversion(product)
+      const stockQuantity = roundStockQuantity(item.quantity * configuredConversion / getStockConversion(product))
       if (!Number.isFinite(stockQuantity) || stockQuantity <= 0 || Number(product.stock) < stockQuantity) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }
@@ -114,12 +114,12 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       for (const batch of fifoBatches) {
         if (remaining <= 0) break
         const available = Number(batch.quantity_remaining)
-        const consumed = Math.min(remaining, available)
+        const consumed = roundStockQuantity(Math.min(remaining, available))
         lineCost += consumed * Number(batch.unit_cost)
-        remaining -= consumed
+        remaining = roundStockQuantity(remaining - consumed)
         nextBatches.set(String(batch.id), {
           ...batch,
-          quantity_remaining: available - consumed,
+          quantity_remaining: roundStockQuantity(available - consumed),
         })
       }
       if (remaining > 0) throw new Error(`Batch HPP untuk ${item.product.name} tidak mencukupi`)
@@ -146,7 +146,7 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       })
       nextProducts.set(item.product.id, {
         ...product,
-          stock: Number(product.stock) - stockQuantity,
+        stock: roundStockQuantity(Number(product.stock) - stockQuantity),
         updated_at: createdAt,
       })
     }
