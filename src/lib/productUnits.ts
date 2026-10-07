@@ -33,7 +33,19 @@ export function getCostConversion(product: Pick<Product, 'prices' | 'cost_conver
 }
 
 export function getStockUnitsForSale(product: Pick<Product, 'prices' | 'stock_conversion' | 'stock_unit'>, unit: UnitType, quantity: number) {
-  return quantity * getUnitConversion(product, unit) / getStockConversion(product)
+  return roundStockQuantity(quantity * getUnitConversion(product, unit) / getStockConversion(product))
+}
+
+export function getStockUnitCostForSale(
+  product: { prices?: unknown; stock_conversion?: unknown; stock_unit?: unknown },
+  saleUnitConversion: number,
+  saleUnitCost: number,
+) {
+  if (!Number.isFinite(saleUnitConversion) || saleUnitConversion <= 0 || !Number.isFinite(saleUnitCost) || saleUnitCost < 0) {
+    throw new Error('Konversi atau HPP satuan penjualan tidak valid')
+  }
+  const stockUnitCost = saleUnitCost * getStockConversion(product) / saleUnitConversion
+  return Math.round((stockUnitCost + Number.EPSILON) * 100) / 100
 }
 
 export function getUnitCost(product: Pick<Product, 'prices' | 'cost_conversion' | 'cost_unit' | 'cost_price'>, unit: UnitType) {

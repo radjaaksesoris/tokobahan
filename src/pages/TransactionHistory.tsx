@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
-import { getStockConversion, roundStockQuantity } from '@/lib/productUnits'
+import { getStockConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
 
 interface SaleRow {
   id: string
@@ -249,7 +249,11 @@ export default function TransactionHistory() {
             : refund
           const now = new Date().toISOString()
           const returnId = crypto.randomUUID()
-          const restoredUnitCost = Number(item.line_cost) / itemQuantity
+          const restoredUnitCost = getStockUnitCostForSale(
+            product,
+            conversion,
+            Number(item.line_cost) / itemQuantity,
+          )
 
           return {
             snapshot: {
