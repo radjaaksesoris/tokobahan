@@ -82,17 +82,46 @@ describe('offline operational analytics', () => {
     ])
   })
 
-  it('summarizes active products and low stock with dashboard cash and profit', () => {
+  it('summarizes active products, low stock, sales, and payment method counts', () => {
     const snapshot = createSnapshot({
-      sales: [{
-        id: 'sale-today',
-        created_at: '2026-10-01T04:00:00.000Z',
-        amount_paid: 20,
-        total_amount: 20,
-        total_cost: 12,
-        total_profit: 8,
-        payment_method: 'cash',
-      }],
+      sales: [
+        {
+          id: 'sale-cash',
+          created_at: '2026-10-01T04:00:00.000Z',
+          amount_paid: 20,
+          total_amount: 20,
+          total_cost: 12,
+          total_profit: 8,
+          payment_method: 'cash',
+        },
+        {
+          id: 'sale-credit',
+          created_at: '2026-10-01T05:00:00.000Z',
+          amount_paid: 0,
+          total_amount: 30,
+          total_cost: 12,
+          total_profit: 18,
+          payment_method: 'credit',
+        },
+        {
+          id: 'sale-transfer',
+          created_at: '2026-10-01T06:00:00.000Z',
+          amount_paid: 40,
+          total_amount: 40,
+          total_cost: 12,
+          total_profit: 28,
+          payment_method: 'transfer',
+        },
+        {
+          id: 'sale-qr',
+          created_at: '2026-10-01T07:00:00.000Z',
+          amount_paid: 50,
+          total_amount: 50,
+          total_cost: 12,
+          total_profit: 38,
+          payment_method: 'qris',
+        },
+      ],
       products: [
         { id: 'active-low', name: 'Benang', stock: 2, min_stock: 3, is_active: true },
         { id: 'active-ok', name: 'Kain', stock: 8, min_stock: 2, is_active: true },
@@ -103,14 +132,13 @@ describe('offline operational analytics', () => {
     const analytics = getLocalDashboardAnalytics(snapshot, new Date('2026-10-01T12:00:00.000Z'))
 
     expect(analytics).toMatchObject({
-      todaySales: 20,
-      todayProfit: 8,
-      todayOrders: 1,
+      todaySales: 110,
+      todayProfit: 92,
+      todayOrders: 4,
+      todayPaymentCounts: { cash: 1, credit: 1, transfer: 1, qris: 1 },
       totalProducts: 2,
       lowStock: 1,
       lowStockProducts: [{ id: 'active-low', name: 'Benang', stock: 2, min_stock: 3 }],
     })
-    expect(analytics.weekData).toHaveLength(7)
-    expect(analytics.weekData.at(-1)).toMatchObject({ sales: 20, profit: 8 })
   })
 })

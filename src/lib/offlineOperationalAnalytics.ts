@@ -1,5 +1,4 @@
-import { format, subDays, startOfDay, endOfDay } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { startOfDay, endOfDay } from 'date-fns'
 import type { OperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 
 export interface SalesSummary {
@@ -30,9 +29,14 @@ export interface DashboardAnalytics {
   todaySales: number
   todayProfit: number
   todayOrders: number
+  todayPaymentCounts: {
+    cash: number
+    credit: number
+    transfer: number
+    qris: number
+  }
   totalProducts: number
   lowStock: number
-  weekData: { date: string; sales: number; profit: number }[]
   lowStockProducts: LowStockProduct[]
 }
 
@@ -168,36 +172,29 @@ export function getLocalDashboardAnalytics(
   const todayStart = startOfDay(now)
   const todayEnd = endOfDay(now)
   const { summary: todaySummary } = summarizeSales(snapshot, todayStart, todayEnd)
-  const weekStart = startOfDay(subDays(now, 6))
-  const { dailySummary } = summarizeSales(snapshot, weekStart, endOfDay(now))
+  const todayPaymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
+  for (const sale of asRows(snapshot, 'sales')) {
+    if (!inRange(sale.created_at, todayStart, todayEnd)) continue
+    const method = String(sale.payment_method || '').toLowerCase()
+    if (method === 'cash') todayPaymentCounts.cash += 1
+    else if (method === 'credit') todayPaymentCounts.credit += 1
+    else if (method === 'transfer') todayPaymentCounts.transfer += 1
+    else if (method === 'qris' || method === 'qr') todayPaymentCounts.qris += 1
+  }
   const activeProducts = asRows(snapshot, 'products')
     .filter((product) => product.is_active === true)
   const lowStockProducts = activeProducts
     .filter((product) => asNumber(product.stock) <= asNumber(product.min_stock))
     .sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')))
   const lowStock = lowStockProducts.length
-  const dayValues = new Map(dailySummary.map((row) => [
-    row.sale_date,
-    { sales: row.total_revenue, profit: row.total_profit },
-  ]))
-  const weekData = Array.from({ length: 7 }, (_, index) => {
-    const day = subDays(now, 6 - index)
-    const key = format(day, 'yyyy-MM-dd')
-    const values = dayValues.get(key) || { sales: 0, profit: 0 }
-    return {
-      date: format(day, 'EEE', { locale: localeId }),
-      sales: values.sales,
-      profit: values.profit,
-    }
-  })
 
   return {
     todaySales: todaySummary.total_revenue,
     todayProfit: todaySummary.total_profit,
     todayOrders: todaySummary.transaction_count,
+    todayPaymentCounts,
     totalProducts: activeProducts.length,
     lowStock,
-    weekData,
     lowStockProducts: lowStockProducts.slice(0, 100).map((product) => ({
       id: String(product.id),
       name: String(product.name || ''),

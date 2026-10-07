@@ -10,17 +10,6 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from 'recharts'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -37,9 +26,14 @@ interface Stats {
   todaySales: number
   todayProfit: number
   todayOrders: number
+  todayPaymentCounts: {
+    cash: number
+    credit: number
+    transfer: number
+    qris: number
+  }
   totalProducts: number
   lowStock: number
-  weekData: { date: string; sales: number; profit: number }[]
 }
 
 interface LowStockProduct {
@@ -55,9 +49,9 @@ export default function Dashboard() {
     todaySales: 0,
     todayProfit: 0,
     todayOrders: 0,
+    todayPaymentCounts: { cash: 0, credit: 0, transfer: 0, qris: 0 },
     totalProducts: 0,
     lowStock: 0,
-    weekData: [],
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -102,9 +96,9 @@ export default function Dashboard() {
           todaySales: analytics.todaySales,
           todayProfit: analytics.todayProfit,
           todayOrders: analytics.todayOrders,
+          todayPaymentCounts: analytics.todayPaymentCounts,
           totalProducts: analytics.totalProducts,
           lowStock: analytics.lowStock,
-          weekData: analytics.weekData,
         }
         setStats(nextStats)
         setLowStockProducts(analytics.lowStockProducts)
@@ -267,13 +261,6 @@ export default function Dashboard() {
       watermark: 'text-emerald-600/[0.09]',
     },
     {
-      title: 'Transaksi Hari Ini',
-      value: formatNumber(stats.todayOrders),
-      icon: DollarSign,
-      color: 'bg-amber-100 text-amber-700',
-      watermark: 'text-amber-600/[0.09]',
-    },
-    {
       title: 'Produk Aktif',
       value: formatNumber(stats.totalProducts),
       icon: Package,
@@ -356,7 +343,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {cards.map((c) => (
           <Card key={c.title} className="relative overflow-hidden border-0">
                 <c.icon
@@ -378,60 +365,34 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card className="relative overflow-hidden border-0">
-          <TrendingUp aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 text-teal-700/[0.08]" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="text-base">Penjualan 7 Hari</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-44 sm:h-56 lg:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.weekData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    formatter={(v: number) => formatCurrency(v)}
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="#0f766e"
-                    fill="#99f6e4"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+      <Card className="relative overflow-hidden border-0">
+        <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-amber-600/[0.09]" />
+        <CardHeader className="relative z-10 border-b border-stone-100 pb-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <CardTitle className="text-base">Rincian Transaksi Hari Ini</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Jumlah transaksi berdasarkan metode pembayaran</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-0">
-          <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-amber-600/[0.09]" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="text-base">Laba 7 Hari</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-44 sm:h-56 lg:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.weekData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    formatter={(v: number) => formatCurrency(v)}
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
-                  />
-                  <Bar dataKey="profit" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="shrink-0 text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-ink">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent className="relative z-10 grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
+          {([
+            ['CASH', stats.todayPaymentCounts.cash, 'bg-teal-50 text-teal-800'],
+            ['KREDIT', stats.todayPaymentCounts.credit, 'bg-amber-50 text-amber-800'],
+            ['TRANSFER', stats.todayPaymentCounts.transfer, 'bg-blue-50 text-blue-800'],
+            ['QR', stats.todayPaymentCounts.qris, 'bg-violet-50 text-violet-800'],
+          ] as const).map(([label, count, color]) => (
+            <div key={label} className={`rounded-xl px-4 py-3 ${color}`}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">{label}</p>
+              <p className="mt-1 text-xl font-bold">{loading ? '...' : formatNumber(count)}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {showLowStockModal && (
         <div
