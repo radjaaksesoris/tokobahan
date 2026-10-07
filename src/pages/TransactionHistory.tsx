@@ -13,6 +13,7 @@ import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
+import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
 
 interface SaleRow {
   id: string
@@ -745,7 +746,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
         <span>TOTAL</span>
         <strong>{formatCurrency(receipt.total)}</strong>
       </div>
-      <div className="receipt-summary"><span>Pembayaran</span><span>{getPaymentMethodLabel(receipt.paymentMethod)}</span></div>
+      <ReceiptPaymentMethod method={receipt.paymentMethod} />
       {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
         <>
           <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>

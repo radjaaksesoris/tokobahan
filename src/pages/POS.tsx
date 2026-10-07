@@ -32,6 +32,7 @@ import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
+import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
 
 function sortCatalogProducts(products: Product[]) {
   return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0))
@@ -1102,7 +1103,7 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
       </div>
       <div className="receipt-rule" />
       <div className="receipt-total receipt-total-highlight"><span>TOTAL</span><strong>{formatCurrency(receipt.total)}</strong></div>
-      <div className="receipt-summary"><span>Pembayaran</span><span>{PAYMENT_METHOD_LABELS[receipt.paymentMethod]}</span></div>
+      <ReceiptPaymentMethod method={receipt.paymentMethod} />
       {receipt.paymentMethod === 'cash' && (
         <>
           <div className="receipt-summary"><span>Dibayar</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
