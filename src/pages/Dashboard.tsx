@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
 import {
@@ -51,6 +52,7 @@ interface LowStockProduct {
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
     todayProfit: 0,
@@ -62,6 +64,7 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [snapshotMissing, setSnapshotMissing] = useState(false)
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
@@ -81,6 +84,7 @@ export default function Dashboard() {
     const requestId = ++statsRequestId.current
     if (!initialLoadComplete.current) setLoading(true)
     setError(null)
+    setSnapshotMissing(false)
     setSnapshotGeneratedAt(null)
     let snapshot
     try {
@@ -124,8 +128,22 @@ export default function Dashboard() {
     }
 
     setError('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+    setSnapshotMissing(true)
     setLoading(false)
     initialLoadComplete.current = true
+  }
+
+  async function initializeDashboardData() {
+    setRefreshing(true)
+    try {
+      await initializeOperationalSnapshot()
+      await loadStats()
+      toast.success('Data awal berhasil disiapkan di perangkat ini')
+    } catch (initializationError) {
+      toast.error(`Gagal menyiapkan data awal: ${initializationError instanceof Error ? initializationError.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   async function refreshMobileData() {
@@ -348,8 +366,39 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-        {error && <p className="sr-only" role="status">{error}</p>}
       </div>
+
+      {error && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-ink">
+                {snapshotMissing ? 'Data toko belum disiapkan di perangkat ini' : 'Dashboard belum dapat memuat data'}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {snapshotMissing && (
+                <button
+                  type="button"
+                  onClick={() => void initializeDashboardData()}
+                  disabled={refreshing}
+                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {refreshing ? 'Menyiapkan...' : 'Siapkan data lokal'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/settings')}
+                className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-stone-50"
+              >
+                Buka Pengaturan
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3">
