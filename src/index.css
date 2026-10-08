@@ -620,7 +620,8 @@ html::-webkit-scrollbar {
     margin: 0 !important;
     padding: 0 !important;
     min-width: 58mm;
-    background: white;
+    background: #fff !important;
+    background-image: none !important;
   }
 
   body > * {
@@ -637,7 +638,8 @@ html::-webkit-scrollbar {
     box-sizing: border-box;
     overflow: visible !important;
     color: #000;
-    background: #fff;
+    background: #fff !important;
+    background-image: none !important;
     font-family: Arial, 'Helvetica Neue', sans-serif;
     font-size: 10px;
     line-height: 1.4;
@@ -653,6 +655,8 @@ html::-webkit-scrollbar {
     margin: 0 !important;
     padding: 0 !important;
     color: #000;
+    background: #fff !important;
+    background-image: none !important;
     font-family: Arial, 'Helvetica Neue', sans-serif;
     font-size: 10px;
     line-height: 1.4;
