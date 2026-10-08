@@ -267,6 +267,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: 'bg-emerald-100 text-emerald-700',
       watermark: 'text-emerald-600/[0.09]',
+      className: 'lg:hidden',
     },
     {
       title: 'Produk Aktif',
@@ -353,7 +354,7 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {cards.map((c) => (
-          <Card key={c.title} className="relative overflow-hidden border-0">
+          <Card key={c.title} className={`relative overflow-hidden border-0 ${'className' in c ? c.className : ''}`}>
                 <c.icon
                   aria-hidden="true"
                   className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 ${c.watermark}`}
