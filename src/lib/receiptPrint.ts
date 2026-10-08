@@ -1,4 +1,4 @@
-export async function printReceiptInFrame(receiptRoot: HTMLElement | null): Promise<void> {
+export function printReceiptInFrame(receiptRoot: HTMLElement | null): void {
   if (!receiptRoot) {
     throw new Error('Konten struk tidak ditemukan')
   }
@@ -23,29 +23,30 @@ export async function printReceiptInFrame(receiptRoot: HTMLElement | null): Prom
     printDocument.open()
     printDocument.write('<!doctype html><html><head></head><body></body></html>')
     printDocument.close()
+    printDocument.documentElement.lang = document.documentElement.lang
 
-    const stylePromises = Array.from(document.head.querySelectorAll<HTMLLinkElement>('link[rel~="stylesheet"]'))
-      .filter((stylesheet) => new URL(stylesheet.href, document.baseURI).origin === window.location.origin)
-      .map((stylesheet) => new Promise<void>((resolve, reject) => {
-        const clonedStylesheet = stylesheet.cloneNode(true) as HTMLLinkElement
-        clonedStylesheet.addEventListener('load', () => resolve(), { once: true })
-        clonedStylesheet.addEventListener('error', () => reject(new Error('Gagal memuat gaya cetak struk')), { once: true })
-        printDocument.head.append(clonedStylesheet)
-      }))
+    const base = printDocument.createElement('base')
+    base.href = document.baseURI
+    printDocument.head.append(base)
+    Array.from(document.styleSheets).forEach((stylesheet) => {
+      if (stylesheet.href && new URL(stylesheet.href, document.baseURI).origin !== window.location.origin) return
 
-    document.head.querySelectorAll('style').forEach((style) => {
-      printDocument.head.append(style.cloneNode(true))
+      const style = printDocument.createElement('style')
+      style.media = stylesheet.media.mediaText
+      style.textContent = Array.from(stylesheet.cssRules, (rule) => rule.cssText).join('\n')
+      printDocument.head.append(style)
     })
     printDocument.body.append(receiptRoot.cloneNode(true))
-    await Promise.all(stylePromises)
 
     const printWindow = frame.contentWindow
     if (!printWindow) {
       throw new Error('Jendela cetak struk tidak dapat diakses')
     }
+    printWindow.addEventListener('afterprint', () => frame.remove(), { once: true })
     printWindow.focus()
     printWindow.print()
-  } finally {
+  } catch (error) {
     frame.remove()
+    throw error
   }
 }

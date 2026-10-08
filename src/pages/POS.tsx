@@ -989,7 +989,7 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
 
   async function printReceipt() {
     try {
-      await printReceiptInFrame(document.getElementById('receipt-print-root'))
+      printReceiptInFrame(document.getElementById('receipt-print-root'))
       onClose()
     } catch (error) {
       toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)

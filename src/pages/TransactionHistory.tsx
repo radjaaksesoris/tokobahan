@@ -342,9 +342,11 @@ export default function TransactionHistory() {
     }
     setReprint(receipt)
     window.setTimeout(() => {
-      void printReceiptInFrame(document.getElementById('receipt-print-root')).catch((error: unknown) => {
+      try {
+        printReceiptInFrame(document.getElementById('receipt-print-root'))
+      } catch (error) {
         toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      })
+      }
     }, 0)
   }
 
