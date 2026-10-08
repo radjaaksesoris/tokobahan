@@ -1,6 +1,6 @@
 // Bump this value when the app shell or caching strategy changes. Old caches
 // are removed during activate so lazy-loaded pages do not resolve stale chunks.
-const CACHE_NAME = 'konveksipos-v4'
+const CACHE_NAME = 'konveksipos-v5'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,

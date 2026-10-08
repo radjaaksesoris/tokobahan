@@ -2,21 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-
-async function recoverFromStaleBuild() {
-  if (!navigator.onLine) return
-  const reloadKey = 'vite-build-reload'
-  if (sessionStorage.getItem(reloadKey)) return
-  sessionStorage.setItem(reloadKey, '1')
-  try {
-    const registration = await navigator.serviceWorker?.ready
-    await registration?.update()
-  } catch (error) {
-    console.warn('Gagal memperbarui service worker setelah asset gagal dimuat:', error)
-  } finally {
-    window.location.reload()
-  }
-}
+import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()

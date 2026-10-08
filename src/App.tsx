@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import Login from '@/pages/Login'
+import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
 
 function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   importer: () => Promise<{ default: T }>,
@@ -17,15 +18,10 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
 ) {
   return lazy(async () => {
     try {
-      const module = await importer()
-      sessionStorage.removeItem(`chunk-reload:${key}`)
-      return module
+      return await importer()
     } catch (error) {
-      const reloadKey = `chunk-reload:${key}`
-      if (navigator.onLine && !sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, '1')
-        window.location.reload()
-      }
+      console.error(`Gagal memuat halaman ${key}:`, error)
+      void recoverFromStaleBuild()
       throw error
     }
   })
@@ -57,12 +53,19 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
     if (!this.state.error) return this.props.children
 
     return (
-      <div className="flex min-h-[40vh] items-center justify-center p-6">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-6">
         <div className="w-full max-w-md rounded-2xl border border-red-200 bg-surface p-6 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-ink">Halaman tidak dapat ditampilkan</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Terjadi kendala saat membuka tab ini. Silakan buka kembali tab ini.
+            Terjadi kendala saat membuka halaman. Muat ulang aplikasi untuk mencoba kembali.
           </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+          >
+            Muat ulang aplikasi
+          </button>
         </div>
       </div>
     )
