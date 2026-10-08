@@ -11,6 +11,7 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { toast } from 'sonner'
+import { printReceiptInFrame } from '@/lib/receiptPrint'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -340,7 +341,11 @@ export default function TransactionHistory() {
       })),
     }
     setReprint(receipt)
-    window.setTimeout(() => window.print(), 0)
+    window.setTimeout(() => {
+      void printReceiptInFrame(document.getElementById('receipt-print-root')).catch((error: unknown) => {
+        toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      })
+    }, 0)
   }
 
   async function changePaymentMethod(method: 'cash' | 'credit') {

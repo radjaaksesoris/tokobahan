@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
+import { printReceiptInFrame } from '@/lib/receiptPrint'
 import { WalletCards, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
@@ -720,9 +721,13 @@ function SettlementReceiptPreview({
     return () => window.clearTimeout(focusTimer)
   }, [])
 
-  function printReceipt() {
-    window.print()
-    onClose()
+  async function printReceipt() {
+    try {
+      await printReceiptInFrame(document.getElementById('receipt-print-root'))
+      onClose()
+    } catch (error) {
+      toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
   }
 
   function ReceiptDocument() {

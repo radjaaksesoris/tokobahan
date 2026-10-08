@@ -32,6 +32,7 @@ import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
+import { printReceiptInFrame } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
 
 function sortCatalogProducts(products: Product[]) {
@@ -986,9 +987,13 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
     return () => window.clearTimeout(focusTimer)
   }, [])
 
-  function printReceipt() {
-    window.print()
-    onClose()
+  async function printReceipt() {
+    try {
+      await printReceiptInFrame(document.getElementById('receipt-print-root'))
+      onClose()
+    } catch (error) {
+      toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
   }
 
   return (
