@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { formatCurrency, formatNumber, toTitleCase } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Printer, Search, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Plus, Printer, Search, Trash2, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
@@ -16,6 +16,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
 import { getStockConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
+import { editOfflineSale, type SaleEditItemInput } from '@/lib/offlineSaleEdit'
+import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
+import { parseProductPrices, UNIT_LABELS, type Product } from '@/types'
 
 interface SaleRow {
   id: string
@@ -55,6 +58,11 @@ interface ReprintData {
   total: number
   amountPaid: number
   items: Array<{ name: string; unit: string; quantity: number; unitPrice: number; lineTotal: number }>
+}
+
+interface SaleEditDraft extends Omit<SaleEditItemInput, 'quantity' | 'unitPrice'> {
+  quantity: string
+  unitPrice: string
 }
 
 const PAGE_SIZE = 20
@@ -106,6 +114,12 @@ export default function TransactionHistory() {
   const [reprint, setReprint] = useState<ReprintData | null>(null)
   const [paymentMethodSaving, setPaymentMethodSaving] = useState(false)
   const [creditCustomerName, setCreditCustomerName] = useState('')
+  const [editingSale, setEditingSale] = useState(false)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editProducts, setEditProducts] = useState<Product[]>([])
+  const [editItems, setEditItems] = useState<SaleEditDraft[]>([])
+  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('cash')
+  const [editCustomerName, setEditCustomerName] = useState('')
   const loadRequestId = useRef(0)
 
   useEffect(() => {
@@ -348,6 +362,105 @@ export default function TransactionHistory() {
         toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       }
     }, 0)
+  }
+
+  async function startEditingSale() {
+    if (!selectedSale || itemsLoading || items.length === 0) return
+    try {
+      const [snapshot, products, customers] = await Promise.all([
+        readOperationalSnapshot(),
+        readOperationalTable<Product>('products'),
+        readOperationalTable<{ id: string; name: string }>('customers'),
+      ])
+      if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      const itemIds = new Set(items.map((item) => item.id))
+      if (snapshot.tables.sale_returns.some((row) =>
+        row.sale_id === selectedSale.id || itemIds.has(String(row.sale_item_id)),
+      )) {
+        throw new Error('Transaksi yang sudah memiliki retur tidak dapat diedit')
+      }
+      if (snapshot.tables.customer_debt_payments.some((row) => row.sale_id === selectedSale.id)) {
+        throw new Error('Transaksi yang sudah memiliki cicilan hutang tidak dapat diedit')
+      }
+      const paymentMethod = selectedSale.payment_method.toLowerCase() as PaymentMethod
+      setEditProducts(products)
+      setEditItems(items.map((item) => ({
+        sourceItemId: item.id,
+        productId: item.product_id,
+        unit: item.unit,
+        quantity: String(item.quantity),
+        unitPrice: String(item.unit_price),
+      })))
+      setEditPaymentMethod(Object.hasOwn(PAYMENT_METHOD_LABELS, paymentMethod) ? paymentMethod : 'cash')
+      setEditCustomerName(customers.find((customer) => customer.id === selectedSale.customer_id)?.name || '')
+      setEditingSale(true)
+    } catch (error) {
+      toast.error(`Gagal menyiapkan edit transaksi: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
+  }
+
+  function addEditItem() {
+    const product = editProducts.find((entry) => entry.is_active) || editProducts[0]
+    if (!product) {
+      toast.error('Tidak ada produk di katalog lokal')
+      return
+    }
+    const prices = parseProductPrices(product.prices)
+    const price = prices.find((entry) => entry.unit === product.stock_unit) || prices[0]
+    if (!price) {
+      toast.error(`Produk ${product.name} belum memiliki satuan harga`)
+      return
+    }
+    setEditItems((current) => [...current, {
+      sourceItemId: null,
+      productId: product.id,
+      unit: price.unit,
+      quantity: '1',
+      unitPrice: String(price.price),
+    }])
+  }
+
+  function updateEditItem(index: number, changes: Partial<SaleEditDraft>) {
+    setEditItems((current) => current.map((item, itemIndex) => itemIndex === index
+      ? { ...item, ...changes }
+      : item))
+  }
+
+  function changeEditProduct(index: number, productId: string) {
+    const product = editProducts.find((entry) => entry.id === productId)
+    if (!product) return
+    const prices = parseProductPrices(product.prices)
+    const price = prices.find((entry) => entry.unit === product.stock_unit) || prices[0]
+    if (!price) {
+      toast.error(`Produk ${product.name} belum memiliki satuan harga`)
+      return
+    }
+    updateEditItem(index, { productId, unit: price.unit, unitPrice: String(price.price) })
+  }
+
+  async function saveSaleEdit() {
+    if (!selectedSale) return
+    setEditSaving(true)
+    try {
+      await editOfflineSale({
+        saleId: selectedSale.id,
+        items: editItems.map((item) => ({
+          ...item,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+        })),
+        paymentMethod: editPaymentMethod,
+        customerName: editCustomerName,
+      })
+      toast.success('Transaksi berhasil diperbarui dan stok disesuaikan')
+      setEditingSale(false)
+      setSelectedSale(null)
+      await loadSales()
+    } catch (error) {
+      toast.error(`Gagal mengedit transaksi: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   async function changePaymentMethod(method: 'cash' | 'credit') {
@@ -662,6 +775,15 @@ export default function TransactionHistory() {
                 variant="outline"
                 className="w-full"
                 disabled={itemsLoading || items.length === 0}
+                onClick={() => void startEditingSale()}
+              >
+                Edit transaksi
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={itemsLoading || items.length === 0}
                 onClick={reprintSale}
               >
                 <Printer className="mr-2 h-4 w-4" /> Cetak ulang
@@ -719,6 +841,147 @@ export default function TransactionHistory() {
               <div className="border-t border-stone-200 pt-3 text-sm">
                 <div className="flex justify-between"><span>Total</span><strong>{formatCurrency(Number(selectedSale.total_amount))}</strong></div>
                 <div className="mt-1 flex justify-between text-emerald-600"><span>Laba</span><strong>{formatCurrency(Number(selectedSale.total_profit))}</strong></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {editingSale && selectedSale && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={() => !editSaving && setEditingSale(false)}>
+          <Card className="max-h-[90vh] w-full max-w-2xl overflow-auto" onClick={(event) => event.stopPropagation()}>
+            <CardHeader className="flex-row items-start justify-between border-b border-stone-100">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Koreksi transaksi</p>
+                <CardTitle className="mt-1">{selectedSale.invoice_no}</CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">Stok dan total akan dihitung ulang saat disimpan.</p>
+              </div>
+              <button type="button" onClick={() => setEditingSale(false)} disabled={editSaving} aria-label="Tutup edit transaksi" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted disabled:opacity-50">
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <div className="space-y-3">
+                {editItems.map((item, index) => {
+                  const product = editProducts.find((entry) => entry.id === item.productId)
+                  const prices = product ? parseProductPrices(product.prices) : []
+                  return (
+                    <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                      <label className="min-w-0 text-xs font-semibold text-muted-foreground">
+                        Barang
+                        <select
+                          value={item.productId}
+                          disabled={editSaving}
+                          onChange={(event) => changeEditProduct(index, event.target.value)}
+                          className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
+                        >
+                          {editProducts.map((entry) => (
+                            <option key={entry.id} value={entry.id}>{entry.name}{entry.is_active ? '' : ' (nonaktif)'}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-semibold text-muted-foreground">
+                        Satuan
+                        <select
+                          value={item.unit}
+                          disabled={editSaving}
+                          onChange={(event) => {
+                            const price = prices.find((entry) => entry.unit === event.target.value)
+                            updateEditItem(index, {
+                              unit: event.target.value,
+                              unitPrice: price ? String(price.price) : item.unitPrice,
+                            })
+                          }}
+                          className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
+                        >
+                          {prices.map((price) => (
+                            <option key={price.unit} value={price.unit}>{UNIT_LABELS[price.unit] || price.unit}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-xs font-semibold text-muted-foreground">
+                          Jumlah
+                          <Input
+                            type="number"
+                            min="0.001"
+                            step="any"
+                            value={item.quantity}
+                            disabled={editSaving}
+                            onChange={(event) => updateEditItem(index, { quantity: event.target.value })}
+                            className="mt-1 bg-white"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-muted-foreground">
+                          Harga
+                          <Input
+                            type="number"
+                            min="1"
+                            step="any"
+                            value={item.unitPrice}
+                            disabled={editSaving}
+                            onChange={(event) => updateEditItem(index, { unitPrice: event.target.value })}
+                            className="mt-1 bg-white"
+                          />
+                        </label>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        aria-label={`Hapus ${product?.name || 'barang'} dari transaksi`}
+                        disabled={editSaving || editItems.length <= 1}
+                        onClick={() => setEditItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                        className="w-full sm:w-10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )
+                })}
+                <Button type="button" variant="outline" disabled={editSaving} onClick={addEditItem} className="w-full">
+                  <Plus className="mr-2 h-4 w-4" /> Tambah barang
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Metode pembayaran
+                  <select
+                    value={editPaymentMethod}
+                    disabled={editSaving}
+                    onChange={(event) => setEditPaymentMethod(event.target.value as PaymentMethod)}
+                    className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm font-normal text-ink"
+                  >
+                    {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Nama pelanggan{editPaymentMethod === 'credit' ? ' (wajib untuk kredit)' : ''}
+                  <Input
+                    value={editCustomerName}
+                    disabled={editSaving}
+                    onChange={(event) => setEditCustomerName(toTitleCase(event.target.value))}
+                    placeholder="Nama pelanggan"
+                    className="mt-1 bg-white"
+                  />
+                </label>
+              </div>
+              <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+                <span className="text-sm font-semibold text-muted-foreground">Total baru</span>
+                <strong className="text-lg text-ink">
+                  {formatCurrency(editItems.reduce(
+                    (total, item) => total + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+                    0,
+                  ))}
+                </strong>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" className="flex-1" disabled={editSaving} onClick={() => setEditingSale(false)}>
+                  Batal
+                </Button>
+                <Button type="button" className="flex-1" disabled={editSaving} onClick={() => void saveSaleEdit()}>
+                  {editSaving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan perubahan'}
+                </Button>
               </div>
             </CardContent>
           </Card>
