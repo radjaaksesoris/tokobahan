@@ -19,7 +19,7 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
   { to: '/transactions', icon: History, label: 'Riwayat Transaksi', className: '' },
   { to: '/products', icon: Package, label: 'Produk', className: '' },
   { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', className: '' },
-  { to: '/reports', icon: BarChart3, label: 'Laporan', className: '' },
+  { to: '/reports', icon: BarChart3, label: 'Laporan', className: 'lg:hidden' },
   { to: '/settings', icon: Settings, label: 'Pengaturan', className: '' },
 ]
 
