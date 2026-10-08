@@ -11,7 +11,7 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { toast } from 'sonner'
-import { printReceiptInFrame } from '@/lib/receiptPrint'
+import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -355,13 +355,15 @@ export default function TransactionHistory() {
       })),
     }
     setReprint(receipt)
-    window.setTimeout(() => {
-      try {
-        printReceiptInFrame(document.getElementById('receipt-print-root'))
-      } catch (error) {
-        toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      }
-    }, 0)
+  }
+
+  function printReprint() {
+    try {
+      invokeReceiptPrint(document.getElementById('receipt-print-root'))
+      setReprint(null)
+    } catch (error) {
+      toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
   }
 
   async function startEditingSale() {
@@ -988,9 +990,38 @@ export default function TransactionHistory() {
         </div>
       )}
       {reprint && createPortal(
-        <div id="receipt-print-root" aria-hidden="true">
-          <HistoryReceiptDocument receipt={reprint} />
-        </div>,
+        <>
+          <div id="receipt-print-root" aria-hidden="true">
+            <HistoryReceiptDocument receipt={reprint} />
+          </div>
+          <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 print:hidden sm:items-center sm:p-4">
+            <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
+              <CardHeader className="flex-row items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Cetak ulang struk</p>
+                  <CardTitle className="mt-1">{reprint.invoiceNo}</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">{formatCurrency(reprint.total)}</p>
+                </div>
+                <button type="button" onClick={() => setReprint(null)} aria-label="Tutup pratinjau struk">
+                  <X className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="receipt-preview-frame">
+                  <HistoryReceiptDocument receipt={reprint} />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => setReprint(null)}>
+                    Batal
+                  </Button>
+                  <Button type="button" className="flex-1" onClick={printReprint}>
+                    <Printer className="mr-2 h-4 w-4" /> Cetak
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>,
         document.body
       )}
     </div>
