@@ -90,7 +90,13 @@ export default function Login() {
           <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full border-[18px] border-primary/20" aria-hidden="true" />
           <div className="relative">
             <div className="flex items-center gap-3">
-              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="RAJA Aksesoris" className="h-12 w-12 rounded-2xl object-cover ring-4 ring-accent/20" />
+              <img
+                src={`${import.meta.env.BASE_URL}icon-96.png`}
+                srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
+                sizes="48px"
+                alt="RAJA Aksesoris"
+                className="h-12 w-12 rounded-2xl object-cover ring-4 ring-accent/20"
+              />
               <div>
                 <p className="text-sm font-semibold tracking-[0.18em] text-accent">RAJA</p>
                 <p className="text-xs text-white/60">Aksesoris Konveksi</p>
@@ -120,7 +126,13 @@ export default function Login() {
           <div className="absolute -bottom-20 -left-10 h-36 w-36 rounded-full border-[12px] border-primary/20" aria-hidden="true" />
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="RAJA Aksesoris" className="h-10 w-10 rounded-xl object-cover ring-4 ring-accent/20" />
+              <img
+                src={`${import.meta.env.BASE_URL}icon-96.png`}
+                srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
+                sizes="40px"
+                alt="RAJA Aksesoris"
+                className="h-10 w-10 rounded-xl object-cover ring-4 ring-accent/20"
+              />
               <div>
                 <p className="text-sm font-semibold tracking-[0.18em] text-accent">RAJA</p>
                 <p className="text-xs text-white/60">Aksesoris Konveksi</p>

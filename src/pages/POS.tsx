@@ -487,7 +487,9 @@ export default function POS() {
         <div className="mb-2 flex items-start justify-between gap-2 lg:mb-4 lg:gap-3">
           <div className="flex items-center gap-3">
             <img
-              src={`${import.meta.env.BASE_URL}icon-192.png`}
+              src={`${import.meta.env.BASE_URL}icon-96.png`}
+              srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
+              sizes="(min-width: 1024px) 40px, 32px"
               alt="RAJA Aksesoris"
               className="h-8 w-8 rounded-lg object-cover shadow-sm lg:h-10 lg:w-10 lg:rounded-xl"
             />
