@@ -178,14 +178,16 @@ describe('offline operational analytics', () => {
       todayCustomerDebtPayments: { amount: 15, count: 1 },
       todayVendorDebtPayments: { amount: 25, count: 1 },
       todayPaymentCounts: { cash: 1, credit: 1, transfer: 1, qris: 1 },
-      todayPaymentTotals: { cash: 20, credit: 10, transfer: 40, qris: 50 },
+      todayPaymentTotals: { cash: 20, credit: 30, transfer: 40, qris: 50 },
       totalProducts: 2,
       lowStock: 1,
       lowStockProducts: [{ id: 'active-low', name: 'Benang', stock: 2, min_stock: 3 }],
     })
     expect(
-      Object.values(analytics.todayPaymentTotals).reduce((sum, amount) => sum + amount, 0)
-      + analytics.todayCustomerDebtPayments.amount,
-    ).toBe(analytics.todaySales)
+      analytics.todayPaymentTotals.cash
+      + analytics.todayPaymentTotals.transfer
+      + analytics.todayPaymentTotals.qris,
+    ).toBe(110)
+    expect(analytics.todaySales).toBe(135)
   })
 })

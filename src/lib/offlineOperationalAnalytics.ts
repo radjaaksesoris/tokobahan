@@ -232,7 +232,7 @@ export function getLocalDashboardAnalytics(
     const paymentKey = method === 'qr' ? 'qris' : method
     if (paymentKey === 'cash' || paymentKey === 'credit' || paymentKey === 'transfer' || paymentKey === 'qris') {
       todayPaymentCounts[paymentKey] += 1
-      todayPaymentTotals[paymentKey] += amountPaid
+      todayPaymentTotals[paymentKey] += paymentKey === 'credit' ? total : amountPaid
     }
   }
   const activeProducts = asRows(snapshot, 'products')
