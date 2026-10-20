@@ -657,8 +657,9 @@ html::-webkit-scrollbar {
     font-size: 10px;
     line-height: 1.4;
     font-variant-numeric: tabular-nums;
-    -webkit-print-color-adjust: economy;
-    print-color-adjust: economy;
+    font-weight: 600;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .receipt-document {
@@ -673,10 +674,18 @@ html::-webkit-scrollbar {
     font-family: Arial, 'Helvetica Neue', sans-serif;
     font-size: 10px;
     line-height: 1.4;
-    -webkit-print-color-adjust: economy;
-    print-color-adjust: economy;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: 600;
     page-break-after: avoid;
     break-after: avoid;
+  }
+
+  .receipt-document,
+  .receipt-document * {
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .receipt-center {
@@ -759,6 +768,10 @@ html::-webkit-scrollbar {
   .receipt-item {
     margin: 7px 0;
     overflow-wrap: anywhere;
+  }
+
+  .receipt-item > div:first-child {
+    font-weight: 600;
   }
 
   .receipt-item-detail {
