@@ -128,7 +128,7 @@ describe('offline operational analytics', () => {
         {
           id: 'sale-credit',
           created_at: '2026-10-01T05:00:00.000Z',
-          amount_paid: 0,
+          amount_paid: 10,
           total_amount: 30,
           total_cost: 12,
           total_profit: 18,
@@ -171,18 +171,21 @@ describe('offline operational analytics', () => {
     const analytics = getLocalDashboardAnalytics(snapshot, new Date('2026-10-01T12:00:00.000Z'))
 
     expect(analytics).toMatchObject({
-      todaySales: 140,
+      todaySales: 135,
+      todayTransactionValue: 110,
       todayProfit: 92,
       todayOrders: 4,
       todayCustomerDebtPayments: { amount: 15, count: 1 },
       todayVendorDebtPayments: { amount: 25, count: 1 },
       todayPaymentCounts: { cash: 1, credit: 1, transfer: 1, qris: 1 },
-      todayPaymentTotals: { cash: 20, credit: 30, transfer: 40, qris: 50 },
+      todayPaymentTotals: { cash: 20, credit: 10, transfer: 40, qris: 50 },
       totalProducts: 2,
       lowStock: 1,
       lowStockProducts: [{ id: 'active-low', name: 'Benang', stock: 2, min_stock: 3 }],
     })
-    expect(Object.values(analytics.todayPaymentTotals).reduce((sum, amount) => sum + amount, 0))
-      .toBe(analytics.todaySales)
+    expect(
+      Object.values(analytics.todayPaymentTotals).reduce((sum, amount) => sum + amount, 0)
+      + analytics.todayCustomerDebtPayments.amount,
+    ).toBe(analytics.todaySales)
   })
 })
