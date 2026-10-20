@@ -121,6 +121,7 @@ export default function TransactionHistory() {
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('cash')
   const [editCustomerName, setEditCustomerName] = useState('')
   const loadRequestId = useRef(0)
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(loadSales, 250)
@@ -558,6 +559,13 @@ export default function TransactionHistory() {
     )
   }, [sales, search])
 
+  function openDatePicker() {
+    const dateInput = dateInputRef.current
+    if (!dateInput) return
+    if (typeof dateInput.showPicker === 'function') dateInput.showPicker()
+    else dateInput.click()
+  }
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-6">
       <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
@@ -599,12 +607,20 @@ export default function TransactionHistory() {
             )}
           </div>
           <div className="relative h-10 w-[38%] min-w-[7.5rem] shrink-0 rounded-xl border border-border bg-surface sm:w-48">
-            <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <span className="pointer-events-none flex h-full items-center pl-9 pr-3 text-sm text-muted-foreground">
-              {date ? format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId }) : 'Tanggal'}
-            </span>
-            <Input
-              className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
+            <button
+              type="button"
+              onClick={openDatePicker}
+              className="flex h-full w-full items-center gap-2 rounded-xl px-3 text-left text-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label={date ? `Filter tanggal transaksi: ${format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId })}` : 'Pilih tanggal transaksi'}
+            >
+              <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">
+                {date ? format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId }) : 'Tanggal'}
+              </span>
+            </button>
+            <input
+              ref={dateInputRef}
+              className="pointer-events-none absolute h-px w-px opacity-0"
               type="date"
               value={date}
               onChange={(event) => {
@@ -612,7 +628,8 @@ export default function TransactionHistory() {
                 setPage(0)
                 setCursorHistory([null])
               }}
-              aria-label="Filter tanggal transaksi"
+              aria-hidden="true"
+              tabIndex={-1}
             />
           </div>
           {date && (
