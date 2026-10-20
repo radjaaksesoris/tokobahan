@@ -36,6 +36,8 @@ export interface DashboardAnalytics {
   todaySales: number
   todayProfit: number
   todayOrders: number
+  todayCustomerDebtPayments: PaymentSummary
+  todayVendorDebtPayments: PaymentSummary
   todayPaymentCounts: {
     cash: number
     credit: number
@@ -51,6 +53,11 @@ export interface DashboardAnalytics {
   totalProducts: number
   lowStock: number
   lowStockProducts: LowStockProduct[]
+}
+
+export interface PaymentSummary {
+  amount: number
+  count: number
 }
 
 const jakartaDateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -200,6 +207,18 @@ export function getLocalDashboardAnalytics(
   const todayStart = startOfDay(now)
   const todayEnd = endOfDay(now)
   const { summary: todaySummary } = summarizeSales(snapshot, todayStart, todayEnd)
+  const todayCustomerDebtPayments = { amount: 0, count: 0 }
+  const todayVendorDebtPayments = { amount: 0, count: 0 }
+  for (const payment of asRows(snapshot, 'customer_debt_payments')) {
+    if (!inRange(payment.paid_at, todayStart, todayEnd)) continue
+    todayCustomerDebtPayments.amount += asNumber(payment.amount)
+    todayCustomerDebtPayments.count += 1
+  }
+  for (const payment of asRows(snapshot, 'vendor_debt_payments')) {
+    if (!inRange(payment.paid_at, todayStart, todayEnd)) continue
+    todayVendorDebtPayments.amount += asNumber(payment.amount)
+    todayVendorDebtPayments.count += 1
+  }
   const todayPaymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
   const todayPaymentTotals = { cash: 0, credit: 0, transfer: 0, qris: 0 }
   for (const sale of asRows(snapshot, 'sales')) {
@@ -223,6 +242,8 @@ export function getLocalDashboardAnalytics(
     todaySales: todaySummary.total_revenue,
     todayProfit: todaySummary.total_profit,
     todayOrders: todaySummary.transaction_count,
+    todayCustomerDebtPayments,
+    todayVendorDebtPayments,
     todayPaymentCounts,
     todayPaymentTotals,
     totalProducts: activeProducts.length,

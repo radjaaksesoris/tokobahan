@@ -158,14 +158,24 @@ describe('offline operational analytics', () => {
         { id: 'active-ok', name: 'Kain', stock: 8, min_stock: 2, is_active: true },
         { id: 'inactive-low', name: 'Resleting', stock: 0, min_stock: 2, is_active: false },
       ],
+      customer_debt_payments: [
+        { id: 'customer-payment-today', paid_at: '2026-10-01T10:00:00.000Z', amount: 15 },
+        { id: 'customer-payment-outside', paid_at: '2026-10-02T10:00:00.000Z', amount: 100 },
+      ],
+      vendor_debt_payments: [
+        { id: 'vendor-payment-today', paid_at: '2026-10-01T11:00:00.000Z', amount: 25 },
+        { id: 'vendor-payment-outside', paid_at: '2026-10-02T11:00:00.000Z', amount: 200 },
+      ],
     })
 
     const analytics = getLocalDashboardAnalytics(snapshot, new Date('2026-10-01T12:00:00.000Z'))
 
     expect(analytics).toMatchObject({
-      todaySales: 110,
+      todaySales: 125,
       todayProfit: 92,
       todayOrders: 4,
+      todayCustomerDebtPayments: { amount: 15, count: 1 },
+      todayVendorDebtPayments: { amount: 25, count: 1 },
       todayPaymentCounts: { cash: 1, credit: 1, transfer: 1, qris: 1 },
       todayPaymentTotals: { cash: 20, credit: 30, transfer: 40, qris: 50 },
       totalProducts: 2,

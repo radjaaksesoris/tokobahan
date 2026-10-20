@@ -10,6 +10,8 @@ import {
   PackageSearch,
   RefreshCw,
   X,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
@@ -27,6 +29,14 @@ interface Stats {
   todaySales: number
   todayProfit: number
   todayOrders: number
+  todayCustomerDebtPayments: {
+    amount: number
+    count: number
+  }
+  todayVendorDebtPayments: {
+    amount: number
+    count: number
+  }
   todayPaymentCounts: {
     cash: number
     credit: number
@@ -57,6 +67,8 @@ export default function Dashboard() {
     todaySales: 0,
     todayProfit: 0,
     todayOrders: 0,
+    todayCustomerDebtPayments: { amount: 0, count: 0 },
+    todayVendorDebtPayments: { amount: 0, count: 0 },
     todayPaymentCounts: { cash: 0, credit: 0, transfer: 0, qris: 0 },
     todayPaymentTotals: { cash: 0, credit: 0, transfer: 0, qris: 0 },
     totalProducts: 0,
@@ -107,6 +119,8 @@ export default function Dashboard() {
           todaySales: analytics.todaySales,
           todayProfit: analytics.todayProfit,
           todayOrders: analytics.todayOrders,
+          todayCustomerDebtPayments: analytics.todayCustomerDebtPayments,
+          todayVendorDebtPayments: analytics.todayVendorDebtPayments,
           todayPaymentCounts: analytics.todayPaymentCounts,
           todayPaymentTotals: analytics.todayPaymentTotals,
           totalProducts: analytics.totalProducts,
@@ -422,6 +436,31 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
+
+      <Card className="relative overflow-hidden border-0">
+        <CardHeader className="border-b border-stone-100 pb-4">
+          <CardTitle className="text-base">Pembayaran Hutang Hari Ini</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">Ringkasan pelunasan hutang pelanggan dan pembayaran ke supplier</p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-xl bg-teal-50 px-4 py-3 text-teal-800">
+            <ArrowDownLeft className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Diterima dari pelanggan</p>
+              <p className="mt-1 truncate text-lg font-bold">{loading ? '...' : formatCurrency(stats.todayCustomerDebtPayments.amount)}</p>
+              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-amber-800">
+            <ArrowUpRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Dibayarkan ke supplier</p>
+              <p className="mt-1 truncate text-lg font-bold">{loading ? '...' : formatCurrency(stats.todayVendorDebtPayments.amount)}</p>
+              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(stats.todayVendorDebtPayments.count)} pembayaran`}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="relative overflow-hidden border-0">
         <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-amber-600/[0.09]" />
