@@ -171,7 +171,7 @@ describe('offline operational analytics', () => {
     const analytics = getLocalDashboardAnalytics(snapshot, new Date('2026-10-01T12:00:00.000Z'))
 
     expect(analytics).toMatchObject({
-      todaySales: 125,
+      todaySales: 140,
       todayProfit: 92,
       todayOrders: 4,
       todayCustomerDebtPayments: { amount: 15, count: 1 },
@@ -182,5 +182,7 @@ describe('offline operational analytics', () => {
       lowStock: 1,
       lowStockProducts: [{ id: 'active-low', name: 'Benang', stock: 2, min_stock: 3 }],
     })
+    expect(Object.values(analytics.todayPaymentTotals).reduce((sum, amount) => sum + amount, 0))
+      .toBe(analytics.todaySales)
   })
 })

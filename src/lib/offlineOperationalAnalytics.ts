@@ -221,10 +221,12 @@ export function getLocalDashboardAnalytics(
   }
   const todayPaymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
   const todayPaymentTotals = { cash: 0, credit: 0, transfer: 0, qris: 0 }
+  let todaySales = 0
   for (const sale of asRows(snapshot, 'sales')) {
     if (!inRange(sale.created_at, todayStart, todayEnd)) continue
     const method = String(sale.payment_method || '').toLowerCase()
     const total = asNumber(sale.total_amount)
+    todaySales += total
     const paymentKey = method === 'qr' ? 'qris' : method
     if (paymentKey === 'cash' || paymentKey === 'credit' || paymentKey === 'transfer' || paymentKey === 'qris') {
       todayPaymentCounts[paymentKey] += 1
@@ -239,7 +241,7 @@ export function getLocalDashboardAnalytics(
   const lowStock = lowStockProducts.length
 
   return {
-    todaySales: todaySummary.total_revenue,
+    todaySales,
     todayProfit: todaySummary.total_profit,
     todayOrders: todaySummary.transaction_count,
     todayCustomerDebtPayments,

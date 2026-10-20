@@ -287,7 +287,7 @@ export default function Dashboard() {
 
   const cards = [
     {
-      title: 'Penjualan Hari Ini',
+      title: 'Nilai Transaksi Hari Ini',
       value: formatCurrency(stats.todaySales),
       icon: ShoppingBag,
       color: 'bg-teal-100 text-teal-700',
@@ -468,7 +468,7 @@ export default function Dashboard() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <CardTitle className="text-base">Rincian Transaksi Hari Ini</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Jumlah transaksi berdasarkan metode pembayaran</p>
+              <p className="mt-1 text-xs text-muted-foreground">Nilai penuh transaksi yang dibuat hari ini, termasuk transaksi kredit</p>
             </div>
             <div className="shrink-0 text-right">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total</p>
