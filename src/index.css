@@ -510,6 +510,12 @@ html::-webkit-scrollbar {
   margin-top: 5px;
   color: #202a2e;
   font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.receipt-customer strong {
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .receipt-total-highlight {
@@ -806,6 +812,11 @@ html::-webkit-scrollbar {
   .receipt-customer {
     margin-top: 5px;
     font-size: 9px;
+  }
+
+  .receipt-customer strong {
+    font-size: 14px;
+    font-weight: 800;
   }
 
   .receipt-total-highlight {

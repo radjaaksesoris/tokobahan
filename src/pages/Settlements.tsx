@@ -748,7 +748,7 @@ function SettlementReceiptPreview({
           <span>No. {receipt.invoiceNo}</span>
           <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
         </div>
-        <div className="receipt-customer">Pelanggan: {receipt.customerName}</div>
+        <div className="receipt-customer">Pelanggan: <strong>{receipt.customerName}</strong></div>
         <div className="receipt-rule" />
         <div className="receipt-items">
           {receipt.items.map((item, index) => (
