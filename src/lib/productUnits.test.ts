@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Product } from '@/types'
+import { parseProductPrices, type Product } from '@/types'
 import { getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
 
 describe('stock unit conversions', () => {
@@ -20,5 +20,19 @@ describe('stock unit conversions', () => {
   it('converts returned sale-unit cost back to cost per stock unit', () => {
     expect(getStockUnitCostForSale(product, 3, 30)).toBe(10)
     expect(getStockUnitCostForSale({ ...product, stock_conversion: 2 }, 3, 30)).toBe(20)
+  })
+
+  it('accepts numeric strings from persisted price records', () => {
+    const parsed = parseProductPrices([
+      { unit: 'satuan', price: '10', conversion: '1' },
+      { unit: 'pack', price: '30', conversion: '3' },
+      { unit: 'meter', price: '12,5', conversion: '0.5' },
+    ])
+
+    expect(parsed).toEqual([
+      { unit: 'satuan', price: 10, conversion: 1 },
+      { unit: 'pack', price: 30, conversion: 3 },
+      { unit: 'meter', price: 12.5, conversion: 0.5 },
+    ])
   })
 })

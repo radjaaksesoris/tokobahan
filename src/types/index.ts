@@ -22,6 +22,46 @@ export const UNIT_FACTORS: Record<string, number> = {
   pack: 1,  // custom pack size stored per product
 }
 
+export function coerceFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value !== 'string') return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  const cleaned = trimmed.replace(/\s+/g, '').replace(/[$\u00A0]/g, '')
+  if (!cleaned) return null
+
+  if (cleaned.includes(',') && cleaned.includes('.')) {
+    const lastComma = cleaned.lastIndexOf(',')
+    const lastDot = cleaned.lastIndexOf('.')
+    const decimalSeparator = lastComma > lastDot ? ',' : '.'
+    const thousandSeparator = decimalSeparator === ',' ? '.' : ','
+    const withoutThousands = cleaned.replace(new RegExp(`\\${thousandSeparator}`, 'g'), '')
+    const normalized = withoutThousands.replace(decimalSeparator, '.')
+    const numeric = Number(normalized)
+    return Number.isFinite(numeric) ? numeric : null
+  }
+
+  if (cleaned.includes(',')) {
+    const commaLast = cleaned.lastIndexOf(',')
+    const fractionPart = cleaned.slice(commaLast + 1)
+    if (fractionPart.length <= 2) {
+      const numeric = Number(cleaned.replace(',', '.'))
+      return Number.isFinite(numeric) ? numeric : null
+    }
+
+    const numeric = Number(cleaned.replace(/,/g, ''))
+    return Number.isFinite(numeric) ? numeric : null
+  }
+
+  const numeric = Number(cleaned)
+  return Number.isFinite(numeric) ? numeric : null
+}
+
 export interface ProductPrice {
   unit: UnitType
   price: number
@@ -35,14 +75,9 @@ export function parseProductPrices(value: unknown): ProductPrice[] {
     if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return []
     const priceRecord = entry as Record<string, unknown>
     const unit = priceRecord.unit
-    const price = priceRecord.price
-    const conversion = priceRecord.conversion
-    if (
-      typeof unit !== 'string' ||
-      !isUnitType(unit) ||
-      typeof price !== 'number' ||
-      typeof conversion !== 'number'
-    ) return []
+    const price = coerceFiniteNumber(priceRecord.price)
+    const conversion = coerceFiniteNumber(priceRecord.conversion)
+    if (typeof unit !== 'string' || !isUnitType(unit) || price === null || conversion === null) return []
     return [{ unit, price, conversion }]
   })
 }

@@ -1,9 +1,9 @@
 import type { Product, ProductPrice, UnitType } from '@/types'
-import { UNIT_FACTORS } from '@/types'
+import { coerceFiniteNumber, UNIT_FACTORS } from '@/types'
 
 function positiveNumber(value: unknown) {
-  const number = Number(value)
-  return Number.isFinite(number) && number > 0 ? number : null
+  const number = coerceFiniteNumber(value)
+  return number !== null && number > 0 ? number : null
 }
 
 export function roundStockQuantity(value: number) {
