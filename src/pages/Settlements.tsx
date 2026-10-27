@@ -770,7 +770,7 @@ function SettlementReceiptPreview({
           <span>Bayar hutang</span>
           <span>{formatCurrency(receipt.payment)}</span>
         </div>
-        <div className="receipt-summary">
+        <div className="receipt-summary receipt-summary-debt">
           <span>Sisa hutang</span>
           <span>{formatCurrency(receipt.remainingDebt)}</span>
         </div>

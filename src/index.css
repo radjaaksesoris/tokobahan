@@ -545,6 +545,11 @@ html::-webkit-scrollbar {
   font-weight: 700;
 }
 
+.receipt-summary-debt > :last-child {
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .receipt-payment-method {
   display: flex;
   align-items: center;

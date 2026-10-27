@@ -1085,7 +1085,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
       {receipt.paymentMethod === 'credit' && receipt.amountPaid > 0 && (
         <>
           <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
-          <div className="receipt-summary"><span>Sisa hutang</span><span>{formatCurrency(Math.max(0, receipt.total - receipt.amountPaid))}</span></div>
+          <div className="receipt-summary receipt-summary-debt"><span>Sisa hutang</span><span>{formatCurrency(Math.max(0, receipt.total - receipt.amountPaid))}</span></div>
         </>
       )}
       <footer className="receipt-center receipt-footer">Terima kasih</footer>
