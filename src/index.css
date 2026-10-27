@@ -516,6 +516,7 @@ html::-webkit-scrollbar {
 .receipt-customer strong {
   font-size: 14px;
   font-weight: 800;
+  text-transform: uppercase;
 }
 
 .receipt-total-highlight {
@@ -817,6 +818,7 @@ html::-webkit-scrollbar {
   .receipt-customer strong {
     font-size: 14px;
     font-weight: 800;
+    text-transform: uppercase;
   }
 
   .receipt-total-highlight {
