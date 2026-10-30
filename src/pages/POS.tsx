@@ -595,7 +595,7 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 max-h-[55dvh] overflow-y-auto lg:max-h-none">
           {loading ? (
             <div className="flex h-40 items-center justify-center">
               <LoadingDots dotClassName="h-2 w-2" />
