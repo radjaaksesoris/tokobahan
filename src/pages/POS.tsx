@@ -671,7 +671,7 @@ export default function POS() {
       </Button>
 
       {/* Cart - desktop */}
-      <div ref={keypadPanelRef} className={`pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:sticky lg:top-0 ${items.length === 0 ? 'lg:h-[60dvh] lg:self-start' : 'lg:h-full'}`}>
+      <div ref={keypadPanelRef} className={`pos-cart-panel flex w-[38%] max-w-sm min-h-0 flex-col rounded-2xl border border-ink/10 bg-ink text-white shadow-[0_18px_40px_rgba(32,42,46,0.18)] lg:sticky lg:top-0 ${items.length === 0 ? 'lg:h-[42dvh] lg:self-start' : 'lg:h-full'}`}>
         {showKeypadPanel ? (
           <KeypadPanel
             value={search}
