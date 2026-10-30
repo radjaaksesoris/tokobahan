@@ -46,6 +46,12 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 - **Backup HDD otomatis**: Di Chrome/Edge desktop, admin dapat memilih folder HDD dari Pengaturan → Backup.
   Backup penuh disimpan ke `tokobahan-backup-latest.json` dan file arsip bertimestamp setiap hari pukul 17.00.
   Fitur ini berjalan selama aplikasi/browser terbuka.
+- **Sinkronisasi Supabase otomatis**: Jika ada perubahan lokal yang belum tersinkron, admin yang sedang login
+  akan mencoba mengirim snapshot lokal penuh ke Supabase pukul 15.00. Jika gagal, aplikasi mencoba lagi pukul
+  16.00; setelah berhasil, percobaan kedua dilewati. Jika kedua percobaan gagal, jadwal berulang keesokan hari.
+  Pengingat dengan hitung mundur dan status koneksi muncul mulai pukul 14.30. Sinkronisasi hanya berjalan saat
+  aplikasi terbuka, memakai waktu lokal perangkat, dan ditolak server jika versi data server berubah sejak
+  snapshot lokal diambil. Notifikasi menyatakan jika data berhasil dikirim ke server.
 - **Akses offline**: Perangkat yang pernah berhasil login menyimpan sesi admin dan profil lokal hingga 30 hari
   untuk tetap dapat membuka aplikasi tanpa koneksi. Logout tetap menghapus akses offline dari perangkat tersebut.
 

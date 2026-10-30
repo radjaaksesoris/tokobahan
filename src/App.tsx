@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { checkTauriUpdate, installTauriUpdate } from '@/lib/tauriUpdater'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { startAutomaticOperationalSync } from '@/lib/automaticOperationalSync'
 import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -176,6 +177,11 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
     return startAutomaticLocalBackup()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
+    return startAutomaticOperationalSync()
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {
