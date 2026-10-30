@@ -773,9 +773,9 @@ export default function Products() {
                   <th className="hidden whitespace-nowrap px-0.5 py-1.5 font-semibold lg:table-cell lg:w-28 lg:px-2">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody className="divide-y divide-[#e2e6dc]">
                 {products.map((p, index) => (
-                  <tr key={p.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
+                  <tr key={p.id} className="odd:bg-surface even:bg-[#f0f3ec] hover:bg-[#e6ecdf]">
                     <td className="px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">{page * pageSize + index + 1}</td>
                     <td className="min-w-0 px-0.5 py-1.5 text-center lg:px-2">
                       <div className="flex min-w-0 items-center justify-center">
