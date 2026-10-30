@@ -1302,9 +1302,12 @@ function CartPanel({
         <h3 className="mt-1 font-heading text-lg font-semibold text-white">Keranjang ({items.length})</h3>
       </div>
 
-      <div className={`min-h-0 overflow-y-auto p-3 space-y-2 ${items.length === 0 ? 'flex-none' : 'flex-1'}`}>
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
         {items.length === 0 ? (
-          <p className="py-3 text-center text-sm text-muted-foreground">Keranjang kosong</p>
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+            <ShoppingCart className="h-10 w-10 opacity-60" aria-hidden="true" />
+            <p className="text-sm">Keranjang kosong</p>
+          </div>
         ) : (
           items.map((item) => (
             <div
