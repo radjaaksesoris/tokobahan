@@ -425,7 +425,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
           <Card key={c.title} className={`relative overflow-hidden border-0 ${'className' in c ? c.className : ''}`}>
                 <c.icon
