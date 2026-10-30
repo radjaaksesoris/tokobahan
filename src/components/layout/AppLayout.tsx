@@ -56,26 +56,26 @@ function OperationalSyncReminder() {
   const StatusIcon = isOnline ? Wifi : WifiOff
   return (
     <div
-      className={`mb-4 flex items-start gap-3 rounded-xl border p-3 text-sm ${
+      className={`mb-8 flex w-fit max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs shadow-sm ${
         isOnline
           ? 'border-sky-200 bg-sky-50 text-sky-950'
           : 'border-amber-300 bg-amber-50 text-amber-950'
       }`}
       role="status"
     >
-      <StatusIcon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+      <StatusIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <p className="font-semibold">
           {isOnline ? 'Sinkronisasi ke server dimulai sebentar lagi' : 'Persiapkan koneksi untuk sinkronisasi server'}
         </p>
-        <p className="mt-0.5 text-xs opacity-85">
+        <p className="text-[11px] opacity-85">
           {isOnline
             ? 'Pastikan aplikasi tetap terbuka.'
-            : 'Perangkat sedang offline. Hubungkan ke internet sebelum pukul 15.00.'}
+            : 'Hubungkan perangkat ke internet sebelum pukul 15.00.'}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-1.5 font-mono font-bold tabular-nums" aria-label={`${minutes} menit ${seconds} detik lagi`}>
-        <Clock3 className="h-4 w-4" aria-hidden="true" />
+      <div className="flex shrink-0 items-center gap-1 font-mono text-xs font-bold tabular-nums" aria-label={`${minutes} menit ${seconds} detik lagi`}>
+        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>
     </div>
