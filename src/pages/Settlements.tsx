@@ -73,7 +73,7 @@ const PAGE_SIZE = 50
 
 export default function Settlements() {
   const administratorId = useAuthStore((state) => state.user?.id)
-  const [tab, setTab] = useState<Tab>('vendor')
+  const [tab, setTab] = useState<Tab>('customer')
   const [debts, setDebts] = useState<Debt[]>([])
   const [payment, setPayment] = useState<Record<string, string>>({})
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null)
