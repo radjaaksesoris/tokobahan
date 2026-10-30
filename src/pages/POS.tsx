@@ -38,7 +38,9 @@ import { isTauriRuntime } from '@/lib/tauriUpdater'
 
 function sortCatalogProducts(products: Product[]) {
   return [...products].sort((a, b) =>
-    a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id),
+    Number(a.stock <= 0) - Number(b.stock <= 0) ||
+    a.name.localeCompare(b.name, 'id') ||
+    a.id.localeCompare(b.id),
   )
 }
 

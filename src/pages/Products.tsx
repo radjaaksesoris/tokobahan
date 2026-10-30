@@ -210,7 +210,11 @@ export default function Products() {
             product.name.toLocaleLowerCase().includes(normalizedTerm) ||
             product.sku?.toLocaleLowerCase().includes(normalizedTerm) ||
             product.barcode?.toLocaleLowerCase().includes(normalizedTerm))
-          .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))
+          .sort((a, b) =>
+            Number(a.stock <= 0) - Number(b.stock <= 0) ||
+            a.name.localeCompare(b.name, 'id') ||
+            a.id.localeCompare(b.id),
+          )
         const start = page * pageSize
         setProducts(filteredProducts.slice(start, start + pageSize))
         setHasNextPage(filteredProducts.length > start + pageSize)
