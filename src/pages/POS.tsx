@@ -484,82 +484,82 @@ export default function POS() {
     <div className="mobile-page-background mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:gap-4">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="mb-2 flex flex-col gap-2 lg:mb-4 lg:gap-3">
-          <div className="flex items-center justify-center gap-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 lg:mb-4 lg:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <img
               src={`${import.meta.env.BASE_URL}icon-96.png`}
               srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
               sizes="(min-width: 1024px) 40px, 32px"
               alt="RAJA Aksesoris"
-              className="h-8 w-8 rounded-lg object-cover shadow-sm lg:h-10 lg:w-10 lg:rounded-xl"
+              className="h-7 w-7 rounded-lg object-cover shadow-sm lg:h-9 lg:w-9 lg:rounded-xl"
             />
-            <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RAJA AKSESORIS</h2>
+            <h2 className="whitespace-nowrap text-sm font-bold tracking-tight text-ink sm:text-base lg:text-2xl">RAJA AKSESORIS</h2>
           </div>
-          <div className="flex items-center justify-end gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
-            <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
-                isOnline ? 'text-teal-800' : 'text-amber-800'
-              }`}
-              title={isOnline
-                ? 'Transaksi tersimpan di perangkat. Sinkronisasi ke Supabase dilakukan manual.'
-                : 'Offline. Transaksi tetap tersimpan di perangkat.'}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
-              Data lokal
-            </span>
-            <Button
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
+              <span
+                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isOnline ? 'text-teal-800' : 'text-amber-800'
+                }`}
+                title={isOnline
+                  ? 'Transaksi tersimpan di perangkat. Sinkronisasi ke Supabase dilakukan manual.'
+                  : 'Offline. Transaksi tetap tersimpan di perangkat.'}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
+                Data lokal
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void backupFromHeader()}
+                disabled={backingUpLocal}
+                className="h-7 w-7 min-h-0 shrink-0 rounded-lg p-0"
+                aria-label="Backup data lokal ke HDD"
+                title="Backup data lokal ke HDD"
+                aria-busy={backingUpLocal}
+              >
+                {backingUpLocal ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <HardDriveDownload className="h-4 w-4" />}
+              </Button>
+              <Button
+                type="button"
+                variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => void syncSnapshotFromHeader()}
+                disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
+                className={`h-7 w-7 min-h-0 shrink-0 rounded-lg p-0 ${
+                  snapshotSyncStatus === 'pending'
+                    ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+                    : snapshotSyncStatus === 'error'
+                      ? 'border-red-300 text-red-700 hover:bg-red-50'
+                      : ''
+                }`}
+                aria-label={snapshotSyncStatus === 'pending'
+                  ? 'Kirim seluruh data aplikasi ke Server'
+                  : snapshotSyncStatus === 'setup'
+                    ? 'Siapkan data lokal untuk sinkronisasi'
+                    : 'Status sinkronisasi data'}
+                title={snapshotSyncStatus === 'pending'
+                  ? 'Sinkronkan data terbaru ke Supabase'
+                  : snapshotSyncStatus === 'setup'
+                    ? 'Buka Pengaturan untuk mengambil ulang data server sebelum sinkronisasi'
+                    : snapshotSyncStatus === 'synced'
+                      ? 'Data lokal sudah tersinkron ke Supabase'
+                      : 'Sinkronisasi belum tersedia'}
+              >
+                {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
+              </Button>
+            </div>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void backupFromHeader()}
-              disabled={backingUpLocal}
-              className="h-7 w-7 min-h-0 shrink-0 rounded-lg p-0"
-              aria-label="Backup data lokal ke HDD"
-              title="Backup data lokal ke HDD"
-              aria-busy={backingUpLocal}
+              onClick={() => navigate('/')}
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
+              aria-label="Kembali ke Dashboard"
+              title="Kembali ke Dashboard"
             >
-              {backingUpLocal ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <HardDriveDownload className="h-4 w-4" />}
-            </Button>
-            <Button
-              type="button"
-              variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => void syncSnapshotFromHeader()}
-              disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
-              className={`h-7 w-7 min-h-0 shrink-0 rounded-lg p-0 ${
-                snapshotSyncStatus === 'pending'
-                  ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
-                  : snapshotSyncStatus === 'error'
-                    ? 'border-red-300 text-red-700 hover:bg-red-50'
-                    : ''
-              }`}
-              aria-label={snapshotSyncStatus === 'pending'
-                ? 'Kirim seluruh data aplikasi ke Server'
-                : snapshotSyncStatus === 'setup'
-                  ? 'Siapkan data lokal untuk sinkronisasi'
-                  : 'Status sinkronisasi data'}
-              title={snapshotSyncStatus === 'pending'
-                ? 'Sinkronkan data terbaru ke Supabase'
-                : snapshotSyncStatus === 'setup'
-                  ? 'Buka Pengaturan untuk mengambil ulang data server sebelum sinkronisasi'
-                : snapshotSyncStatus === 'synced'
-                  ? 'Data lokal sudah tersinkron ke Supabase'
-                  : 'Sinkronisasi belum tersedia'}
-            >
-              {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
-            </Button>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
-            aria-label="Kembali ke Dashboard"
-            title="Kembali ke Dashboard"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </button>
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </button>
           </div>
         </div>
         <div className="mb-2 flex gap-2 lg:mb-3">
