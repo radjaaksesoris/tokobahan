@@ -319,34 +319,34 @@ export default function Dashboard() {
       title: 'Uang Diterima Hari Ini',
       value: formatCurrency(stats.todaySales),
       icon: ShoppingBag,
-      color: 'bg-teal-200 text-teal-900',
-      watermark: 'text-teal-700/[0.12]',
-      surface: 'bg-teal-50/80 ring-1 ring-teal-200',
+      color: 'bg-[#dce6d5] text-[#344b2f]',
+      watermark: 'text-[#526b49]/[0.12]',
+      surface: 'bg-[#f1f5ee]/80 ring-1 ring-[#cbd7c3]',
     },
     {
       title: 'Nilai Transaksi Hari Ini',
       value: formatCurrency(stats.todayTransactionValue),
       icon: DollarSign,
-      color: 'bg-blue-200 text-blue-900',
-      watermark: 'text-blue-700/[0.12]',
-      surface: 'bg-blue-50/80 ring-1 ring-blue-200',
+      color: 'bg-[#d8e2d0] text-[#344b2f]',
+      watermark: 'text-[#526b49]/[0.12]',
+      surface: 'bg-[#eef3ea]/80 ring-1 ring-[#c5d2bb]',
     },
     {
       title: 'Laba Bersih Hari Ini',
       value: formatCurrency(stats.todayProfit),
       icon: TrendingUp,
-      color: 'bg-emerald-200 text-emerald-900',
-      watermark: 'text-emerald-700/[0.12]',
-      surface: 'bg-emerald-50/80 ring-1 ring-emerald-200',
+      color: 'bg-[#e2e9d8] text-[#3d5035]',
+      watermark: 'text-[#526b49]/[0.12]',
+      surface: 'bg-[#f3f5ef]/80 ring-1 ring-[#d0dac6]',
       className: 'lg:hidden',
     },
     {
       title: 'Produk Aktif',
       value: formatNumber(stats.totalProducts),
       icon: Package,
-      color: 'bg-indigo-200 text-indigo-900',
-      watermark: 'text-indigo-700/[0.12]',
-      surface: 'bg-indigo-50/80 ring-1 ring-indigo-200',
+      color: 'bg-[#d5dfcc] text-[#344b2f]',
+      watermark: 'text-[#526b49]/[0.12]',
+      surface: 'bg-[#edf2e8]/80 ring-1 ring-[#c2cfb7]',
     },
   ]
 
@@ -509,7 +509,7 @@ export default function Dashboard() {
           <p className="mt-1 text-xs text-muted-foreground">Ringkasan pelunasan hutang pelanggan dan pembayaran ke supplier</p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3 rounded-xl border border-teal-200 bg-teal-100 px-4 py-3 text-teal-900">
+          <div className="flex items-center gap-3 rounded-xl border border-[#c9d6c1] bg-[#e3ebdc] px-4 py-3 text-[#354a30]">
             <ArrowDownLeft className="h-5 w-5 shrink-0" aria-hidden="true" />
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Diterima dari pelanggan</p>
@@ -517,7 +517,7 @@ export default function Dashboard() {
               <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-100 px-4 py-3 text-amber-900">
+          <div className="flex items-center gap-3 rounded-xl border border-[#d1d8bd] bg-[#e8ebd9] px-4 py-3 text-[#4a5432]">
             <ArrowUpRight className="h-5 w-5 shrink-0" aria-hidden="true" />
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Dibayarkan ke supplier</p>
@@ -529,7 +529,7 @@ export default function Dashboard() {
       </Card>
 
       <Card className="relative overflow-hidden border-0">
-        <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-amber-600/[0.09]" />
+        <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-[#657b52]/[0.12]" />
         <CardHeader className="relative z-10 border-b border-stone-100 pb-4">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -544,10 +544,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border border-teal-200 bg-teal-100 text-teal-900'],
-            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border border-amber-200 bg-amber-100 text-amber-900'],
-            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border border-blue-200 bg-blue-100 text-blue-900'],
-            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border border-violet-200 bg-violet-100 text-violet-900'],
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border border-[#c9d6c1] bg-[#e3ebdc] text-[#354a30]'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border border-[#d1d8bd] bg-[#e8ebd9] text-[#4a5432]'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border border-[#c5d3c5] bg-[#e0e9df] text-[#354a3a]'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border border-[#c6d1bc] bg-[#dce5d3] text-[#3b4d32]'],
           ] as const).map(([label, total, count, color]) => (
             <div key={label} className={`rounded-xl px-4 py-3 ${color}`}>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">{label}</p>
