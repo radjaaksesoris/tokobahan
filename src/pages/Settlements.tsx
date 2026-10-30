@@ -548,9 +548,9 @@ export default function Settlements() {
           </div>
         </CardContent></Card>
       )
-    ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
-      {openDebts.map((debt) => <Card key={debt.id} className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className="space-y-2 p-2.5 sm:p-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
+      {openDebts.map((debt) => <Card key={debt.id} className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
+        <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
@@ -563,11 +563,12 @@ export default function Settlements() {
               <Button
                 variant="outline"
                 size="icon"
+                className={tab === 'customer' ? 'h-8 w-8' : undefined}
                 onClick={() => reprintCustomerDebt(debt)}
                 aria-label={`Cetak ulang struk ${debt.name} ${debt.reference}`}
                 title="Cetak ulang struk"
               >
-                <Printer className="h-4 w-4" />
+                <Printer className="h-3.5 w-3.5" />
               </Button>
             )}
             <Input
@@ -585,12 +586,12 @@ export default function Settlements() {
             }}
               placeholder="Nominal"
               aria-label={`Nominal pembayaran ${debt.name}`}
-              className="h-10 min-w-[8.5rem] flex-1 sm:w-40 sm:flex-none"
+              className={`${tab === 'customer' ? 'h-8 min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
             />
-            <Button className="h-10 px-3" variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+            <Button className={tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
-            <Button className="h-10 px-3" onClick={() => settle(debt)}><WalletCards className="h-4 w-4" /> Bayar</Button>
+            <Button className={tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} onClick={() => settle(debt)}><WalletCards className={tab === 'customer' ? 'h-3.5 w-3.5' : 'h-4 w-4'} /> Bayar</Button>
           </div>
         </div>
         {expandedDebtId === debt.id && (
