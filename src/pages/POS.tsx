@@ -484,8 +484,8 @@ export default function POS() {
     <div className="mobile-page-background mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:gap-4">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="mb-2 flex items-start justify-between gap-2 lg:mb-4 lg:gap-3">
-          <div className="flex items-center gap-3">
+        <div className="mb-2 flex flex-col gap-2 lg:mb-4 lg:gap-3">
+          <div className="flex items-center justify-center gap-3">
             <img
               src={`${import.meta.env.BASE_URL}icon-96.png`}
               srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
@@ -495,6 +495,7 @@ export default function POS() {
             />
             <h2 className="text-xl font-bold tracking-tight text-ink lg:text-3xl">RAJA AKSESORIS</h2>
           </div>
+          <div className="flex items-center justify-end gap-2">
           <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
             <span
               className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
@@ -559,6 +560,7 @@ export default function POS() {
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Dashboard</span>
           </button>
+          </div>
         </div>
         <div className="mb-2 flex gap-2 lg:mb-3">
           <div ref={searchFilterRef} className="relative flex-1">
