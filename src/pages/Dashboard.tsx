@@ -356,11 +356,6 @@ export default function Dashboard() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
-          {snapshotGeneratedAt && (
-            <p className="mt-1 text-xs font-medium text-emerald-200" role="status">
-              Snapshot lokal · dibuat {format(new Date(snapshotGeneratedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
-            </p>
-          )}
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button
@@ -446,6 +441,12 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {snapshotGeneratedAt && (
+        <p className="-mt-5 text-xs font-medium text-emerald-700" role="status">
+          Snapshot lokal · dibuat {format(new Date(snapshotGeneratedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
+        </p>
+      )}
 
       {error && (
         <Card className="border-amber-200 bg-amber-50">
