@@ -8,14 +8,10 @@ import {
   Menu,
   Settings,
   WalletCards,
-  Clock3,
-  Wifi,
-  WifiOff,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { CurrentDate } from '@/components/layout/CurrentDate'
-import { isMobileDevice } from '@/lib/automaticOperationalSync'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -26,61 +22,6 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
   { to: '/reports', icon: BarChart3, label: 'Laporan', className: 'lg:hidden' },
   { to: '/settings', icon: Settings, label: 'Pengaturan', className: '' },
 ]
-
-function OperationalSyncReminder() {
-  const [now, setNow] = useState(() => new Date())
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
-  const reminderStartsAt = new Date(now)
-  reminderStartsAt.setHours(14, 30, 0, 0)
-  const syncStartsAt = new Date(now)
-  syncStartsAt.setHours(15, 0, 0, 0)
-  const reminderVisible = now >= reminderStartsAt && now < syncStartsAt
-  const secondsRemaining = Math.max(0, Math.ceil((syncStartsAt.getTime() - now.getTime()) / 1000))
-  const minutes = Math.floor(secondsRemaining / 60)
-  const seconds = secondsRemaining % 60
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000)
-    const updateOnlineState = () => setIsOnline(navigator.onLine)
-    window.addEventListener('online', updateOnlineState)
-    window.addEventListener('offline', updateOnlineState)
-    return () => {
-      window.clearInterval(timer)
-      window.removeEventListener('online', updateOnlineState)
-      window.removeEventListener('offline', updateOnlineState)
-    }
-  }, [])
-
-  if (isMobileDevice() || !reminderVisible) return null
-
-  const StatusIcon = isOnline ? Wifi : WifiOff
-  return (
-    <div
-      className={`mb-8 flex w-fit max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs shadow-sm ${
-        isOnline
-          ? 'border-sky-200 bg-sky-50 text-sky-950'
-          : 'border-amber-300 bg-amber-50 text-amber-950'
-      }`}
-      role="status"
-    >
-      <StatusIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold">
-          {isOnline ? 'Sinkronisasi ke server dimulai sebentar lagi' : 'Persiapkan koneksi untuk sinkronisasi server'}
-        </p>
-        <p className="text-[11px] opacity-85">
-          {isOnline
-            ? 'Pastikan aplikasi tetap terbuka.'
-            : 'Hubungkan perangkat ke internet sebelum pukul 15.00.'}
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1 font-mono text-xs font-bold tabular-nums" aria-label={`${minutes} menit ${seconds} detik lagi`}>
-        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-      </div>
-    </div>
-  )
-}
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -242,7 +183,6 @@ export function AppLayout() {
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
-          <OperationalSyncReminder />
           <Outlet />
         </main>
         <div

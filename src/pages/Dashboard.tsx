@@ -12,6 +12,9 @@ import {
   X,
   ArrowDownLeft,
   ArrowUpRight,
+  Clock3,
+  Wifi,
+  WifiOff,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
@@ -24,6 +27,7 @@ import {
   initializeOperationalSnapshot,
   refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
+import { isMobileDevice } from '@/lib/automaticOperationalSync'
 
 interface Stats {
   todaySales: number
@@ -84,11 +88,33 @@ export default function Dashboard() {
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [lowStockDismissed, setLowStockDismissed] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [reminderNow, setReminderNow] = useState(() => new Date())
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const statsRequestId = useRef(0)
   const initialLoadComplete = useRef(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported',
   )
+  const reminderStartsAt = new Date(reminderNow)
+  reminderStartsAt.setHours(14, 30, 0, 0)
+  const syncStartsAt = new Date(reminderNow)
+  syncStartsAt.setHours(15, 0, 0, 0)
+  const syncReminderVisible = !isMobileDevice() && reminderNow >= reminderStartsAt && reminderNow < syncStartsAt
+  const syncSecondsRemaining = Math.max(0, Math.ceil((syncStartsAt.getTime() - reminderNow.getTime()) / 1000))
+  const syncMinutes = Math.floor(syncSecondsRemaining / 60)
+  const syncSeconds = syncSecondsRemaining % 60
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setReminderNow(new Date()), 1000)
+    const updateOnlineState = () => setIsOnline(navigator.onLine)
+    window.addEventListener('online', updateOnlineState)
+    window.addEventListener('offline', updateOnlineState)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('online', updateOnlineState)
+      window.removeEventListener('offline', updateOnlineState)
+    }
+  }, [])
 
   useEffect(() => {
     void loadStats()
@@ -348,50 +374,75 @@ export default function Dashboard() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             Refresh
           </button>
-          <div
-            className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left"
-            aria-label="Status toko aktif"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
-            <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
-          </div>
-          {stats.lowStock > 0 && !lowStockDismissed && (
+          {syncReminderVisible ? (
             <div
-              role="alert"
-              aria-live="polite"
-              className="relative min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-white sm:min-w-[9.5rem] lg:flex-none"
+              className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-xs shadow-sm lg:flex-none ${
+                isOnline
+                  ? 'border-sky-300 bg-sky-100 text-sky-950'
+                  : 'border-amber-300 bg-amber-100 text-amber-950'
+              }`}
+              role="status"
             >
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 pr-5 text-left"
-                onClick={() => setShowLowStockModal(true)}
-              >
-                <span className="rounded-lg bg-amber-400/15 p-1.5 text-amber-300">
-                  <PackageSearch className="h-4 w-4" aria-hidden="true" />
+              {isOnline ? <Wifi className="h-4 w-4 shrink-0" aria-hidden="true" /> : <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />}
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">
+                  {isOnline ? 'Sinkronisasi ke server dimulai sebentar lagi' : 'Hubungkan ke internet sebelum pukul 15.00'}
                 </span>
-                <span className="min-w-0">
-                  <span className="block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
-                  <span className="mt-1 block truncate text-sm font-semibold">{stats.lowStock} produk</span>
-                </span>
-              </button>
-              {notificationPermission === 'default' && (
-                <button
-                  type="button"
-                  className="mt-2 text-left text-[10px] font-semibold text-accent underline-offset-2 hover:underline"
-                  onClick={enableStockNotifications}
-                >
-                  Aktifkan notifikasi
-                </button>
-              )}
-              <button
-                type="button"
-                aria-label="Tutup notifikasi stok menipis"
-                className="absolute right-2 top-2 hidden rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white lg:block"
-                onClick={dismissLowStockAlert}
-              >
-                <X className="h-4 w-4" />
-              </button>
+                <span className="block text-[11px] opacity-80">Pastikan aplikasi tetap terbuka.</span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 font-mono font-bold tabular-nums" aria-label={`${syncMinutes} menit ${syncSeconds} detik lagi`}>
+                <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                {String(syncMinutes).padStart(2, '0')}:{String(syncSeconds).padStart(2, '0')}
+              </span>
             </div>
+          ) : (
+            <>
+              <div
+                className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left"
+                aria-label="Status toko aktif"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
+                <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
+              </div>
+              {stats.lowStock > 0 && !lowStockDismissed && (
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="relative min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-white sm:min-w-[9.5rem] lg:flex-none"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 pr-5 text-left"
+                    onClick={() => setShowLowStockModal(true)}
+                  >
+                    <span className="rounded-lg bg-amber-400/15 p-1.5 text-amber-300">
+                      <PackageSearch className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
+                      <span className="mt-1 block truncate text-sm font-semibold">{stats.lowStock} produk</span>
+                    </span>
+                  </button>
+                  {notificationPermission === 'default' && (
+                    <button
+                      type="button"
+                      className="mt-2 text-left text-[10px] font-semibold text-accent underline-offset-2 hover:underline"
+                      onClick={enableStockNotifications}
+                    >
+                      Aktifkan notifikasi
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Tutup notifikasi stok menipis"
+                    className="absolute right-2 top-2 hidden rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white lg:block"
+                    onClick={dismissLowStockAlert}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
