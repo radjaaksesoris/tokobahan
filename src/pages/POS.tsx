@@ -485,7 +485,7 @@ export default function POS() {
   }
 
   return (
-    <div className="mobile-page-background mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:min-h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-4rem)] lg:gap-4">
+    <div className="mobile-page-background mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] lg:gap-4">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 lg:mb-4 lg:gap-3">
