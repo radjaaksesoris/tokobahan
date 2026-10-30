@@ -34,9 +34,12 @@ import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
+import { isTauriRuntime } from '@/lib/tauriUpdater'
 
 function sortCatalogProducts(products: Product[]) {
-  return [...products].sort((a, b) => Number(a.stock <= 0) - Number(b.stock <= 0))
+  return [...products].sort((a, b) =>
+    a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id),
+  )
 }
 
 interface ReceiptData {
@@ -550,16 +553,18 @@ export default function POS() {
                 {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
               </Button>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
-              aria-label="Kembali ke Dashboard"
-              title="Kembali ke Dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </button>
+            {!isTauriRuntime() && (
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
+                aria-label="Kembali ke Dashboard"
+                title="Kembali ke Dashboard"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </button>
+            )}
           </div>
         </div>
         <div className="mb-2 flex gap-2 lg:mb-3">

@@ -12,6 +12,12 @@ function localDateKey(date: Date) {
   return `${year}-${month}-${day}`
 }
 
+export function isMobileDevice() {
+  if (typeof navigator === 'undefined') return false
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
 export function getNextAutomaticSyncAt(now = new Date()) {
   const todayAt15 = new Date(now)
   todayAt15.setHours(15, 0, 0, 0)
@@ -27,7 +33,7 @@ export function getNextAutomaticSyncAt(now = new Date()) {
 }
 
 export function startAutomaticOperationalSync() {
-  if (typeof window === 'undefined') return () => undefined
+  if (typeof window === 'undefined' || isMobileDevice()) return () => undefined
 
   let active = true
   let timer: number | undefined

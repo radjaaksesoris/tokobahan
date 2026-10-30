@@ -112,4 +112,19 @@ describe('automatic operational sync', () => {
 
     stop()
   })
+
+  it('does not schedule or send automatic sync on mobile devices', async () => {
+    vi.stubGlobal('navigator', {
+      onLine: true,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    })
+    const stop = startAutomaticOperationalSync()
+
+    await vi.advanceTimersByTimeAsync(2 * 60 * 60_000)
+    expect(syncOperationalSnapshot).not.toHaveBeenCalled()
+
+    stop()
+  })
 })

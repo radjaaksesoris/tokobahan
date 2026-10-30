@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { CurrentDate } from '@/components/layout/CurrentDate'
+import { isMobileDevice } from '@/lib/automaticOperationalSync'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -50,7 +51,7 @@ function OperationalSyncReminder() {
     }
   }, [])
 
-  if (!reminderVisible) return null
+  if (isMobileDevice() || !reminderVisible) return null
 
   const StatusIcon = isOnline ? Wifi : WifiOff
   return (
