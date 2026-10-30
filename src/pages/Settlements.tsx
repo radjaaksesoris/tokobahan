@@ -471,18 +471,18 @@ export default function Settlements() {
       )}
     </header>
     <div className="grid gap-3 lg:grid-cols-2">
-      <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-2.5 shadow-sm">
+      <section className="rounded-2xl border border-amber-300 bg-amber-100 p-2.5 shadow-sm">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-800">Hutang yang harus dibayar</p>
         <div className="grid grid-cols-2 gap-2">
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-100/70 text-amber-900 hover:bg-amber-200/80'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor' ? 'bg-amber-700 text-white shadow-sm' : 'bg-amber-200 text-amber-950 hover:bg-amber-300'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-200 text-teal-950 hover:bg-teal-300'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
         </div>
       </section>
-      <section className="rounded-2xl border border-teal-200 bg-teal-50/70 p-2.5 shadow-sm">
+      <section className="rounded-2xl border border-teal-300 bg-teal-100 p-2.5 shadow-sm">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-teal-800">Catatan pembayaran</p>
         <div className="grid grid-cols-2 gap-2">
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-teal-700 text-white shadow-sm' : 'bg-teal-100/70 text-teal-900 hover:bg-teal-200/80'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-blue-700 text-white shadow-sm' : 'bg-blue-200 text-blue-950 hover:bg-blue-300'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-violet-700 text-white shadow-sm' : 'bg-violet-200 text-violet-950 hover:bg-violet-300'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
         </div>
       </section>
     </div>
@@ -495,11 +495,11 @@ export default function Settlements() {
       />
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
-      filteredVendorPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
-        <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
+      filteredVendorPaymentHistory.length === 0 ? <Card className="border-blue-200 bg-blue-100"><CardContent className="p-6 text-center text-sm text-blue-950">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
+        <Card className="border-blue-200 bg-blue-100"><CardContent className="p-3">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-blue-300">
             <table className="w-full min-w-[42rem] text-center text-sm">
-              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
+              <thead className="sticky top-0 z-10 border-y border-blue-300 bg-blue-200 text-xs text-blue-950 shadow-[0_2px_0_rgba(29,78,216,0.12)]">
                 <tr>
                   <th className="py-2 font-medium">Tanggal</th>
                   <th className="py-2 font-medium">Vendor</th>
@@ -522,11 +522,11 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : tab === 'customer-history' ? (
-      filteredCustomerPaymentHistory.length === 0 ? <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
-        <Card className="border-teal-200 bg-teal-50/40"><CardContent className="p-3">
-          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-teal-200/80">
+      filteredCustomerPaymentHistory.length === 0 ? <Card className="border-violet-200 bg-violet-100"><CardContent className="p-6 text-center text-sm text-violet-950">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
+        <Card className="border-violet-200 bg-violet-100"><CardContent className="p-3">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-violet-300">
             <table className="w-full min-w-[38rem] text-center text-sm">
-              <thead className="sticky top-0 z-10 border-y border-teal-200 bg-teal-50 text-xs text-muted-foreground shadow-[0_2px_0_rgba(15,118,110,0.12)]">
+              <thead className="sticky top-0 z-10 border-y border-violet-300 bg-violet-200 text-xs text-violet-950 shadow-[0_2px_0_rgba(109,40,217,0.12)]">
                 <tr>
                   <th className="py-2 font-medium">Tanggal</th>
                   <th className="py-2 font-medium">Pelanggan</th>
@@ -548,8 +548,8 @@ export default function Settlements() {
           </div>
         </CardContent></Card>
       )
-    ) : openDebts.length === 0 ? <Card className="border-amber-200 bg-amber-50/40"><CardContent className="p-6 text-center text-sm text-muted-foreground">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
-      {openDebts.map((debt) => <Card key={debt.id} className="border-amber-200 bg-amber-50/40"><CardContent className="space-y-2 p-2.5 sm:p-3">
+    ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className="grid gap-3">
+      {openDebts.map((debt) => <Card key={debt.id} className={tab === 'customer' ? 'border-teal-200 bg-teal-100' : 'border-amber-200 bg-amber-100'}><CardContent className="space-y-2 p-2.5 sm:p-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
