@@ -381,7 +381,7 @@ export default function Dashboard() {
               {isOnline ? <Wifi className="h-4 w-4 shrink-0" aria-hidden="true" /> : <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />}
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">
-                  {isOnline ? 'Sinkronisasi ke server dimulai sebentar lagi' : 'Hubungkan ke internet sebelum pukul 15.00'}
+                  {isOnline ? 'Sinkronisasi ke server' : 'Hubungkan ke internet sebelum pukul 15.00'}
                 </span>
                 <span className="block text-[11px] opacity-80">Pastikan aplikasi tetap terbuka.</span>
               </span>
