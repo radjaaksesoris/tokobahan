@@ -466,7 +466,7 @@ export default function TransactionHistory() {
     }
   }
 
-  async function changePaymentMethod(method: 'cash' | 'credit') {
+  async function changePaymentMethod(method: PaymentMethod) {
     if (!selectedSale || selectedSale.payment_method.toLowerCase() === method) return
     const customerName = creditCustomerName.trim()
     if (method === 'credit' && !customerName) {
@@ -507,7 +507,7 @@ export default function TransactionHistory() {
             customerId = String(customer.id)
             localCustomerId = customerId
           } else if (snapshot.tables.customer_debt_payments.some((payment) => payment.sale_id === sale.id)) {
-            throw new Error('Transaksi kredit yang sudah memiliki cicilan tidak dapat diubah menjadi tunai')
+            throw new Error('Transaksi kredit yang sudah memiliki cicilan tidak dapat diubah menjadi metode pembayaran lain')
           }
 
           return {
@@ -538,7 +538,7 @@ export default function TransactionHistory() {
         setSelectedSale(updatedSale)
         setSales((current) => current.map((sale) => sale.id === updatedSale.id ? updatedSale : sale))
         setCreditCustomerName('')
-        toast.success(`Metode pembayaran diubah menjadi ${method === 'credit' ? 'kredit' : 'tunai'}`)
+        toast.success(`Metode pembayaran diubah menjadi ${PAYMENT_METHOD_LABELS[method]}`)
         setPaymentMethodSaving(false)
         return
       }
@@ -811,8 +811,8 @@ export default function TransactionHistory() {
                 <div className="flex items-center gap-2 text-sm font-semibold text-sky-900">
                   <CreditCard className="h-4 w-4" /> Koreksi metode pembayaran
                 </div>
-                <p className="mt-1 text-xs text-sky-800/80">Gunakan jika transaksi salah memilih Tunai atau Kredit.</p>
-                {selectedSale.payment_method.toLowerCase() === 'cash' && (
+                <p className="mt-1 text-xs text-sky-800/80">Gunakan jika transaksi salah memilih metode pembayaran.</p>
+                {selectedSale.payment_method.toLowerCase() !== 'credit' && (
                   <Input
                     value={creditCustomerName}
                     onChange={(event) => setCreditCustomerName(toTitleCase(event.target.value))}
@@ -822,22 +822,17 @@ export default function TransactionHistory() {
                   />
                 )}
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={selectedSale.payment_method.toLowerCase() === 'cash' ? 'primary' : 'outline'}
-                    disabled={paymentMethodSaving || selectedSale.payment_method.toLowerCase() === 'cash'}
-                    onClick={() => void changePaymentMethod('cash')}
-                  >
-                    Tunai
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={selectedSale.payment_method.toLowerCase() === 'credit' ? 'primary' : 'outline'}
-                    disabled={paymentMethodSaving || selectedSale.payment_method.toLowerCase() === 'credit'}
-                    onClick={() => void changePaymentMethod('credit')}
-                  >
-                    Kredit
-                  </Button>
+                  {(Object.entries(PAYMENT_METHOD_LABELS) as Array<[PaymentMethod, string]>).map(([method, label]) => (
+                    <Button
+                      key={method}
+                      type="button"
+                      variant={selectedSale.payment_method.toLowerCase() === method ? 'primary' : 'outline'}
+                      disabled={paymentMethodSaving || selectedSale.payment_method.toLowerCase() === method}
+                      onClick={() => void changePaymentMethod(method)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
                 </div>
               </div>
               {returningItem && (
