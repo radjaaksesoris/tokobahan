@@ -182,7 +182,7 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
+        <main id="main-content" className={`min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:px-8 lg:pb-8 ${isPosRoute ? 'lg:pt-3' : 'lg:pt-8'}`}>
           <Outlet />
         </main>
         <div
