@@ -180,7 +180,7 @@ export default function Reports() {
       </div>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <Card className="overflow-hidden border-primary/15 bg-primary text-white shadow-[0_16px_32px_rgba(33,108,104,0.16)]">
+      <Card className="overflow-hidden border-primary/15 bg-primary text-white shadow-[0_16px_32px_rgba(64,87,55,0.16)]">
         <CardContent className="flex flex-row items-center justify-between gap-3 p-3 sm:p-5">
           <div className="max-w-xl">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 sm:text-xs sm:tracking-[0.16em]">Kesimpulan periode ini</p>

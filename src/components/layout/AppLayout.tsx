@@ -219,7 +219,7 @@ export function AppLayout() {
       </div>
       {!sidebarOpen && (
         <button
-          className="fixed bottom-4 left-4 z-50 hidden rounded-xl border border-border bg-surface p-2 text-muted-foreground shadow-sm transition-all hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 active:scale-95 lg:block"
+          className="fixed bottom-4 left-4 z-50 hidden rounded-xl border border-border bg-surface p-2 text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary active:scale-95 lg:block"
           onClick={() => setSidebarOpen(true)}
           aria-label="Tampilkan navbar"
           title="Tampilkan navbar"

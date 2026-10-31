@@ -675,7 +675,7 @@ export default function TransactionHistory() {
                   {filteredSales.map((sale, index) => (
                     <tr
                       key={sale.id}
-                      className={`border-b border-stone-100 transition-colors hover:bg-teal-50/60 ${
+                      className={`border-b border-stone-100 transition-colors hover:bg-primary/5 ${
                         index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'
                       }`}
                     >
@@ -702,7 +702,7 @@ export default function TransactionHistory() {
                       </td>
                       <td className="px-1 py-2 text-center lg:px-3">
                         <button
-                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-teal-100 hover:text-primary"
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                           onClick={() => openDetails(sale)}
                           title={`Lihat ${sale.invoice_no}`}
                           aria-label={`Lihat detail ${sale.invoice_no}`}

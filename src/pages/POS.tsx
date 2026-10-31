@@ -503,13 +503,13 @@ export default function POS() {
             <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
               <span
                 className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isOnline ? 'text-teal-800' : 'text-amber-800'
+                  isOnline ? 'text-primary' : 'text-amber-800'
                 }`}
                 title={isOnline
                   ? 'Transaksi tersimpan di perangkat. Sinkronisasi ke Supabase dilakukan manual.'
                   : 'Offline. Transaksi tetap tersimpan di perangkat.'}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-teal-500' : 'bg-amber-500'}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-primary' : 'bg-amber-500'}`} />
                 Data lokal
               </span>
               <Button
@@ -613,12 +613,12 @@ export default function POS() {
                   onClick={() => openAdd(p)}
                   className={`group flex min-h-12 items-center gap-1.5 rounded-xl border bg-surface p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
                     activeProductIndex === index
-                      ? 'border-primary bg-teal-100 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(33,108,104,0.18)]'
+                      ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
                       : 'border-stone-200/80'
                   } ${
                     availableStock <= 0
                       ? 'cursor-not-allowed opacity-60'
-                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(33,108,104,0.12)] active:scale-[0.98]'
+                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
                   }`}
                 >
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors lg:h-9 lg:w-9 lg:text-base ${
@@ -630,21 +630,19 @@ export default function POS() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-xs font-medium lg:text-[13px] ${
-                      activeProductIndex === index ? 'text-teal-900' : 'text-ink/90'
+                      activeProductIndex === index ? 'text-primary' : 'text-ink/90'
                     }`}>{p.name}</p>
                     <p className={`mt-0.5 text-[10px] ${
                       availableStock <= 0
                         ? 'font-semibold text-red-500'
                         : activeProductIndex === index
-                          ? 'text-teal-700'
+                          ? 'text-primary'
                           : 'text-muted-foreground'
                     }`}>
                       {availableStock <= 0 ? 'Barang habis'                       : `Stok: ${formatStockQuantity(availableStock)}`}
                     </p>
                   </div>
-                  <p className={`shrink-0 text-[11px] font-semibold lg:text-xs ${
-                    activeProductIndex === index ? 'text-teal-900' : 'text-teal-700'
-                  }`}>
+                  <p className="shrink-0 text-[11px] font-semibold text-primary lg:text-xs">
                     {formatCurrency(
                       p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
                     )}
@@ -751,7 +749,7 @@ export default function POS() {
                       }}
                       className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
                         selectedUnit === u
-                          ? 'border-teal-600 bg-teal-50 text-teal-700'
+                          ? 'border-primary bg-primary/5 text-primary'
                           : 'border-slate-200 hover:border-slate-300'
                       }`}
                     >
@@ -759,10 +757,10 @@ export default function POS() {
                     </button>
                   ))}
                 </div>
-                <div className="shrink-0 rounded-lg border border-teal-600 bg-teal-50 px-3 py-2 text-center">
+                <div className="shrink-0 rounded-lg border border-primary bg-primary/5 px-3 py-2 text-center">
                   <p className="text-[10px] text-muted-foreground">Sisa stok</p>
                   <p className={`text-sm font-bold ${
-                    getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-teal-700'
+                    getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-primary'
                   }`}>
                     {Math.max(0, getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedUnit] || selectedUnit}
                   </p>
@@ -848,7 +846,7 @@ export default function POS() {
                         confirmAdd()
                       }
                     }}
-                    className={`h-9 px-2 text-center text-lg font-bold text-teal-700 ${
+                    className={`h-9 px-2 text-center text-lg font-bold text-primary ${
                       salePriceError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
                     }`}
                     aria-label="Harga jual"
@@ -859,7 +857,7 @@ export default function POS() {
 
               <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
                 <p className="text-xs text-muted-foreground">Total</p>
-                <p className="text-xl font-bold text-teal-700">
+                <p className="text-xl font-bold text-primary">
                   {formatCurrency((Number(salePriceInput) || 0) * (Number(qtyInput) || 0))}
                 </p>
               </div>
@@ -892,9 +890,9 @@ export default function POS() {
                 <h3 className="mt-1 text-xl font-semibold text-ink">Selesaikan transaksi</h3>
               </div>
               <div className="overflow-hidden rounded-2xl border border-stone-200 bg-muted/50">
-                <div className="flex items-center justify-between border-b border-stone-200 bg-teal-50 px-4 py-3">
+                <div className="flex items-center justify-between border-b border-stone-200 bg-primary/5 px-4 py-3">
                   <span className="text-sm font-medium text-muted-foreground">Total transaksi</span>
-                  <span className="text-xl font-bold text-teal-800">{formatCurrency(totals.subtotal)}</span>
+                  <span className="text-xl font-bold text-primary">{formatCurrency(totals.subtotal)}</span>
                 </div>
                 {paymentMethod === 'credit' && <div className="border-b border-stone-200 px-4 py-3">
                   <label htmlFor="credit-customer-name" className="mb-1 block text-xs font-medium text-muted-foreground">Pelanggan kredit</label>
@@ -1113,7 +1111,7 @@ function NumericKeypad({
     <div className="mt-4">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground">{title}</p>
-        <button type="button" className="text-xs font-medium text-teal-700" onClick={onClose}>
+        <button type="button" className="text-xs font-medium text-primary" onClick={onClose}>
           Selesai
         </button>
       </div>

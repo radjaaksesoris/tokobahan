@@ -17,7 +17,7 @@ export default function NotFound() {
           </p>
           <Link
             to="/"
-            className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[0_6px_16px_rgba(33,108,104,0.18)] transition-all duration-200 hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 active:scale-[0.98]"
+            className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[0_6px_16px_rgba(64,87,55,0.18)] transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-[0.98]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Kembali ke dashboard

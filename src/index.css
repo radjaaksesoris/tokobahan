@@ -2,7 +2,7 @@
 
 @theme {
   --font-heading: 'Rubik', 'Nunito Sans', system-ui, sans-serif;
-  --color-primary: #216c68;
+  --color-primary: #405737;
   --color-primary-foreground: #fbfaf5;
   --color-secondary: #d97706;
   --color-secondary-foreground: #201b16;
@@ -264,7 +264,7 @@ html::-webkit-scrollbar {
 }
 
 .app-scrollbar-track:focus-visible {
-  outline: 2px solid #216c68;
+  outline: 2px solid var(--color-primary);
   outline-offset: -1px;
 }
 
@@ -414,7 +414,7 @@ html::-webkit-scrollbar {
 .receipt-title {
   align-self: center;
   margin-top: 12px;
-  color: #216c68;
+  color: var(--color-primary);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.1em;

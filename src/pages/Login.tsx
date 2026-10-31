@@ -152,7 +152,7 @@ export default function Login() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 overflow-hidden opacity-80" aria-hidden="true">
             <div className="absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-primary/15 blur-2xl" />
             <div className="absolute -bottom-32 -left-20 h-56 w-56 rounded-full border-[18px] border-accent/15" />
-            <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(rgba(33,108,104,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(33,108,104,0.06)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+            <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(rgba(64,87,55,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(64,87,55,0.06)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_top,black,transparent)]" />
           </div>
           <CardHeader className={`relative z-10 items-center text-center lg:items-start lg:text-left ${keyboardVisible ? 'pb-0 pt-3' : 'pb-1 pt-5'}`}>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Selamat datang kembali</p>
