@@ -43,7 +43,7 @@ html {
 
 @media (min-width: 1024px) {
   .page-header {
-    min-height: 8rem;
+    min-height: 6.25rem;
   }
 
   #main-content .page-header-tabs {
