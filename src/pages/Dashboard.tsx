@@ -86,7 +86,6 @@ export default function Dashboard() {
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
-  const [lowStockDismissed, setLowStockDismissed] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [reminderNow, setReminderNow] = useState(() => new Date())
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
@@ -157,7 +156,6 @@ export default function Dashboard() {
         }
         setStats(nextStats)
         setLowStockProducts(analytics.lowStockProducts)
-        if (analytics.lowStock === 0) setLowStockDismissed(false)
         notifyLowStock(analytics.lowStockProducts)
         setSnapshotGeneratedAt(snapshot.generated_at)
         setLoading(false)
@@ -310,10 +308,6 @@ export default function Dashboard() {
     }
   }
 
-  function dismissLowStockAlert() {
-    setLowStockDismissed(true)
-  }
-
   const cards = [
     {
       title: 'Uang Diterima Hari Ini',
@@ -347,6 +341,7 @@ export default function Dashboard() {
       color: 'bg-[#d5dfcc] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
       surface: 'bg-[#edf2e8]/80 ring-1 ring-[#c2cfb7]',
+      isProductCard: true,
     },
   ]
 
@@ -399,44 +394,6 @@ export default function Dashboard() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
                 <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
               </div>
-              {stats.lowStock > 0 && !lowStockDismissed && (
-                <div
-                  role="alert"
-                  aria-live="polite"
-                  className="relative min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-white sm:min-w-[9.5rem] lg:flex-none"
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 pr-5 text-left"
-                    onClick={() => setShowLowStockModal(true)}
-                  >
-                    <span className="rounded-lg bg-amber-400/15 p-1.5 text-amber-300">
-                      <PackageSearch className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Stok menipis</span>
-                      <span className="mt-1 block truncate text-sm font-semibold">{stats.lowStock} produk</span>
-                    </span>
-                  </button>
-                  {notificationPermission === 'default' && (
-                    <button
-                      type="button"
-                      className="mt-2 text-left text-[10px] font-semibold text-accent underline-offset-2 hover:underline"
-                      onClick={enableStockNotifications}
-                    >
-                      Aktifkan notifikasi
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Tutup notifikasi stok menipis"
-                    className="absolute right-2 top-2 hidden rounded-md p-1 text-stone-300 hover:bg-white/10 hover:text-white lg:block"
-                    onClick={dismissLowStockAlert}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -497,6 +454,28 @@ export default function Dashboard() {
                 <p className="truncate text-lg font-bold text-ink">
                   {loading ? '...' : c.value}
                 </p>
+                {'isProductCard' in c && c.isProductCard && stats.lowStock > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 underline-offset-2 hover:underline"
+                      aria-label={`Lihat ${stats.lowStock} produk dengan stok menipis`}
+                      onClick={() => setShowLowStockModal(true)}
+                    >
+                      <PackageSearch className="h-3.5 w-3.5" aria-hidden="true" />
+                      Stok menipis: {formatNumber(stats.lowStock)} produk
+                    </button>
+                    {notificationPermission === 'default' && (
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                        onClick={enableStockNotifications}
+                      >
+                        Aktifkan notifikasi
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
