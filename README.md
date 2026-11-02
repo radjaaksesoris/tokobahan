@@ -23,6 +23,15 @@ Aplikasi **Point of Sale (POS)** modern untuk **toko grosir alat konveksi**, dib
 | **Laporan** | Filter hari ini / 7 hari / bulan + riwayat transaksi |
 | **Akses** | Hanya akun `admin` |
 
+### Retensi Riwayat Transaksi
+
+Aplikasi menyimpan maksimal 500 transaksi terbaru yang sudah lunas. Transaksi kredit
+dengan sisa tagihan tetap disimpan di luar batas tersebut, sehingga jumlah total dapat
+melebihi 500 jika masih ada banyak piutang. Transaksi lama beserta item, retur, dan
+pembayaran terkait dihapus dari data operasional lokal; Supabase menerapkan aturan yang
+sama setelah migration retensi dijalankan. Salinan transaksi yang sudah ada di backup
+sebelumnya tidak ikut dihapus.
+
 ### Konversi Satuan Default
 - **Satuan** = 1 pcs
 - **Lusin** = 12 pcs

@@ -6,6 +6,7 @@ import { registerPushSubscription } from '@/lib/notifications'
 import { checkTauriUpdate, installTauriUpdate } from '@/lib/tauriUpdater'
 import {
   OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
+  pruneStoredOperationalSales,
   readOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
 import { startAutomaticOperationalSync } from '@/lib/automaticOperationalSync'
@@ -165,6 +166,14 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
     return startAutomaticOperationalSync()
+  }, [authLoading, isAdmin, user])
+
+  useEffect(() => {
+    if (authLoading || !user || !isAdmin) return
+
+    void pruneStoredOperationalSales().catch((error) => {
+      console.error('Gagal membatasi riwayat transaksi lokal:', error)
+    })
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {

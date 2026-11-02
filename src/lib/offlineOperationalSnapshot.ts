@@ -1,4 +1,5 @@
 import { roundStockQuantity } from './productUnits'
+import { pruneOperationalSales } from './offlineSalesRetention'
 
 export const OFFLINE_DB_NAME = 'konveksi-pos'
 export const OFFLINE_DB_VERSION = 5
@@ -287,7 +288,9 @@ export function readOperationalSnapshot<
 export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
-  const normalizedSnapshot = normalizeSnapshotStockPrecision(validateOperationalSnapshot(snapshot))
+  const normalizedSnapshot = normalizeSnapshotStockPrecision(
+    pruneOperationalSales(validateOperationalSnapshot(snapshot)),
+  )
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     lockRequest.onsuccess = () => {
@@ -304,7 +307,9 @@ export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
 export function initializeOperationalSnapshotIfMissing<TSnapshot extends OperationalSnapshot>(
   snapshot: TSnapshot,
 ): Promise<void> {
-  const normalizedSnapshot = normalizeSnapshotStockPrecision(validateOperationalSnapshot(snapshot))
+  const normalizedSnapshot = normalizeSnapshotStockPrecision(
+    pruneOperationalSales(validateOperationalSnapshot(snapshot)),
+  )
   return withSnapshotStore<void>('readwrite', (store, _setResult, abortWithError) => {
     const lockRequest = store.get(SYNC_LOCK_KEY)
     const snapshotRequest = store.get(SNAPSHOT_KEY)
@@ -472,7 +477,7 @@ export function updateOperationalSnapshot<TResult>(
 
         const next = update(validateOperationalSnapshot(current.data))
         const normalizedSnapshot = normalizeSnapshotStockPrecision(
-          validateOperationalSnapshot(next.snapshot),
+          pruneOperationalSales(validateOperationalSnapshot(next.snapshot)),
         )
         const snapshot = normalizedSnapshot === current.data
           ? normalizedSnapshot
@@ -496,6 +501,18 @@ export function updateOperationalSnapshot<TResult>(
       updateWhenReady()
     }
   })
+}
+
+export async function pruneStoredOperationalSales(): Promise<boolean> {
+  if (!await readOperationalSnapshot()) return false
+
+  let pruned = false
+  await updateOperationalSnapshot((snapshot) => {
+    const nextSnapshot = pruneOperationalSales(snapshot)
+    pruned = nextSnapshot !== snapshot
+    return { snapshot: nextSnapshot, result: undefined }
+  })
+  return pruned
 }
 
 export function validateOperationalSnapshot(value: unknown): OperationalSnapshot {
