@@ -101,13 +101,6 @@ function PageLoader() {
   return (
     <div className="page-loader" role="status" aria-label={`Memuat ${pageName}`}>
       <div className="page-loader__panel">
-        <div className="page-loader__emblem" aria-hidden="true">
-          <span className="page-loader__orbit" />
-          <span className="page-loader__logo">
-            <img src={`${import.meta.env.BASE_URL}icon-96.png`} alt="" />
-          </span>
-          <span className="page-loader__spark" />
-        </div>
         <div className="page-loader__copy">
           <p className="page-loader__eyebrow">RAJA AKSESORIS <span /> RUANG KERJA</p>
           <p className="page-loader__title">Menyiapkan {pageName}</p>
