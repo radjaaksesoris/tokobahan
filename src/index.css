@@ -193,7 +193,7 @@ textarea::placeholder {
   min-height: min(58vh, 34rem);
   place-items: center;
   padding: clamp(1.25rem, 5vw, 3rem);
-  animation: page-loader-enter 260ms ease-out both;
+  animation: page-loader-enter 260ms ease-out 180ms both;
 }
 
 .page-loader__panel {
@@ -477,6 +477,7 @@ html::-webkit-scrollbar {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
   }
 }
 
