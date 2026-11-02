@@ -1,6 +1,5 @@
-// Bump this value when the app shell or caching strategy changes. Old caches
-// are removed during activate so lazy-loaded pages do not resolve stale chunks.
-const CACHE_NAME = 'konveksipos-v6'
+// Keep the previous cache briefly so open tabs can finish loading their chunks.
+const CACHE_NAME = 'konveksipos-v7'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -23,7 +22,18 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => {
+        const appCaches = keys
+          .filter((key) => /^konveksipos-v\d+$/.test(key))
+          .sort((left, right) => Number(right.slice('konveksipos-v'.length)) - Number(left.slice('konveksipos-v'.length)))
+        const previousCache = appCaches.find((key) => key !== CACHE_NAME)
+        const cachesToKeep = new Set([CACHE_NAME, ...(previousCache ? [previousCache] : [])])
+        return Promise.all(
+          keys
+            .filter((key) => key.startsWith('konveksipos-v') && !cachesToKeep.has(key))
+            .map((key) => caches.delete(key)),
+        )
+      })
       .then(() => self.clients.claim()),
   )
 })
@@ -90,9 +100,14 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         if (response.ok) {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch((error) => {
+              console.error('Gagal menyimpan aset aplikasi ke cache:', error)
+            }),
+          )
+          return response
         }
-        return response
+        return caches.match(event.request).then((cached) => cached || response)
       })
       .catch(() => caches.match(event.request).then((cached) => cached || Response.error())),
   )

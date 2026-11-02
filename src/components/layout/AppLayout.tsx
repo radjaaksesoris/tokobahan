@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
+import { preloadPageChunk } from '@/lib/pageChunks'
 import { CurrentDate } from '@/components/layout/CurrentDate'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
@@ -137,6 +138,8 @@ export function AppLayout() {
               key={item.to}
               to={item.to}
               end
+              onPointerEnter={() => preloadPageChunk(item.to)}
+              onFocus={() => preloadPageChunk(item.to)}
               className={({ isActive }) =>
                 cn(
                   'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',

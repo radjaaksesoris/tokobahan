@@ -14,6 +14,7 @@ import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriC
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
+import { getPageChunkImporter } from '@/lib/pageChunks'
 import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
 
@@ -32,16 +33,16 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   })
 }
 
-const Dashboard = lazyWithRecovery(() => import('@/pages/Dashboard'), 'dashboard')
-const POS = lazyWithRecovery(() => import('@/pages/POS'), 'pos')
-const Products = lazyWithRecovery(() => import('@/pages/Products'), 'products')
-const StockHistory = lazyWithRecovery(() => import('@/pages/StockHistory'), 'stock-history')
-const Reports = lazyWithRecovery(() => import('@/pages/Reports'), 'reports')
-const TransactionHistory = lazyWithRecovery(() => import('@/pages/TransactionHistory'), 'transactions')
-const SettingsPage = lazyWithRecovery(() => import('@/pages/Settings'), 'settings')
-const Settlements = lazyWithRecovery(() => import('@/pages/Settlements'), 'settlements')
-const StockOpname = lazyWithRecovery(() => import('@/pages/StockOpname'), 'stock-opname')
-const NotFound = lazyWithRecovery(() => import('@/pages/NotFound'), 'not-found')
+const Dashboard = lazyWithRecovery(getPageChunkImporter('dashboard'), 'dashboard')
+const POS = lazyWithRecovery(getPageChunkImporter('pos'), 'pos')
+const Products = lazyWithRecovery(getPageChunkImporter('products'), 'products')
+const StockHistory = lazyWithRecovery(getPageChunkImporter('stockHistory'), 'stock-history')
+const Reports = lazyWithRecovery(getPageChunkImporter('reports'), 'reports')
+const TransactionHistory = lazyWithRecovery(getPageChunkImporter('transactions'), 'transactions')
+const SettingsPage = lazyWithRecovery(getPageChunkImporter('settings'), 'settings')
+const Settlements = lazyWithRecovery(getPageChunkImporter('settlements'), 'settlements')
+const StockOpname = lazyWithRecovery(getPageChunkImporter('stockOpname'), 'stock-opname')
+const NotFound = lazyWithRecovery(getPageChunkImporter('notFound'), 'not-found')
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null }

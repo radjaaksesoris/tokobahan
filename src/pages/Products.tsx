@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { getPriceConversion, roundStockQuantity } from '@/lib/productUnits'
+import { preloadPageChunk } from '@/lib/pageChunks'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -709,6 +710,8 @@ export default function Products() {
             <Button
               variant="outline"
               className="h-11 shrink-0 border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+              onPointerEnter={() => preloadPageChunk('/products/history')}
+              onFocus={() => preloadPageChunk('/products/history')}
               onClick={() => navigate('/products/history')}
             >
               <History className="h-4 w-4" />
