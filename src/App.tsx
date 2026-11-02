@@ -83,20 +83,39 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function PageLoader() {
+  const { pathname } = useLocation()
+  const pageName = ({
+    '/': 'Ringkasan',
+    '/pos': 'Kasir',
+    '/products': 'Produk',
+    '/products/history': 'Riwayat stok',
+    '/products/stock-opname': 'Stok opname',
+    '/reports': 'Laporan',
+    '/transactions': 'Riwayat transaksi',
+    '/settings': 'Pengaturan',
+    '/settlements': 'Pelunasan hutang',
+    '/login': 'Login',
+  } as Record<string, string>)[pathname] || 'halaman'
+
   return (
-    <div className="min-h-[40vh] animate-pulse space-y-6" aria-label="Memuat halaman" role="status">
-      <div className="space-y-3 border-b border-border pb-5">
-        <div className="h-3 w-32 rounded-full bg-muted" />
-        <div className="h-9 w-56 rounded-lg bg-muted" />
-        <div className="h-4 w-72 max-w-full rounded-full bg-muted" />
+    <div className="page-loader" role="status" aria-label={`Memuat ${pageName}`}>
+      <div className="page-loader__panel">
+        <div className="page-loader__emblem" aria-hidden="true">
+          <span className="page-loader__orbit" />
+          <span className="page-loader__logo">
+            <img src={`${import.meta.env.BASE_URL}icon-96.png`} alt="" />
+          </span>
+          <span className="page-loader__spark" />
+        </div>
+        <div className="page-loader__copy">
+          <p className="page-loader__eyebrow">RAJA AKSESORIS <span /> RUANG KERJA</p>
+          <p className="page-loader__title">Menyiapkan {pageName}</p>
+          <div className="page-loader__track" aria-hidden="true">
+            <span />
+          </div>
+          <span className="sr-only">Memuat halaman...</span>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="h-24 rounded-2xl border border-border/60 bg-surface" />
-        ))}
-      </div>
-      <div className="h-64 rounded-2xl border border-border/60 bg-surface" />
-      <span className="sr-only">Memuat halaman...</span>
     </div>
   )
 }
