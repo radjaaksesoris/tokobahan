@@ -104,16 +104,34 @@ export default function Dashboard() {
   const syncSeconds = syncSecondsRemaining % 60
 
   useEffect(() => {
-    const timer = window.setInterval(() => setReminderNow(new Date()), 1000)
     const updateOnlineState = () => setIsOnline(navigator.onLine)
+    const updateReminderTime = () => setReminderNow(new Date())
     window.addEventListener('online', updateOnlineState)
     window.addEventListener('offline', updateOnlineState)
+    window.addEventListener('focus', updateReminderTime)
+    document.addEventListener('visibilitychange', updateReminderTime)
     return () => {
-      window.clearInterval(timer)
       window.removeEventListener('online', updateOnlineState)
       window.removeEventListener('offline', updateOnlineState)
+      window.removeEventListener('focus', updateReminderTime)
+      document.removeEventListener('visibilitychange', updateReminderTime)
     }
   }, [])
+
+  useEffect(() => {
+    if (isMobileDevice()) return
+
+    const now = new Date(reminderNow)
+    const nextReminder = new Date(now)
+    nextReminder.setHours(14, 30, 0, 0)
+    if (now >= nextReminder) nextReminder.setDate(nextReminder.getDate() + 1)
+
+    const delay = syncReminderVisible
+      ? 1000
+      : Math.max(0, nextReminder.getTime() - now.getTime())
+    const timer = window.setTimeout(() => setReminderNow(new Date()), delay)
+    return () => window.clearTimeout(timer)
+  }, [reminderNow, syncReminderVisible])
 
   useEffect(() => {
     void loadStats()

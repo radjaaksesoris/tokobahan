@@ -4,6 +4,7 @@ export const OFFLINE_DB_NAME = 'konveksi-pos'
 export const OFFLINE_DB_VERSION = 5
 export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
 export const OFFLINE_INVOICE_SEQUENCE_STORE = 'offline-invoice-sequence'
+export const OPERATIONAL_SNAPSHOT_CHANGE_EVENT = 'tokobahan:operational-snapshot-change'
 
 const TRANSACTION_STORE = 'offline-transactions'
 const SETTLEMENT_STORE = 'offline-settlements'
@@ -239,6 +240,9 @@ async function withSnapshotStore<T>(
         transaction.oncomplete = () => {
           if (settled) return
           settled = true
+          if (mode === 'readwrite' && typeof window !== 'undefined') {
+            window.dispatchEvent(new Event(OPERATIONAL_SNAPSHOT_CHANGE_EVENT))
+          }
           resolve(result)
         }
         run(

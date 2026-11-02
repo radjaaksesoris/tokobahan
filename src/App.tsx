@@ -4,7 +4,10 @@ import { Toaster } from 'sonner'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { registerPushSubscription } from '@/lib/notifications'
 import { checkTauriUpdate, installTauriUpdate } from '@/lib/tauriUpdater'
-import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import {
+  OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
+  readOperationalSnapshot,
+} from '@/lib/offlineOperationalSnapshot'
 import { startAutomaticOperationalSync } from '@/lib/automaticOperationalSync'
 import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -101,20 +104,6 @@ function PageSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 
-function preloadPageChunks() {
-  void Promise.all([
-    import('@/pages/Dashboard'),
-    import('@/pages/POS'),
-    import('@/pages/Products'),
-    import('@/pages/StockHistory'),
-    import('@/pages/TransactionHistory'),
-    import('@/pages/Settings'),
-    import('@/pages/Settlements'),
-  ]).catch((error) => {
-    console.warn('Gagal melakukan prefetch halaman:', error)
-  })
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore()
 
@@ -148,12 +137,6 @@ export default function App() {
     registerPushSubscription().catch((error) => {
       console.warn('Push subscription sync failed:', error)
     })
-  }, [authLoading, isAdmin, user])
-
-  useEffect(() => {
-    if (authLoading || !user || !isAdmin) return
-
-    preloadPageChunks()
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {
@@ -196,15 +179,25 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
 
+    let checking = false
     const updatePendingState = async () => {
+      if (checking) return
+      checking = true
       try {
         const snapshot = await readOperationalSnapshot()
         hasPendingLocalChangesRef.current = Boolean(
           snapshot && window.localStorage.getItem(LOCAL_BACKUP_LAST_GENERATED_KEY) !== snapshot.generated_at,
         )
-      } catch {
+      } catch (error) {
+        console.warn('Gagal memeriksa perubahan data lokal:', error)
         hasPendingLocalChangesRef.current = false
+      } finally {
+        checking = false
       }
+    }
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void updatePendingState()
     }
 
     const warnBeforeOfflineClose = (event: BeforeUnloadEvent) => {
@@ -214,10 +207,16 @@ export default function App() {
     }
 
     void updatePendingState()
-    const timer = window.setInterval(() => void updatePendingState(), 2000)
+    const timer = window.setInterval(refreshWhenVisible, 15000)
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
     window.addEventListener('beforeunload', warnBeforeOfflineClose)
     return () => {
       window.clearInterval(timer)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
       window.removeEventListener('beforeunload', warnBeforeOfflineClose)
       hasPendingLocalChangesRef.current = false
     }

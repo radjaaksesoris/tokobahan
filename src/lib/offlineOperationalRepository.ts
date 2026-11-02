@@ -22,8 +22,9 @@ function rowId(row: OperationalRow) {
 
 export async function readOperationalTable<T = OperationalRow>(
   table: OperationalSnapshotTable,
+  sourceSnapshot?: OperationalSnapshot,
 ): Promise<T[]> {
-  const snapshot = await readOperationalSnapshot<OperationalSnapshot>()
+  const snapshot = sourceSnapshot ?? await readOperationalSnapshot<OperationalSnapshot>()
   if (!snapshot) throw new Error('Snapshot lokal belum diinisialisasi')
   return snapshot.tables[table] as T[]
 }

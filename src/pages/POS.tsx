@@ -24,7 +24,10 @@ import {
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
-import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import {
+  OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
+  readOperationalSnapshot,
+} from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
@@ -142,7 +145,10 @@ export default function POS() {
 
   useEffect(() => {
     let cancelled = false
+    let checking = false
     const refreshSnapshotSyncStatus = async () => {
+      if (checking) return
+      checking = true
       try {
         const snapshot = await readOperationalSnapshot()
         if (cancelled) return
@@ -157,25 +163,38 @@ export default function POS() {
         )
       } catch {
         if (!cancelled) setSnapshotSyncStatus('error')
+      } finally {
+        checking = false
       }
     }
 
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void refreshSnapshotSyncStatus()
+    }
+
     void refreshSnapshotSyncStatus()
-    const timer = window.setInterval(() => void refreshSnapshotSyncStatus(), 3000)
+    const timer = window.setInterval(refreshWhenVisible, 30000)
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener('online', refreshWhenVisible)
+    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
     return () => {
       cancelled = true
       window.clearInterval(timer)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('online', refreshWhenVisible)
+      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
     }
   }, [])
 
   useEffect(() => {
     const controller = new AbortController()
-    const timer = window.setTimeout(() => void loadProducts(controller.signal), 250)
+    void loadProducts(controller.signal)
     return () => {
       controller.abort()
-      window.clearTimeout(timer)
     }
-  }, [search])
+  }, [])
 
   useEffect(() => {
     if (!showKeypadPanel) return
@@ -228,8 +247,9 @@ export default function POS() {
     let cancelled = false
     async function loadCustomers() {
       try {
-        if (await readOperationalSnapshot()) {
-          const rows = await readOperationalTable<{ id: string; name: string }>('customers')
+        const snapshot = await readOperationalSnapshot()
+        if (snapshot) {
+          const rows = await readOperationalTable<{ id: string; name: string }>('customers', snapshot)
           if (!cancelled) setCustomers(rows.sort((a, b) => a.name.localeCompare(b.name, 'id')))
           return
         }
@@ -250,25 +270,28 @@ export default function POS() {
   async function loadProducts(signal?: AbortSignal) {
     if (!initialLoadComplete.current) setLoading(true)
     try {
-      if (await readOperationalSnapshot()) {
-        const localProducts = await readOperationalTable<Product>('products')
-        if (signal?.aborted) return
-        const term = search.trim().toLocaleLowerCase()
-        const rows = localProducts
-          .filter((product) => product.is_active)
-          .filter((product) => !term ||
-            product.name.toLocaleLowerCase().includes(term) ||
-            product.sku?.toLocaleLowerCase().includes(term) ||
-            product.barcode?.toLocaleLowerCase().includes(term))
-          .map((product) => ({
-            ...product,
-            prices: parseProductPrices(product.prices),
-          }))
-        setProducts(sortCatalogProducts(rows))
+      const snapshot = await readOperationalSnapshot()
+      if (signal?.aborted) return
+      if (!snapshot) {
+        toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
+        setProducts([])
         initialLoadComplete.current = true
         setLoading(false)
         return
       }
+
+      const localProducts = await readOperationalTable<Product>('products', snapshot)
+      if (signal?.aborted) return
+      const rows = localProducts
+        .filter((product) => product.is_active)
+        .map((product) => ({
+          ...product,
+          prices: parseProductPrices(product.prices),
+        }))
+      if (signal?.aborted) return
+      setProducts(sortCatalogProducts(rows))
+      initialLoadComplete.current = true
+      setLoading(false)
     } catch (error) {
       if (signal?.aborted) return
       toast.error(`Gagal membaca katalog lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
@@ -277,20 +300,16 @@ export default function POS() {
       initialLoadComplete.current = true
       return
     }
-    toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
-    setProducts([])
-    initialLoadComplete.current = true
-    setLoading(false)
   }
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase()
+    const q = search.trim().toLocaleLowerCase()
     if (!q) return products
     return products.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.sku?.toLowerCase().includes(q) ||
-        p.barcode?.toLowerCase().includes(q)
+        p.name.toLocaleLowerCase().includes(q) ||
+        p.sku?.toLocaleLowerCase().includes(q) ||
+        p.barcode?.toLocaleLowerCase().includes(q)
     )
   }, [products, search])
 
