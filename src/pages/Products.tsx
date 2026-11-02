@@ -48,7 +48,7 @@ function ProductTableSkeleton() {
           {Array.from({ length: 8 }, (_, index) => (
             <div key={index} className="grid grid-cols-[2.5rem_1.4fr_1fr_1fr_1fr_1fr_3rem] items-center gap-3 px-4 py-3">
               {Array.from({ length: 7 }, (_, cell) => (
-                <div key={cell} className={`h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80 ${cell === 0 || cell === 6 ? 'mx-auto w-6' : 'w-full'}`} />
+                <div key={cell} className={`h-3 rounded-full bg-muted/80 ${cell === 0 || cell === 6 ? 'mx-auto w-6' : 'w-full'}`} />
               ))}
             </div>
           ))}
@@ -57,12 +57,12 @@ function ProductTableSkeleton() {
       <div className="space-y-3 p-3 sm:hidden">
         {Array.from({ length: 6 }, (_, index) => (
           <div key={index} className="space-y-3 rounded-xl border border-border p-4">
-            <div className="h-4 w-2/3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80" />
+            <div className="h-4 w-2/3 rounded-full bg-muted/80" />
             <div className="grid grid-cols-2 gap-3">
-              <div className="h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80" />
-              <div className="h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80" />
-              <div className="h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80" />
-              <div className="h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80" />
+              <div className="h-3 rounded-full bg-muted/80" />
+              <div className="h-3 rounded-full bg-muted/80" />
+              <div className="h-3 rounded-full bg-muted/80" />
+              <div className="h-3 rounded-full bg-muted/80" />
             </div>
           </div>
         ))}

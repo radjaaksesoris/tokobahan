@@ -1,4 +1,13 @@
 const RELOAD_KEY_PREFIX = 'vite-build-reload:'
+export const STALE_BUILD_RECOVERY_PARAM = '__app_recovery'
+
+export function clearStaleBuildRecoveryParam(): void {
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has(STALE_BUILD_RECOVERY_PARAM)) return
+
+  url.searchParams.delete(STALE_BUILD_RECOVERY_PARAM)
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+}
 
 function waitForWorkerActivation(worker: ServiceWorker): Promise<void> {
   if (worker.state === 'activated' || worker.state === 'redundant') return Promise.resolve()
@@ -47,6 +56,8 @@ export async function recoverFromStaleBuild(): Promise<void> {
   } catch (error) {
     console.warn('Gagal memperbarui aplikasi setelah asset gagal dimuat:', error)
   } finally {
-    window.location.reload()
+    const url = new URL(window.location.href)
+    url.searchParams.set(STALE_BUILD_RECOVERY_PARAM, Date.now().toString())
+    window.location.replace(url.toString())
   }
 }

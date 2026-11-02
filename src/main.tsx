@@ -2,7 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
+import { clearStaleBuildRecoveryParam, recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
+
+clearStaleBuildRecoveryParam()
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()

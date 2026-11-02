@@ -79,16 +79,16 @@ function TransactionTableSkeleton() {
             {Array.from({ length: 6 }, (_, cell) => (
               <div
                 key={cell}
-                className={`h-3 animate-[pulse_3.5s_ease-in-out_infinite] rounded-full bg-muted/80 ${cell === 0 || cell === 5 ? 'mx-auto w-5' : 'w-full'}`}
+                className={`h-3 rounded-full bg-muted/80 ${cell === 0 || cell === 5 ? 'mx-auto w-5' : 'w-full'}`}
               />
             ))}
           </div>
         ))}
       </div>
       <div className="flex justify-between border-t border-stone-100 p-4">
-        <div className="h-8 w-24 animate-pulse rounded-lg bg-muted" />
-        <div className="h-4 w-20 animate-pulse rounded-full bg-muted" />
-        <div className="h-8 w-24 animate-pulse rounded-lg bg-muted" />
+        <div className="h-8 w-24 rounded-lg bg-muted" />
+        <div className="h-4 w-20 rounded-full bg-muted" />
+        <div className="h-8 w-24 rounded-lg bg-muted" />
       </div>
     </div>
   )
