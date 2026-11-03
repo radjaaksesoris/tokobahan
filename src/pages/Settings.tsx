@@ -25,7 +25,6 @@ import {
 import { validateOperationalSnapshotIntegrity } from '@/lib/validateOperationalSnapshotIntegrity'
 import {
   initializeOperationalSnapshot,
-  refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import {
@@ -392,23 +391,6 @@ export default function Settings() {
       toast.success(`Data awal tersimpan di perangkat (${result.rows} baris dari ${result.tables} tabel)`)
     } catch (error) {
       toast.error(`Gagal menyiapkan data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-    } finally {
-      setInitializingLocalData(false)
-    }
-  }
-
-  async function refreshLocalDataFromServer() {
-    if (!window.confirm(
-      'Data lokal di perangkat ini akan diganti dengan data terbaru dari server. ' +
-      'Perubahan lokal yang belum disinkronkan akan hilang. Lanjutkan?',
-    )) return
-    setInitializingLocalData(true)
-    try {
-      const result = await refreshOperationalSnapshotFromServer()
-      await loadLocalSnapshotStatus()
-      toast.success(`Data lokal diperbarui dari server (${result.rows} baris dari ${result.tables} tabel)`)
-    } catch (error) {
-      toast.error(`Gagal memperbarui data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     } finally {
       setInitializingLocalData(false)
     }
@@ -1075,13 +1057,11 @@ export default function Settings() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => void refreshLocalDataFromServer()}
-                  disabled={syncingLocalData || initializingLocalData}
+                  disabled
+                  title="Refresh dari server dinonaktifkan sementara"
                 >
-                  {initializingLocalData
-                    ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
-                    : <Download className="h-4 w-4" />}
-                  Ambil ulang data server
+                  <Download className="h-4 w-4" />
+                  Refresh server sementara nonaktif
                 </Button>
               </>
             )}

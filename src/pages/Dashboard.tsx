@@ -25,7 +25,6 @@ import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
 import {
   initializeOperationalSnapshot,
-  refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
 import { isMobileDevice } from '@/lib/automaticOperationalSync'
 
@@ -207,33 +206,6 @@ export default function Dashboard() {
     }
   }
 
-  async function refreshMobileData() {
-    if (!navigator.onLine) {
-      toast.error('Refresh membutuhkan koneksi internet')
-      return
-    }
-
-    setRefreshing(true)
-    try {
-      const localSnapshot = await readOperationalSnapshot()
-      const hasPendingChanges = Boolean(
-        localSnapshot?.synced_generated_at && localSnapshot.synced_generated_at !== localSnapshot.generated_at,
-      )
-      if (hasPendingChanges) {
-        toast.warning('Data lokal belum tersinkron. Lakukan sinkronisasi dari PC sebelum refresh mobile.')
-        return
-      }
-      if (localSnapshot) await refreshOperationalSnapshotFromServer()
-      else await initializeOperationalSnapshot()
-      await loadStats()
-      toast.success('Data transaksi berhasil diperbarui')
-    } catch (refreshError) {
-      toast.error(`Refresh gagal: ${refreshError instanceof Error ? refreshError.message : 'Kesalahan tidak diketahui'}`)
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
   function notifyLowStock(products: LowStockProduct[]) {
     if (products.length === 0) {
       window.localStorage.removeItem(LOW_STOCK_NOTIFIED_KEY)
@@ -375,14 +347,13 @@ export default function Dashboard() {
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           <button
             type="button"
-            onClick={() => void refreshMobileData()}
-            disabled={refreshing}
-            className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-ink px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 lg:hidden"
-            aria-label="Refresh data transaksi dari Supabase"
-            title="Refresh data transaksi dari Supabase"
+            disabled
+            className="inline-flex min-w-0 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-white/20 bg-ink px-3 py-3 text-sm font-semibold text-white/60 opacity-70 lg:hidden"
+            aria-label="Refresh data dinonaktifkan sementara"
+            title="Refresh dari server dinonaktifkan sementara"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-            Refresh
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            Refresh sementara nonaktif
           </button>
           {syncReminderVisible ? (
             <div
