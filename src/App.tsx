@@ -108,9 +108,6 @@ function PageLoader() {
         <div className="page-loader__copy">
           <p className="page-loader__eyebrow">RAJA AKSESORIS <span /> RUANG KERJA</p>
           <p className="page-loader__title">Menyiapkan {pageName}</p>
-          <div className="page-loader__track" aria-hidden="true">
-            <span />
-          </div>
           <span className="sr-only">Memuat halaman...</span>
         </div>
       </div>

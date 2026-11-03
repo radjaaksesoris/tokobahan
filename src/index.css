@@ -193,7 +193,6 @@ textarea::placeholder {
   min-height: min(58vh, 34rem);
   place-items: center;
   padding: clamp(1.25rem, 5vw, 3rem);
-  animation: page-loader-enter 180ms ease-out both;
 }
 
 .page-loader__panel {
@@ -239,48 +238,6 @@ textarea::placeholder {
   font-size: clamp(1.05rem, 3vw, 1.3rem);
   font-weight: 600;
   letter-spacing: -0.035em;
-}
-
-.page-loader__track {
-  position: relative;
-  height: 3px;
-  overflow: hidden;
-  margin-top: 1rem;
-  border-radius: 999px;
-  background: rgba(64, 87, 55, 0.1);
-}
-
-.page-loader__track span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 42%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #405737 0%, #78915f 72%, #d97706 100%);
-  transform-origin: left center;
-  animation: page-loader-progress 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-@keyframes page-loader-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes page-loader-progress {
-  0% {
-    transform: translateX(-105%) scaleX(0.55);
-  }
-  55% {
-    transform: translateX(95%) scaleX(1);
-  }
-  100% {
-    transform: translateX(245%) scaleX(0.7);
-  }
 }
 
 @media (max-width: 1023px) {
