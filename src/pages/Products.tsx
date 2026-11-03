@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
-import { formatCurrency, formatCurrencyInput, formatStockQuantity, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -154,8 +154,6 @@ export default function Products() {
   }))
   const unitFactors = UNIT_FACTORS
   const basePriceUnit = prices.find((price) => price.conversion === 1)?.unit
-  const stockConversion = getPriceConversion(prices, stockUnit)
-  const recommendBaseStockUnit = !editing && basePriceUnit && stockUnit !== basePriceUnit && stockConversion > 1
 
   useEffect(() => {
     let cancelled = false
@@ -1139,9 +1137,6 @@ export default function Products() {
                       {skuValidationError}
                     </p>
                   )}
-                  {editing?.sku && !skuEditing && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">SKU dikunci saat mengubah stok atau harga.</p>
-                  )}
                 </div>
                 <div className="min-w-0">
                   <label htmlFor="product-stock" className="mb-1 block text-sm font-medium">Stok</label>
@@ -1180,14 +1175,6 @@ export default function Products() {
                       aria-label="Satuan stok"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Stok dicatat dalam satuan {getUnitLabel(stockUnit)}.
-                    {editing && <> Tampilan campuran dibulatkan ke satuan terkecil dan tidak mengubah angka stok tersimpan.</>}
-                    {recommendBaseStockUnit && (
-                      <> Untuk penjualan per {getUnitLabel(basePriceUnit)}, pilih {getUnitLabel(basePriceUnit)} sebagai satuan stok agar stok tidak dihitung sebagai pecahan {getUnitLabel(stockUnit)}.</>
-                    )}
-                    {editing && <> Satuan stok produk lama dikunci agar jumlah stok dan batch HPP tidak berubah tanpa konversi.</>}
-                  </p>
                 </div>
               </div>
               {!editing && (
@@ -1302,16 +1289,6 @@ export default function Products() {
                       aria-label="Satuan harga modal"
                     />
                   </div>
-                  {editing && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Perubahan ini menjadi acuan modal untuk stok masuk berikutnya. HPP batch lama tidak berubah.
-                    </p>
-                  )}
-                  {basePriceUnit && getPriceConversion(prices, costUnit) > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Setara sekitar {formatCurrency(Math.round(costPrice / getPriceConversion(prices, costUnit)))} per {getUnitLabel(basePriceUnit)}.
-                    </p>
-                  )}
                 </div>
                 <div>
                   <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">Min. Stok</label>
@@ -1432,18 +1409,6 @@ export default function Products() {
                       )}
                     </div>
                   ))}
-                </div>
-                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                  {prices.map((price, index) => (
-                    <p key={`${price.unit}-${index}`}>
-                      {basePriceUnit
-                        ? `1 ${getUnitLabel(price.unit)} = ${formatStockQuantity(price.conversion)} ${getUnitLabel(basePriceUnit)}`
-                        : `Isi jumlah unit dasar dalam 1 ${getUnitLabel(price.unit)}.`}
-                    </p>
-                  ))}
-                  {basePriceUnit && (
-                    <p>Gunakan satuan dengan konversi 1 sebagai unit dasar. HPP setara per unit dasar ditampilkan di bagian Harga Modal.</p>
-                  )}
                 </div>
               </div>
             </CardContent>
