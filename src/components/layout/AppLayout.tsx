@@ -27,6 +27,7 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [scrollMetrics, setScrollMetrics] = useState({ height: 0, top: 0, max: 0 })
+  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const scrollTrackRef = useRef<HTMLDivElement>(null)
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
@@ -170,7 +171,10 @@ export function AppLayout() {
         <div className="hidden border-t border-white/10 p-4 lg:block">
           <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
-            <CurrentDate className="text-left text-stone-300" />
+            <CurrentDate
+              className="text-left text-stone-300"
+              snapshotGeneratedAt={snapshotGeneratedAt}
+            />
           </div>
           <button
             className="mt-2 flex w-full items-center justify-center rounded-lg border border-white/20 p-2 text-stone-300 transition-colors hover:bg-white/10 hover:text-white"
@@ -186,7 +190,7 @@ export function AppLayout() {
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
-          <Outlet />
+          <Outlet context={{ setSnapshotGeneratedAt }} />
         </main>
         <div
           ref={scrollTrackRef}

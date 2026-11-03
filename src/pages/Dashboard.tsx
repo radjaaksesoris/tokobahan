@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
 import {
@@ -68,6 +68,9 @@ interface LowStockProduct {
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { setSnapshotGeneratedAt } = useOutletContext<{
+    setSnapshotGeneratedAt: (timestamp: string | null) => void
+  }>()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
     todayTransactionValue: 0,
@@ -83,7 +86,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [snapshotMissing, setSnapshotMissing] = useState(false)
-  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   const [showLowStockModal, setShowLowStockModal] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -416,12 +418,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
-      {snapshotGeneratedAt && (
-        <p className="-mt-5 text-xs font-medium text-emerald-700" role="status">
-          Snapshot lokal · dibuat {format(new Date(snapshotGeneratedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
-        </p>
-      )}
 
       {error && (
         <Card className="border-amber-200 bg-amber-50">
