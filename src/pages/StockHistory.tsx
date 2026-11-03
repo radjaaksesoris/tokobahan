@@ -3,23 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import { endOfDay, format, startOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { Calendar, ChevronLeft, ChevronRight, History, X } from 'lucide-react'
-import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { UNIT_LABELS, type UnitType } from '@/types'
-import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, formatNumber, formatStockQuantity, parseCurrencyInput } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const PAGE_SIZE = 20
 type PageCursor = { received_at: string; id: string } | null
 
+function getUnitLabel(unit: string | null | undefined) {
+  return unit ? UNIT_LABELS[unit] || unit : 'Satuan'
+}
+
 interface StockReceipt {
   id: string
+  product_id: string
   quantity_received: number
+  quantity_remaining: number
   unit_cost: number
   received_at: string
   vendor: { name: string } | null
@@ -30,6 +37,7 @@ interface StockReceipt {
 
 export default function StockHistory() {
   const navigate = useNavigate()
+  const userId = useAuthStore((state) => state.profile?.id || state.user?.id || null)
   const [history, setHistory] = useState<StockReceipt[]>([])
   const [date, setDate] = useState('')
   const [vendorId, setVendorId] = useState('')
@@ -38,7 +46,91 @@ export default function StockHistory() {
   const [cursorHistory, setCursorHistory] = useState<PageCursor[]>([null])
   const [hasNextPage, setHasNextPage] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [costCorrection, setCostCorrection] = useState<StockReceipt | null>(null)
+  const [correctedUnitCost, setCorrectedUnitCost] = useState(0)
+  const [correctionReason, setCorrectionReason] = useState('')
+  const [savingCorrection, setSavingCorrection] = useState(false)
   const requestId = useRef(0)
+
+  function openCostCorrection(receipt: StockReceipt) {
+    setCostCorrection(receipt)
+    setCorrectedUnitCost(receipt.unit_cost)
+    setCorrectionReason('')
+  }
+
+  async function saveCostCorrection() {
+    if (!costCorrection || savingCorrection) return
+    if (!Number.isSafeInteger(correctedUnitCost) || correctedUnitCost < 0 || correctedUnitCost > 9_999_999_999_999) {
+      toast.error('HPP batch harus berupa rupiah utuh dalam batas nominal yang aman')
+      return
+    }
+    if (!correctionReason.trim()) {
+      toast.error('Alasan koreksi HPP wajib diisi')
+      return
+    }
+    if (!userId) {
+      toast.error('Sesi admin tidak tersedia. Masuk kembali sebelum mengoreksi HPP.')
+      return
+    }
+
+    setSavingCorrection(true)
+    try {
+      const now = new Date().toISOString()
+      await updateOperationalSnapshot((snapshot) => {
+        const batch = snapshot.tables.product_stock_batches.find((row) => row.id === costCorrection.id)
+        if (!batch || batch.product_id !== costCorrection.product_id) {
+          throw new Error('Batch stok tidak ditemukan di snapshot lokal')
+        }
+        if (Number(batch.unit_cost) !== costCorrection.unit_cost) {
+          throw new Error('HPP batch sudah berubah. Muat ulang riwayat stok sebelum mengoreksi lagi.')
+        }
+        const paidAmount = snapshot.tables.vendor_debt_payments
+          .filter((payment) => payment.stock_batch_id === batch.id)
+          .reduce((total, payment) => total + Number(payment.amount), 0)
+        if (paidAmount > Number(batch.quantity_received) * correctedUnitCost) {
+          throw new Error('HPP baru lebih rendah daripada pembayaran vendor yang sudah dicatat')
+        }
+
+        const reason = `Koreksi HPP batch ${batch.id}: ${formatCurrency(Number(batch.unit_cost))} menjadi ${formatCurrency(correctedUnitCost)} per ${getUnitLabel(costCorrection.product?.stock_unit)}. Alasan: ${correctionReason.trim()}`
+        const stockAdjustment = {
+          id: crypto.randomUUID(),
+          product_id: batch.product_id,
+          system_stock: Number(batch.quantity_remaining),
+          physical_stock: Number(batch.quantity_remaining),
+          difference: 0,
+          reason,
+          adjusted_by: userId,
+          created_at: now,
+        }
+
+        return {
+          snapshot: {
+            ...snapshot,
+            tables: {
+              ...snapshot.tables,
+              product_stock_batches: snapshot.tables.product_stock_batches.map((row) =>
+                row.id === batch.id ? { ...row, unit_cost: correctedUnitCost } : row,
+              ),
+              stock_adjustments: [...snapshot.tables.stock_adjustments, stockAdjustment],
+            },
+          },
+          result: undefined,
+        }
+      })
+      toast.success('HPP batch berhasil dikoreksi. Transaksi lama tidak berubah.')
+      setHistory((current) => current.map((receipt) =>
+        receipt.id === costCorrection.id
+          ? { ...receipt, unit_cost: correctedUnitCost }
+          : receipt,
+      ))
+      setCostCorrection(null)
+      setCorrectionReason('')
+    } catch (error) {
+      toast.error(`Gagal mengoreksi HPP batch: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setSavingCorrection(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -106,7 +198,9 @@ export default function StockHistory() {
               return {
                 ...batch,
                 id: String(batch.id),
+                product_id: String(batch.product_id),
                 quantity_received: Number(batch.quantity_received),
+                quantity_remaining: Number(batch.quantity_remaining),
                 unit_cost: Number(batch.unit_cost),
                 received_at: String(batch.received_at),
                 payment_status: batch.payment_status as 'kredit' | 'lunas',
@@ -210,7 +304,7 @@ export default function StockHistory() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="min-w-[720px] w-full table-auto text-[11px] sm:text-sm">
+            <table className="min-w-[820px] w-full table-auto text-[11px] sm:text-sm">
                   <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
@@ -221,18 +315,19 @@ export default function StockHistory() {
                       <th className="w-[17%] px-1 py-2 sm:w-auto sm:px-3">HPP</th>
                       <th className="w-[15%] px-1 py-2 sm:w-auto sm:px-3">Status</th>
                       <th className="w-[15%] px-1 py-2 sm:w-auto sm:px-3">Nilai stok</th>
+                      <th className="px-1 py-2 sm:px-3">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {loading ? (
                       <tr>
-                        <td colSpan={8} className="h-24 text-center">
+                        <td colSpan={9} className="h-24 text-center">
                           <LoadingDots className="text-primary" />
                         </td>
                       </tr>
                     ) : history.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="h-24 text-center text-sm text-muted-foreground">
+                        <td colSpan={9} className="h-24 text-center text-sm text-muted-foreground">
                           Belum ada riwayat input stok pada tanggal tersebut.
                         </td>
                       </tr>
@@ -253,10 +348,15 @@ export default function StockHistory() {
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-1 py-2 text-center font-semibold text-ink sm:px-3">{formatCurrency(Number(receipt.quantity_received) * Number(receipt.unit_cost))}</td>
+                        <td className="px-1 py-2 text-center sm:px-3">
+                          <Button variant="outline" size="sm" onClick={() => openCostCorrection(receipt)}>
+                            Koreksi HPP
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={4} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td></tr></tfoot>
+                  <tfoot className="border-t border-border bg-muted/50"><tr><td colSpan={4} className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">Total halaman</td><td className="px-3 py-2 text-center text-xs font-semibold text-ink">{formatNumber(summary.quantity)}</td><td /><td /><td className="px-3 py-2 text-center text-xs font-semibold text-primary">{formatCurrency(summary.value)}</td><td /></tr></tfoot>
             </table>
           </div>
           <div className="flex items-center justify-between border-t border-border px-4 py-3">
@@ -268,6 +368,58 @@ export default function StockHistory() {
           </div>
         </CardContent>
       </Card>
+      {costCorrection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader className="flex-row items-center justify-between border-b">
+              <div>
+                <CardTitle>Koreksi HPP batch</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">{costCorrection.product?.name || 'Produk'} · {format(new Date(costCorrection.received_at), 'dd MMM yyyy', { locale: localeId })}</p>
+              </div>
+              <button type="button" onClick={() => setCostCorrection(null)} aria-label="Tutup koreksi HPP" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted">
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                HPP saat ini: <strong>{formatCurrency(costCorrection.unit_cost)} / {getUnitLabel(costCorrection.product?.stock_unit)}</strong>
+                <br />
+                Sisa batch: <strong>{formatStockQuantity(costCorrection.quantity_remaining)} {getUnitLabel(costCorrection.product?.stock_unit)}</strong>
+              </div>
+              <div>
+                <label htmlFor="corrected-batch-cost" className="mb-1 block text-sm font-medium">
+                  HPP yang benar per {getUnitLabel(costCorrection.product?.stock_unit)}
+                </label>
+                <Input
+                  id="corrected-batch-cost"
+                  inputMode="numeric"
+                  value={formatCurrencyInput(correctedUnitCost)}
+                  onChange={(event) => setCorrectedUnitCost(parseCurrencyInput(event.target.value))}
+                />
+              </div>
+              <div>
+                <label htmlFor="batch-cost-correction-reason" className="mb-1 block text-sm font-medium">Alasan koreksi</label>
+                <Input
+                  id="batch-cost-correction-reason"
+                  value={correctionReason}
+                  onChange={(event) => setCorrectionReason(event.target.value)}
+                  placeholder="Contoh: salah input, seharusnya Rp480.000"
+                  maxLength={240}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Koreksi tidak menambah stok dan tidak mengubah HPP transaksi lama. Nilai ini memengaruhi HPP FIFO untuk sisa batch. Jika batch kredit, koreksi juga dapat mengubah sisa utang vendor.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setCostCorrection(null)} disabled={savingCorrection}>Batal</Button>
+                <Button className="flex-1" onClick={() => void saveCostCorrection()} disabled={savingCorrection || !correctionReason.trim()}>
+                  {savingCorrection ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan koreksi'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

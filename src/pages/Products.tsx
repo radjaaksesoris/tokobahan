@@ -1274,8 +1274,8 @@ export default function Products() {
                           costUnitSelectRef.current?.focus()
                         }
                       }}
-                      readOnly={Boolean(editing)}
-                      title={editing ? 'Gunakan Tambah Stok untuk mengubah HPP batch baru' : undefined}
+                      readOnly={editingPricesOnly}
+                      title={editingPricesOnly ? 'Harga modal hanya dapat diubah dari Edit Produk' : undefined}
                     />
                     <Select
                       className="min-w-0"
@@ -1303,7 +1303,7 @@ export default function Products() {
                   </div>
                   {editing && (
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      Stok dan HPP produk lama dikunci. Gunakan tombol Tambah Stok untuk membuat batch FIFO baru.
+                      Perubahan ini menjadi acuan modal untuk stok masuk berikutnya. HPP batch lama tidak berubah.
                     </p>
                   )}
                   {basePriceUnit && getPriceConversion(prices, costUnit) > 0 && (
