@@ -47,26 +47,60 @@ describe('automatic operational sync', () => {
     vi.unstubAllGlobals()
   })
 
-  it('schedules today at 15:00, then 16:00, then tomorrow after both slots', () => {
+  it('schedules today at 15:00, then 16:15, then tomorrow after both slots', () => {
     expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 14, 30))).toEqual(new Date(2026, 9, 30, 15, 0))
-    expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 15, 30))).toEqual(new Date(2026, 9, 30, 16, 0))
-    expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 16, 1))).toEqual(new Date(2026, 9, 31, 15, 0))
+    expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 15, 30))).toEqual(new Date(2026, 9, 30, 16, 15))
+    expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 16, 14))).toEqual(new Date(2026, 9, 30, 16, 15))
+    expect(getNextAutomaticSyncAt(new Date(2026, 9, 30, 16, 16))).toEqual(new Date(2026, 9, 31, 15, 0))
   })
 
-  it('does not retry at 16:00 after the 15:00 sync succeeds', async () => {
+  it('does not resend at 16:15 when the 15:00 sync left the snapshot synchronized', async () => {
+    syncOperationalSnapshot.mockImplementation(async () => {
+      readOperationalSnapshot.mockResolvedValue({
+        generated_at: 'synced-version',
+        synced_generated_at: 'synced-version',
+      })
+      return { rowCount: 4 }
+    })
     const stop = startAutomaticOperationalSync()
 
     await vi.advanceTimersByTimeAsync(60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(1)
     expect(toast.success).toHaveBeenCalledWith('Berhasil dikirim ke server (4 baris)')
 
-    await vi.advanceTimersByTimeAsync(60 * 60_000)
+    await vi.advanceTimersByTimeAsync(75 * 60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(1)
 
     stop()
   })
 
-  it('retries a failed 15:00 sync at 16:00', async () => {
+  it('syncs local changes made after the successful 15:00 sync at 16:15', async () => {
+    syncOperationalSnapshot.mockImplementation(async () => {
+      const version = syncOperationalSnapshot.mock.calls.length === 1
+        ? 'first-sync'
+        : 'second-sync'
+      readOperationalSnapshot.mockResolvedValue({
+        generated_at: version,
+        synced_generated_at: version,
+      })
+      return { rowCount: 4 }
+    })
+    const stop = startAutomaticOperationalSync()
+
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(syncOperationalSnapshot).toHaveBeenCalledTimes(1)
+
+    readOperationalSnapshot.mockResolvedValue({
+      generated_at: 'new-local-change',
+      synced_generated_at: 'first-sync',
+    })
+    await vi.advanceTimersByTimeAsync(75 * 60_000)
+    expect(syncOperationalSnapshot).toHaveBeenCalledTimes(2)
+
+    stop()
+  })
+
+  it('retries a failed 15:00 sync at 16:15', async () => {
     syncOperationalSnapshot
       .mockRejectedValueOnce(new Error('network unavailable'))
       .mockResolvedValueOnce({ rowCount: 4 })
@@ -75,7 +109,7 @@ describe('automatic operational sync', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(1)
 
-    await vi.advanceTimersByTimeAsync(60 * 60_000)
+    await vi.advanceTimersByTimeAsync(75 * 60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(2)
     expect(toast.error).toHaveBeenCalledTimes(1)
     expect(toast.success).toHaveBeenCalledWith('Berhasil dikirim ke server (4 baris)')
@@ -91,10 +125,10 @@ describe('automatic operational sync', () => {
     const stop = startAutomaticOperationalSync()
 
     await vi.advanceTimersByTimeAsync(60_000)
-    await vi.advanceTimersByTimeAsync(60 * 60_000)
+    await vi.advanceTimersByTimeAsync(75 * 60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(2)
 
-    await vi.advanceTimersByTimeAsync(23 * 60 * 60_000)
+    await vi.advanceTimersByTimeAsync((22 * 60 + 45) * 60_000)
     expect(syncOperationalSnapshot).toHaveBeenCalledTimes(3)
 
     stop()

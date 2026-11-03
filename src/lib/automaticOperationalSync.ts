@@ -2,8 +2,9 @@ import { toast } from 'sonner'
 import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 
-const AUTO_SYNC_SUCCESS_DATE_KEY = 'tokobahan:auto-operational-sync-success-date'
 const SLOT_GRACE_PERIOD_MS = 5 * 60 * 1000
+const RETRY_HOUR = 16
+const RETRY_MINUTE = 15
 
 function localDateKey(date: Date) {
   const year = date.getFullYear()
@@ -23,9 +24,9 @@ export function getNextAutomaticSyncAt(now = new Date()) {
   todayAt15.setHours(15, 0, 0, 0)
   if (now <= todayAt15) return todayAt15
 
-  const todayAt16 = new Date(now)
-  todayAt16.setHours(16, 0, 0, 0)
-  if (now <= todayAt16) return todayAt16
+  const todayRetry = new Date(now)
+  todayRetry.setHours(RETRY_HOUR, RETRY_MINUTE, 0, 0)
+  if (now <= todayRetry) return todayRetry
 
   const tomorrowAt15 = new Date(todayAt15)
   tomorrowAt15.setDate(tomorrowAt15.getDate() + 1)
@@ -37,7 +38,6 @@ export function startAutomaticOperationalSync() {
 
   let active = true
   let timer: number | undefined
-  let successfulDateInMemory: string | null = null
 
   const scheduleNextAttempt = (afterSlot?: Date) => {
     if (!active) return
@@ -45,13 +45,13 @@ export function startAutomaticOperationalSync() {
     const now = new Date()
     let scheduledAt = getNextAutomaticSyncAt(now)
     if (afterSlot?.getHours() === 15) {
-      const retryAt16 = new Date(afterSlot)
-      retryAt16.setHours(16, 0, 0, 0)
+      const retryAt = new Date(afterSlot)
+      retryAt.setHours(RETRY_HOUR, RETRY_MINUTE, 0, 0)
       if (
         localDateKey(now) === localDateKey(afterSlot) &&
-        now.getTime() <= retryAt16.getTime() + SLOT_GRACE_PERIOD_MS
+        now.getTime() <= retryAt.getTime() + SLOT_GRACE_PERIOD_MS
       ) {
-        scheduledAt = retryAt16
+        scheduledAt = retryAt
       }
     } else if (afterSlot && scheduledAt <= afterSlot) {
       scheduledAt = new Date(afterSlot)
@@ -73,12 +73,6 @@ export function startAutomaticOperationalSync() {
     ) return
 
     try {
-      const dateKey = localDateKey(now)
-      if (
-        successfulDateInMemory === dateKey ||
-        window.localStorage.getItem(AUTO_SYNC_SUCCESS_DATE_KEY) === dateKey
-      ) return
-
       if (!navigator.onLine) throw new Error('Perangkat tidak terhubung ke internet')
 
       const snapshot = await readOperationalSnapshot()
@@ -86,12 +80,6 @@ export function startAutomaticOperationalSync() {
       if (!snapshot.synced_generated_at || snapshot.synced_generated_at === snapshot.generated_at) return
 
       const result = await syncOperationalSnapshot()
-      successfulDateInMemory = dateKey
-      try {
-        window.localStorage.setItem(AUTO_SYNC_SUCCESS_DATE_KEY, dateKey)
-      } catch (error) {
-        console.error('Gagal menyimpan status sinkronisasi otomatis:', error)
-      }
       toast.success(`Berhasil dikirim ke server (${result.rowCount} baris)`)
     } catch (error) {
       console.error('Sinkronisasi otomatis gagal:', error)
