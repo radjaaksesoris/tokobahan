@@ -15,7 +15,7 @@ import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
-import { getStockConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
+import { getStockUnitCostForSale, getStockUnitsFromConversion, roundStockQuantity } from '@/lib/productUnits'
 import { editOfflineSale, type SaleEditItemInput } from '@/lib/offlineSaleEdit'
 import { assertCreditSaleCanChangePaymentMethod } from '@/lib/creditPayment'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
@@ -250,7 +250,7 @@ export default function TransactionHistory() {
           if (!Number.isFinite(conversion) || conversion <= 0) {
             throw new Error('Konversi satuan pada barang transaksi tidak valid')
           }
-          const stockQuantity = roundStockQuantity(quantity * conversion / getStockConversion(product))
+          const stockQuantity = getStockUnitsFromConversion(product, conversion, quantity)
           if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) {
             throw new Error('Jumlah stok retur terlalu kecil untuk dicatat dengan presisi stok saat ini')
           }

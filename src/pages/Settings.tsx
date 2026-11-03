@@ -42,6 +42,7 @@ import { toTitleCase } from '@/lib/utils'
 import StockOpname from '@/pages/StockOpname'
 import { chooseLocalBackupFolder, getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { checkTauriUpdate, installTauriUpdate, isTauriRuntime } from '@/lib/tauriUpdater'
+import { migrateSnapshotToIntegerStock } from '@/lib/integerStockMigration'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -88,6 +89,7 @@ export default function Settings() {
   const [unitName, setUnitName] = useState('')
   const [unitLoading, setUnitLoading] = useState(false)
   const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
+  const [normalizingStock, setNormalizingStock] = useState(false)
   const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
   const [localBackupStatus, setLocalBackupStatus] = useState<{ supported: boolean; configured: boolean; folderName?: string }>({ supported: true, configured: false })
   const [localBackupLoading, setLocalBackupLoading] = useState(false)
@@ -607,6 +609,50 @@ export default function Settings() {
     }
   }
 
+  async function normalizeLocalStockUnits() {
+    setNormalizingStock(true)
+    try {
+      const current = await readOperationalSnapshot()
+      if (!current) throw new Error('Snapshot lokal belum tersedia')
+      const expectedGeneratedAt = current.generated_at
+      const preview = migrateSnapshotToIntegerStock(current)
+      if (preview.convertedProducts === 0) {
+        toast.info('Semua produk sudah menggunakan stok unit dasar bulat')
+        return
+      }
+
+      const accepted = window.confirm(
+        `Normalisasi akan mengubah stok lokal ${preview.convertedProducts} produk ke unit terkecil yang dikonfigurasi, ` +
+        `membulatkan sisa lama pada ${preview.roundedProducts} produk, menyelaraskan FIFO, dan mencatat ${preview.adjustmentRows} penyesuaian. ` +
+        'Backup snapshot lokal akan diunduh terlebih dahulu. Lanjutkan hanya di komputer admin yang memiliki data terbaru.',
+      )
+      if (!accepted) return
+
+      downloadBackup(
+        JSON.parse(JSON.stringify(current)) as Json,
+        new Date().toISOString(),
+      )
+      const result = await updateOperationalSnapshot((snapshot) => {
+        if (snapshot.generated_at !== expectedGeneratedAt) {
+          throw new Error('Snapshot berubah setelah backup dibuat. Tinjau data terbaru lalu ulangi normalisasi.')
+        }
+        const migration = migrateSnapshotToIntegerStock(snapshot)
+        return {
+          snapshot: migration.snapshot,
+          result: migration,
+        }
+      })
+      toast.success(
+        `Stok dinormalisasi: ${result.convertedProducts} produk, ` +
+        `${result.roundedProducts} dibulatkan, ${result.createdAdjustmentBatches} batch penyesuaian.`,
+      )
+    } catch (error) {
+      toast.error(`Normalisasi stok gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setNormalizingStock(false)
+    }
+  }
+
   function downloadBackup(payload: Json, createdAt: string) {
     const filenameDate = new Date(createdAt).toISOString().replace(/[:.]/g, '-')
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
@@ -927,6 +973,24 @@ export default function Settings() {
         <h3 id="stock-heading" className="text-lg font-bold tracking-tight text-ink">Stok</h3>
         <p className="mt-1 text-sm text-muted-foreground">Periksa dan sesuaikan stok fisik dengan catatan di aplikasi.</p>
       </div>
+      <Card className="border-amber-200 bg-amber-50/40">
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-3xl">
+            <p className="font-semibold text-ink">Simpan stok dalam unit terkecil</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ubah stok lama ke bilangan unit terkecil dari konversi harga jual. Jalankan hanya di komputer admin dengan data terbaru; backup lokal akan diunduh sebelum perubahan.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="shrink-0"
+            onClick={() => void normalizeLocalStockUnits()}
+            disabled={normalizingStock}
+          >
+            {normalizingStock ? <LoadingDots /> : 'Normalisasi stok'}
+          </Button>
+        </CardContent>
+      </Card>
       <Card className="border-sky-200 bg-sky-50/30">
         <CardHeader>
           <button

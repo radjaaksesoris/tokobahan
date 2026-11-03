@@ -29,7 +29,10 @@ function getAvailableQuantity(product: Product, unit: UnitType, items: CartItem[
     .filter((item) => item.product.id === product.id && item !== currentItem)
     .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
   const availableBaseUnits = Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
-  return availableBaseUnits / getUnitConversion(product, unit)
+  const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
+  return product.stock_unit_mode === 'integer-base'
+    ? Math.floor(availableQuantity + 1e-8)
+    : availableQuantity
 }
 
 export const useCartStore = create<CartState>((set, get) => ({

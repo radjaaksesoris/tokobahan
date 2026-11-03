@@ -94,6 +94,7 @@ export interface Product {
   stock: number // in configured stock unit
   stock_unit: UnitType
   stock_conversion: number
+  stock_unit_mode?: 'fractional' | 'integer-base' | null
   min_stock: number
   unit_base: 'pcs' | 'meter'
   prices: ProductPrice[]

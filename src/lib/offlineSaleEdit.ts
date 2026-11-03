@@ -2,7 +2,7 @@ import type { Product } from '@/types'
 import { parseProductPrices } from '@/types'
 import type { PaymentMethod } from '@/lib/paymentMethods'
 import {
-  getStockConversion,
+  getStockUnitsFromConversion,
   roundStockQuantity,
 } from '@/lib/productUnits'
 import {
@@ -125,12 +125,12 @@ export function applyOfflineSaleEdit(
     if (source) usedSources.add(source.id)
 
     let retainedCost = 0
-    let additionalStock = roundStockQuantity(
-      draft.quantity * price.conversion / getStockConversion(product),
-    )
+    let additionalStock = getStockUnitsFromConversion(product, price.conversion, draft.quantity)
     if (source && source.product_id === product.id) {
-      const oldStockQuantity = roundStockQuantity(
-        Number(source.quantity) * Number(source.conversion) / getStockConversion(product),
+      const oldStockQuantity = getStockUnitsFromConversion(
+        product,
+        Number(source.conversion),
+        Number(source.quantity),
       )
       const retainedStock = Math.min(oldStockQuantity, additionalStock)
       const oldCost = Number(source.line_cost)
@@ -141,8 +141,10 @@ export function applyOfflineSaleEdit(
     } else if (source) {
       const oldProduct = productById.get(source.product_id)
       if (!oldProduct) throw new Error(`Produk ${source.product_name} tidak ditemukan untuk penyesuaian stok`)
-      const oldStockQuantity = roundStockQuantity(
-        Number(source.quantity) * Number(source.conversion) / getStockConversion(oldProduct),
+      const oldStockQuantity = getStockUnitsFromConversion(
+        oldProduct,
+        Number(source.conversion),
+        Number(source.quantity),
       )
       addDelta(
         oldProduct.id,
@@ -173,8 +175,10 @@ export function applyOfflineSaleEdit(
     if (usedSources.has(source.id)) continue
     const product = productById.get(source.product_id)
     if (!product) throw new Error(`Produk ${source.product_name} tidak ditemukan untuk penyesuaian stok`)
-    const stockQuantity = roundStockQuantity(
-      Number(source.quantity) * Number(source.conversion) / getStockConversion(product),
+    const stockQuantity = getStockUnitsFromConversion(
+      product,
+      Number(source.conversion),
+      Number(source.quantity),
     )
     addDelta(product.id, stockQuantity, Number(source.line_cost))
   }

@@ -2,7 +2,7 @@ import type { CartItem } from '@/types'
 import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
-import { consumeFifoStockBatches, getStockConversion, roundStockQuantity } from '@/lib/productUnits'
+import { consumeFifoStockBatches, getStockUnitsFromConversion, roundStockQuantity } from '@/lib/productUnits'
 import type { PaymentMethod } from '@/lib/paymentMethods'
 
 export type OfflinePaymentMethod = PaymentMethod
@@ -97,7 +97,11 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       if (item.unit_price > configuredUnitPrice) {
         throw new Error(`Harga jual ${product.name} melebihi harga katalog`)
       }
-      const stockQuantity = roundStockQuantity(item.quantity * configuredConversion / getStockConversion(product))
+      const stockQuantity = getStockUnitsFromConversion(
+        product,
+        configuredConversion,
+        item.quantity,
+      )
       if (!Number.isFinite(stockQuantity) || stockQuantity <= 0 || Number(product.stock) < stockQuantity) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }

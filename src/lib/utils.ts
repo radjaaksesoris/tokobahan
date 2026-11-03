@@ -19,7 +19,7 @@ export function formatNumber(num: number): string {
 }
 
 export function formatStockQuantity(num: number): string {
-  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(num)
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(num)
 }
 
 export function formatCurrencyInput(amount: number): string {

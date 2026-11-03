@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase'
+import { formatMixedStockQuantity } from '@/lib/productUnits'
+import type { ProductPrice } from '@/types'
 
 const SOUND_ENABLED_KEY = 'tokobahan.low-stock-sound-enabled'
 const PUSH_COOLDOWN_KEY = 'tokobahan.low-stock-push-last-request'
@@ -92,14 +94,29 @@ export async function showLowStockNotification(product: {
   name: string
   stock: number
   min_stock: number
+  stock_unit: string
+  stock_conversion: number
+  prices: ProductPrice[]
 }) {
   if (!('serviceWorker' in navigator)) {
     throw new Error('Service worker tidak tersedia untuk notifikasi stok')
   }
 
   const registration = await navigator.serviceWorker.ready
+  const stock = formatMixedStockQuantity({
+    stock: product.stock,
+    stock_unit: product.stock_unit,
+    stock_conversion: product.stock_conversion,
+    prices: product.prices,
+  })
+  const minimumStock = formatMixedStockQuantity({
+    stock: product.min_stock,
+    stock_unit: product.stock_unit,
+    stock_conversion: product.stock_conversion,
+    prices: product.prices,
+  })
   await registration.showNotification(`Stok menipis: ${product.name}`, {
-    body: `Tersisa ${product.stock}, minimum stok ${product.min_stock}.`,
+    body: `Tersisa ${stock}, minimum stok ${minimumStock}.`,
     icon: `${import.meta.env.BASE_URL}icon-192.png`,
     tag: `low-stock-${product.id}`,
     data: { url: import.meta.env.BASE_URL },

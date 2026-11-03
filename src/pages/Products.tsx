@@ -17,7 +17,9 @@ import {
   formatMixedStockQuantity,
   getCostConversion,
   getPriceConversion,
+  getSmallestConfiguredUnit,
   getStockUnitCostForSale,
+  getStockUnitsFromConversion,
   roundStockQuantity,
 } from '@/lib/productUnits'
 import { preloadPageChunk } from '@/lib/pageChunks'
@@ -131,6 +133,7 @@ export default function Products() {
   const [costUnit, setCostUnit] = useState<UnitType>('satuan')
   const [stock, setStock] = useState('0')
   const [stockUnit, setStockUnit] = useState<UnitType>('satuan')
+  const [stockReceiptUnit, setStockReceiptUnit] = useState<UnitType>('satuan')
   const [minStock, setMinStock] = useState(10)
   const [unitBase, setUnitBase] = useState<'pcs' | 'meter'>('pcs')
   const [prices, setPrices] = useState<ProductPrice[]>([
@@ -308,6 +311,11 @@ export default function Products() {
   function openStock(p: Product) {
     setStockProduct(p)
     setStockQuantity('0')
+    setStockReceiptUnit(
+      p.prices?.some((price) => price.unit === p.cost_unit)
+        ? p.cost_unit
+        : p.stock_unit,
+    )
     setStockCost(p.cost_price)
     setStockVendorId('')
     setStockPaymentStatus('lunas')
@@ -316,8 +324,8 @@ export default function Products() {
 
   async function handleStockReceipt() {
     if (!stockProduct) return
-    const quantity = roundStockQuantity(Number(stockQuantity))
-    if (quantity <= 0 || stockCost < 0) {
+    const enteredQuantity = Number(stockQuantity)
+    if (!Number.isFinite(enteredQuantity) || enteredQuantity <= 0 || stockCost < 0) {
       toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
       return
     }
@@ -341,6 +349,24 @@ export default function Products() {
           if (!current.tables.vendors.some((vendor) => vendor.id === stockVendorId)) {
             throw new Error('Vendor tidak ditemukan di penyimpanan lokal')
           }
+          const receiptPrice = Array.isArray(product.prices)
+            ? product.prices.find((price) =>
+              price !== null &&
+              typeof price === 'object' &&
+              !Array.isArray(price) &&
+              price.unit === stockReceiptUnit,
+            )
+            : undefined
+          const receiptConversion = Number(receiptPrice?.conversion)
+          if (!Number.isFinite(receiptConversion) || receiptConversion <= 0) {
+            throw new Error(`Satuan stok ${stockReceiptUnit} tidak tersedia untuk produk ini`)
+          }
+          const quantity = getStockUnitsFromConversion(
+            product,
+            receiptConversion,
+            enteredQuantity,
+            stockReceiptUnit,
+          )
           return {
             snapshot: {
               ...current,
@@ -527,6 +553,63 @@ export default function Products() {
       toast.error('Isi per satuan jual harus lebih besar dari 0')
       return
     }
+    const smallestUnit = getSmallestConfiguredUnit(prices)
+    if (!smallestUnit) {
+      toast.error('Satuan jual dasar produk tidak valid')
+      return
+    }
+    const storageUnit = editing ? stockUnit : smallestUnit.unit
+    const storageConversion = editing
+      ? getPriceConversion(prices, stockUnit)
+      : smallestUnit.conversion
+    const stockUnitMode = editing?.stock_unit_mode ?? (editing ? 'fractional' : 'integer-base')
+    if (
+      stockUnitMode === 'integer-base' &&
+      Math.abs(storageConversion - Number(editing?.stock_conversion)) > 1e-8
+    ) {
+      toast.error('Konversi satuan stok dasar tidak dapat diubah setelah stok dinormalisasi')
+      return
+    }
+    if (
+      (stockUnitMode === 'integer-base' || !editing) &&
+      prices.some((price) => {
+        const ratio = price.conversion / storageConversion
+        return Math.abs(ratio - Math.round(ratio)) > 1e-8
+      })
+    ) {
+      toast.error(`Konversi semua satuan jual harus setara dengan bilangan bulat ${getUnitLabel(storageUnit)}`)
+      return
+    }
+    const inputStockProduct = {
+      prices,
+      stock_unit: storageUnit,
+      stock_conversion: storageConversion,
+      stock_unit_mode: stockUnitMode,
+    }
+    let initialStockInBaseUnit: number
+    let minimumStockInBaseUnit: number
+    try {
+      initialStockInBaseUnit = editing
+        ? roundStockQuantity(initialStock)
+        : getStockUnitsFromConversion(inputStockProduct, getPriceConversion(prices, stockUnit), initialStock, stockUnit)
+      minimumStockInBaseUnit = getStockUnitsFromConversion(
+        inputStockProduct,
+        getPriceConversion(prices, stockUnit),
+        minStock,
+        stockUnit,
+      )
+      const costConversion = getPriceConversion(prices, costUnit)
+      const costRatio = costConversion / storageConversion
+      if (
+        (stockUnitMode === 'integer-base' || !editing) &&
+        Math.abs(costRatio - Math.round(costRatio)) > 1e-8
+      ) {
+        throw new Error(`Satuan modal ${getUnitLabel(costUnit)} tidak setara dengan bilangan bulat ${getUnitLabel(storageUnit)}`)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Konversi stok tidak valid')
+      return
+    }
     if (!editing && !stockVendorId) {
       toast.error('Nama vendor wajib dipilih')
       return
@@ -550,10 +633,11 @@ export default function Products() {
       cost_price: costPrice,
       cost_unit: costUnit,
       cost_conversion: getPriceConversion(prices, costUnit),
-      stock: editing ? roundStockQuantity(Number(stock)) : 0,
-      stock_unit: stockUnit,
-      stock_conversion: getPriceConversion(prices, stockUnit),
-      min_stock: minStock,
+      stock: editing ? roundStockQuantity(Number(stock)) : initialStockInBaseUnit,
+      stock_unit: storageUnit,
+      stock_conversion: storageConversion,
+      stock_unit_mode: stockUnitMode,
+      min_stock: minimumStockInBaseUnit,
       unit_base: unitBase,
       prices: prices.map((price) => ({ ...price })) as Json,
       is_active: true,
@@ -602,7 +686,7 @@ export default function Products() {
             category_id: editing?.category_id ?? null,
             image_url: editing?.image_url ?? null,
             prices: prices.map((price) => ({ ...price })),
-            stock: editing ? roundStockQuantity(Number(stock)) : roundStockQuantity(initialStock),
+            stock: editing ? roundStockQuantity(Number(stock)) : initialStockInBaseUnit,
             created_at: editing?.created_at ?? now,
             updated_at: now,
           }
@@ -613,8 +697,8 @@ export default function Products() {
             ? [...current.tables.product_stock_batches, {
                 id: crypto.randomUUID(),
                 product_id: productId,
-                quantity_received: initialStock,
-                quantity_remaining: initialStock,
+                quantity_received: initialStockInBaseUnit,
+                quantity_remaining: initialStockInBaseUnit,
                 unit_cost: getStockUnitCostForSale(
                   payload,
                   payload.cost_conversion,
@@ -874,18 +958,33 @@ export default function Products() {
                     Stok saat ini: <strong>{formatMixedStockQuantity(stockProduct)}</strong>
                   </div>
                   <div>
-                    <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
-                    <Input
-                      id="stock-quantity"
-                      type="number"
-                      min="0"
-                      value={stockQuantity}
-                      onFocus={() => {
-                        if (stockQuantity === '0') setStockQuantity('')
-                      }}
-                      onChange={(event) => setStockQuantity(event.target.value)}
-                      autoFocus
-                    />
+                    <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">
+                      Jumlah stok masuk
+                    </label>
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
+                      <Input
+                        id="stock-quantity"
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={stockQuantity}
+                        onFocus={() => {
+                          if (stockQuantity === '0') setStockQuantity('')
+                        }}
+                        onChange={(event) => setStockQuantity(event.target.value)}
+                        autoFocus
+                      />
+                      <Select
+                        className="min-w-0"
+                        value={stockReceiptUnit}
+                        onChange={(value) => setStockReceiptUnit(value as UnitType)}
+                        aria-label="Satuan stok masuk"
+                        options={(stockProduct.prices || []).map((price) => ({
+                          value: price.unit,
+                          label: getUnitLabel(price.unit),
+                        }))}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label htmlFor="stock-cost" className="mb-1 block text-sm font-medium">
@@ -1139,7 +1238,11 @@ export default function Products() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <label htmlFor="product-stock" className="mb-1 block text-sm font-medium">Stok</label>
+                  <label htmlFor="product-stock" className="mb-1 block text-sm font-medium">
+                    {editing
+                      ? 'Stok'
+                      : `Stok awal · per ${getUnitLabel(stockUnit)}`}
+                  </label>
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,6.5rem)] gap-2">
                     <Input
                       id="product-stock"
@@ -1172,7 +1275,7 @@ export default function Products() {
                         }
                       }}
                       disabled={Boolean(editing)}
-                      aria-label="Satuan stok"
+                      aria-label={editing ? 'Satuan stok' : 'Satuan input stok awal'}
                     />
                   </div>
                 </div>
@@ -1291,7 +1394,9 @@ export default function Products() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">Min. Stok</label>
+                  <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">
+                    Min. Stok · per {getUnitLabel(editing?.stock_unit || stockUnit)}
+                  </label>
                   <Input
                     ref={minStockInputRef}
                     id="product-min-stock"

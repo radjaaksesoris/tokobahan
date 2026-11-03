@@ -7,6 +7,7 @@ import {
   type OperationalSnapshot,
 } from './offlineOperationalSnapshot'
 import { saveOfflineCheckout } from './offlineCheckout'
+import { formatMixedStockQuantity } from './productUnits'
 
 const product: Product = {
   id: 'product-1',
@@ -181,6 +182,66 @@ describe('offline checkout', () => {
       unit: 'lusin',
       conversion: 12,
     })
+  })
+
+  it('deducts one meter from integer meter stock and displays the roll remainder', async () => {
+    const meterStockProduct: Product = {
+      ...product,
+      stock: 880,
+      stock_unit: 'meter',
+      stock_conversion: 1,
+      stock_unit_mode: 'integer-base',
+      cost_price: 480000,
+      cost_unit: 'roll',
+      cost_conversion: 44,
+      min_stock: 44,
+      prices: [
+        { unit: 'meter', price: 13000, conversion: 1 },
+        { unit: 'roll', price: 525000, conversion: 44 },
+      ],
+    }
+    const meterItem: CartItem = {
+      ...item,
+      product: meterStockProduct,
+      unit: 'meter',
+      quantity: 1,
+      unit_price: 13000,
+      conversion: 1,
+      line_total: 13000,
+      line_cost: 480000 / 44,
+      line_profit: 13000 - 480000 / 44,
+    }
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...meterStockProduct }],
+        product_stock_batches: [{
+          id: 'batch-meter',
+          product_id: meterStockProduct.id,
+          quantity_received: 880,
+          quantity_remaining: 880,
+          unit_cost: 480000 / 44,
+          received_at: '2026-09-01T00:00:00.000Z',
+        }],
+      },
+    })
+
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-METER-1',
+      items: [meterItem],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 13000,
+      cashierId: 'admin-1',
+    })
+
+    const updated = await readOperationalSnapshot()
+    const updatedProduct = updated?.tables.products[0] as unknown as Product
+    expect(updatedProduct.stock).toBe(879)
+    expect(formatMixedStockQuantity(updatedProduct)).toBe('19 roll + 43 Meter')
+    expect(updated?.tables.product_stock_batches[0].quantity_remaining).toBe(879)
+    expect(updated?.tables.sale_items[0].line_cost).toBe(10909.09)
   })
 
   it('calculates FIFO cost when modal and stock use different units', async () => {

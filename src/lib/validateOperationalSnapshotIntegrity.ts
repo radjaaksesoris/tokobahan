@@ -48,9 +48,28 @@ export function validateOperationalSnapshotIntegrity(snapshot: OperationalSnapsh
   for (const product of tables.products) {
     requireNumber(product, 'stock', 'stok produk')
     requireNumber(product, 'cost_price', 'harga modal')
+    if (
+      product.stock_unit_mode !== undefined &&
+      product.stock_unit_mode !== null &&
+      product.stock_unit_mode !== 'fractional' &&
+      product.stock_unit_mode !== 'integer-base'
+    ) {
+      throw new Error('Snapshot tidak valid: mode satuan stok produk tidak dikenal')
+    }
+    if (product.stock_unit_mode === 'integer-base' && (
+      !Number.isInteger(Number(product.stock)) ||
+      !Number.isInteger(Number(product.min_stock || 0))
+    )) {
+      throw new Error('Snapshot tidak valid: stok unit dasar harus berupa bilangan bulat')
+    }
     requireReference(tableIds.categories, product.category_id, 'kategori produk', true)
   }
 
+  const integerStockProducts = new Set(
+    tables.products
+      .filter((product) => product.stock_unit_mode === 'integer-base')
+      .map((product) => String(product.id)),
+  )
   for (const batch of tables.product_stock_batches) {
     requireReference(tableIds.products, batch.product_id, 'produk batch stok')
     requireReference(tableIds.vendors, batch.vendor_id, 'vendor batch stok', true)
@@ -59,6 +78,13 @@ export function validateOperationalSnapshotIntegrity(snapshot: OperationalSnapsh
     requireNumber(batch, 'unit_cost', 'HPP batch')
     if (Number(batch.quantity_remaining) > Number(batch.quantity_received)) {
       throw new Error('Snapshot tidak valid: sisa batch stok melebihi stok masuk')
+    }
+    if (
+      integerStockProducts.has(String(batch.product_id)) &&
+      (!Number.isInteger(Number(batch.quantity_received)) ||
+        !Number.isInteger(Number(batch.quantity_remaining)))
+    ) {
+      throw new Error('Snapshot tidak valid: kuantitas batch unit dasar harus berupa bilangan bulat')
     }
   }
 

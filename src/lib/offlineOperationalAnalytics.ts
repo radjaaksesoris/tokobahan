@@ -1,5 +1,7 @@
 import { startOfDay, endOfDay } from 'date-fns'
 import type { OperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import { getStockConversion } from '@/lib/productUnits'
+import { parseProductPrices, type ProductPrice } from '@/types'
 
 export interface SalesSummary {
   total_revenue: number
@@ -30,6 +32,9 @@ export interface LowStockProduct {
   name: string
   stock: number
   min_stock: number
+  stock_unit: string
+  stock_conversion: number
+  prices: ProductPrice[]
 }
 
 export interface DashboardAnalytics {
@@ -258,6 +263,9 @@ export function getLocalDashboardAnalytics(
       name: String(product.name || ''),
       stock: asNumber(product.stock),
       min_stock: asNumber(product.min_stock),
+      stock_unit: String(product.stock_unit || 'satuan'),
+      stock_conversion: getStockConversion(product),
+      prices: parseProductPrices(product.prices),
     })),
   }
 }

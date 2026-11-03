@@ -11,22 +11,44 @@ export function roundStockQuantity(value: number) {
   return Math.sign(value) * Math.round((Math.abs(value) + Number.EPSILON) * 1000) / 1000
 }
 
+export function getSmallestConfiguredUnit(prices: ProductPrice[]) {
+  return prices
+    .filter((price) => Number.isFinite(price.conversion) && price.conversion > 0)
+    .reduce<ProductPrice | null>((smallest, price) =>
+      !smallest || price.conversion < smallest.conversion ? price : smallest,
+    null)
+}
+
 export function formatMixedStockQuantity(
   product: Pick<Product, 'stock' | 'stock_unit' | 'stock_conversion' | 'prices'>,
 ) {
   const stockConversion = positiveNumber(product.stock_conversion)
-  const baseUnit = (product.prices || [])
-    .map((price) => ({ unit: price.unit, conversion: positiveNumber(price.conversion) }))
-    .filter((price): price is { unit: UnitType; conversion: number } =>
-      price.conversion !== null && stockConversion !== null && price.conversion < stockConversion,
-    )
-    .sort((a, b) => a.conversion - b.conversion)[0]
+  const prices = product.prices || []
+  const baseUnit = getSmallestConfiguredUnit(prices)
 
   if (!stockConversion || !baseUnit) {
     return `${formatStockQuantity(product.stock)} ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`
   }
 
-  const stockUnitsPerBaseUnit = stockConversion / baseUnit.conversion
+  const packageUnit = prices
+    .filter((price) =>
+      price.conversion > baseUnit.conversion &&
+      Number.isInteger(price.conversion / baseUnit.conversion),
+    )
+    .reduce<ProductPrice | null>((largest, price) =>
+      !largest || price.conversion > largest.conversion ? price : largest,
+    null)
+  const stockUnitIsPackage = stockConversion > baseUnit.conversion &&
+    Number.isInteger(stockConversion / baseUnit.conversion)
+  const displayUnit = stockUnitIsPackage
+    ? { unit: product.stock_unit, conversion: stockConversion }
+    : packageUnit
+
+  if (!displayUnit) {
+    return `${formatStockQuantity(product.stock)} ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`
+  }
+
+  const stockUnitsPerBaseUnit = displayUnit.conversion / baseUnit.conversion
   const baseQuantity = Number(product.stock) * stockConversion / baseUnit.conversion
   if (
     !Number.isInteger(stockUnitsPerBaseUnit) ||
@@ -39,13 +61,12 @@ export function formatMixedStockQuantity(
   const roundedBaseQuantity = Math.round(baseQuantity)
   const wholeStockQuantity = Math.floor(roundedBaseQuantity / stockUnitsPerBaseUnit)
   const remainingBaseQuantity = roundedBaseQuantity % stockUnitsPerBaseUnit
-  const isApproximate = Math.abs(baseQuantity - roundedBaseQuantity) > 1e-8
-  const prefix = isApproximate ? '≈ ' : ''
-  const stockLabel = UNIT_LABELS[product.stock_unit] || product.stock_unit
+  const stockLabel = UNIT_LABELS[displayUnit.unit] || displayUnit.unit
   const baseLabel = UNIT_LABELS[baseUnit.unit] || baseUnit.unit
 
-  if (remainingBaseQuantity === 0) return `${prefix}${formatStockQuantity(wholeStockQuantity)} ${stockLabel}`
-  return `${prefix}${formatStockQuantity(wholeStockQuantity)} ${stockLabel} + ${formatStockQuantity(remainingBaseQuantity)} ${baseLabel}`
+  if (wholeStockQuantity === 0) return `${formatStockQuantity(roundedBaseQuantity)} ${baseLabel}`
+  if (remainingBaseQuantity === 0) return `${formatStockQuantity(wholeStockQuantity)} ${stockLabel}`
+  return `${formatStockQuantity(wholeStockQuantity)} ${stockLabel} + ${formatStockQuantity(remainingBaseQuantity)} ${baseLabel}`
 }
 
 export function getConfiguredPrice(product: Pick<Product, 'prices'>, unit: UnitType): ProductPrice | undefined {
@@ -72,8 +93,58 @@ export function getCostConversion(product: { prices?: unknown; cost_conversion?:
   return positiveNumber(product.cost_conversion) || getPriceConversion(prices, costUnit)
 }
 
-export function getStockUnitsForSale(product: Pick<Product, 'prices' | 'stock_conversion' | 'stock_unit'>, unit: UnitType, quantity: number) {
-  return roundStockQuantity(quantity * getUnitConversion(product, unit) / getStockConversion(product))
+export function getStockUnitsForSale(
+  product: Pick<Product, 'prices' | 'stock_conversion' | 'stock_unit' | 'stock_unit_mode'>,
+  unit: UnitType,
+  quantity: number,
+) {
+  return getStockUnitsFromConversion(
+    product,
+    getUnitConversion(product, unit),
+    quantity,
+    unit,
+  )
+}
+
+export function getStockUnitsFromConversion(
+  product: {
+    stock_conversion?: unknown
+    stock_unit?: unknown
+    stock_unit_mode?: unknown
+  },
+  saleUnitConversion: number,
+  quantity: number,
+  saleUnit = 'Satuan',
+) {
+  if (
+    !Number.isFinite(saleUnitConversion) || saleUnitConversion <= 0 ||
+    !Number.isFinite(quantity) || quantity < 0
+  ) {
+    throw new Error('Jumlah atau konversi stok tidak valid')
+  }
+  const stockQuantity = quantity * saleUnitConversion / getStockConversion(product)
+  if (product.stock_unit_mode === 'integer-base') {
+    const rounded = Math.round(stockQuantity)
+    if (!Number.isFinite(stockQuantity) || Math.abs(stockQuantity - rounded) > 1e-8) {
+      throw new Error(`Jumlah ${saleUnit} harus setara dengan bilangan bulat ${product.stock_unit}`)
+    }
+    return rounded
+  }
+  return roundStockQuantity(stockQuantity)
+}
+
+function getNormalizedStockQuantity(
+  product: Pick<Product, 'prices' | 'stock_conversion' | 'stock_unit' | 'stock_unit_mode'>,
+  unit: UnitType,
+  quantity: number,
+) {
+  const stockQuantity = quantity * getUnitConversion(product, unit) / getStockConversion(product)
+  if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) return null
+  if (product.stock_unit_mode === 'integer-base') {
+    const rounded = Math.round(stockQuantity)
+    return Math.abs(stockQuantity - rounded) <= 1e-8 ? rounded : null
+  }
+  return roundStockQuantity(stockQuantity)
 }
 
 export function getStockUnitCostForSale(
@@ -133,15 +204,14 @@ export function consumeFifoStockBatches(
 }
 
 export function getFifoCostForSale(
-  product: Pick<Product, 'id' | 'prices' | 'stock_conversion' | 'stock_unit'>,
+  product: Pick<Product, 'id' | 'prices' | 'stock_conversion' | 'stock_unit' | 'stock_unit_mode'>,
   batches: Record<string, unknown>[],
   unit: UnitType,
   quantity: number,
 ): number | null {
   if (!Number.isFinite(quantity) || quantity <= 0) return null
-  const stockQuantity = roundStockQuantity(
-    quantity * getUnitConversion(product, unit) / getStockConversion(product),
-  )
+  const stockQuantity = getNormalizedStockQuantity(product, unit, quantity)
+  if (stockQuantity === null) return null
   return consumeFifoStockBatches(batches, product.id, stockQuantity)?.cost ?? null
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { formatCurrency, formatNumber, formatStockQuantity } from '@/lib/utils'
+import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatMixedStockQuantity } from '@/lib/productUnits'
+import type { ProductPrice } from '@/types'
 import {
   TrendingUp,
   ShoppingBag,
@@ -62,6 +64,9 @@ interface LowStockProduct {
   name: string
   stock: number
   min_stock: number
+  stock_unit: string
+  stock_conversion: number
+  prices: ProductPrice[]
 }
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
@@ -555,8 +560,13 @@ export default function Dashboard() {
                   <li key={product.id} className="flex items-center justify-between gap-4 px-6 py-4">
                     <span className="min-w-0 truncate font-medium text-ink/90">{product.name}</span>
                     <span className="shrink-0 text-right text-sm">
-                      <strong className="text-amber-700">{formatStockQuantity(product.stock)}</strong>
-                      <span className="text-muted-foreground"> / min. {formatStockQuantity(product.min_stock)}</span>
+                      <strong className="text-amber-700">
+                        {formatMixedStockQuantity({ ...product, stock: product.stock })}
+                      </strong>
+                      <span className="text-muted-foreground">
+                        {' / min. '}
+                        {formatMixedStockQuantity({ ...product, stock: product.min_stock })}
+                      </span>
                     </span>
                   </li>
                 ))}

@@ -188,6 +188,11 @@ describe('offline operational analytics', () => {
       + analytics.todayPaymentTotals.transfer
       + analytics.todayPaymentTotals.qris,
     ).toBe(110)
+    expect(analytics.lowStockProducts[0]).toMatchObject({
+      stock_unit: 'satuan',
+      stock_conversion: 1,
+      prices: [],
+    })
     expect(analytics.todaySales).toBe(135)
   })
 })

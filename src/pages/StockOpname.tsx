@@ -5,15 +5,23 @@ import { reconcileStockBatches, type StockBatch } from '@/lib/stockOpname'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import type { Product } from '@/types'
 import { UNIT_LABELS } from '@/types'
 import { toTitleCase } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { getCostConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
-import { formatStockQuantity } from '@/lib/utils'
+import {
+  formatMixedStockQuantity,
+  getCostConversion,
+  getStockUnitCostForSale,
+  roundStockQuantity,
+} from '@/lib/productUnits'
 
-type ProductRow = { id: string; name: string; stock: number; stock_unit: string }
+type ProductRow = Pick<
+  Product,
+  'id' | 'name' | 'stock' | 'stock_unit' | 'stock_conversion' | 'prices' | 'stock_unit_mode'
+> & { is_active?: boolean }
 const PAGE_SIZE = 50
 
 export default function StockOpname() {
@@ -40,7 +48,7 @@ export default function StockOpname() {
     }
     if (snapshot) {
       try {
-        const localProducts = await readOperationalTable<ProductRow & { is_active?: boolean }>('products')
+        const localProducts = await readOperationalTable<ProductRow>('products')
         const activeProducts = localProducts
           .filter((product) => product.is_active)
           .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))
@@ -63,7 +71,19 @@ export default function StockOpname() {
   useEffect(() => { void load() }, [page])
 
   async function save(product: ProductRow) {
-    const value = roundStockQuantity(Number(physical[product.id]))
+    const rawValue = physical[product.id]?.trim()
+    const enteredValue = rawValue ? Number(rawValue) : Number.NaN
+    if (
+      product.stock_unit_mode === 'integer-base' &&
+      Number.isFinite(enteredValue) &&
+      !Number.isInteger(enteredValue)
+    ) {
+      toast.error(`Stok fisik ${product.name} harus berupa bilangan bulat ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`)
+      return
+    }
+    const value = product.stock_unit_mode === 'integer-base'
+      ? enteredValue
+      : roundStockQuantity(enteredValue)
     const reason = reasons[product.id]?.trim() || ''
     if (!Number.isFinite(value) || value < 0 || !reason) {
       toast.error('Stok fisik dan alasan wajib diisi')
@@ -159,9 +179,9 @@ export default function StockOpname() {
               <CardContent className="grid gap-3 p-4 lg:grid-cols-[1.4fr_0.7fr_1.4fr_auto] lg:items-end">
                 <div>
                   <p className="font-semibold text-ink">{product.name}</p>
-                  <p className="text-xs text-muted-foreground">Stok sistem: {formatStockQuantity(product.stock)} {UNIT_LABELS[product.stock_unit] || product.stock_unit}</p>
+                  <p className="text-xs text-muted-foreground">Stok sistem: {formatMixedStockQuantity(product)}</p>
                 </div>
-                <Input type="number" min="0" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder="Stok fisik" aria-label={`Stok fisik ${product.name}`} />
+                <Input type="number" min="0" step={product.stock_unit_mode === 'integer-base' ? 1 : 'any'} value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder={`Stok fisik (${UNIT_LABELS[product.stock_unit] || product.stock_unit})`} aria-label={`Stok fisik ${product.name}`} />
                 <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: toTitleCase(event.target.value) }))} placeholder="Alasan penyesuaian" aria-label={`Alasan penyesuaian ${product.name}`} />
                 <Button onClick={() => void save(product)} disabled={saving === product.id}>{saving === product.id ? 'Menyimpan...' : 'Simpan'}</Button>
               </CardContent>

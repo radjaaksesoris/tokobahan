@@ -17,6 +17,25 @@ describe('stock unit conversions', () => {
     expect(getStockUnitsForSale({ ...product, stock_conversion: 3 }, 'satuan', 1)).toBe(0.333)
   })
 
+  it('uses integer base units for roll and meter sales', () => {
+    const meterStockProduct = {
+      stock: 879,
+      stock_unit: 'meter',
+      stock_conversion: 1,
+      stock_unit_mode: 'integer-base' as const,
+      prices: [
+        { unit: 'meter', price: 13000, conversion: 1 },
+        { unit: 'roll', price: 525000, conversion: 44 },
+      ],
+    }
+
+    expect(getStockUnitsForSale(meterStockProduct, 'roll', 20)).toBe(880)
+    expect(getStockUnitsForSale(meterStockProduct, 'meter', 1)).toBe(1)
+    expect(formatMixedStockQuantity(meterStockProduct)).toBe('19 roll + 43 Meter')
+    expect(() => getStockUnitsForSale(meterStockProduct, 'meter', 0.5))
+      .toThrow('Jumlah meter harus setara dengan bilangan bulat meter')
+  })
+
   it('displays pack stock as whole packs and rolls without changing stored stock', () => {
     const packStockProduct = {
       stock: 43.498,
@@ -28,7 +47,7 @@ describe('stock unit conversions', () => {
       ],
     }
 
-    expect(formatMixedStockQuantity(packStockProduct)).toBe('≈ 43 Pack + 3 Roll')
+    expect(formatMixedStockQuantity(packStockProduct)).toBe('43 Pack + 3 Roll')
     expect(formatMixedStockQuantity({
       ...packStockProduct,
       stock: 44 + 5 / 6,

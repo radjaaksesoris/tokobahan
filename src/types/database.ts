@@ -85,6 +85,7 @@ export interface Database {
           cost_conversion: number
           stock_unit: string
           stock_conversion: number
+          stock_unit_mode: string | null
           stock: number
           min_stock: number
           unit_base: string
@@ -105,6 +106,7 @@ export interface Database {
           cost_conversion?: number
           stock_unit?: string
           stock_conversion?: number
+          stock_unit_mode?: string
           stock?: number
           min_stock?: number
           unit_base?: string
@@ -122,6 +124,7 @@ export interface Database {
           cost_conversion?: number
           stock_unit?: string
           stock_conversion?: number
+          stock_unit_mode?: string
           stock?: number
           min_stock?: number
           unit_base?: string
