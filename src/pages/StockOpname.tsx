@@ -10,7 +10,7 @@ import { toTitleCase } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { roundStockQuantity } from '@/lib/productUnits'
+import { getCostConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
 import { formatStockQuantity } from '@/lib/utils'
 
 type ProductRow = { id: string; name: string; stock: number; stock_unit: string }
@@ -102,7 +102,11 @@ export default function StockOpname() {
             batches,
             product.id,
             value,
-            cost,
+            getStockUnitCostForSale(
+              currentProduct,
+              getCostConversion(currentProduct),
+              cost,
+            ),
             now,
           )
           const adjustment = {

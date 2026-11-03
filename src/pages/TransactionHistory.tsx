@@ -17,6 +17,7 @@ import { getPaymentMethodLabel } from '@/lib/paymentMethods'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
 import { getStockConversion, getStockUnitCostForSale, roundStockQuantity } from '@/lib/productUnits'
 import { editOfflineSale, type SaleEditItemInput } from '@/lib/offlineSaleEdit'
+import { assertCreditSaleCanChangePaymentMethod } from '@/lib/creditPayment'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { parseProductPrices, UNIT_LABELS, type Product } from '@/types'
 
@@ -483,6 +484,9 @@ export default function TransactionHistory() {
         await updateOperationalSnapshot((snapshot) => {
           const sale = snapshot.tables.sales.find((row) => row.id === selectedSale.id)
           if (!sale) throw new Error('Transaksi tidak ditemukan di penyimpanan lokal')
+          if (method !== 'credit') {
+            assertCreditSaleCanChangePaymentMethod(sale, snapshot.tables.customer_debt_payments)
+          }
           let customerId: string | null = null
           let customers = snapshot.tables.customers
 
@@ -506,8 +510,6 @@ export default function TransactionHistory() {
             }
             customerId = String(customer.id)
             localCustomerId = customerId
-          } else if (snapshot.tables.customer_debt_payments.some((payment) => payment.sale_id === sale.id)) {
-            throw new Error('Transaksi kredit yang sudah memiliki cicilan tidak dapat diubah menjadi metode pembayaran lain')
           }
 
           return {

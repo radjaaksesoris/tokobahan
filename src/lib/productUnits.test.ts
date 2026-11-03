@@ -22,6 +22,25 @@ describe('stock unit conversions', () => {
     expect(getStockUnitCostForSale({ ...product, stock_conversion: 2 }, 3, 30)).toBe(20)
   })
 
+  it('converts modal cost per cost unit into cost per stock unit', () => {
+    const dozenStockProduct = {
+      ...product,
+      stock_unit: 'lusin',
+      stock_conversion: 12,
+      cost_unit: 'satuan',
+      cost_conversion: 1,
+    }
+
+    expect(getStockUnitCostForSale(dozenStockProduct, 1, 10)).toBe(120)
+    expect(getStockUnitCostForSale({
+      ...dozenStockProduct,
+      stock_unit: 'satuan',
+      stock_conversion: 1,
+      cost_unit: 'lusin',
+      cost_conversion: 12,
+    }, 12, 120)).toBe(10)
+  })
+
   it('accepts numeric strings from persisted price records', () => {
     const parsed = parseProductPrices([
       { unit: 'satuan', price: '10', conversion: '1' },

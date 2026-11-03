@@ -183,6 +183,61 @@ describe('offline checkout', () => {
     })
   })
 
+  it('calculates FIFO cost when modal and stock use different units', async () => {
+    const dozenStockProduct: Product = {
+      ...product,
+      stock: 2,
+      stock_unit: 'lusin',
+      stock_conversion: 12,
+      cost_unit: 'satuan',
+      cost_conversion: 1,
+      prices: [{ unit: 'satuan', price: 10, conversion: 1 }],
+    }
+    const singleItem: CartItem = {
+      ...item,
+      product: dozenStockProduct,
+      unit: 'satuan',
+      quantity: 1,
+      unit_price: 10,
+      conversion: 1,
+      line_total: 10,
+      line_cost: 10,
+      line_profit: 0,
+    }
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...dozenStockProduct }],
+        product_stock_batches: [{
+          id: 'batch-dozen',
+          product_id: product.id,
+          quantity_received: 2,
+          quantity_remaining: 2,
+          unit_cost: 120,
+          received_at: '2026-09-01T00:00:00.000Z',
+        }],
+      },
+    })
+
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-COST-CONVERSION',
+      items: [singleItem],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 10,
+      cashierId: 'admin-1',
+    })
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        products: [{ stock: 1.917 }],
+        product_stock_batches: [{ quantity_remaining: 1.917 }],
+        sale_items: [{ line_cost: 9.96, line_profit: 0.04 }],
+      },
+    })
+  })
+
   it('keeps repeated fractional stock deductions at three-decimal precision', async () => {
     const convertedProduct = {
       ...product,

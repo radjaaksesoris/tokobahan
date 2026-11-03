@@ -28,8 +28,10 @@ export function getStockConversion(product: { prices?: unknown; stock_conversion
   return positiveNumber(product.stock_conversion) || getPriceConversion(prices, stockUnit)
 }
 
-export function getCostConversion(product: Pick<Product, 'prices' | 'cost_conversion' | 'cost_unit'>) {
-  return positiveNumber(product.cost_conversion) || getUnitConversion(product, product.cost_unit)
+export function getCostConversion(product: { prices?: unknown; cost_conversion?: unknown; cost_unit?: unknown }) {
+  const prices = Array.isArray(product.prices) ? product.prices as ProductPrice[] : []
+  const costUnit = typeof product.cost_unit === 'string' ? product.cost_unit : 'satuan'
+  return positiveNumber(product.cost_conversion) || getPriceConversion(prices, costUnit)
 }
 
 export function getStockUnitsForSale(product: Pick<Product, 'prices' | 'stock_conversion' | 'stock_unit'>, unit: UnitType, quantity: number) {
@@ -37,7 +39,13 @@ export function getStockUnitsForSale(product: Pick<Product, 'prices' | 'stock_co
 }
 
 export function getStockUnitCostForSale(
-  product: { prices?: unknown; stock_conversion?: unknown; stock_unit?: unknown },
+  product: {
+    prices?: unknown
+    stock_conversion?: unknown
+    stock_unit?: unknown
+    cost_conversion?: unknown
+    cost_unit?: unknown
+  },
   saleUnitConversion: number,
   saleUnitCost: number,
 ) {

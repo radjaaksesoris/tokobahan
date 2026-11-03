@@ -13,7 +13,12 @@ import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
-import { getPriceConversion, roundStockQuantity } from '@/lib/productUnits'
+import {
+  getCostConversion,
+  getPriceConversion,
+  getStockUnitCostForSale,
+  roundStockQuantity,
+} from '@/lib/productUnits'
 import { preloadPageChunk } from '@/lib/pageChunks'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
@@ -347,7 +352,11 @@ export default function Products() {
                   product_id: stockProduct.id,
                   quantity_received: quantity,
                   quantity_remaining: quantity,
-                  unit_cost: stockCost,
+                  unit_cost: getStockUnitCostForSale(
+                    product,
+                    getCostConversion(product),
+                    stockCost,
+                  ),
                   vendor_id: stockVendorId,
                   payment_status: stockPaymentStatus,
                   due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
@@ -602,7 +611,11 @@ export default function Products() {
                 product_id: productId,
                 quantity_received: initialStock,
                 quantity_remaining: initialStock,
-                unit_cost: costPrice,
+                unit_cost: getStockUnitCostForSale(
+                  payload,
+                  payload.cost_conversion,
+                  costPrice,
+                ),
                 vendor_id: stockVendorId,
                 payment_status: stockPaymentStatus,
                 due_date: stockPaymentStatus === 'kredit' ? stockDueDate : null,
@@ -872,7 +885,9 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="stock-cost" className="mb-1 block text-sm font-medium">HPP batch baru</label>
+                    <label htmlFor="stock-cost" className="mb-1 block text-sm font-medium">
+                      HPP batch baru · per {getUnitLabel(stockProduct.cost_unit)}
+                    </label>
                     <Input
                       id="stock-cost"
                       inputMode="numeric"
@@ -1230,7 +1245,9 @@ export default function Products() {
               )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="product-cost" className="mb-1 block text-sm font-medium">Harga Modal</label>
+                  <label htmlFor="product-cost" className="mb-1 block text-sm font-medium">
+                    Harga Modal · per {getUnitLabel(costUnit)}
+                  </label>
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
                     <Input
                       ref={costPriceInputRef}
