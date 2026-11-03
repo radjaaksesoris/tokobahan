@@ -18,7 +18,6 @@ import {
 } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { LoadingDots } from '@/components/ui/LoadingDots'
 import { getPageChunkImporter } from '@/lib/pageChunks'
 import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
@@ -130,8 +129,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-primary lg:bg-canvas">
-        <LoadingDots className="text-white lg:text-primary" dotClassName="h-2.5 w-2.5" />
+      <div className="flex min-h-dvh items-center justify-center bg-primary lg:bg-canvas" role="status" aria-label="Memuat aplikasi">
+        <img
+          src={`${import.meta.env.BASE_URL}icon-96.png`}
+          alt=""
+          className="h-12 w-12 rounded-xl"
+        />
       </div>
     )
   }
