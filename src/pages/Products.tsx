@@ -294,11 +294,10 @@ export default function Products() {
     const savedStockUnit = (p.stock_unit || 'satuan') as UnitType
     setCostUnit((p.cost_unit || savedStockUnit) as UnitType)
     const productPrices: ProductPrice[] = p.prices?.length
-      ? p.prices.map((price, index) => (
-        index === 0
-          ? { ...price, unit: savedStockUnit, conversion: Number(price.conversion) > 0 ? price.conversion : unitFactors[savedStockUnit] || 1 }
-          : price
-      ))
+      ? p.prices.map((price) => ({
+        ...price,
+        conversion: Number(price.conversion) > 0 ? price.conversion : unitFactors[price.unit] || 1,
+      }))
       : [{ unit: savedStockUnit, price: 0, conversion: unitFactors[savedStockUnit] || 1 }]
     setStock(String(p.stock))
     setStockUnit(savedStockUnit)
