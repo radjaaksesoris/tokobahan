@@ -788,7 +788,7 @@ export default function POS() {
                   <p className={`text-sm font-bold ${
                     getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-primary'
                   }`}>
-                    {Math.max(0, getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0))} {UNIT_LABELS[selectedUnit] || selectedUnit}
+                    {formatStockQuantity(Math.max(0, getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0)))} {UNIT_LABELS[selectedUnit] || selectedUnit}
                   </p>
                 </div>
               </div>
