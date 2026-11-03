@@ -1,5 +1,6 @@
 import type { Product, ProductPrice, UnitType } from '@/types'
-import { coerceFiniteNumber, UNIT_FACTORS } from '@/types'
+import { coerceFiniteNumber, UNIT_FACTORS, UNIT_LABELS } from '@/types'
+import { formatStockQuantity } from '@/lib/utils'
 
 function positiveNumber(value: unknown) {
   const number = coerceFiniteNumber(value)
@@ -8,6 +9,43 @@ function positiveNumber(value: unknown) {
 
 export function roundStockQuantity(value: number) {
   return Math.sign(value) * Math.round((Math.abs(value) + Number.EPSILON) * 1000) / 1000
+}
+
+export function formatMixedStockQuantity(
+  product: Pick<Product, 'stock' | 'stock_unit' | 'stock_conversion' | 'prices'>,
+) {
+  const stockConversion = positiveNumber(product.stock_conversion)
+  const baseUnit = (product.prices || [])
+    .map((price) => ({ unit: price.unit, conversion: positiveNumber(price.conversion) }))
+    .filter((price): price is { unit: UnitType; conversion: number } =>
+      price.conversion !== null && stockConversion !== null && price.conversion < stockConversion,
+    )
+    .sort((a, b) => a.conversion - b.conversion)[0]
+
+  if (!stockConversion || !baseUnit) {
+    return `${formatStockQuantity(product.stock)} ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`
+  }
+
+  const stockUnitsPerBaseUnit = stockConversion / baseUnit.conversion
+  const baseQuantity = Number(product.stock) * stockConversion / baseUnit.conversion
+  if (
+    !Number.isInteger(stockUnitsPerBaseUnit) ||
+    !Number.isFinite(baseQuantity) ||
+    baseQuantity < 0
+  ) {
+    return `${formatStockQuantity(product.stock)} ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`
+  }
+
+  const roundedBaseQuantity = Math.round(baseQuantity)
+  const wholeStockQuantity = Math.floor(roundedBaseQuantity / stockUnitsPerBaseUnit)
+  const remainingBaseQuantity = roundedBaseQuantity % stockUnitsPerBaseUnit
+  const isApproximate = Math.abs(baseQuantity - roundedBaseQuantity) > 1e-8
+  const prefix = isApproximate ? '≈ ' : ''
+  const stockLabel = UNIT_LABELS[product.stock_unit] || product.stock_unit
+  const baseLabel = UNIT_LABELS[baseUnit.unit] || baseUnit.unit
+
+  if (remainingBaseQuantity === 0) return `${prefix}${formatStockQuantity(wholeStockQuantity)} ${stockLabel}`
+  return `${prefix}${formatStockQuantity(wholeStockQuantity)} ${stockLabel} + ${formatStockQuantity(remainingBaseQuantity)} ${baseLabel}`
 }
 
 export function getConfiguredPrice(product: Pick<Product, 'prices'>, unit: UnitType): ProductPrice | undefined {

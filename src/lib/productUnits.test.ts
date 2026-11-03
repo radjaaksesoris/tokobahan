@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseProductPrices, type Product } from '@/types'
-import { getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
+import { formatMixedStockQuantity, getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
 
 describe('stock unit conversions', () => {
   const product: Pick<Product, 'stock_unit' | 'stock_conversion' | 'prices'> = {
@@ -15,6 +15,25 @@ describe('stock unit conversions', () => {
   it('rounds converted sale stock to database precision', () => {
     expect(getStockUnitsForSale(product, 'pack', 0.1)).toBe(0.3)
     expect(getStockUnitsForSale({ ...product, stock_conversion: 3 }, 'satuan', 1)).toBe(0.333)
+  })
+
+  it('displays pack stock as whole packs and rolls without changing stored stock', () => {
+    const packStockProduct = {
+      stock: 43.498,
+      stock_unit: 'pack',
+      stock_conversion: 6,
+      prices: [
+        { unit: 'pack', price: 72000, conversion: 6 },
+        { unit: 'Roll', price: 12000, conversion: 1 },
+      ],
+    }
+
+    expect(formatMixedStockQuantity(packStockProduct)).toBe('≈ 43 Pack + 3 Roll')
+    expect(formatMixedStockQuantity({
+      ...packStockProduct,
+      stock: 44 + 5 / 6,
+    })).toBe('44 Pack + 5 Roll')
+    expect(packStockProduct.stock).toBe(43.498)
   })
 
   it('converts returned sale-unit cost back to cost per stock unit', () => {

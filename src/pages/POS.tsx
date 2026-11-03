@@ -33,7 +33,7 @@ import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
-import { getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
+import { formatMixedStockQuantity, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
@@ -680,7 +680,9 @@ export default function POS() {
                           ? 'text-primary'
                           : 'text-muted-foreground'
                     }`}>
-                      {availableStock <= 0 ? 'Barang habis'                       : `Stok: ${formatStockQuantity(availableStock)}`}
+                      {availableStock <= 0
+                        ? 'Barang habis'
+                        : `Stok: ${formatMixedStockQuantity({ ...p, stock: availableStock })}`}
                     </p>
                   </div>
                   <p className="shrink-0 text-[11px] font-semibold text-primary lg:text-xs">

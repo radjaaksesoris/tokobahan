@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import {
+  formatMixedStockQuantity,
   getCostConversion,
   getPriceConversion,
   getStockUnitCostForSale,
@@ -808,9 +809,8 @@ export default function Products() {
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       <span className={p.stock <= p.min_stock ? 'font-semibold text-amber-600' : ''}>
-                        {formatStockQuantity(p.stock)}
+                        {formatMixedStockQuantity(p)}
                       </span>{' '}
-                      {getUnitLabel(p.stock_unit)}
                     </td>
                     <td className="whitespace-nowrap px-0.5 py-1.5 text-center text-[11px] text-muted-foreground lg:px-2 lg:text-xs">
                       {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType] || p.cost_unit || 'Satuan'}</span>
@@ -873,7 +873,7 @@ export default function Products() {
                 </CardHeader>
                 <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                    Stok saat ini: <strong>{formatStockQuantity(stockProduct.stock)} {getUnitLabel(stockProduct.stock_unit)}</strong>
+                    Stok saat ini: <strong>{formatMixedStockQuantity(stockProduct)}</strong>
                   </div>
                   <div>
                     <label htmlFor="stock-quantity" className="mb-1 block text-sm font-medium">Jumlah stok masuk</label>
@@ -1149,8 +1149,8 @@ export default function Products() {
                     <Input
                       id="product-stock"
                       className="min-w-0 w-full"
-                      type="number"
-                      value={stock}
+                      type={editing ? 'text' : 'number'}
+                      value={editing ? formatMixedStockQuantity(editing) : stock}
                       onFocus={() => {
                         if (stock === '0') setStock('')
                       }}
@@ -1182,6 +1182,7 @@ export default function Products() {
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Stok dicatat dalam satuan {getUnitLabel(stockUnit)}.
+                    {editing && <> Tampilan campuran dibulatkan ke satuan terkecil dan tidak mengubah angka stok tersimpan.</>}
                     {recommendBaseStockUnit && (
                       <> Untuk penjualan per {getUnitLabel(basePriceUnit)}, pilih {getUnitLabel(basePriceUnit)} sebagai satuan stok agar stok tidak dihitung sebagai pecahan {getUnitLabel(stockUnit)}.</>
                     )}
