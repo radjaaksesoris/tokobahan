@@ -403,7 +403,14 @@ export default function POS() {
   }
 
   async function syncSnapshotFromHeader() {
-    const snapshot = await readOperationalSnapshot()
+    let snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (error) {
+      setSnapshotSyncStatus('error')
+      toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
     if (!snapshot?.server_revision) {
       setSnapshotSyncStatus('setup')
       toast.info('Buka Pengaturan lalu pilih Ambil ulang data server untuk menyiapkan sinkronisasi.')

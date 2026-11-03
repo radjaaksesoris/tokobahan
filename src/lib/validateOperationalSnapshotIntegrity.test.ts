@@ -78,6 +78,54 @@ describe('operational snapshot integrity', () => {
       .toThrow('item transaksi retur tidak sesuai')
   })
 
+  it('accepts legacy returns without a cash refund amount for server-side migration', () => {
+    const snapshot = createSnapshot({
+      sales: [{ id: 'sale-1', total_amount: 10, amount_paid: 10, customer_id: null }],
+      products: [{ id: 'product-1', stock: 1, cost_price: 5, category_id: null }],
+      sale_items: [{
+        id: 'item-1',
+        sale_id: 'sale-1',
+        product_id: 'product-1',
+        quantity: 1,
+        unit_price: 10,
+      }],
+      sale_returns: [{
+        id: 'return-1',
+        sale_id: 'sale-1',
+        sale_item_id: 'item-1',
+        quantity: 1,
+        refund_amount: 10,
+      }],
+    })
+
+    expect(validateOperationalSnapshotIntegrity(snapshot)).toBe(snapshot)
+  })
+
+  it('rejects an invalid cash refund amount when the field is present', () => {
+    const snapshot = createSnapshot({
+      sales: [{ id: 'sale-1', total_amount: 10, amount_paid: 10, customer_id: null }],
+      products: [{ id: 'product-1', stock: 1, cost_price: 5, category_id: null }],
+      sale_items: [{
+        id: 'item-1',
+        sale_id: 'sale-1',
+        product_id: 'product-1',
+        quantity: 1,
+        unit_price: 10,
+      }],
+      sale_returns: [{
+        id: 'return-1',
+        sale_id: 'sale-1',
+        sale_item_id: 'item-1',
+        quantity: 1,
+        refund_amount: 10,
+        cash_refund_amount: null,
+      }],
+    })
+
+    expect(() => validateOperationalSnapshotIntegrity(snapshot))
+      .toThrow('pengembalian tunai tidak valid')
+  })
+
   it('rejects duplicate identifiers before syncing', () => {
     const snapshot = createSnapshot({
       vendors: [

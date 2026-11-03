@@ -415,7 +415,13 @@ export default function Settings() {
   }
 
   async function syncLocalData() {
-    const snapshot = await readOperationalSnapshot()
+    let snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
     if (!snapshot) {
       toast.error('Data lokal belum disiapkan. Ambil data server ke perangkat terlebih dahulu.')
       return

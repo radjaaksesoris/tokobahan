@@ -4,7 +4,7 @@ import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 
 const SLOT_GRACE_PERIOD_MS = 5 * 60 * 1000
 const RETRY_HOUR = 16
-const RETRY_MINUTE = 15
+const RETRY_MINUTE = 45
 
 function localDateKey(date: Date) {
   const year = date.getFullYear()

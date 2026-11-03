@@ -30,6 +30,9 @@ function requireReference(
 }
 
 function requireNumber(row: Row, field: string, description: string, minimum = 0) {
+  if (row[field] === null || row[field] === undefined || row[field] === '') {
+    throw new Error(`Snapshot tidak valid: ${description} tidak valid`)
+  }
   const value = Number(row[field])
   if (!Number.isFinite(value) || value < minimum) {
     throw new Error(`Snapshot tidak valid: ${description} tidak valid`)
@@ -97,9 +100,11 @@ export function validateOperationalSnapshotIntegrity(snapshot: OperationalSnapsh
     }
     requireNumber(saleReturn, 'quantity', 'jumlah retur', Number.EPSILON)
     requireNumber(saleReturn, 'refund_amount', 'nilai retur')
-    requireNumber(saleReturn, 'cash_refund_amount', 'pengembalian tunai')
-    if (Number(saleReturn.cash_refund_amount) > Number(saleReturn.refund_amount)) {
-      throw new Error('Snapshot tidak valid: pengembalian tunai melebihi nilai retur')
+    if ('cash_refund_amount' in saleReturn) {
+      requireNumber(saleReturn, 'cash_refund_amount', 'pengembalian tunai')
+      if (Number(saleReturn.cash_refund_amount) > Number(saleReturn.refund_amount)) {
+        throw new Error('Snapshot tidak valid: pengembalian tunai melebihi nilai retur')
+      }
     }
     const returned = (returnedQuantities.get(String(saleReturn.sale_item_id)) || 0)
       + Number(saleReturn.quantity)
