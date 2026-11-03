@@ -2,7 +2,7 @@ import type { CartItem } from '@/types'
 import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
-import { getStockConversion, roundStockQuantity } from '@/lib/productUnits'
+import { consumeFifoStockBatches, getStockConversion, roundStockQuantity } from '@/lib/productUnits'
 import type { PaymentMethod } from '@/lib/paymentMethods'
 
 export type OfflinePaymentMethod = PaymentMethod
@@ -102,30 +102,19 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }
 
-      let remaining = stockQuantity
-      let lineCost = 0
-      const fifoBatches = [...nextBatches.values()]
-        .filter((batch) => batch.product_id === item.product.id && Number(batch.quantity_remaining) > 0)
-        .sort((a, b) =>
-          String(a.received_at).localeCompare(String(b.received_at)) ||
-          String(a.id).localeCompare(String(b.id)),
-        )
-
-      for (const batch of fifoBatches) {
-        if (remaining <= 0) break
-        const available = Number(batch.quantity_remaining)
-        const consumed = roundStockQuantity(Math.min(remaining, available))
-        lineCost += consumed * Number(batch.unit_cost)
-        remaining = roundStockQuantity(remaining - consumed)
-        nextBatches.set(String(batch.id), {
-          ...batch,
-          quantity_remaining: roundStockQuantity(available - consumed),
-        })
+      const fifoResult = consumeFifoStockBatches(
+        [...nextBatches.values()],
+        item.product.id,
+        stockQuantity,
+      )
+      if (!fifoResult) throw new Error(`Batch HPP untuk ${item.product.name} tidak mencukupi`)
+      for (const [batchId, quantityRemaining] of fifoResult.remainingByBatchId) {
+        const batch = nextBatches.get(batchId)
+        if (batch) nextBatches.set(batchId, { ...batch, quantity_remaining: quantityRemaining })
       }
-      if (remaining > 0) throw new Error(`Batch HPP untuk ${item.product.name} tidak mencukupi`)
 
       const lineTotal = roundMoney(item.unit_price * item.quantity)
-      lineCost = roundMoney(lineCost)
+      const lineCost = fifoResult.cost
       if (lineTotal <= lineCost) {
         throw new Error(`Harga jual ${product.name} harus lebih besar dari HPP FIFO`)
       }

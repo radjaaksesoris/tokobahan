@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseProductPrices, type Product } from '@/types'
-import { getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
+import { getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
 
 describe('stock unit conversions', () => {
   const product: Pick<Product, 'stock_unit' | 'stock_conversion' | 'prices'> = {
@@ -39,6 +39,26 @@ describe('stock unit conversions', () => {
       cost_unit: 'lusin',
       cost_conversion: 12,
     }, 12, 120)).toBe(10)
+  })
+
+  it('estimates the same FIFO cost as checkout across stock batches', () => {
+    const meterProduct = {
+      id: 'product-1',
+      stock_unit: 'roll',
+      stock_conversion: 44,
+      prices: [{ unit: 'meter', price: 13000, conversion: 1 }],
+    }
+    const batches = [
+      { id: 'batch-1', product_id: 'product-1', quantity_remaining: 0.01, unit_cost: 44000, received_at: '2026-01-01' },
+      { id: 'batch-2', product_id: 'product-1', quantity_remaining: 1, unit_cost: 48000, received_at: '2026-01-02' },
+    ]
+
+    expect(getFifoCostForSale(meterProduct, batches, 'meter', 1)).toBe(1064)
+    expect(getFifoCostForSale(meterProduct, batches, 'meter', 2)).toBe(2120)
+    expect(getFifoCostForSale(meterProduct, [
+      { id: 'batch-1', product_id: 'product-1', quantity_remaining: 1, unit_cost: 48000, received_at: '2026-01-01' },
+    ], 'meter', 1)).toBe(1104)
+    expect(getFifoCostForSale(meterProduct, batches, 'meter', 100)).toBeNull()
   })
 
   it('accepts numeric strings from persisted price records', () => {

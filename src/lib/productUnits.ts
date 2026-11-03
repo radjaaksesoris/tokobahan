@@ -56,6 +56,57 @@ export function getStockUnitCostForSale(
   return Math.round((stockUnitCost + Number.EPSILON) * 100) / 100
 }
 
+export function consumeFifoStockBatches(
+  batches: Record<string, unknown>[],
+  productId: string,
+  stockQuantity: number,
+): { cost: number; remainingByBatchId: Map<string, number> } | null {
+  if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) return null
+  let remaining = roundStockQuantity(stockQuantity)
+  let totalCost = 0
+  const remainingByBatchId = new Map<string, number>()
+  const fifoBatches = batches
+    .filter((batch) =>
+      batch.product_id === productId &&
+      Number.isFinite(Number(batch.quantity_remaining)) &&
+      Number(batch.quantity_remaining) > 0,
+    )
+    .sort((a, b) =>
+      String(a.received_at).localeCompare(String(b.received_at)) ||
+      String(a.id).localeCompare(String(b.id)),
+    )
+
+  for (const batch of fifoBatches) {
+    if (remaining <= 0) break
+    const available = Number(batch.quantity_remaining)
+    const unitCost = Number(batch.unit_cost)
+    if (!Number.isFinite(unitCost) || unitCost < 0) return null
+    const consumed = roundStockQuantity(Math.min(remaining, available))
+    totalCost += consumed * unitCost
+    remaining = roundStockQuantity(remaining - consumed)
+    remainingByBatchId.set(String(batch.id), roundStockQuantity(available - consumed))
+  }
+
+  if (remaining > 0) return null
+  return {
+    cost: Math.round((totalCost + Number.EPSILON) * 100) / 100,
+    remainingByBatchId,
+  }
+}
+
+export function getFifoCostForSale(
+  product: Pick<Product, 'id' | 'prices' | 'stock_conversion' | 'stock_unit'>,
+  batches: Record<string, unknown>[],
+  unit: UnitType,
+  quantity: number,
+): number | null {
+  if (!Number.isFinite(quantity) || quantity <= 0) return null
+  const stockQuantity = roundStockQuantity(
+    quantity * getUnitConversion(product, unit) / getStockConversion(product),
+  )
+  return consumeFifoStockBatches(batches, product.id, stockQuantity)?.cost ?? null
+}
+
 export function getUnitCost(product: Pick<Product, 'prices' | 'cost_conversion' | 'cost_unit' | 'cost_price'>, unit: UnitType) {
   return product.cost_price / getCostConversion(product) * getUnitConversion(product, unit)
 }

@@ -27,12 +27,13 @@ import { toast } from 'sonner'
 import {
   OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
   readOperationalSnapshot,
+  type OperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
-import { getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
+import { getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
 import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
@@ -66,6 +67,7 @@ interface ReceiptData {
 export default function POS() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
+  const [stockBatches, setStockBatches] = useState<OperationalSnapshot['tables']['product_stock_batches']>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -110,6 +112,11 @@ export default function POS() {
     const availableBaseUnits = Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
     return availableBaseUnits / getUnitConversion(product, unit)
   }
+  const selectedFifoQuantity = Math.max(1, Number(qtyInput) || 1)
+  const selectedFifoCost = selectedProduct
+    ? getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, selectedFifoQuantity)
+    : null
+  const selectedFifoUnitCost = selectedFifoCost === null ? null : selectedFifoCost / selectedFifoQuantity
 
   function createReceipt(invoiceNo: string): ReceiptData {
     const amountPaid = paymentMethod === 'cash' || paymentMethod === 'credit'
@@ -273,6 +280,7 @@ export default function POS() {
       const snapshot = await readOperationalSnapshot()
       if (signal?.aborted) return
       if (!snapshot) {
+        setStockBatches([])
         toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
         setProducts([])
         initialLoadComplete.current = true
@@ -280,6 +288,7 @@ export default function POS() {
         return
       }
 
+      setStockBatches(snapshot.tables.product_stock_batches)
       const localProducts = await readOperationalTable<Product>('products', snapshot)
       if (signal?.aborted) return
       const rows = localProducts
@@ -294,7 +303,8 @@ export default function POS() {
       setLoading(false)
     } catch (error) {
       if (signal?.aborted) return
-      toast.error(`Gagal membaca katalog lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    setStockBatches([])
+    toast.error(`Gagal membaca katalog lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setProducts([])
       setLoading(false)
       initialLoadComplete.current = true
@@ -362,9 +372,14 @@ export default function POS() {
     const availableStock = getAvailableStock(selectedProduct, selectedUnit)
     const quantity = Math.min(availableStock, Math.max(1, Number(qtyInput) || 1))
     const salePrice = Number(salePriceInput)
-    const unitCost = getUnitCost(selectedProduct, selectedUnit)
-    if (!Number.isFinite(salePrice) || salePrice <= unitCost) {
-      toast.error(`Harga jual harus lebih besar dari HPP (${formatCurrency(unitCost)})`)
+    const fifoCost = getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, quantity)
+    if (fifoCost === null) {
+      toast.error(`Batch HPP untuk ${selectedProduct.name} tidak mencukupi`)
+      return
+    }
+    const lineTotal = Math.round((salePrice * quantity + Number.EPSILON) * 100) / 100
+    if (!Number.isFinite(salePrice) || lineTotal <= fifoCost) {
+      toast.error(`Total harga jual harus lebih besar dari HPP FIFO (${formatCurrency(fifoCost)})`)
       return
     }
     setQty(quantity)
@@ -845,7 +860,9 @@ export default function POS() {
                 <div className="rounded-lg bg-slate-50 p-3 text-center">
                   <p className="text-xs text-muted-foreground">HPP</p>
                   <p className="text-lg font-bold text-ink">
-                    {formatCurrency(getUnitCost(selectedProduct, selectedUnit))}
+                    {selectedFifoUnitCost === null
+                      ? 'Tidak tersedia'
+                      : `${formatCurrency(selectedFifoUnitCost)} / ${UNIT_LABELS[selectedUnit] || selectedUnit}`}
                   </p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3 text-center">
