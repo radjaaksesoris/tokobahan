@@ -152,6 +152,9 @@ export default function Products() {
     label: UNIT_LABELS[unit] || unit,
   }))
   const unitFactors = UNIT_FACTORS
+  const basePriceUnit = prices.find((price) => price.conversion === 1)?.unit
+  const stockConversion = getPriceConversion(prices, stockUnit)
+  const recommendBaseStockUnit = !editing && basePriceUnit && stockUnit !== basePriceUnit && stockConversion > 1
 
   useEffect(() => {
     let cancelled = false
@@ -412,12 +415,14 @@ export default function Products() {
     if (!isUnitType(value)) return
     const nextUnit = value as UnitType
     setStockUnit(nextUnit)
-    setCostUnit(nextUnit)
-    setPrices((current) => current.map((price, index) => (
-      index === 0
-        ? { ...price, unit: nextUnit, conversion: unitFactors[nextUnit] || 1 }
-        : price
-    )))
+    if (costPrice === 0) setCostUnit(nextUnit)
+    if (!prices.some((price) => price.unit === nextUnit)) {
+      setPrices((current) => current.map((price, index) => (
+        index === 0
+          ? { ...price, unit: nextUnit, conversion: unitFactors[nextUnit] || 1 }
+          : price
+      )))
+    }
   }
 
   async function checkProductNameAvailability(value: string) {
@@ -1175,6 +1180,13 @@ export default function Products() {
                       aria-label="Satuan stok"
                     />
                   </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Stok dicatat dalam satuan {getUnitLabel(stockUnit)}.
+                    {recommendBaseStockUnit && (
+                      <> Untuk penjualan per {getUnitLabel(basePriceUnit)}, pilih {getUnitLabel(basePriceUnit)} sebagai satuan stok agar stok tidak dihitung sebagai pecahan {getUnitLabel(stockUnit)}.</>
+                    )}
+                    {editing && <> Satuan stok produk lama dikunci agar jumlah stok dan batch HPP tidak berubah tanpa konversi.</>}
+                  </p>
                 </div>
               </div>
               {!editing && (
@@ -1294,6 +1306,11 @@ export default function Products() {
                       Stok dan HPP produk lama dikunci. Gunakan tombol Tambah Stok untuk membuat batch FIFO baru.
                     </p>
                   )}
+                  {basePriceUnit && getPriceConversion(prices, costUnit) > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Setara sekitar {formatCurrency(Math.round(costPrice / getPriceConversion(prices, costUnit)))} per {getUnitLabel(basePriceUnit)}.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="product-min-stock" className="mb-1 block text-sm font-medium">Min. Stok</label>
@@ -1316,7 +1333,7 @@ export default function Products() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <span id="sale-prices-label" className="text-sm font-medium">Harga Jual per Unit</span>
+                  <span id="sale-prices-label" className="text-sm font-medium">Harga jual & konversi satuan</span>
                   <Button variant="outline" size="sm" onClick={addPriceRow} disabled={editingPricesOnly}>
                     <Plus className="h-3 w-3" /> Tambah
                   </Button>
@@ -1353,9 +1370,9 @@ export default function Products() {
                         inputMode="decimal"
                         value={pr.conversion}
                         onChange={(event) => updatePrice(idx, 'conversion', Number(event.target.value))}
-                        placeholder="Isi dasar"
-                        aria-label={`Isi unit dasar untuk harga jual ${idx + 1}`}
-                        title="Jumlah unit dasar dalam satu satuan jual. Contoh: 1 Roll = 50 Meter, isi 50."
+                        placeholder="Jumlah dasar"
+                        aria-label={`Jumlah ${basePriceUnit ? getUnitLabel(basePriceUnit) : 'unit dasar'} per ${getUnitLabel(pr.unit)}`}
+                        title={`Jumlah ${basePriceUnit ? getUnitLabel(basePriceUnit) : 'unit dasar'} dalam 1 ${getUnitLabel(pr.unit)}.`}
                       />
                       {prices.length > 1 && (
                         <button
@@ -1415,9 +1432,18 @@ export default function Products() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Isi dasar = jumlah unit dasar per satuan jual. Contoh: 1 Roll = 50 Meter, isi Roll 50 dan Meter 1.
-                </p>
+                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                  {prices.map((price, index) => (
+                    <p key={`${price.unit}-${index}`}>
+                      {basePriceUnit
+                        ? `1 ${getUnitLabel(price.unit)} = ${formatStockQuantity(price.conversion)} ${getUnitLabel(basePriceUnit)}`
+                        : `Isi jumlah unit dasar dalam 1 ${getUnitLabel(price.unit)}.`}
+                    </p>
+                  ))}
+                  {basePriceUnit && (
+                    <p>Gunakan satuan dengan konversi 1 sebagai unit dasar. HPP setara per unit dasar ditampilkan di bagian Harga Modal.</p>
+                  )}
+                </div>
               </div>
             </CardContent>
             <div className="flex gap-2 border-t p-4">
