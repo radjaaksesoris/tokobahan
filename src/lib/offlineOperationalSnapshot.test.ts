@@ -9,6 +9,7 @@ import {
   OFFLINE_OPERATIONAL_SNAPSHOT_STORE,
   OFFLINE_DB_VERSION,
   OPERATIONAL_SNAPSHOT_TABLES,
+  pruneStoredOperationalSales,
   readOperationalSnapshot,
   replaceOperationalSnapshotAfterRefresh,
   updateOperationalSnapshot,
@@ -79,6 +80,46 @@ describe('offline operational snapshot storage', () => {
 
     await clearOperationalSnapshot()
     await expect(readOperationalSnapshot()).resolves.toBeNull()
+  })
+
+  it('skips the stock migration snapshot read after its completion marker exists', async () => {
+    await writeOperationalSnapshot(createSnapshot())
+    await readOperationalSnapshot()
+
+    const getSpy = vi.spyOn(IDBObjectStore.prototype, 'get')
+    await readOperationalSnapshot()
+
+    expect(getSpy.mock.calls.filter(([key]) => key === 'current')).toHaveLength(1)
+    getSpy.mockRestore()
+  })
+
+  it('does not rewrite or announce a snapshot update when nothing changed', async () => {
+    const snapshot = createSnapshot()
+    await writeOperationalSnapshot(snapshot)
+    const storedBefore = await readOperationalSnapshot()
+    const changeListener = vi.fn()
+    const eventTarget = new EventTarget()
+    vi.stubGlobal('window', eventTarget)
+    eventTarget.addEventListener('tokobahan:operational-snapshot-change', changeListener)
+
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: 'unchanged',
+    }))).resolves.toBe('unchanged')
+
+    expect(changeListener).not.toHaveBeenCalled()
+    await expect(readOperationalSnapshot()).resolves.toEqual(storedBefore)
+    eventTarget.removeEventListener('tokobahan:operational-snapshot-change', changeListener)
+  })
+
+  it('does not rewrite a snapshot when startup retention has nothing to prune', async () => {
+    const snapshot = createSnapshot()
+    await writeOperationalSnapshot(snapshot)
+
+    await expect(pruneStoredOperationalSales()).resolves.toBe(false)
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      generated_at: snapshot.generated_at,
+    })
   })
 
   it('does not replace a snapshot created by a concurrent bootstrap', async () => {

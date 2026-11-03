@@ -127,15 +127,19 @@ function migrateStoredStockPrecision(database: IDBDatabase): Promise<void> {
 
     const store = transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE)
     const migrationRequest = store.get(STOCK_PRECISION_MIGRATION_KEY)
-    const lockRequest = store.get(SYNC_LOCK_KEY)
-    const snapshotRequest = store.get(SNAPSHOT_KEY)
-    let readyCount = 0
-    const migrate = () => {
-      readyCount += 1
-      if (readyCount !== 3) return
-      if (migrationRequest.result || isActiveSyncLock(lockRequest.result as SyncLock | undefined)) return
+    migrationRequest.onsuccess = () => {
+      if (migrationRequest.result) return
+      const lockRequest = store.get(SYNC_LOCK_KEY)
+      lockRequest.onsuccess = () => {
+        if (isActiveSyncLock(lockRequest.result as SyncLock | undefined)) return
+        const snapshotRequest = store.get(SNAPSHOT_KEY)
+        snapshotRequest.onsuccess = () => {
+          migrateSnapshot(snapshotRequest.result as StoredSnapshot | undefined)
+        }
+      }
+    }
 
-      const stored = snapshotRequest.result as StoredSnapshot | undefined
+    const migrateSnapshot = (stored: StoredSnapshot | undefined) => {
       const products = stored?.data?.tables?.products
       const batches = stored?.data?.tables?.product_stock_batches
       let changed = false
@@ -165,9 +169,6 @@ function migrateStoredStockPrecision(database: IDBDatabase): Promise<void> {
       if (changed && stored) store.put(stored)
       store.put({ id: STOCK_PRECISION_MIGRATION_KEY, completed: true })
     }
-    migrationRequest.onsuccess = migrate
-    lockRequest.onsuccess = migrate
-    snapshotRequest.onsuccess = migrate
 
     transaction.oncomplete = () => resolve()
     transaction.onerror = () => reject(new Error(
@@ -213,6 +214,7 @@ async function withSnapshotStore<T>(
     setResult: (result: T) => void,
     abortWithError: (error: unknown) => void,
   ) => void,
+  shouldDispatchChange: () => boolean = () => mode === 'readwrite',
 ): Promise<T> {
   const database = await openDatabase()
 
@@ -241,7 +243,7 @@ async function withSnapshotStore<T>(
         transaction.oncomplete = () => {
           if (settled) return
           settled = true
-          if (mode === 'readwrite' && typeof window !== 'undefined') {
+          if (shouldDispatchChange() && typeof window !== 'undefined') {
             window.dispatchEvent(new Event(OPERATIONAL_SNAPSHOT_CHANGE_EVENT))
           }
           resolve(result)
@@ -458,6 +460,7 @@ export function updateOperationalSnapshot<TResult>(
     result: TResult
   },
 ): Promise<TResult> {
+  let snapshotChanged = false
   return withSnapshotStore<TResult>('readwrite', (store, setResult, abortWithError) => {
     const snapshotRequest = store.get(SNAPSHOT_KEY)
     const lockRequest = store.get(SYNC_LOCK_KEY)
@@ -472,21 +475,27 @@ export function updateOperationalSnapshot<TResult>(
           throw new Error('Snapshot sedang disinkronkan dan tidak dapat diubah')
         }
         store.delete(SYNC_LOCK_KEY)
-        const current = snapshotResult
-        if (!current) throw new Error('Snapshot lokal belum diinisialisasi')
+        const storedSnapshot = snapshotResult
+        if (!storedSnapshot) throw new Error('Snapshot lokal belum diinisialisasi')
 
-        const next = update(validateOperationalSnapshot(current.data))
+        const current = validateOperationalSnapshot(storedSnapshot.data)
+        const next = update(current)
+        if (next.snapshot === current) {
+          setResult(next.result)
+          return
+        }
         const normalizedSnapshot = normalizeSnapshotStockPrecision(
           pruneOperationalSales(validateOperationalSnapshot(next.snapshot)),
         )
-        const snapshot = normalizedSnapshot === current.data
+        const snapshot = normalizedSnapshot === storedSnapshot.data
           ? normalizedSnapshot
           : {
               ...normalizedSnapshot,
               generated_at: new Date().toISOString(),
-              synced_generated_at: normalizedSnapshot.synced_generated_at ?? current.data.generated_at,
+              synced_generated_at: normalizedSnapshot.synced_generated_at ?? storedSnapshot.data.generated_at,
             }
         store.put({ id: SNAPSHOT_KEY, data: snapshot } satisfies StoredSnapshot)
+        snapshotChanged = true
         setResult(next.result)
       } catch (error) {
         abortWithError(error)
@@ -500,11 +509,12 @@ export function updateOperationalSnapshot<TResult>(
       lockResult = lockRequest.result as SyncLock | undefined
       updateWhenReady()
     }
-  })
+  }, () => snapshotChanged)
 }
 
 export async function pruneStoredOperationalSales(): Promise<boolean> {
-  if (!await readOperationalSnapshot()) return false
+  const initialSnapshot = await readOperationalSnapshot()
+  if (!initialSnapshot || pruneOperationalSales(initialSnapshot) === initialSnapshot) return false
 
   let pruned = false
   await updateOperationalSnapshot((snapshot) => {

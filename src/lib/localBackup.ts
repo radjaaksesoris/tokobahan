@@ -5,6 +5,7 @@ const BACKUP_DB_VERSION = 1
 const BACKUP_STORE = 'settings'
 const BACKUP_HANDLE_KEY = 'directory'
 export const LOCAL_BACKUP_LAST_GENERATED_KEY = 'tokobahan.local-backup-last-generated-at'
+export const LOCAL_BACKUP_COMPLETED_EVENT = 'tokobahan:local-backup-completed'
 const TAURI_BACKUP_PATH_KEY = 'tokobahan.tauri-backup-folder'
 const DAILY_BACKUP_HOUR = 17
 
@@ -51,11 +52,7 @@ async function saveTauriBackup(folder: string, snapshot: Awaited<ReturnType<type
     ? ['tokobahan-backup-latest.json', `tokobahan-backup-${timestampForFilename(new Date())}.json`]
     : ['tokobahan-backup-latest.json']
   for (const filename of filenames) await writeTextFile(filePath(folder, filename), content)
-  try {
-    window.localStorage.setItem(LOCAL_BACKUP_LAST_GENERATED_KEY, snapshot.generated_at)
-  } catch {
-    // The files are already safely written; localStorage is only the close-warning marker.
-  }
+  markLocalBackupComplete(snapshot.generated_at)
   return true
 }
 
@@ -109,6 +106,15 @@ function timestampForFilename(date: Date) {
   return date.toISOString().replace(/[:.]/g, '-')
 }
 
+function markLocalBackupComplete(generatedAt: string) {
+  try {
+    window.localStorage.setItem(LOCAL_BACKUP_LAST_GENERATED_KEY, generatedAt)
+    window.dispatchEvent(new Event(LOCAL_BACKUP_COMPLETED_EVENT))
+  } catch {
+    // The backup files are safe; localStorage is only used for the close warning.
+  }
+}
+
 export async function chooseLocalBackupFolder() {
   if (isTauriRuntime()) {
     const { open } = await import('@tauri-apps/plugin-dialog')
@@ -154,11 +160,7 @@ export async function saveLocalBackup(options: { archive?: boolean } = {}) {
     await writable.write(content)
     await writable.close()
   }
-  try {
-    window.localStorage.setItem(LOCAL_BACKUP_LAST_GENERATED_KEY, snapshot.generated_at)
-  } catch {
-    // The files are already safely written; localStorage is only the close-warning marker.
-  }
+  markLocalBackupComplete(snapshot.generated_at)
   return true
 }
 

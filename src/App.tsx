@@ -10,7 +10,12 @@ import {
   readOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
 import { startAutomaticOperationalSync } from '@/lib/automaticOperationalSync'
-import { LOCAL_BACKUP_LAST_GENERATED_KEY, startAutomaticLocalBackup, startTauriCloseGuard } from '@/lib/localBackup'
+import {
+  LOCAL_BACKUP_COMPLETED_EVENT,
+  LOCAL_BACKUP_LAST_GENERATED_KEY,
+  startAutomaticLocalBackup,
+  startTauriCloseGuard,
+} from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingDots } from '@/components/ui/LoadingDots'
@@ -118,6 +123,8 @@ function PageSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 
+const LOCAL_SALES_RETENTION_MIGRATION_KEY = 'tokobahan.sales-retention-500-v1'
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore()
 
@@ -183,10 +190,22 @@ export default function App() {
 
   useEffect(() => {
     if (authLoading || !user || !isAdmin) return
+    try {
+      if (window.localStorage.getItem(LOCAL_SALES_RETENTION_MIGRATION_KEY) === '1') return
+    } catch (error) {
+      console.warn('Gagal memeriksa status pembatasan riwayat lokal:', error)
+    }
 
-    void pruneStoredOperationalSales().catch((error) => {
-      console.error('Gagal membatasi riwayat transaksi lokal:', error)
-    })
+    const timer = window.setTimeout(() => {
+      void pruneStoredOperationalSales()
+        .then(() => {
+          window.localStorage.setItem(LOCAL_SALES_RETENTION_MIGRATION_KEY, '1')
+        })
+        .catch((error) => {
+          console.error('Gagal membatasi riwayat transaksi lokal:', error)
+        })
+    }, 2000)
+    return () => window.clearTimeout(timer)
   }, [authLoading, isAdmin, user])
 
   useEffect(() => {
@@ -202,17 +221,21 @@ export default function App() {
     if (authLoading || !user || !isAdmin) return
 
     let checking = false
+    let stateVersion = 0
     const updatePendingState = async () => {
       if (checking) return
       checking = true
+      const currentVersion = stateVersion
       try {
         const snapshot = await readOperationalSnapshot()
-        hasPendingLocalChangesRef.current = Boolean(
-          snapshot && window.localStorage.getItem(LOCAL_BACKUP_LAST_GENERATED_KEY) !== snapshot.generated_at,
-        )
+        if (currentVersion === stateVersion) {
+          hasPendingLocalChangesRef.current = Boolean(
+            snapshot && window.localStorage.getItem(LOCAL_BACKUP_LAST_GENERATED_KEY) !== snapshot.generated_at,
+          )
+        }
       } catch (error) {
         console.warn('Gagal memeriksa perubahan data lokal:', error)
-        hasPendingLocalChangesRef.current = false
+        if (currentVersion === stateVersion) hasPendingLocalChangesRef.current = false
       } finally {
         checking = false
       }
@@ -221,6 +244,14 @@ export default function App() {
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') void updatePendingState()
     }
+    const markLocalChangesPending = () => {
+      stateVersion += 1
+      hasPendingLocalChangesRef.current = true
+    }
+    const markLocalChangesBackedUp = () => {
+      stateVersion += 1
+      hasPendingLocalChangesRef.current = false
+    }
 
     const warnBeforeOfflineClose = (event: BeforeUnloadEvent) => {
       if (!hasPendingLocalChangesRef.current) return
@@ -228,17 +259,18 @@ export default function App() {
       event.returnValue = 'Ada perubahan data lokal. Buat backup terlebih dahulu sebelum menutup aplikasi.'
     }
 
-    void updatePendingState()
-    const timer = window.setInterval(refreshWhenVisible, 15000)
+    const timer = window.setTimeout(() => void updatePendingState(), 1000)
     window.addEventListener('focus', refreshWhenVisible)
     document.addEventListener('visibilitychange', refreshWhenVisible)
-    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
+    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, markLocalChangesPending)
+    window.addEventListener(LOCAL_BACKUP_COMPLETED_EVENT, markLocalChangesBackedUp)
     window.addEventListener('beforeunload', warnBeforeOfflineClose)
     return () => {
-      window.clearInterval(timer)
+      window.clearTimeout(timer)
       window.removeEventListener('focus', refreshWhenVisible)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
-      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
+      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, markLocalChangesPending)
+      window.removeEventListener(LOCAL_BACKUP_COMPLETED_EVENT, markLocalChangesBackedUp)
       window.removeEventListener('beforeunload', warnBeforeOfflineClose)
       hasPendingLocalChangesRef.current = false
     }
