@@ -49,11 +49,20 @@ const Settlements = lazyWithRecovery(getPageChunkImporter('settlements'), 'settl
 const StockOpname = lazyWithRecovery(getPageChunkImporter('stockOpname'), 'stock-opname')
 const NotFound = lazyWithRecovery(getPageChunkImporter('notFound'), 'not-found')
 
-class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+class AppErrorBoundary extends Component<
+  { children: ReactNode; resetKey?: string },
+  { error: Error | null }
+> {
   state: { error: Error | null } = { error: null }
 
   static getDerivedStateFromError(error: Error) {
     return { error }
+  }
+
+  componentDidUpdate(previousProps: Readonly<{ children: ReactNode; resetKey?: string }>) {
+    if (previousProps.resetKey !== this.props.resetKey && this.state.error) {
+      this.setState({ error: null })
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -85,7 +94,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
 
 function RouteErrorBoundary({ children }: { children: ReactNode }) {
   const location = useLocation()
-  return <AppErrorBoundary key={location.pathname}>{children}</AppErrorBoundary>
+  return <AppErrorBoundary resetKey={location.pathname}>{children}</AppErrorBoundary>
 }
 
 function PageLoader() {
