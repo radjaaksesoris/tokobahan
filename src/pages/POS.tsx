@@ -1516,7 +1516,6 @@ function CartPanel({
               placeholder="Nama pelanggan (wajib)"
               aria-label="Nama pelanggan untuk transaksi kredit"
               aria-invalid={customerNameNeedsAttention}
-              aria-describedby={customerNameNeedsAttention ? 'credit-customer-name-required' : undefined}
               onKeyDown={(event) => {
                 if (event.key === 'Tab') {
                   event.preventDefault()
@@ -1546,11 +1545,6 @@ function CartPanel({
                   : ''
               }`}
             />
-            {customerNameNeedsAttention && (
-              <p id="credit-customer-name-required" className="mt-1 text-xs font-medium text-red-300" role="alert">
-                Nama pelanggan wajib diisi untuk transaksi kredit.
-              </p>
-            )}
             {customerNameFocused && customerName.trim() && customerSuggestions.length > 0 && (
               <div className="absolute inset-x-0 bottom-full z-20 mb-1 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-ink p-1 shadow-lg">
                 {customerSuggestions.map((customer, index) => (
