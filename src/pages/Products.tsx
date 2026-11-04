@@ -14,6 +14,10 @@ import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import {
+  getInactiveProductDeletionBlockReason,
+  permanentlyDeleteUnusedInactiveProduct,
+} from '@/lib/offlineInactiveProductCleanup'
+import {
   formatMixedStockQuantity,
   getCostConversion,
   getPriceConversion,
@@ -82,6 +86,11 @@ function ProductTableSkeleton() {
 export default function Products() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
+  const [inactiveProducts, setInactiveProducts] = useState<Array<{
+    product: Product
+    deletionBlockReason: string | null
+  }>>([])
+  const [inactiveProductsOpen, setInactiveProductsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -89,6 +98,8 @@ export default function Products() {
   const [returnToStockProduct, setReturnToStockProduct] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteName, setDeleteName] = useState('')
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<Product | null>(null)
+  const [permanentDeleteName, setPermanentDeleteName] = useState('')
   const [stockProduct, setStockProduct] = useState<Product | null>(null)
   const [stockQuantity, setStockQuantity] = useState('0')
   const [stockCost, setStockCost] = useState(0)
@@ -205,6 +216,7 @@ export default function Products() {
       if (signal?.aborted || requestId !== loadRequestId.current) return
       toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setProducts([])
+      setInactiveProducts([])
       setHasNextPage(false)
       setLoading(false)
       initialLoadComplete.current = true
@@ -212,20 +224,28 @@ export default function Products() {
     }
     if (localSnapshot) {
       try {
-        const localProducts = await readOperationalTable<Product>('products')
+        const localProducts = await readOperationalTable<Product>('products', localSnapshot)
         if (signal?.aborted || requestId !== loadRequestId.current) return
         const normalizedTerm = term.toLocaleLowerCase()
-        const filteredProducts = localProducts
-          .filter((product) => product.is_active)
-          .filter((product) => !normalizedTerm ||
+        const matchesSearch = (product: Product) => !normalizedTerm ||
             product.name.toLocaleLowerCase().includes(normalizedTerm) ||
             product.sku?.toLocaleLowerCase().includes(normalizedTerm) ||
-            product.barcode?.toLocaleLowerCase().includes(normalizedTerm))
+            product.barcode?.toLocaleLowerCase().includes(normalizedTerm)
+        const filteredProducts = localProducts
+          .filter((product) => product.is_active)
+          .filter(matchesSearch)
           .sort((a, b) =>
             Number(a.stock <= 0) - Number(b.stock <= 0) ||
             a.name.localeCompare(b.name, 'id') ||
             a.id.localeCompare(b.id),
           )
+        setInactiveProducts(localProducts
+          .filter((product) => product.is_active === false)
+          .sort((a, b) => a.name.localeCompare(b.name, 'id'))
+          .map((product) => ({
+            product,
+            deletionBlockReason: getInactiveProductDeletionBlockReason(localSnapshot, product.id),
+          })))
         const start = page * pageSize
         setProducts(filteredProducts.slice(start, start + pageSize))
         setHasNextPage(filteredProducts.length > start + pageSize)
@@ -235,6 +255,7 @@ export default function Products() {
         if (signal?.aborted || requestId !== loadRequestId.current) return
         toast.error(`Gagal membaca produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
         setProducts([])
+        setInactiveProducts([])
         setHasNextPage(false)
         setLoading(false)
         initialLoadComplete.current = true
@@ -244,6 +265,7 @@ export default function Products() {
     if (!localSnapshot) {
       toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       setProducts([])
+      setInactiveProducts([])
       setHasNextPage(false)
       initialLoadComplete.current = true
       setLoading(false)
@@ -798,6 +820,41 @@ export default function Products() {
     }
   }
 
+  function requestPermanentDelete(product: Product) {
+    const inactiveProduct = inactiveProducts.find((entry) => entry.product.id === product.id)
+    if (inactiveProduct?.deletionBlockReason) {
+      toast.error(`Produk tidak dapat dihapus: ${inactiveProduct.deletionBlockReason}`)
+      return
+    }
+    setPermanentDeleteTarget(product)
+    setPermanentDeleteName('')
+  }
+
+  async function handlePermanentDelete() {
+    if (!permanentDeleteTarget) return
+    if (permanentDeleteName.trim().toLocaleLowerCase() !== permanentDeleteTarget.name.trim().toLocaleLowerCase()) {
+      toast.error('Nama produk tidak cocok')
+      return
+    }
+    try {
+      await permanentlyDeleteUnusedInactiveProduct(permanentDeleteTarget.id)
+      toast.success('Produk dihapus permanen dari data lokal')
+      setPermanentDeleteTarget(null)
+      setPermanentDeleteName('')
+      await load()
+    } catch (error) {
+      toast.error(`Gagal menghapus produk permanen: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
+  }
+
+  const normalizedProductSearch = search.trim().replace(/[%_,]/g, ' ').toLocaleLowerCase()
+  const visibleInactiveProducts = inactiveProducts.filter(({ product }) =>
+    !normalizedProductSearch ||
+    product.name.toLocaleLowerCase().includes(normalizedProductSearch) ||
+    product.sku?.toLocaleLowerCase().includes(normalizedProductSearch) ||
+    product.barcode?.toLocaleLowerCase().includes(normalizedProductSearch),
+  )
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-6">
       <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
@@ -850,6 +907,111 @@ export default function Products() {
           </Button>
         </div>
       </div>
+      {inactiveProducts.length > 0 && (
+        <Card>
+          <CardHeader className="flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Barang nonaktif ({inactiveProducts.length})</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Hanya barang tanpa stok dan tanpa riwayat yang dapat dihapus permanen.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              aria-expanded={inactiveProductsOpen}
+              onClick={() => setInactiveProductsOpen((open) => !open)}
+            >
+              {inactiveProductsOpen ? 'Tutup daftar' : 'Kelola'}
+            </Button>
+          </CardHeader>
+          {inactiveProductsOpen && (
+            <CardContent className="space-y-2 pt-0">
+              {visibleInactiveProducts.length === 0 ? (
+                <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                  Tidak ada barang nonaktif yang cocok dengan pencarian.
+                </p>
+              ) : visibleInactiveProducts.map(({ product, deletionBlockReason }) => (
+                <div
+                  key={product.id}
+                  className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {deletionBlockReason
+                        ? `Dipertahankan: ${deletionBlockReason}`
+                        : 'Tidak ada stok atau riwayat terkait; aman dihapus permanen.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={Boolean(deletionBlockReason)}
+                    onClick={() => requestPermanentDelete(product)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Hapus permanen
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          )}
+        </Card>
+      )}
+      {permanentDeleteTarget && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="flex-row items-center justify-between border-b">
+              <CardTitle>Hapus barang permanen</CardTitle>
+              <button
+                type="button"
+                aria-label="Tutup konfirmasi hapus permanen"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                onClick={() => setPermanentDeleteTarget(null)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <p className="text-sm text-muted-foreground">
+                Barang ini akan dihapus dari data lokal dan tidak dapat dipulihkan dari aplikasi.
+                Salinan server diperbarui setelah data lokal disinkronkan.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Ketik <strong>{permanentDeleteTarget.name}</strong> untuk melanjutkan.
+              </p>
+              <Input
+                value={permanentDeleteName}
+                onChange={(event) => setPermanentDeleteName(event.target.value)}
+                placeholder="Nama barang"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setPermanentDeleteTarget(null)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={permanentDeleteName.trim().toLocaleLowerCase() !== permanentDeleteTarget.name.trim().toLocaleLowerCase()}
+                  onClick={() => void handlePermanentDelete()}
+                >
+                  Hapus permanen
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {loading ? (
         <ProductTableSkeleton />
       ) : products.length === 0 ? (
