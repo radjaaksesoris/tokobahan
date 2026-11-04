@@ -370,17 +370,22 @@ textarea::placeholder {
 @keyframes startup-step-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(242, 196, 119, 0);
+    border-color: rgba(242, 196, 119, 0.55);
+    background: rgba(242, 196, 119, 0.1);
+    box-shadow: 0 0 0 0 rgba(242, 196, 119, 0.05);
   }
   50% {
-    transform: scale(1.06);
-    box-shadow: 0 0 0 4px rgba(242, 196, 119, 0.12);
+    transform: scale(1.12);
+    border-color: #f2c477;
+    background: rgba(242, 196, 119, 0.28);
+    box-shadow:
+      0 0 0 5px rgba(242, 196, 119, 0.16),
+      0 0 18px rgba(242, 196, 119, 0.25);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .startup-screen__step-arrow.is-active,
-  .startup-screen__steps li.is-current .startup-screen__step-mark {
+  .startup-screen__step-arrow.is-active {
     animation: none;
     transform: none;
   }
