@@ -188,6 +188,67 @@ textarea::placeholder {
   color: #202a2e;
 }
 
+.route-loader {
+  display: grid;
+  min-height: min(58vh, 34rem);
+  align-content: start;
+  gap: 1.5rem;
+  padding: clamp(0.25rem, 1vw, 0.75rem);
+  color: #202a2e;
+}
+
+.route-loader__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.route-loader__indicator {
+  width: 0.65rem;
+  height: 0.65rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #78915f;
+  box-shadow: 0 0 0 4px rgba(120, 145, 95, 0.12);
+}
+
+.route-loader__heading p {
+  color: #7b8580;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.route-loader__heading h2 {
+  margin-top: 0.25rem;
+  font-family: 'Rubik', 'Nunito Sans', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.route-loader__placeholder {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 42rem);
+}
+
+.route-loader__placeholder span {
+  display: block;
+  height: 3.25rem;
+  border: 1px solid rgba(32, 42, 46, 0.07);
+  border-radius: 0.8rem;
+  background: rgba(32, 42, 46, 0.035);
+}
+
+.route-loader__placeholder span:first-child {
+  width: 62%;
+  height: 1.15rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(32, 42, 46, 0.08);
+}
+
 .startup-screen {
   position: fixed;
   z-index: 80;

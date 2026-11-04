@@ -89,7 +89,37 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function PageLoader() {
-  return <StartupLoadingScreen phase="page" />
+  const { pathname } = useLocation()
+  const pageName = ({
+    '/': 'Ringkasan',
+    '/pos': 'Kasir',
+    '/products': 'Produk',
+    '/products/history': 'Riwayat stok',
+    '/products/stock-opname': 'Stok opname',
+    '/reports': 'Laporan',
+    '/transactions': 'Riwayat transaksi',
+    '/settings': 'Pengaturan',
+    '/settlements': 'Pelunasan hutang',
+    '/login': 'Login',
+  } as Record<string, string>)[pathname] || 'halaman'
+
+  return (
+    <section className="route-loader" role="status" aria-label={`Memuat ${pageName}`}>
+      <div className="route-loader__heading">
+        <span className="route-loader__indicator" aria-hidden="true" />
+        <div>
+          <p>RUANG KERJA TOKO</p>
+          <h2>Membuka {pageName}</h2>
+        </div>
+      </div>
+      <div className="route-loader__placeholder" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <span className="sr-only">Memuat halaman...</span>
+    </section>
+  )
 }
 
 function PageSuspense({ children }: { children: ReactNode }) {
