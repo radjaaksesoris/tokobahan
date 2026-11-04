@@ -18,6 +18,7 @@ import {
 } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { StartupLoadingScreen, useStartupMinimumTime } from '@/components/ui/StartupLoadingScreen'
 import { getPageChunkImporter } from '@/lib/pageChunks'
 import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
@@ -88,31 +89,7 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function PageLoader() {
-  const { pathname } = useLocation()
-  const pageName = ({
-    '/': 'Ringkasan',
-    '/pos': 'Kasir',
-    '/products': 'Produk',
-    '/products/history': 'Riwayat stok',
-    '/products/stock-opname': 'Stok opname',
-    '/reports': 'Laporan',
-    '/transactions': 'Riwayat transaksi',
-    '/settings': 'Pengaturan',
-    '/settlements': 'Pelunasan hutang',
-    '/login': 'Login',
-  } as Record<string, string>)[pathname] || 'halaman'
-
-  return (
-    <div className="page-loader" role="status" aria-label={`Memuat ${pageName}`}>
-      <div className="page-loader__panel">
-        <div className="page-loader__copy">
-          <p className="page-loader__eyebrow">RAJA AKSESORIS <span /> RUANG KERJA</p>
-          <p className="page-loader__title">Menyiapkan {pageName}</p>
-          <span className="sr-only">Memuat halaman...</span>
-        </div>
-      </div>
-    </div>
-  )
+  return <StartupLoadingScreen phase="page" />
 }
 
 function PageSuspense({ children }: { children: ReactNode }) {
@@ -123,16 +100,11 @@ const LOCAL_SALES_RETENTION_MIGRATION_KEY = 'tokobahan.sales-retention-500-v1'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore()
+  const minimumTimeElapsed = useStartupMinimumTime(!loading)
 
-  if (loading) {
+  if (loading || !minimumTimeElapsed) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-primary lg:bg-canvas" role="status" aria-label="Memuat aplikasi">
-        <img
-          src={`${import.meta.env.BASE_URL}icon-96.png`}
-          alt=""
-          className="h-12 w-12 rounded-xl"
-        />
-      </div>
+      <StartupLoadingScreen phase={loading ? 'access' : 'data'} />
     )
   }
 

@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { preloadPageChunk } from '@/lib/pageChunks'
 import { CurrentDate } from '@/components/layout/CurrentDate'
+import { StartupLoadingScreen, useStartupMinimumTime } from '@/components/ui/StartupLoadingScreen'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -28,10 +29,14 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [scrollMetrics, setScrollMetrics] = useState({ height: 0, top: 0, max: 0 })
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
+  const [dashboardReady, setDashboardReady] = useState(false)
   const scrollTrackRef = useRef<HTMLDivElement>(null)
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
   const location = useLocation()
+  const minimumStartupTimeElapsed = useStartupMinimumTime(dashboardReady)
+  const showStartupScreen = location.pathname === '/' &&
+    (!dashboardReady || !minimumStartupTimeElapsed)
   const isPosRoute = location.pathname.endsWith('/pos')
   const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
   const scrollPercent = scrollMetrics.max > 0
@@ -190,7 +195,7 @@ export function AppLayout() {
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
-          <Outlet context={{ setSnapshotGeneratedAt }} />
+          <Outlet context={{ setSnapshotGeneratedAt, setDashboardReady }} />
         </main>
         <div
           ref={scrollTrackRef}
@@ -234,6 +239,7 @@ export function AppLayout() {
           <Menu className="h-5 w-5" />
         </button>
       )}
+      {showStartupScreen && <StartupLoadingScreen phase="data" />}
     </div>
   )
 }

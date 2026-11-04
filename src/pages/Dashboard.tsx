@@ -72,8 +72,9 @@ interface LowStockProduct {
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { setSnapshotGeneratedAt } = useOutletContext<{
+  const { setSnapshotGeneratedAt, setDashboardReady } = useOutletContext<{
     setSnapshotGeneratedAt: (timestamp: string | null) => void
+    setDashboardReady: (ready: boolean) => void
   }>()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
@@ -157,6 +158,7 @@ export default function Dashboard() {
       setError(`Gagal membaca snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
       setLoading(false)
       initialLoadComplete.current = true
+      setDashboardReady(true)
       return
     }
     if (requestId !== statsRequestId.current) return
@@ -184,10 +186,12 @@ export default function Dashboard() {
         setSnapshotGeneratedAt(snapshot.generated_at)
         setLoading(false)
         initialLoadComplete.current = true
+        setDashboardReady(true)
       } catch (snapshotError) {
         setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
         setLoading(false)
         initialLoadComplete.current = true
+        setDashboardReady(true)
       }
       return
     }
@@ -196,6 +200,7 @@ export default function Dashboard() {
     setSnapshotMissing(true)
     setLoading(false)
     initialLoadComplete.current = true
+    setDashboardReady(true)
   }
 
   async function initializeDashboardData() {
