@@ -970,6 +970,7 @@ export default function TransactionHistory() {
                 {editItems.map((item, index) => {
                   const product = editProducts.find((entry) => entry.id === item.productId)
                   const prices = product ? parseProductPrices(product.prices) : []
+                  const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
                   return (
                     <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                       <label className="min-w-0 text-xs font-semibold text-muted-foreground">
@@ -1042,6 +1043,10 @@ export default function TransactionHistory() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      <div className="flex items-center justify-between border-t border-stone-100 pt-2 text-sm sm:col-span-4">
+                        <span className="text-muted-foreground">Total item</span>
+                        <strong className="text-ink">{formatCurrency(itemTotal)}</strong>
+                      </div>
                     </div>
                   )
                 })}
