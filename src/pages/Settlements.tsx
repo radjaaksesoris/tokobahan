@@ -752,7 +752,7 @@ function SettlementReceiptPreview({
         <div className="receipt-customer">Pelanggan: <strong>{receipt.customerName}</strong></div>
         <div className="receipt-rule" />
         <div className="receipt-items">
-          {receipt.items.map((item, index) => (
+          {receipt.items.filter((item) => item.quantity > 0).map((item, index) => (
             <div key={`${item.name}-${index}`} className="receipt-item">
               <div>{item.name}</div>
               <div className="receipt-item-detail">

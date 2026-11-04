@@ -361,13 +361,15 @@ export default function TransactionHistory() {
       total: Number(selectedSale.total_amount),
       amountPaid: Number(selectedSale.amount_paid) || 0,
       cashReceived: selectedSale.cash_received == null ? null : Number(selectedSale.cash_received),
-      items: items.map((item) => ({
+      items: items
+        .map((item) => ({
         name: item.product_name,
         unit: item.unit,
         quantity: Math.max(0, Number(item.quantity) - item.returned_quantity),
         unitPrice: Number(item.unit_price),
         lineTotal: Math.max(0, Number(item.line_total) - item.returned_amount),
-      })),
+        }))
+        .filter((item) => item.quantity > 0),
     }
     setReprint(receipt)
   }
@@ -1151,7 +1153,7 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
       {receipt.customerName && <div className="receipt-customer">Pelanggan: <strong>{receipt.customerName}</strong></div>}
       <div className="receipt-rule" />
       <div className="receipt-items">
-        {receipt.items.map((item, index) => (
+        {receipt.items.filter((item) => item.quantity > 0).map((item, index) => (
           <div key={`${item.name}-${index}`} className="receipt-item">
             <div>{item.name}</div>
             <div className="receipt-item-detail">
