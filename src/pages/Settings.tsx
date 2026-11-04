@@ -422,13 +422,17 @@ export default function Settings() {
     const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
     if (!window.confirm(
       `Ambil ulang data dari server akan mengganti seluruh data lokal saat ini (${rowCount} baris). ` +
-      'Backup JSON data lokal akan diunduh sebelum proses dimulai. Antrean transaksi lama harus dikosongkan. Lanjutkan?',
+      'Perubahan lokal yang belum dikirim juga akan diganti. Backup JSON data lokal akan diunduh sebelum proses dimulai. ' +
+      'Antrean transaksi lama harus dikosongkan. Lanjutkan?',
     )) return
 
     setRefreshingServerData(true)
     try {
       downloadBackup(JSON.parse(JSON.stringify(snapshot)) as Json, new Date().toISOString())
-      const result = await refreshOperationalSnapshotFromServer()
+      const result = await refreshOperationalSnapshotFromServer({
+        replaceUnsyncedLocalChanges: true,
+        expectedLocalGeneratedAt: snapshot.generated_at,
+      })
       await loadLocalSnapshotStatus()
       toast.success(`Data server berhasil disalin ke perangkat (${result.rows} baris dari ${result.tables} tabel)`)
     } catch (error) {

@@ -20,6 +20,25 @@ export function hasUnsyncedLocalChanges(
   )
 }
 
+type RefreshOptions =
+  | { replaceUnsyncedLocalChanges?: false }
+  | { replaceUnsyncedLocalChanges: true; expectedLocalGeneratedAt: string }
+
+export function assertRefreshCanReplaceLocalSnapshot(
+  snapshot: { generated_at: string; synced_generated_at?: string },
+  options: RefreshOptions = {},
+) {
+  if (options.replaceUnsyncedLocalChanges) {
+    if (snapshot.generated_at !== options.expectedLocalGeneratedAt) {
+      throw new Error('Data lokal berubah setelah backup dibuat. Unduh backup terbaru lalu ulangi.')
+    }
+    return
+  }
+  if (hasUnsyncedLocalChanges(snapshot)) {
+    throw new Error('Ada perubahan lokal yang belum dikirim ke server. Sinkronkan data lokal sebelum mengambil data server.')
+  }
+}
+
 function extractBackupPayload(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('payload' in value)) {
     throw new Error('Backup server tidak berisi snapshot operasional')
@@ -68,13 +87,11 @@ export async function initializeOperationalSnapshot() {
   }
 }
 
-export async function refreshOperationalSnapshotFromServer() {
+export async function refreshOperationalSnapshotFromServer(options: RefreshOptions = {}) {
   await ensureNoQueuedTransactions()
   const { snapshot: localSnapshot, lockToken } = await beginOperationalSnapshotSync()
   try {
-    if (hasUnsyncedLocalChanges(localSnapshot)) {
-      throw new Error('Ada perubahan lokal yang belum dikirim ke server. Sinkronkan data lokal sebelum mengambil data server.')
-    }
+    assertRefreshCanReplaceLocalSnapshot(localSnapshot, options)
     const snapshot = await fetchServerSnapshot()
     await replaceOperationalSnapshotAfterRefresh({
       ...snapshot,
