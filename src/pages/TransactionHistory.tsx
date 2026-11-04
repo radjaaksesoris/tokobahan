@@ -982,6 +982,8 @@ export default function TransactionHistory() {
                           onChange={(productId) => changeEditProduct(index, productId)}
                           aria-label={`Barang baris ${index + 1}`}
                           className="mt-1 w-full min-w-0"
+                          searchable
+                          compact
                           options={[
                             { value: '', label: 'Pilih barang' },
                             ...editProducts.map((entry) => ({
