@@ -817,7 +817,9 @@ export default function TransactionHistory() {
                 <div className="flex justify-center py-6"><LoadingDots className="text-primary" dotClassName="h-1.5 w-1.5" /></div>
               ) : (
                 <div className="divide-y divide-stone-100">
-                  {items.map((item) => (
+                  {items
+                    .filter((item) => item.quantity - item.returned_quantity > 0)
+                    .map((item) => (
                     <div key={item.id} className="flex justify-between gap-3 py-3 text-sm">
                       <div>
                         <p className="font-medium">{item.product_name}</p>
