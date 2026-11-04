@@ -505,6 +505,21 @@ html::-webkit-scrollbar {
     animation-duration: 0.01ms !important;
     animation-delay: 0ms !important;
   }
+
+  .startup-screen__steps li.is-current .startup-screen__step-mark {
+    animation: startup-step-pulse-reduced 2.2s ease-in-out infinite !important;
+  }
+}
+
+@keyframes startup-step-pulse-reduced {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(242, 196, 119, 0.06);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 4px rgba(242, 196, 119, 0.14);
+  }
 }
 
 @keyframes keypad-panel-in {
