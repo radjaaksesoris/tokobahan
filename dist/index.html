@@ -14,10 +14,55 @@
     <title>RAJA Aksesoris · POS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&display=swap" as="style" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
     <style>
       html, body, #root {
         background: #202a2e;
+      }
+      html, body {
+        min-height: 100%;
+        margin: 0;
+      }
+      .boot-screen {
+        display: grid;
+        min-height: 100dvh;
+        place-items: center;
+        padding: 1.5rem;
+        color: #fffdf8;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      .boot-screen__content {
+        display: grid;
+        justify-items: center;
+        gap: 0.75rem;
+      }
+      .boot-screen__brand {
+        color: #f2c477;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+      }
+      .boot-screen__message {
+        margin: 0;
+        color: #d3dbd7;
+        font-size: 0.9rem;
+      }
+      .boot-screen__indicator {
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 2px solid rgba(242, 196, 119, 0.25);
+        border-top-color: #f2c477;
+        border-radius: 50%;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      @keyframes boot-spin {
+        to { transform: rotate(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-screen__indicator { animation-duration: 2s; }
       }
       @media (min-width: 1024px) {
         html, body, #root {
@@ -25,14 +70,22 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-DlPCTgVO.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CmOgnVY_.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-ui-Ct_xjN7d.js">
+    <script type="module" crossorigin src="/assets/index-Dkx9q20R.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-Bc8z43_o.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-ui-DSOTKWLC.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-D_iOwayF.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-Bce6Eq_z.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CQaPqek1.css">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-Bn_Bs3zT.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BYY2h1O6.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="boot-screen" role="status" aria-label="Menyiapkan aplikasi">
+        <div class="boot-screen__content">
+          <span class="boot-screen__brand">RAJA AKSESORIS</span>
+          <span class="boot-screen__indicator" aria-hidden="true"></span>
+          <p class="boot-screen__message">Membuka aplikasi...</p>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

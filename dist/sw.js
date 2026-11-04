@@ -1,6 +1,5 @@
-// Bump this value when the app shell or caching strategy changes. Old caches
-// are removed during activate so lazy-loaded pages do not resolve stale chunks.
-const CACHE_NAME = 'konveksipos-v4'
+// Keep the previous cache briefly so open tabs can finish loading their chunks.
+const CACHE_NAME = 'konveksipos-v8'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -8,6 +7,7 @@ const APP_SHELL = [
   `${BASE_PATH}manifest.webmanifest`,
   `${BASE_PATH}favicon.png`,
   `${BASE_PATH}icon-192.png`,
+  `${BASE_PATH}icon-96.png`,
   `${BASE_PATH}icon-512.png`,
   `${BASE_PATH}login-background.jpg`,
 ]
@@ -22,8 +22,29 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim()),
+      .then(async (keys) => {
+        const appCaches = keys
+          .filter((key) => /^konveksipos-v\d+$/.test(key))
+          .sort((left, right) => Number(right.slice('konveksipos-v'.length)) - Number(left.slice('konveksipos-v'.length)))
+        const previousCache = appCaches.find((key) => key !== CACHE_NAME)
+        const cachesToKeep = new Set([CACHE_NAME, ...(previousCache ? [previousCache] : [])])
+        await Promise.all(
+          keys
+            .filter((key) => key.startsWith('konveksipos-v') && !cachesToKeep.has(key))
+            .map((key) => caches.delete(key)),
+        )
+        await self.clients.claim()
+        if (!previousCache) return
+
+        const openWindows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        await Promise.all(openWindows.map(async (client) => {
+          try {
+            await client.navigate(client.url)
+          } catch (error) {
+            console.error('Gagal memuat ulang aplikasi setelah update:', error)
+          }
+        }))
+      })
   )
 })
 
@@ -89,9 +110,14 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         if (response.ok) {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch((error) => {
+              console.error('Gagal menyimpan aset aplikasi ke cache:', error)
+            }),
+          )
+          return response
         }
-        return response
+        return caches.match(event.request).then((cached) => cached || response)
       })
       .catch(() => caches.match(event.request).then((cached) => cached || Response.error())),
   )

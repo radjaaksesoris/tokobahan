@@ -243,6 +243,148 @@ describe('offline transaction editing', () => {
     })
   })
 
+  it('rejects a credit correction that makes the total lower than net payments already received', () => {
+    const creditSnapshot: OperationalSnapshot = {
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...product, stock: 8 }],
+        sales: snapshot.tables.sales.map((sale) => ({
+          ...sale,
+          payment_method: 'credit',
+          amount_paid: 15,
+          total_amount: 20,
+          total_cost: 5.33,
+          total_profit: 14.67,
+        })),
+        sale_returns: [{
+          id: 'return-1',
+          sale_id: 'sale-1',
+          sale_item_id: 'sale-item-1',
+          quantity: 1,
+          refund_amount: 10,
+          cash_refund_amount: 0,
+        }],
+      },
+    }
+
+    expect(() => applyOfflineSaleEdit(creditSnapshot, {
+      ...edit,
+      paymentMethod: 'credit',
+      customerName: 'Pelanggan',
+      items: [{ ...edit.items[0], quantity: 1, unitPrice: 10 }],
+    })).toThrow('pembayaran bersih')
+  })
+
+  it('allows a credit correction when a previous cash refund accounts for the excess payment', () => {
+    const creditSnapshot: OperationalSnapshot = {
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...product, stock: 8 }],
+        sales: snapshot.tables.sales.map((sale) => ({
+          ...sale,
+          payment_method: 'credit',
+          amount_paid: 30,
+          total_amount: 20,
+          total_cost: 5.33,
+          total_profit: 14.67,
+        })),
+        sale_returns: [{
+          id: 'return-1',
+          sale_id: 'sale-1',
+          sale_item_id: 'sale-item-1',
+          quantity: 1,
+          refund_amount: 10,
+          cash_refund_amount: 10,
+        }],
+      },
+    }
+
+    const result = applyOfflineSaleEdit(creditSnapshot, {
+      ...edit,
+      paymentMethod: 'credit',
+      customerName: 'Pelanggan',
+      items: [{ ...edit.items[0], quantity: 2, unitPrice: 10 }],
+    })
+
+    expect(result.sale.total_amount).toBe(20)
+    expect(result.sale.amount_paid).toBe(30)
+  })
+
+  it('restores the unreturned old item and consumes FIFO stock when replacing it', () => {
+    const replacementProduct: Product = {
+      ...product,
+      id: 'product-2',
+      name: 'Kancing',
+      stock: 5,
+    }
+    const returnedSnapshot: OperationalSnapshot = {
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...product, stock: 8 }, { ...replacementProduct }],
+        sales: snapshot.tables.sales.map((sale) => ({
+          ...sale,
+          total_amount: 20,
+          total_cost: 5.33,
+          total_profit: 14.67,
+        })),
+        product_stock_batches: [
+          ...snapshot.tables.product_stock_batches,
+          {
+            id: 'return-batch',
+            product_id: product.id,
+            quantity_remaining: 1,
+            quantity_received: 1,
+            unit_cost: 2.67,
+            received_at: '2026-10-02T00:00:00.000Z',
+          },
+          {
+            id: 'replacement-batch',
+            product_id: replacementProduct.id,
+            quantity_remaining: 5,
+            quantity_received: 5,
+            unit_cost: 4,
+            received_at: '2026-09-02T00:00:00.000Z',
+          },
+        ],
+        sale_returns: [{
+          id: 'return-1',
+          sale_id: 'sale-1',
+          sale_item_id: 'sale-item-1',
+          quantity: 1,
+          refund_amount: 10,
+          cash_refund_amount: 10,
+        }],
+      },
+    }
+
+    const result = applyOfflineSaleEdit(returnedSnapshot, {
+      ...edit,
+      items: [{
+        sourceItemId: 'sale-item-1',
+        productId: replacementProduct.id,
+        unit: 'satuan',
+        quantity: 2,
+        unitPrice: 12,
+      }],
+    })
+
+    expect(result.sale).toMatchObject({
+      total_amount: 24,
+      total_cost: 8,
+      total_profit: 16,
+      amount_paid: 34,
+    })
+    expect(result.snapshot.tables.products).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: product.id, stock: 10 }),
+      expect.objectContaining({ id: replacementProduct.id, stock: 3 }),
+    ]))
+    expect(result.snapshot.tables.product_stock_batches.find((batch) => batch.id === 'replacement-batch')?.quantity_remaining).toBe(3)
+    expect(result.snapshot.tables.sale_returns).toEqual(returnedSnapshot.tables.sale_returns)
+  })
+
   it('does not turn unpaid credit into paid cash during a correction', () => {
     const creditSnapshot = {
       ...snapshot,

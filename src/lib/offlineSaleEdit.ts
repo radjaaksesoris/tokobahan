@@ -331,6 +331,22 @@ export function applyOfflineSaleEdit(
   if (!Number.isFinite(amountPaid) || amountPaid < 0 || (!hasReturns && amountPaid > totalAmount)) {
     throw new Error('Total transaksi tidak boleh lebih kecil dari jumlah yang sudah dibayar')
   }
+  if (input.paymentMethod === 'credit') {
+    const debtPayments = snapshot.tables.customer_debt_payments
+      .filter((payment) => payment.sale_id === sale.id)
+      .reduce((sum, payment) => sum + Number(payment.amount), 0)
+    const cashRefunds = [...returnsByItem.values()]
+      .flat()
+      .reduce((sum, saleReturn) => sum + Number(saleReturn.cash_refund_amount ?? 0), 0)
+    if (!Number.isFinite(debtPayments) || !Number.isFinite(cashRefunds)) {
+      throw new Error('Riwayat pembayaran atau retur kredit tidak valid')
+    }
+    if (roundMoney(amountPaid + debtPayments - cashRefunds) > totalAmount) {
+      throw new Error(
+        'Total kredit tidak boleh lebih kecil dari pembayaran bersih yang sudah diterima. Proses pengembalian dana terlebih dahulu.',
+      )
+    }
+  }
 
   let customers = snapshot.tables.customers
   let customerId: string | null = hasReturns ? sale.customer_id : null

@@ -1,0 +1,1 @@
+function d(n){if(!(n!=null&&n.isConnected))throw new Error("Konten struk tidak ditemukan");if(n.parentElement!==document.body)throw new Error("Konten struk tidak berada di dokumen utama");window.print()}export{d as i};
