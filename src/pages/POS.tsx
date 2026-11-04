@@ -973,6 +973,21 @@ export default function POS() {
                     aria-label={paymentMethod === 'credit' ? 'Bayar sekarang' : 'Uang diterima'}
                   />
                 </div>
+                {paymentMethod === 'cash' && (
+                  <div className="flex gap-2 border-b border-stone-200 px-4 py-2" aria-label="Tambah nominal uang diterima">
+                    {[20000, 50000, 100000].map((amount) => (
+                      <Button
+                        key={amount}
+                        type="button"
+                        size="sm"
+                        className="h-8 min-w-0 flex-1 px-2 text-xs tabular-nums"
+                        onClick={() => setCashReceived((current) => String((Number(current) || 0) + amount))}
+                      >
+                        {formatCurrency(amount).replace(/^Rp\s*/, '')}
+                      </Button>
+                    ))}
+                  </div>
+                )}
                 <div className={`flex items-center justify-between px-4 py-3 ${
                   Number(cashReceived) >= totals.subtotal ? 'bg-emerald-50' : 'bg-white'
                 }`}>
