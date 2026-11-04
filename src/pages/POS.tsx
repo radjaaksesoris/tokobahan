@@ -1402,9 +1402,15 @@ function CartPanel({
 }) {
   const [customerNameFocused, setCustomerNameFocused] = useState(false)
   const [activeCustomerIndex, setActiveCustomerIndex] = useState(-1)
+  const [customerNameNeedsAttention, setCustomerNameNeedsAttention] = useState(false)
+  const customerNameInputRef = useRef<HTMLInputElement>(null)
   const customerSuggestions = customers
     .filter((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase()))
     .slice(0, 8)
+
+  useEffect(() => {
+    if (paymentMethod === 'credit') customerNameInputRef.current?.focus()
+  }, [paymentMethod])
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -1478,7 +1484,11 @@ function CartPanel({
           {(['cash', 'credit', 'transfer', 'qris'] as const).map((m) => (
             <button
               key={m}
-              onClick={() => setPaymentMethod(m)}
+              onClick={() => {
+                setPaymentMethod(m)
+                setCustomerNameNeedsAttention(m === 'credit' && !customerName.trim())
+                if (m === paymentMethod && m === 'credit') customerNameInputRef.current?.focus()
+              }}
               className={`flex-1 rounded-lg border py-2 text-xs font-medium capitalize ${
               paymentMethod === m
                   ? 'border-accent bg-accent text-ink'
@@ -1493,15 +1503,20 @@ function CartPanel({
         {paymentMethod === 'credit' && (
           <div className="relative">
             <Input
+              ref={customerNameInputRef}
               value={customerName}
               onChange={(event) => {
-                setCustomerName(toTitleCase(event.target.value))
+                const nextName = toTitleCase(event.target.value)
+                setCustomerName(nextName)
+                setCustomerNameNeedsAttention(!nextName.trim())
                 setActiveCustomerIndex(-1)
               }}
               onFocus={() => setCustomerNameFocused(true)}
               onBlur={() => window.setTimeout(() => setCustomerNameFocused(false), 150)}
               placeholder="Nama pelanggan (wajib)"
               aria-label="Nama pelanggan untuk transaksi kredit"
+              aria-invalid={customerNameNeedsAttention}
+              aria-describedby={customerNameNeedsAttention ? 'credit-customer-name-required' : undefined}
               onKeyDown={(event) => {
                 if (event.key === 'Tab') {
                   event.preventDefault()
@@ -1525,8 +1540,17 @@ function CartPanel({
                   }
                 }
               }}
-              className="border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20"
+              className={`border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20 ${
+                customerNameNeedsAttention
+                  ? 'border-red-400 focus:border-red-300 focus:ring-red-400/30 motion-safe:animate-pulse'
+                  : ''
+              }`}
             />
+            {customerNameNeedsAttention && (
+              <p id="credit-customer-name-required" className="mt-1 text-xs font-medium text-red-300" role="alert">
+                Nama pelanggan wajib diisi untuk transaksi kredit.
+              </p>
+            )}
             {customerNameFocused && customerName.trim() && customerSuggestions.length > 0 && (
               <div className="absolute inset-x-0 bottom-full z-20 mb-1 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-ink p-1 shadow-lg">
                 {customerSuggestions.map((customer, index) => (
