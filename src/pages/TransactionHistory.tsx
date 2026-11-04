@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { formatCurrency, formatNumber, toTitleCase } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
@@ -975,37 +976,43 @@ export default function TransactionHistory() {
                     <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.7fr)_auto] sm:items-end">
                       <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                         Barang
-                        <select
+                        <Select
                           value={item.productId || ''}
                           disabled={editSaving}
-                          onChange={(event) => changeEditProduct(index, event.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
-                        >
-                          <option value="">Pilih barang</option>
-                          {editProducts.map((entry) => (
-                            <option key={entry.id} value={entry.id}>{entry.name}{entry.is_active ? '' : ' (nonaktif)'}</option>
-                          ))}
-                        </select>
+                          onChange={(productId) => changeEditProduct(index, productId)}
+                          aria-label={`Barang baris ${index + 1}`}
+                          className="mt-1 w-full min-w-0"
+                          options={[
+                            { value: '', label: 'Pilih barang' },
+                            ...editProducts.map((entry) => ({
+                              value: entry.id,
+                              label: `${entry.name}${entry.is_active ? '' : ' (nonaktif)'}`,
+                            })),
+                          ]}
+                        />
                       </label>
                       <label className="text-xs font-semibold text-muted-foreground">
                         Satuan
-                        <select
+                        <Select
                           value={item.unit}
                           disabled={editSaving || !product}
-                          onChange={(event) => {
-                            const price = prices.find((entry) => entry.unit === event.target.value)
+                          onChange={(unit) => {
+                            const price = prices.find((entry) => entry.unit === unit)
                             updateEditItem(index, {
-                              unit: event.target.value,
+                              unit,
                               unitPrice: price ? String(price.price) : item.unitPrice,
                             })
                           }}
-                          className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
-                        >
-                          <option value="">Pilih satuan</option>
-                          {prices.map((price) => (
-                            <option key={price.unit} value={price.unit}>{UNIT_LABELS[price.unit] || price.unit}</option>
-                          ))}
-                        </select>
+                          aria-label={`Satuan baris ${index + 1}`}
+                          className="mt-1 w-full min-w-0"
+                          options={[
+                            { value: '', label: 'Pilih satuan' },
+                            ...prices.map((price) => ({
+                              value: price.unit,
+                              label: UNIT_LABELS[price.unit] || price.unit,
+                            })),
+                          ]}
+                        />
                       </label>
                       <div className="grid min-w-0 grid-cols-2 gap-2">
                         <label className="min-w-0 text-xs font-semibold text-muted-foreground">
