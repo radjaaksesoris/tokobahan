@@ -12,6 +12,7 @@ const SETTLEMENT_STORE = 'offline-settlements'
 const SNAPSHOT_KEY = 'current'
 const SYNC_LOCK_KEY = 'sync-lock'
 const STOCK_PRECISION_MIGRATION_KEY = 'stock-precision-3'
+const SNAPSHOT_STORAGE_TIMEOUT_MS = 15_000
 export const OPERATIONAL_SNAPSHOT_FORMAT = 'tokobahan-operational-backup'
 export const OPERATIONAL_SNAPSHOT_VERSION = '3'
 
@@ -189,19 +190,49 @@ function openDatabase(): Promise<IDBDatabase> {
       return
     }
 
+    let settled = false
+    let blocked = false
+    let database: IDBDatabase | null = null
+    let timeout: ReturnType<typeof setTimeout>
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      database?.close()
+      reject(error)
+    }
+    timeout = setTimeout(() => {
+      fail(new Error(blocked
+        ? 'Penyimpanan data lokal sedang digunakan tab lain. Tutup tab TOKOBAHAN lain lalu muat ulang aplikasi.'
+        : 'Waktu tunggu membuka penyimpanan data lokal habis. Muat ulang aplikasi untuk mencoba kembali.'))
+    }, SNAPSHOT_STORAGE_TIMEOUT_MS)
+
     const request = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION)
     request.onupgradeneeded = () => ensureOfflineOperationalStores(request.result)
     request.onsuccess = () => {
-      const database = request.result
-      void migrateStoredStockPrecision(database).then(
-        () => resolve(database),
-        (error: unknown) => {
-          database.close()
-          reject(error)
-        },
-      )
+      const openedDatabase = request.result
+      database = openedDatabase
+      openedDatabase.onversionchange = () => openedDatabase.close()
+      if (settled) {
+        openedDatabase.close()
+        return
+      }
+      void migrateStoredStockPrecision(openedDatabase).then(() => {
+        if (settled) {
+          openedDatabase.close()
+          return
+        }
+        settled = true
+        clearTimeout(timeout)
+        resolve(openedDatabase)
+      }, (error: unknown) => {
+        fail(error instanceof Error
+          ? error
+          : new Error('Gagal menyiapkan penyimpanan data lokal', { cause: error }))
+      })
     }
-    request.onerror = () => reject(
+    request.onblocked = () => { blocked = true }
+    request.onerror = () => fail(
       new Error('Gagal membuka penyimpanan snapshot operasional', { cause: request.error }),
     )
   })
@@ -223,9 +254,11 @@ async function withSnapshotStore<T>(
       let result!: T
       let settled = false
       let operationError: Error | null = null
+      let timeout: ReturnType<typeof setTimeout> | null = null
       const fail = (error: Error) => {
         if (settled) return
         settled = true
+        if (timeout !== null) clearTimeout(timeout)
         reject(error)
       }
 
@@ -240,9 +273,19 @@ async function withSnapshotStore<T>(
           'Transaksi snapshot operasional dibatalkan',
           { cause: transaction.error },
         ))
+        timeout = setTimeout(() => {
+          const error = new Error('Waktu tunggu membaca penyimpanan data lokal habis')
+          operationError = error
+          try {
+            transaction.abort()
+          } catch {
+            fail(error)
+          }
+        }, SNAPSHOT_STORAGE_TIMEOUT_MS)
         transaction.oncomplete = () => {
           if (settled) return
           settled = true
+          if (timeout !== null) clearTimeout(timeout)
           if (shouldDispatchChange() && typeof window !== 'undefined') {
             window.dispatchEvent(new Event(OPERATIONAL_SNAPSHOT_CHANGE_EVENT))
           }
