@@ -1062,7 +1062,14 @@ export default function POS() {
         <ReceiptPreview
           receipt={receipt}
           autoPrint={receiptAutoPrint}
-          onClose={() => setReceipt(null)}
+          onClose={() => {
+            setReceipt(null)
+            setPaymentMethod('cash')
+          }}
+          onPrinted={() => {
+            setReceipt(null)
+            setPaymentMethod('cash')
+          }}
         />
       )}
       </div>
@@ -1073,10 +1080,12 @@ function ReceiptPreview({
   receipt,
   autoPrint = false,
   onClose,
+  onPrinted,
 }: {
   receipt: ReceiptData
   autoPrint?: boolean
   onClose: () => void
+  onPrinted: () => void
 }) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
   const autoPrintStartedRef = useRef(false)
@@ -1093,7 +1102,7 @@ function ReceiptPreview({
     autoPrintStartedRef.current = true
     try {
       invokeReceiptPrint(document.getElementById('receipt-print-root'))
-      onClose()
+      onPrinted()
     } catch (error) {
       toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setAutoPrintFailed(true)
@@ -1103,7 +1112,7 @@ function ReceiptPreview({
   async function printReceipt() {
     try {
       invokeReceiptPrint(document.getElementById('receipt-print-root'))
-      onClose()
+      onPrinted()
     } catch (error) {
       toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
