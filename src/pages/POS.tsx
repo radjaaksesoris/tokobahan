@@ -1555,7 +1555,7 @@ function CartPanel({
           ref={checkoutButtonRef}
           className="w-full focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
           size="lg"
-          disabled={items.length === 0 || loading}
+          disabled={items.length === 0 || loading || (paymentMethod === 'credit' && !customerName.trim())}
           onClick={onCheckout}
         >
           {loading ? (
