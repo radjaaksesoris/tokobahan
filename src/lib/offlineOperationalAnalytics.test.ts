@@ -40,14 +40,15 @@ describe('offline operational analytics', () => {
       }],
     })
 
-    const { summary } = getLocalReportAnalytics(
+    const report = getLocalReportAnalytics(
       snapshot,
       new Date('2026-10-01T00:00:00.000Z'),
       new Date('2026-10-01T23:59:59.999Z'),
     )
 
-    expect(summary.total_revenue).toBe(30)
-    expect(summary.total_profit).toBe(20.67)
+    expect(report.summary.total_revenue).toBe(30)
+    expect(report.summary.total_profit).toBe(20.67)
+    expect(report.paymentMethods.cash).toEqual({ amount: 30, transaction_count: 1 })
   })
 
   it('matches report summaries, Jakarta daily buckets, and vendor payment totals', () => {
@@ -192,6 +193,13 @@ describe('offline operational analytics', () => {
         { id: 'customer-payment-today', paid_at: '2026-10-01T10:00:00.000Z', amount: 15 },
         { id: 'customer-payment-outside', paid_at: '2026-10-02T10:00:00.000Z', amount: 100 },
       ],
+      sale_returns: [{
+        id: 'cash-return-today',
+        sale_id: 'sale-cash',
+        created_at: '2026-10-01T11:00:00.000Z',
+        refund_amount: 12,
+        cash_refund_amount: 12,
+      }],
       vendor_debt_payments: [
         { id: 'vendor-payment-today', paid_at: '2026-10-01T11:00:00.000Z', amount: 25 },
         { id: 'vendor-payment-outside', paid_at: '2026-10-02T11:00:00.000Z', amount: 200 },
@@ -201,14 +209,14 @@ describe('offline operational analytics', () => {
     const analytics = getLocalDashboardAnalytics(snapshot, new Date('2026-10-01T12:00:00.000Z'))
 
     expect(analytics).toMatchObject({
-      todaySales: 135,
+      todaySales: 123,
       todayTransactionValue: 110,
       todayProfit: 92,
       todayOrders: 4,
       todayCustomerDebtPayments: { amount: 15, count: 1 },
       todayVendorDebtPayments: { amount: 25, count: 1 },
       todayPaymentCounts: { cash: 1, credit: 1, transfer: 1, qris: 1 },
-      todayPaymentTotals: { cash: 20, credit: 30, transfer: 40, qris: 50 },
+      todayPaymentTotals: { cash: 8, credit: 30, transfer: 40, qris: 50 },
       totalProducts: 2,
       lowStock: 1,
       lowStockProducts: [{ id: 'active-low', name: 'Benang', stock: 2, min_stock: 3 }],
@@ -217,12 +225,12 @@ describe('offline operational analytics', () => {
       analytics.todayPaymentTotals.cash
       + analytics.todayPaymentTotals.transfer
       + analytics.todayPaymentTotals.qris,
-    ).toBe(110)
+    ).toBe(98)
     expect(analytics.lowStockProducts[0]).toMatchObject({
       stock_unit: 'satuan',
       stock_conversion: 1,
       prices: [],
     })
-    expect(analytics.todaySales).toBe(135)
+    expect(analytics.todaySales).toBe(123)
   })
 })

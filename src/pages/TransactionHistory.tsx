@@ -385,13 +385,33 @@ export default function TransactionHistory() {
       const hasReturns = snapshot.tables.sale_returns.some((row) =>
         row.sale_id === selectedSale.id || itemIds.has(String(row.sale_item_id)),
       )
-      if (!hasReturns && snapshot.tables.customer_debt_payments.some((row) => row.sale_id === selectedSale.id)) {
+      if (snapshot.tables.customer_debt_payments.some((row) => row.sale_id === selectedSale.id)) {
         throw new Error('Transaksi yang sudah memiliki cicilan hutang tidak dapat diedit')
       }
       const paymentMethod = selectedSale.payment_method.toLowerCase() as PaymentMethod
+      const returnedQuantities = new Map<string, number>()
+      if (hasReturns) {
+        for (const saleReturn of snapshot.tables.sale_returns) {
+          if (saleReturn.sale_id !== selectedSale.id && !itemIds.has(String(saleReturn.sale_item_id))) continue
+          const itemId = String(saleReturn.sale_item_id || '')
+          if (!itemIds.has(itemId)) {
+            throw new Error('Data retur transaksi tidak terhubung ke barang yang valid')
+          }
+          returnedQuantities.set(
+            itemId,
+            (returnedQuantities.get(itemId) || 0) + Number(saleReturn.quantity),
+          )
+        }
+      }
+      const editableItems = items.flatMap((item) => {
+        const remainingQuantity = Number(item.quantity) - (returnedQuantities.get(item.id) || 0)
+        return remainingQuantity > 0
+          ? [{ ...item, quantity: remainingQuantity }]
+          : []
+      })
       setEditProducts(products)
       setEditHasReturns(hasReturns)
-      setEditItems(hasReturns ? [] : items.map((item) => ({
+      setEditItems(editableItems.map((item) => ({
         sourceItemId: item.id,
         productId: item.product_id,
         unit: item.unit,
@@ -973,7 +993,7 @@ export default function TransactionHistory() {
               </div>
               {editHasReturns ? (
                 <div className="rounded-xl border border-stone-200 px-3 py-2 text-sm text-muted-foreground">
-                  Metode pembayaran tetap: {PAYMENT_METHOD_LABELS[editPaymentMethod]}
+                  Barang yang sudah diretur tetap tercatat dalam histori. Barang lainnya dapat dikoreksi. Metode pembayaran tetap: {PAYMENT_METHOD_LABELS[editPaymentMethod]}
                   {editCustomerName ? ` · Pelanggan: ${editCustomerName}` : ''}
                 </div>
               ) : <div className="grid gap-3 sm:grid-cols-2">
@@ -1003,7 +1023,7 @@ export default function TransactionHistory() {
               </div>}
               <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                 <span className="text-sm font-semibold text-muted-foreground">
-                  {editHasReturns ? 'Nilai barang tambahan' : 'Total baru'}
+                  Total baru
                 </span>
                 <strong className="text-lg text-ink">
                   {formatCurrency(editItems.reduce(
@@ -1012,19 +1032,6 @@ export default function TransactionHistory() {
                   ))}
                 </strong>
               </div>
-              {editHasReturns && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-muted-foreground">Total transaksi setelah tambahan</span>
-                  <strong className="text-ink">
-                    {formatCurrency(
-                      Number(selectedSale.total_amount) + editItems.reduce(
-                        (total, item) => total + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
-                        0,
-                      ),
-                    )}
-                  </strong>
-                </div>
-              )}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" className="flex-1" disabled={editSaving} onClick={() => setEditingSale(false)}>
                   Batal

@@ -240,6 +240,10 @@ export function getLocalDashboardAnalytics(
       todayPaymentTotals[paymentKey] += paymentKey === 'credit' ? total : amountPaid
     }
   }
+  for (const saleReturn of asRows(snapshot, 'sale_returns')) {
+    if (!inRange(saleReturn.created_at, todayStart, todayEnd)) continue
+    todayPaymentTotals.cash -= asNumber(saleReturn.cash_refund_amount)
+  }
   const activeProducts = asRows(snapshot, 'products')
     .filter((product) => product.is_active === true)
   const lowStockProducts = activeProducts

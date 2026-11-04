@@ -137,7 +137,7 @@ describe('offline transaction editing', () => {
     }, edit)).toThrow('cicilan')
   })
 
-  it('preserves returned items and adds new items without changing the return record', () => {
+  it('keeps returned history, edits remaining quantity, and adds items', () => {
     const returnedSnapshot: OperationalSnapshot = {
       ...snapshot,
       tables: {
@@ -173,35 +173,74 @@ describe('offline transaction editing', () => {
 
     const result = applyOfflineSaleEdit(returnedSnapshot, {
       ...edit,
-      items: [{
-        sourceItemId: null,
-        productId: 'product-1',
-        unit: 'satuan',
-        quantity: 1,
-        unitPrice: 10,
-      }],
+      items: [
+        { ...edit.items[0], quantity: 2 },
+        {
+          sourceItemId: null,
+          productId: 'product-1',
+          unit: 'satuan',
+          quantity: 1,
+          unitPrice: 10,
+        },
+      ],
     })
 
     expect(result.sale).toMatchObject({
-      total_amount: 30,
+      total_amount: 34,
       total_cost: 9.33,
-      total_profit: 20.67,
-      amount_paid: 40,
+      total_profit: 24.67,
+      amount_paid: 44,
       cash_received: null,
     })
-    expect(result.snapshot.tables.sale_items).toHaveLength(2)
+    expect(result.snapshot.tables.sale_items).toHaveLength(3)
+    expect(result.snapshot.tables.sale_items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'sale-item-1', quantity: 1, line_total: 10 }),
+      expect.objectContaining({ quantity: 2, line_total: 24 }),
+      expect.objectContaining({ quantity: 1, line_total: 10 }),
+    ]))
     expect(result.snapshot.tables.sale_returns).toEqual(returnedSnapshot.tables.sale_returns)
     expect(result.snapshot.tables.products[0].stock).toBe(7)
   })
 
-  it('does not allow changing existing items on a transaction with returns', () => {
-    expect(() => applyOfflineSaleEdit({
+  it('allows editing the unreturned portion without changing the return record', () => {
+    const result = applyOfflineSaleEdit({
       ...snapshot,
       tables: {
         ...snapshot.tables,
-        sale_returns: [{ id: 'return-1', sale_id: 'sale-1', sale_item_id: 'sale-item-1' }],
+        products: [{ ...product, stock: 8 }],
+        sales: snapshot.tables.sales.map((sale) => ({
+          ...sale,
+          total_amount: 20,
+          total_cost: 5.33,
+          total_profit: 14.67,
+        })),
+        sale_returns: [{
+          id: 'return-1',
+          sale_id: 'sale-1',
+          sale_item_id: 'sale-item-1',
+          quantity: 1,
+          refund_amount: 10,
+          cash_refund_amount: 10,
+        }],
       },
-    }, edit)).toThrow('Barang transaksi lama yang memiliki retur')
+    }, {
+      ...edit,
+      items: [{ ...edit.items[0], quantity: 1 }],
+    })
+
+    expect(result.sale.total_amount).toBe(12)
+    expect(result.snapshot.tables.sale_items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'sale-item-1', quantity: 1, line_total: 10 }),
+      expect.objectContaining({ quantity: 1, line_total: 12 }),
+    ]))
+    expect(result.snapshot.tables.products[0].stock).toBe(9)
+    expect(result.sale.amount_paid).toBe(22)
+    expect(result.snapshot.tables.sale_returns[0]).toMatchObject({
+      id: 'return-1',
+      sale_item_id: 'sale-item-1',
+      quantity: 1,
+      refund_amount: 10,
+    })
   })
 
   it('does not turn unpaid credit into paid cash during a correction', () => {
