@@ -135,6 +135,7 @@ export default function TransactionHistory() {
   const [editCustomerName, setEditCustomerName] = useState('')
   const loadRequestId = useRef(0)
   const dateInputRef = useRef<HTMLInputElement>(null)
+  const returnBackdropPointerDown = useRef(false)
 
   useEffect(() => {
     const timer = window.setTimeout(loadSales, 250)
@@ -892,7 +893,20 @@ export default function TransactionHistory() {
                 </div>
               </div>
               {returningItem && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setReturningItem(null)}>
+                <div
+                  className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+                  onPointerDown={(event) => {
+                    returnBackdropPointerDown.current = event.target === event.currentTarget
+                  }}
+                  onPointerUp={(event) => {
+                    const releasedOnBackdrop = event.target === event.currentTarget
+                    if (returnBackdropPointerDown.current && releasedOnBackdrop && !returnSaving) {
+                      setReturningItem(null)
+                    }
+                    returnBackdropPointerDown.current = false
+                  }}
+                  onPointerCancel={() => { returnBackdropPointerDown.current = false }}
+                >
                   <Card className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
                     <CardHeader className="flex-row items-start justify-between border-b border-stone-100">
                       <div><CardTitle>Retur item</CardTitle><p className="mt-1 text-xs text-muted-foreground">{returningItem.product_name}</p></div>
