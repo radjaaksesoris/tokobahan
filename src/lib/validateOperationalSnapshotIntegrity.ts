@@ -92,6 +92,12 @@ export function validateOperationalSnapshotIntegrity(snapshot: OperationalSnapsh
     requireReference(tableIds.customers, sale.customer_id, 'pelanggan transaksi', true)
     requireNumber(sale, 'total_amount', 'total transaksi')
     requireNumber(sale, 'amount_paid', 'pembayaran transaksi')
+    if (sale.cash_received !== undefined && sale.cash_received !== null) {
+      requireNumber(sale, 'cash_received', 'uang diterima')
+      if (sale.payment_method !== 'cash' || Number(sale.cash_received) < Number(sale.total_amount)) {
+        throw new Error('Snapshot tidak valid: uang diterima harus sesuai transaksi tunai dan tidak kurang dari total')
+      }
+    }
   }
 
   for (const item of tables.sale_items) {

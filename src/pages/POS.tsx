@@ -53,6 +53,7 @@ interface ReceiptData {
   paymentMethod: PaymentMethod
   customerName: string | null
   amountPaid: number
+  cashReceived: number | null
   change: number
   total: number
   items: {
@@ -97,6 +98,7 @@ export default function POS() {
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
+  const [receiptAutoPrint, setReceiptAutoPrint] = useState(false)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
   const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'setup' | 'error'>('loading')
   const [syncingSnapshot, setSyncingSnapshot] = useState(false)
@@ -131,6 +133,7 @@ export default function POS() {
       paymentMethod,
       customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
       amountPaid,
+      cashReceived: paymentMethod === 'cash' ? Number(cashReceived) || 0 : null,
       change: paymentMethod === 'cash' ? Math.max(0, amountPaid - totals.subtotal) : 0,
       total: totals.subtotal,
       items: items.map((item) => ({
@@ -521,10 +524,12 @@ export default function POS() {
         paymentMethod,
         customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
         amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
+        cashReceived: paymentMethod === 'cash' ? Number(cashReceived) || 0 : null,
         cashierId: profile?.id || null,
       })
       toast.success(`Transaksi ${invoiceNo} tersimpan di perangkat`)
-      if (showReceiptPreview) setReceipt(createReceipt(invoiceNo))
+      setReceiptAutoPrint(!showReceiptPreview)
+      setReceipt(createReceipt(invoiceNo))
       clearCart()
       setShowPaymentModal(false)
       setCashReceived('')
@@ -1053,18 +1058,47 @@ export default function POS() {
           </Card>
         </div>
       )}
-      {receipt && <ReceiptPreview receipt={receipt} onClose={() => setReceipt(null)} />}
+      {receipt && (
+        <ReceiptPreview
+          receipt={receipt}
+          autoPrint={receiptAutoPrint}
+          onClose={() => setReceipt(null)}
+        />
+      )}
       </div>
   )
 }
 
-function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+function ReceiptPreview({
+  receipt,
+  autoPrint = false,
+  onClose,
+}: {
+  receipt: ReceiptData
+  autoPrint?: boolean
+  onClose: () => void
+}) {
   const printButtonRef = useRef<HTMLButtonElement>(null)
+  const autoPrintStartedRef = useRef(false)
+  const [autoPrintFailed, setAutoPrintFailed] = useState(false)
 
   useEffect(() => {
+    if (autoPrint) return
     const focusTimer = window.setTimeout(() => printButtonRef.current?.focus(), 0)
     return () => window.clearTimeout(focusTimer)
-  }, [])
+  }, [autoPrint])
+
+  useEffect(() => {
+    if (!autoPrint || autoPrintStartedRef.current) return
+    autoPrintStartedRef.current = true
+    try {
+      invokeReceiptPrint(document.getElementById('receipt-print-root'))
+      onClose()
+    } catch (error) {
+      toast.error(`Gagal mencetak struk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      setAutoPrintFailed(true)
+    }
+  }, [autoPrint, onClose])
 
   async function printReceipt() {
     try {
@@ -1077,12 +1111,17 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
 
   return (
     <>
-      <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4 print:hidden">
+      {(!autoPrint || autoPrintFailed) && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4 print:hidden">
         <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
           <CardContent className="space-y-4 p-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preview struk 58 mm</p>
-              <h3 className="mt-1 text-xl font-bold text-ink">Siap dicetak</h3>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                {autoPrintFailed ? 'Cetak otomatis gagal' : 'Preview struk 58 mm'}
+              </p>
+              <h3 className="mt-1 text-xl font-bold text-ink">
+                {autoPrintFailed ? 'Struk siap dicoba kembali' : 'Siap dicetak'}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">{receipt.invoiceNo} · {formatCurrency(receipt.total)}</p>
             </div>
             <div className="receipt-preview-frame">
@@ -1100,7 +1139,8 @@ function ReceiptPreview({ receipt, onClose }: { receipt: ReceiptData; onClose: (
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
       {createPortal(
         <div id="receipt-print-root" aria-hidden="true">
           <ReceiptDocument receipt={receipt} />
@@ -1147,7 +1187,7 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
       <ReceiptPaymentMethod method={receipt.paymentMethod} />
       {receipt.paymentMethod === 'cash' && (
         <>
-          <div className="receipt-summary"><span>Dibayar</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
+          <div className="receipt-summary"><span>Uang diterima</span><span>{formatCurrency(receipt.cashReceived ?? receipt.amountPaid)}</span></div>
           <div className="receipt-summary"><span>Kembalian</span><span>{formatCurrency(receipt.change)}</span></div>
         </>
       )}

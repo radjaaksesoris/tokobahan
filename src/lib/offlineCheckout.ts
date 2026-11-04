@@ -14,6 +14,7 @@ interface OfflineCheckoutInput {
   paymentMethod: OfflinePaymentMethod
   customerName: string | null
   amountPaid: number
+  cashReceived?: number | null
   cashierId: string | null
 }
 
@@ -150,6 +151,12 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
     if (!Number.isFinite(amountPaid) || amountPaid < 0 || amountPaid > totalAmount) {
       throw new Error('Nominal pembayaran tidak valid')
     }
+    const cashReceived = input.paymentMethod === 'cash'
+      ? input.cashReceived ?? totalAmount
+      : null
+    if (cashReceived !== null && (!Number.isFinite(cashReceived) || cashReceived < totalAmount)) {
+      throw new Error('Uang diterima tidak boleh kurang dari total transaksi')
+    }
 
     return {
       snapshot: {
@@ -174,6 +181,7 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
             cashier_id: input.cashierId,
             customer_id: customerId,
             amount_paid: amountPaid,
+            cash_received: cashReceived,
             created_at: createdAt,
           }],
           sale_items: [...snapshot.tables.sale_items, ...saleItems],

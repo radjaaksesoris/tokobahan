@@ -65,14 +65,9 @@ export function applyOfflineSaleEdit(
   const originalItems = snapshot.tables.sale_items
     .filter((row) => row.sale_id === sale.id) as SaleItemRecord[]
   const originalItemIds = new Set(originalItems.map((item) => item.id))
-  if (snapshot.tables.sale_returns.some((row) =>
+  const hasReturns = snapshot.tables.sale_returns.some((row) =>
     row.sale_id === sale.id || originalItemIds.has(String(row.sale_item_id)),
-  )) {
-    throw new Error('Transaksi yang sudah memiliki retur tidak dapat diedit')
-  }
-  if (snapshot.tables.customer_debt_payments.some((row) => row.sale_id === sale.id)) {
-    throw new Error('Transaksi yang sudah memiliki cicilan hutang tidak dapat diedit')
-  }
+  )
   if (!Object.hasOwn({
     cash: true,
     credit: true,
@@ -88,6 +83,125 @@ export function applyOfflineSaleEdit(
 
   const products = snapshot.tables.products as unknown as Product[]
   const productById = new Map(products.map((product) => [product.id, product]))
+  if (hasReturns) {
+    if (input.paymentMethod !== sale.payment_method) {
+      throw new Error('Metode pembayaran transaksi yang sudah memiliki retur tidak dapat diubah')
+    }
+    if (input.items.length === 0) throw new Error('Tambahkan minimal satu barang baru ke transaksi')
+    if (input.items.some((item) => item.sourceItemId !== null)) {
+      throw new Error('Barang transaksi lama yang memiliki retur tidak dapat diubah')
+    }
+
+    const now = new Date().toISOString()
+    const nextBatches = snapshot.tables.product_stock_batches.map((batch) => ({ ...batch }))
+    const addedItems: SaleItemRecord[] = []
+    const nextProducts = new Map(products.map((product) => [product.id, { ...product }]))
+
+    for (const draft of input.items) {
+      const product = productById.get(draft.productId)
+      if (!product || !product.is_active) {
+        throw new Error('Produk transaksi tidak ditemukan atau tidak aktif di katalog lokal')
+      }
+      const price = parseProductPrices(product.prices).find((entry) => entry.unit === draft.unit)
+      if (!price || price.conversion <= 0) {
+        throw new Error(`Satuan ${draft.unit} untuk ${product.name} tidak tersedia`)
+      }
+      if (
+        !Number.isFinite(draft.quantity) || draft.quantity <= 0 ||
+        !Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0
+      ) {
+        throw new Error(`Jumlah atau harga ${product.name} tidak valid`)
+      }
+
+      const stockQuantity = getStockUnitsFromConversion(product, price.conversion, draft.quantity)
+      if (!Number.isFinite(stockQuantity) || stockQuantity <= 0 || Number(product.stock) < stockQuantity) {
+        throw new Error(`Stok ${product.name} tidak mencukupi`)
+      }
+      let remaining = stockQuantity
+      let lineCost = 0
+      const batches = nextBatches
+        .filter((batch) => batch.product_id === product.id && Number(batch.quantity_remaining) > 0)
+        .sort((a, b) =>
+          String(a.received_at).localeCompare(String(b.received_at)) ||
+          String(a.id).localeCompare(String(b.id)),
+        )
+      for (const batch of batches) {
+        if (remaining <= 0) break
+        const available = Number(batch.quantity_remaining)
+        const consumed = roundStockQuantity(Math.min(remaining, available))
+        lineCost += consumed * Number(batch.unit_cost)
+        remaining = roundStockQuantity(remaining - consumed)
+        batch.quantity_remaining = roundStockQuantity(available - consumed)
+      }
+      if (remaining > 0) throw new Error(`Batch HPP atau stok ${product.name} tidak mencukupi`)
+
+      const lineTotal = roundMoney(draft.quantity * draft.unitPrice)
+      lineCost = roundMoney(lineCost)
+      if (lineTotal <= lineCost) {
+        throw new Error(`Harga jual ${product.name} harus lebih besar dari HPP FIFO`)
+      }
+      addedItems.push({
+        id: crypto.randomUUID(),
+        sale_id: sale.id,
+        product_id: product.id,
+        product_name: product.name,
+        unit: draft.unit,
+        quantity: draft.quantity,
+        conversion: price.conversion,
+        unit_price: draft.unitPrice,
+        line_total: lineTotal,
+        line_cost: lineCost,
+        line_profit: roundMoney(lineTotal - lineCost),
+        created_at: now,
+      })
+      const nextProduct = nextProducts.get(product.id)
+      if (nextProduct) {
+        nextProducts.set(product.id, {
+          ...nextProduct,
+          stock: roundStockQuantity(Number(nextProduct.stock) - stockQuantity),
+          updated_at: now,
+        })
+      }
+    }
+
+    const addedTotal = roundMoney(addedItems.reduce((sum, item) => sum + item.line_total, 0))
+    const addedCost = roundMoney(addedItems.reduce((sum, item) => sum + item.line_cost, 0))
+    const totalAmount = roundMoney(Number(sale.total_amount) + addedTotal)
+    const totalCost = roundMoney(Number(sale.total_cost) + addedCost)
+    const updatedSale: SaleRecord = {
+      ...sale,
+      total_amount: totalAmount,
+      total_cost: totalCost,
+      total_profit: roundMoney(Number(sale.total_profit) + addedTotal - addedCost),
+      amount_paid: sale.payment_method === 'credit'
+        ? Number(sale.amount_paid)
+        : roundMoney(Number(sale.amount_paid) + addedTotal),
+      ...(sale.payment_method === 'cash' ? { cash_received: null } : {}),
+    }
+
+    return {
+      snapshot: {
+        ...snapshot,
+        tables: {
+          ...snapshot.tables,
+          products: snapshot.tables.products.map((row) => {
+            const updated = nextProducts.get(String(row.id))
+            return updated ? { ...row, stock: updated.stock, updated_at: updated.updated_at } : row
+          }),
+          product_stock_batches: nextBatches,
+          sales: snapshot.tables.sales.map((row) => row.id === sale.id ? updatedSale : row),
+          sale_items: [...snapshot.tables.sale_items, ...addedItems],
+        },
+      },
+      sale: updatedSale,
+      items: [...originalItems, ...addedItems],
+    }
+  }
+
+  if (snapshot.tables.customer_debt_payments.some((row) => row.sale_id === sale.id)) {
+    throw new Error('Transaksi yang sudah memiliki cicilan hutang tidak dapat diedit')
+  }
+
   const originalById = new Map(originalItems.map((item) => [item.id, item]))
   const usedSources = new Set<string>()
   const nextBatches = snapshot.tables.product_stock_batches.map((batch) => ({ ...batch }))
@@ -298,6 +412,7 @@ export function applyOfflineSaleEdit(
     payment_method: input.paymentMethod,
     customer_id: customerId,
     amount_paid: amountPaid,
+    cash_received: null,
   }
 
   return {

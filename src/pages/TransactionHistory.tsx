@@ -31,6 +31,7 @@ interface SaleRow {
   cashier_id: string | null
   customer_id: string | null
   amount_paid: number
+  cash_received?: number | null
   created_at: string
 }
 
@@ -58,6 +59,7 @@ interface ReprintData {
   customerName: string | null
   total: number
   amountPaid: number
+  cashReceived: number | null
   items: Array<{ name: string; unit: string; quantity: number; unitPrice: number; lineTotal: number }>
 }
 
@@ -116,6 +118,7 @@ export default function TransactionHistory() {
   const [paymentMethodSaving, setPaymentMethodSaving] = useState(false)
   const [creditCustomerName, setCreditCustomerName] = useState('')
   const [editingSale, setEditingSale] = useState(false)
+  const [editHasReturns, setEditHasReturns] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
   const [editProducts, setEditProducts] = useState<Product[]>([])
   const [editItems, setEditItems] = useState<SaleEditDraft[]>([])
@@ -348,6 +351,7 @@ export default function TransactionHistory() {
       customerName,
       total: Number(selectedSale.total_amount),
       amountPaid: Number(selectedSale.amount_paid) || 0,
+      cashReceived: selectedSale.cash_received == null ? null : Number(selectedSale.cash_received),
       items: items.map((item) => ({
         name: item.product_name,
         unit: item.unit,
@@ -378,17 +382,16 @@ export default function TransactionHistory() {
       ])
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       const itemIds = new Set(items.map((item) => item.id))
-      if (snapshot.tables.sale_returns.some((row) =>
+      const hasReturns = snapshot.tables.sale_returns.some((row) =>
         row.sale_id === selectedSale.id || itemIds.has(String(row.sale_item_id)),
-      )) {
-        throw new Error('Transaksi yang sudah memiliki retur tidak dapat diedit')
-      }
-      if (snapshot.tables.customer_debt_payments.some((row) => row.sale_id === selectedSale.id)) {
+      )
+      if (!hasReturns && snapshot.tables.customer_debt_payments.some((row) => row.sale_id === selectedSale.id)) {
         throw new Error('Transaksi yang sudah memiliki cicilan hutang tidak dapat diedit')
       }
       const paymentMethod = selectedSale.payment_method.toLowerCase() as PaymentMethod
       setEditProducts(products)
-      setEditItems(items.map((item) => ({
+      setEditHasReturns(hasReturns)
+      setEditItems(hasReturns ? [] : items.map((item) => ({
         sourceItemId: item.id,
         productId: item.product_id,
         unit: item.unit,
@@ -524,6 +527,7 @@ export default function TransactionHistory() {
                       payment_method: method,
                       customer_id: method === 'credit' ? customerId : null,
                       amount_paid: method === 'credit' ? 0 : Number(row.total_amount),
+                      cash_received: null,
                     }
                   : row),
               },
@@ -536,6 +540,7 @@ export default function TransactionHistory() {
           payment_method: method,
           customer_id: method === 'credit' ? localCustomerId : null,
           amount_paid: method === 'credit' ? 0 : Number(selectedSale.total_amount),
+          cash_received: null,
         }
         setSelectedSale(updatedSale)
         setSales((current) => current.map((sale) => sale.id === updatedSale.id ? updatedSale : sale))
@@ -869,7 +874,11 @@ export default function TransactionHistory() {
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Koreksi transaksi</p>
                 <CardTitle className="mt-1">{selectedSale.invoice_no}</CardTitle>
-                <p className="mt-1 text-xs text-muted-foreground">Stok dan total akan dihitung ulang saat disimpan.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {editHasReturns
+                    ? 'Item lama dikunci. Tambahkan barang baru; retur tetap mengurangi omzet bersih.'
+                    : 'Stok dan total akan dihitung ulang saat disimpan.'}
+                </p>
               </div>
               <button type="button" onClick={() => setEditingSale(false)} disabled={editSaving} aria-label="Tutup edit transaksi" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted disabled:opacity-50">
                 <X className="h-5 w-5 text-muted-foreground" />
@@ -877,6 +886,11 @@ export default function TransactionHistory() {
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               <div className="space-y-3">
+                {editHasReturns && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    Total setelah retur: {formatCurrency(selectedSale.total_amount)}
+                  </div>
+                )}
                 {editItems.map((item, index) => {
                   const product = editProducts.find((entry) => entry.id === item.productId)
                   const prices = product ? parseProductPrices(product.prices) : []
@@ -944,7 +958,7 @@ export default function TransactionHistory() {
                         type="button"
                         variant="outline"
                         aria-label={`Hapus ${product?.name || 'barang'} dari transaksi`}
-                        disabled={editSaving || editItems.length <= 1}
+                        disabled={editSaving || editItems.length <= (editHasReturns ? 0 : 1)}
                         onClick={() => setEditItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}
                         className="w-full sm:w-10"
                       >
@@ -957,7 +971,12 @@ export default function TransactionHistory() {
                   <Plus className="mr-2 h-4 w-4" /> Tambah barang
                 </Button>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              {editHasReturns ? (
+                <div className="rounded-xl border border-stone-200 px-3 py-2 text-sm text-muted-foreground">
+                  Metode pembayaran tetap: {PAYMENT_METHOD_LABELS[editPaymentMethod]}
+                  {editCustomerName ? ` · Pelanggan: ${editCustomerName}` : ''}
+                </div>
+              ) : <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-muted-foreground">
                   Metode pembayaran
                   <select
@@ -981,9 +1000,11 @@ export default function TransactionHistory() {
                     className="mt-1 bg-white"
                   />
                 </label>
-              </div>
+              </div>}
               <div className="flex items-center justify-between border-t border-stone-200 pt-3">
-                <span className="text-sm font-semibold text-muted-foreground">Total baru</span>
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {editHasReturns ? 'Nilai barang tambahan' : 'Total baru'}
+                </span>
                 <strong className="text-lg text-ink">
                   {formatCurrency(editItems.reduce(
                     (total, item) => total + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
@@ -991,11 +1012,29 @@ export default function TransactionHistory() {
                   ))}
                 </strong>
               </div>
+              {editHasReturns && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-muted-foreground">Total transaksi setelah tambahan</span>
+                  <strong className="text-ink">
+                    {formatCurrency(
+                      Number(selectedSale.total_amount) + editItems.reduce(
+                        (total, item) => total + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+                        0,
+                      ),
+                    )}
+                  </strong>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" className="flex-1" disabled={editSaving} onClick={() => setEditingSale(false)}>
                   Batal
                 </Button>
-                <Button type="button" className="flex-1" disabled={editSaving} onClick={() => void saveSaleEdit()}>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  disabled={editSaving || (editHasReturns && editItems.length === 0)}
+                  onClick={() => void saveSaleEdit()}
+                >
                   {editSaving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan perubahan'}
                 </Button>
               </div>
@@ -1083,6 +1122,22 @@ function HistoryReceiptDocument({ receipt }: { receipt: ReprintData }) {
         <>
           <div className="receipt-summary"><span>Dibayar sebagian</span><span>{formatCurrency(receipt.amountPaid)}</span></div>
           <div className="receipt-summary receipt-summary-debt"><span>Sisa hutang</span><span>{formatCurrency(Math.max(0, receipt.total - receipt.amountPaid))}</span></div>
+        </>
+      )}
+      {receipt.paymentMethod === 'cash' && (
+        <>
+          <div className="receipt-summary">
+            <span>Uang diterima</span>
+            <span>{receipt.cashReceived === null ? 'Tidak tercatat' : formatCurrency(receipt.cashReceived)}</span>
+          </div>
+          <div className="receipt-summary">
+            <span>Kembalian</span>
+            <span>
+              {receipt.cashReceived === null
+                ? 'Tidak tercatat'
+                : formatCurrency(Math.max(0, receipt.cashReceived - receipt.total))}
+            </span>
+          </div>
         </>
       )}
       <footer className="receipt-center receipt-footer">Terima kasih</footer>

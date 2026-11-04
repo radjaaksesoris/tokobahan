@@ -146,6 +146,7 @@ export interface Database {
           cashier_id: string | null
           customer_id: string | null
           amount_paid: number
+          cash_received: number | null
           created_at: string
         }
         Insert: {
@@ -159,11 +160,13 @@ export interface Database {
           cashier_id?: string | null
           customer_id?: string | null
           amount_paid?: number
+          cash_received?: number | null
         }
         Update: {
           notes?: string | null
           customer_id?: string | null
           amount_paid?: number
+          cash_received?: number | null
         }
         Relationships: []
       }

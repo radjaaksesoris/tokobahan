@@ -171,11 +171,17 @@ describe('offline checkout', () => {
       paymentMethod: 'cash',
       customerName: null,
       amountPaid: 120,
+      cashReceived: 200,
       cashierId: 'admin-1',
     })
 
     const updated = await readOperationalSnapshot()
     expect(updated?.tables.products[0].stock).toBe(12)
+    expect(updated?.tables.sales[0]).toMatchObject({
+      payment_method: 'cash',
+      total_amount: 120,
+      cash_received: 200,
+    })
     expect(updated?.tables.product_stock_batches.map((batch) => batch.quantity_remaining)).toEqual([0, 12])
     expect(updated?.tables.sale_items[0]).toMatchObject({
       quantity: 1,

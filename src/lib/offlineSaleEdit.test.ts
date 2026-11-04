@@ -127,15 +127,7 @@ describe('offline transaction editing', () => {
     expect(result.sale.total_profit).toBe(36)
   })
 
-  it('rejects editing transactions that already have returns or debt payments', () => {
-    expect(() => applyOfflineSaleEdit({
-      ...snapshot,
-      tables: {
-        ...snapshot.tables,
-        sale_returns: [{ id: 'return-1', sale_id: 'sale-1', sale_item_id: 'sale-item-1' }],
-      },
-    }, edit)).toThrow('retur')
-
+  it('rejects editing transactions that already have debt payments', () => {
     expect(() => applyOfflineSaleEdit({
       ...snapshot,
       tables: {
@@ -143,6 +135,73 @@ describe('offline transaction editing', () => {
         customer_debt_payments: [{ id: 'payment-1', sale_id: 'sale-1', amount: 2 }],
       },
     }, edit)).toThrow('cicilan')
+  })
+
+  it('preserves returned items and adds new items without changing the return record', () => {
+    const returnedSnapshot: OperationalSnapshot = {
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [{ ...product, stock: 8 }],
+        sales: snapshot.tables.sales.map((sale) => ({
+          ...sale,
+          total_amount: 20,
+          total_cost: 5.33,
+          total_profit: 14.67,
+        })),
+        product_stock_batches: [
+          ...snapshot.tables.product_stock_batches,
+          {
+            id: 'return-batch',
+            product_id: product.id,
+            quantity_remaining: 1,
+            quantity_received: 1,
+            unit_cost: 2.67,
+            received_at: '2026-10-02T00:00:00.000Z',
+          },
+        ],
+        sale_returns: [{
+          id: 'return-1',
+          sale_id: 'sale-1',
+          sale_item_id: 'sale-item-1',
+          quantity: 1,
+          refund_amount: 10,
+          cash_refund_amount: 10,
+        }],
+      },
+    }
+
+    const result = applyOfflineSaleEdit(returnedSnapshot, {
+      ...edit,
+      items: [{
+        sourceItemId: null,
+        productId: 'product-1',
+        unit: 'satuan',
+        quantity: 1,
+        unitPrice: 10,
+      }],
+    })
+
+    expect(result.sale).toMatchObject({
+      total_amount: 30,
+      total_cost: 9.33,
+      total_profit: 20.67,
+      amount_paid: 40,
+      cash_received: null,
+    })
+    expect(result.snapshot.tables.sale_items).toHaveLength(2)
+    expect(result.snapshot.tables.sale_returns).toEqual(returnedSnapshot.tables.sale_returns)
+    expect(result.snapshot.tables.products[0].stock).toBe(7)
+  })
+
+  it('does not allow changing existing items on a transaction with returns', () => {
+    expect(() => applyOfflineSaleEdit({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        sale_returns: [{ id: 'return-1', sale_id: 'sale-1', sale_item_id: 'sale-item-1' }],
+      },
+    }, edit)).toThrow('Barang transaksi lama yang memiliki retur')
   })
 
   it('does not turn unpaid credit into paid cash during a correction', () => {

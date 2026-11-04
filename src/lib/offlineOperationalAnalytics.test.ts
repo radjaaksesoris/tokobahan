@@ -20,6 +20,36 @@ function createSnapshot(overrides: Partial<OperationalSnapshot['tables']> = {}):
 }
 
 describe('offline operational analytics', () => {
+  it('subtracts cash returns from revenue after additional items are added to the sale', () => {
+    const snapshot = createSnapshot({
+      sales: [{
+        id: 'sale-1',
+        created_at: '2026-10-01T10:00:00.000Z',
+        amount_paid: 40,
+        total_amount: 30,
+        total_cost: 9.33,
+        total_profit: 20.67,
+        payment_method: 'cash',
+      }],
+      sale_returns: [{
+        id: 'return-1',
+        sale_id: 'sale-1',
+        created_at: '2026-10-01T11:00:00.000Z',
+        refund_amount: 10,
+        cash_refund_amount: 10,
+      }],
+    })
+
+    const { summary } = getLocalReportAnalytics(
+      snapshot,
+      new Date('2026-10-01T00:00:00.000Z'),
+      new Date('2026-10-01T23:59:59.999Z'),
+    )
+
+    expect(summary.total_revenue).toBe(30)
+    expect(summary.total_profit).toBe(20.67)
+  })
+
   it('matches report summaries, Jakarta daily buckets, and vendor payment totals', () => {
     const snapshot = createSnapshot({
       sales: [

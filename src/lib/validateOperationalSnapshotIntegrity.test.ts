@@ -35,6 +35,37 @@ describe('operational snapshot integrity', () => {
     expect(validateOperationalSnapshotIntegrity(snapshot)).toBe(snapshot)
   })
 
+  it('accepts a recorded cash amount that covers the sale total', () => {
+    const snapshot = createSnapshot({
+      sales: [{
+        id: 'sale-1',
+        total_amount: 120,
+        amount_paid: 120,
+        cash_received: 200,
+        payment_method: 'cash',
+        customer_id: null,
+      }],
+    })
+
+    expect(validateOperationalSnapshotIntegrity(snapshot)).toBe(snapshot)
+  })
+
+  it('rejects cash received below the sale total', () => {
+    const snapshot = createSnapshot({
+      sales: [{
+        id: 'sale-1',
+        total_amount: 120,
+        amount_paid: 120,
+        cash_received: 100,
+        payment_method: 'cash',
+        customer_id: null,
+      }],
+    })
+
+    expect(() => validateOperationalSnapshotIntegrity(snapshot))
+      .toThrow('uang diterima harus sesuai transaksi tunai')
+  })
+
   it('rejects a stock batch that references a missing product', () => {
     const snapshot = createSnapshot({
       product_stock_batches: [{
