@@ -27,6 +27,8 @@ import { readOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { getLocalDashboardAnalytics } from '@/lib/offlineOperationalAnalytics'
 import {
   initializeOperationalSnapshot,
+  hasUnsyncedLocalChanges,
+  refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
 import { isMobileDevice } from '@/lib/automaticOperationalSync'
 
@@ -70,6 +72,18 @@ interface LowStockProduct {
 }
 
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
+
+function downloadSnapshotBackup(snapshot: unknown) {
+  const filenameDate = new Date().toISOString().replace(/[:.]/g, '-')
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `tokobahan-backup-${filenameDate}.json`
+  link.click()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { setSnapshotGeneratedAt, setDashboardReady, setStartupPhase } = useOutletContext<{
@@ -218,6 +232,51 @@ export default function Dashboard() {
     }
   }
 
+  async function refreshDataAndApp() {
+    if (!navigator.onLine) {
+      toast.error('Hubungkan perangkat ke internet untuk mengambil data dan versi aplikasi terbaru')
+      return
+    }
+
+    setRefreshing(true)
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot && hasUnsyncedLocalChanges(snapshot)) {
+        if (!window.confirm(
+          'Ada perubahan lokal yang belum terkirim. Agar transaksi tidak hilang, data server tidak akan diunduh. ' +
+          'Tetap periksa dan muat ulang aplikasi terbaru?',
+        )) return
+        toast.info('Data lokal dipertahankan. Memeriksa versi aplikasi terbaru...')
+        updateAppAndReload()
+        return
+      }
+
+      if (snapshot && !window.confirm(
+        'Ambil pembaruan akan mengganti data lokal dengan data terbaru dari server. ' +
+        'File backup data lokal akan diunduh terlebih dahulu. Lanjutkan?',
+      )) return
+
+      if (snapshot) {
+        downloadSnapshotBackup(snapshot)
+        const result = await refreshOperationalSnapshotFromServer()
+        toast.success(`Data server diperbarui (${result.rows} baris). Memuat versi aplikasi terbaru...`)
+      } else {
+        const result = await initializeOperationalSnapshot()
+        toast.success(`Data awal diunduh (${result.rows} baris). Memuat versi aplikasi terbaru...`)
+      }
+
+      updateAppAndReload()
+    } catch (refreshError) {
+      toast.error(`Pembaruan gagal: ${refreshError instanceof Error ? refreshError.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  function updateAppAndReload() {
+    window.setTimeout(() => window.location.reload(), 1200)
+  }
+
   function notifyLowStock(products: LowStockProduct[]) {
     if (products.length === 0) {
       window.localStorage.removeItem(LOW_STOCK_NOTIFIED_KEY)
@@ -357,16 +416,19 @@ export default function Dashboard() {
           <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
-          <button
-            type="button"
-            disabled
-            className="inline-flex min-w-0 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-white/20 bg-ink px-3 py-3 text-sm font-semibold text-white/60 opacity-70 lg:hidden"
-            aria-label="Refresh data dinonaktifkan sementara"
-            title="Refresh dari server dinonaktifkan sementara"
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
-            Refresh sementara nonaktif
-          </button>
+          {isMobileDevice() && (
+            <button
+              type="button"
+              onClick={() => void refreshDataAndApp()}
+              disabled={refreshing || !isOnline}
+              className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-ink px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 lg:hidden"
+              aria-label={refreshing ? 'Sedang mengambil pembaruan data dan aplikasi' : 'Ambil pembaruan data dan aplikasi'}
+              title={isOnline ? 'Ambil data terbaru dari server dan periksa pembaruan aplikasi' : 'Hubungkan perangkat ke internet'}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+              {refreshing ? 'Mengambil pembaruan...' : 'Refresh / Perbarui'}
+            </button>
+          )}
           {syncReminderVisible ? (
             <div
               className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-xs shadow-sm lg:flex-none ${

@@ -1,5 +1,5 @@
 // Keep the previous cache briefly so open tabs can finish loading their chunks.
-const CACHE_NAME = 'konveksipos-v7'
+const CACHE_NAME = 'konveksipos-v8'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -22,19 +22,29 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => {
+      .then(async (keys) => {
         const appCaches = keys
           .filter((key) => /^konveksipos-v\d+$/.test(key))
           .sort((left, right) => Number(right.slice('konveksipos-v'.length)) - Number(left.slice('konveksipos-v'.length)))
         const previousCache = appCaches.find((key) => key !== CACHE_NAME)
         const cachesToKeep = new Set([CACHE_NAME, ...(previousCache ? [previousCache] : [])])
-        return Promise.all(
+        await Promise.all(
           keys
             .filter((key) => key.startsWith('konveksipos-v') && !cachesToKeep.has(key))
             .map((key) => caches.delete(key)),
         )
+        await self.clients.claim()
+        if (!previousCache) return
+
+        const openWindows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        await Promise.all(openWindows.map(async (client) => {
+          try {
+            await client.navigate(client.url)
+          } catch (error) {
+            console.error('Gagal memuat ulang aplikasi setelah update:', error)
+          }
+        }))
       })
-      .then(() => self.clients.claim()),
   )
 })
 

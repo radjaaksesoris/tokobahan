@@ -11,6 +11,15 @@ import { validateOperationalSnapshotIntegrity } from '@/lib/validateOperationalS
 import { getQueuedTransactions } from '@/lib/offlineTransactions'
 import { getQueuedSettlements } from '@/lib/offlineSettlements'
 
+export function hasUnsyncedLocalChanges(
+  snapshot: { generated_at: string; synced_generated_at?: string },
+) {
+  return Boolean(
+    snapshot.synced_generated_at &&
+    snapshot.synced_generated_at !== snapshot.generated_at,
+  )
+}
+
 function extractBackupPayload(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('payload' in value)) {
     throw new Error('Backup server tidak berisi snapshot operasional')
@@ -46,7 +55,11 @@ export async function initializeOperationalSnapshot() {
     throw new Error('Snapshot lokal sudah tersedia; inisialisasi tidak dijalankan')
   }
   await ensureNoQueuedTransactions()
-  const snapshot = await fetchServerSnapshot()
+  const serverSnapshot = await fetchServerSnapshot()
+  const snapshot = {
+    ...serverSnapshot,
+    synced_generated_at: serverSnapshot.generated_at,
+  }
   await initializeOperationalSnapshotIfMissing(snapshot)
   return {
     tables: Object.keys(snapshot.tables).length,
@@ -57,10 +70,16 @@ export async function initializeOperationalSnapshot() {
 
 export async function refreshOperationalSnapshotFromServer() {
   await ensureNoQueuedTransactions()
-  const { lockToken } = await beginOperationalSnapshotSync()
+  const { snapshot: localSnapshot, lockToken } = await beginOperationalSnapshotSync()
   try {
+    if (hasUnsyncedLocalChanges(localSnapshot)) {
+      throw new Error('Ada perubahan lokal yang belum dikirim ke server. Sinkronkan data lokal sebelum mengambil data server.')
+    }
     const snapshot = await fetchServerSnapshot()
-    await replaceOperationalSnapshotAfterRefresh(snapshot, lockToken)
+    await replaceOperationalSnapshotAfterRefresh({
+      ...snapshot,
+      synced_generated_at: snapshot.generated_at,
+    }, lockToken)
     return {
       tables: Object.keys(snapshot.tables).length,
       rows: Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0),
