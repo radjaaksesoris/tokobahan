@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const MIN_STARTUP_LOADING_MS = 3000
+const MIN_STARTUP_LOADING_MS = 5000
 const startupStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
 export type StartupLoadingPhase = 'access' | 'data' | 'page'
@@ -61,18 +61,25 @@ export function StartupLoadingScreen({ phase }: { phase: StartupLoadingPhase }) 
                 className={complete ? 'is-complete' : current ? 'is-current' : ''}
                 aria-current={current ? 'step' : undefined}
               >
-                <span className="startup-screen__step-mark" aria-hidden="true">
-                  {complete ? '✓' : String(index + 1).padStart(2, '0')}
-                </span>
-                <span>{item.label}</span>
+                <div className="startup-screen__step-row">
+                  <span className="startup-screen__step-mark" aria-hidden="true">
+                    {complete ? '✓' : String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span>{item.label}</span>
+                </div>
+                {index < phases.length - 1 && (
+                  <span
+                    className={`startup-screen__step-arrow${index === activeIndex ? ' is-active' : ''}`}
+                    aria-hidden="true"
+                  >
+                    ↓
+                  </span>
+                )}
               </li>
             )
           })}
         </ol>
 
-        <div className="startup-screen__progress" aria-hidden="true">
-          <span />
-        </div>
         <p className="startup-screen__footer">Data tetap tersimpan di perangkat ini</p>
       </div>
     </section>

@@ -72,9 +72,10 @@ interface LowStockProduct {
 const LOW_STOCK_NOTIFIED_KEY = 'tokobahan.low-stock-notified'
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { setSnapshotGeneratedAt, setDashboardReady } = useOutletContext<{
+  const { setSnapshotGeneratedAt, setDashboardReady, setStartupPhase } = useOutletContext<{
     setSnapshotGeneratedAt: (timestamp: string | null) => void
     setDashboardReady: (ready: boolean) => void
+    setStartupPhase: (phase: 'access' | 'data' | 'page') => void
   }>()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
@@ -146,6 +147,7 @@ export default function Dashboard() {
 
   async function loadStats() {
     const requestId = ++statsRequestId.current
+    setStartupPhase('page')
     if (!initialLoadComplete.current) setLoading(true)
     setError(null)
     setSnapshotMissing(false)

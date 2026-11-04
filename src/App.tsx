@@ -18,7 +18,7 @@ import {
 } from '@/lib/localBackup'
 import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { StartupLoadingScreen, useStartupMinimumTime } from '@/components/ui/StartupLoadingScreen'
+import { StartupLoadingScreen } from '@/components/ui/StartupLoadingScreen'
 import { getPageChunkImporter } from '@/lib/pageChunks'
 import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
@@ -100,13 +100,8 @@ const LOCAL_SALES_RETENTION_MIGRATION_KEY = 'tokobahan.sales-retention-500-v1'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore()
-  const minimumTimeElapsed = useStartupMinimumTime(!loading)
 
-  if (loading || !minimumTimeElapsed) {
-    return (
-      <StartupLoadingScreen phase={loading ? 'access' : 'data'} />
-    )
-  }
+  if (loading) return <StartupLoadingScreen phase="access" />
 
   if (!user || profile?.role !== 'admin') return <Navigate to="/login" replace />
   return <>{children}</>
