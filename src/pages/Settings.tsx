@@ -25,6 +25,7 @@ import {
 import { validateOperationalSnapshotIntegrity } from '@/lib/validateOperationalSnapshotIntegrity'
 import {
   initializeOperationalSnapshot,
+  refreshOperationalSnapshotFromServer,
 } from '@/lib/offlineOperationalBootstrap'
 import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import {
@@ -60,6 +61,7 @@ export default function Settings() {
   const [localSnapshotSummary, setLocalSnapshotSummary] = useState<{ tableCount: number; rowCount: number } | null>(null)
   const [localSnapshotError, setLocalSnapshotError] = useState<string | null>(null)
   const [initializingLocalData, setInitializingLocalData] = useState(false)
+  const [refreshingServerData, setRefreshingServerData] = useState(false)
   const [syncingLocalData, setSyncingLocalData] = useState(false)
   const [replacingServerData, setReplacingServerData] = useState(false)
   const [legacyQueueCounts, setLegacyQueueCounts] = useState({ transactions: 0, settlements: 0 })
@@ -396,6 +398,43 @@ export default function Settings() {
       toast.error(`Gagal menyiapkan data lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     } finally {
       setInitializingLocalData(false)
+    }
+  }
+
+  async function refreshLocalDataFromServer() {
+    if (!navigator.onLine) {
+      toast.error('Koneksi internet diperlukan untuk mengambil data dari server')
+      return
+    }
+
+    let snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal membaca data lokal sebelum refresh: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
+    if (!snapshot) {
+      toast.error('Data lokal belum disiapkan. Gunakan Salin data server ke perangkat.')
+      return
+    }
+
+    const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
+    if (!window.confirm(
+      `Ambil ulang data dari server akan mengganti seluruh data lokal saat ini (${rowCount} baris). ` +
+      'Backup JSON data lokal akan diunduh sebelum proses dimulai. Antrean transaksi lama harus dikosongkan. Lanjutkan?',
+    )) return
+
+    setRefreshingServerData(true)
+    try {
+      downloadBackup(JSON.parse(JSON.stringify(snapshot)) as Json, new Date().toISOString())
+      const result = await refreshOperationalSnapshotFromServer()
+      await loadLocalSnapshotStatus()
+      toast.success(`Data server berhasil disalin ke perangkat (${result.rows} baris dari ${result.tables} tabel)`)
+    } catch (error) {
+      toast.error(`Gagal mengambil data dari server: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setRefreshingServerData(false)
     }
   }
 
@@ -1180,7 +1219,7 @@ export default function Settings() {
               <>
                 <Button
                   onClick={() => void syncLocalData()}
-                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData || refreshingServerData}
                 >
                   {syncingLocalData
                     ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
@@ -1190,7 +1229,7 @@ export default function Settings() {
                 <Button
                   variant="destructive"
                   onClick={() => void replaceServerWithLocalData()}
-                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData || refreshingServerData}
                 >
                   {replacingServerData
                     ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
@@ -1199,11 +1238,13 @@ export default function Settings() {
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
-                  title="Refresh dari server dinonaktifkan sementara"
+                  onClick={() => void refreshLocalDataFromServer()}
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData || refreshingServerData}
                 >
-                  <Download className="h-4 w-4" />
-                  Refresh server sementara nonaktif
+                  {refreshingServerData
+                    ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                    : <RefreshCw className="h-4 w-4" />}
+                  {refreshingServerData ? 'Mengambil data server...' : 'Ambil ulang data server'}
                 </Button>
               </>
             )}
