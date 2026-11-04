@@ -908,7 +908,7 @@ export default function Products() {
         </div>
       </div>
       {inactiveProducts.length > 0 && (
-        <Card>
+        <Card className="hidden">
           <CardHeader className="flex-row items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base">Barang nonaktif ({inactiveProducts.length})</CardTitle>
