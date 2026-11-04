@@ -39,8 +39,10 @@ export function AppLayout() {
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
   const location = useLocation()
+  const startupScreenAllowedRef = useRef(location.pathname === '/')
+  if (location.pathname !== '/') startupScreenAllowedRef.current = false
   const minimumStartupTimeElapsed = useStartupMinimumTime(dashboardReady)
-  const showStartupScreen = location.pathname === '/' &&
+  const showStartupScreen = startupScreenAllowedRef.current && location.pathname === '/' &&
     (!dashboardReady || !minimumStartupTimeElapsed)
   const isPosRoute = location.pathname.endsWith('/pos')
   const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
