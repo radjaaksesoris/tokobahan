@@ -449,7 +449,15 @@ export default function POS() {
       toast.success(`Data terbaru tersimpan ke Supabase (${result.rowCount} baris)`)
     } catch (error) {
       setSnapshotSyncStatus('error')
-      toast.error(`Sinkronisasi gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      const message = error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
+      if (message.includes('Data server berubah sejak snapshot lokal dibuat')) {
+        toast.error(
+          'Sinkronisasi biasa ditolak karena versi server berubah. Jika data lokal adalah sumber yang benar, buka Pengaturan > Backup untuk mengganti data server dengan backup pengaman.',
+          { action: { label: 'Pengaturan', onClick: () => navigate('/settings') } },
+        )
+      } else {
+        toast.error(`Sinkronisasi gagal: ${message}`)
+      }
     } finally {
       setSyncingSnapshot(false)
     }

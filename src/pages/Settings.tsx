@@ -61,6 +61,7 @@ export default function Settings() {
   const [localSnapshotError, setLocalSnapshotError] = useState<string | null>(null)
   const [initializingLocalData, setInitializingLocalData] = useState(false)
   const [syncingLocalData, setSyncingLocalData] = useState(false)
+  const [replacingServerData, setReplacingServerData] = useState(false)
   const [legacyQueueCounts, setLegacyQueueCounts] = useState({ transactions: 0, settlements: 0 })
   const [legacyQueueStatus, setLegacyQueueStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [legacyQueueExported, setLegacyQueueExported] = useState(false)
@@ -427,6 +428,69 @@ export default function Settings() {
       toast.error(`Sinkronisasi gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     } finally {
       setSyncingLocalData(false)
+    }
+  }
+
+  async function replaceServerWithLocalData() {
+    let snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>
+    try {
+      snapshot = await readOperationalSnapshot()
+    } catch (error) {
+      toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+      return
+    }
+    if (!snapshot) {
+      toast.error('Data lokal belum disiapkan. Ambil data server ke perangkat terlebih dahulu.')
+      return
+    }
+
+    const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
+    if (!window.confirm(
+      `PERINGATAN: seluruh data operasional Supabase akan diganti dengan data lokal perangkat ini (${rowCount} baris). ` +
+      'Sebelum mengganti, aplikasi akan mengunduh backup lokal dan membuat backup cloud dari data Supabase saat ini. ' +
+      'Lanjutkan hanya jika data lokal adalah sumber yang benar.',
+    )) return
+
+    setReplacingServerData(true)
+    try {
+      const result = await syncOperationalSnapshot({
+        prepareServerReplacement: async (lockedSnapshot) => {
+          if (lockedSnapshot.generated_at !== snapshot.generated_at) {
+            throw new Error('Data lokal berubah sebelum backup dibuat. Tinjau data terbaru lalu ulangi.')
+          }
+
+          const localPayload = JSON.parse(JSON.stringify(lockedSnapshot)) as Json
+          downloadBackup(localPayload, new Date().toISOString())
+
+          const { data, error } = await supabase.rpc('create_operational_backup')
+          if (error) throw new Error(`Backup Supabase sebelum penggantian gagal: ${error.message}`)
+          if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            throw new Error('Respons backup Supabase tidak valid')
+          }
+          const backup = data as Record<string, Json>
+          if (
+            typeof backup.id !== 'string' ||
+            typeof backup.created_at !== 'string' ||
+            typeof backup.server_revision !== 'string' ||
+            !/^\d+$/.test(backup.server_revision) ||
+            !backup.payload
+          ) {
+            throw new Error('Backup Supabase tidak memiliki referensi atau versi data yang valid')
+          }
+
+          await uploadBackupObject(backup.id, backup.payload)
+          return backup.server_revision
+        },
+      })
+      await loadCloudBackups()
+      toast.success(
+        `Data lokal berhasil menggantikan data Supabase (${result.rowCount} baris). ` +
+        'Backup lokal dan backup Supabase sebelum penggantian sudah dibuat.',
+      )
+    } catch (error) {
+      toast.error(`Penggantian data server gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setReplacingServerData(false)
     }
   }
 
@@ -1081,8 +1145,9 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground">
             IndexedDB di perangkat ini adalah sumber data utama. Sinkronkan untuk mengirim seluruh snapshot
             lokal ke Supabase agar dapat dilihat dari aplikasi mobile; setelah selesai aplikasi tetap bekerja
-            menggunakan data lokal. Jika data server berubah sejak snapshot diambil, sinkronisasi akan ditolak
-            agar perubahan server tidak tertimpa.
+            menggunakan data lokal. Pengiriman biasa ditolak jika versi server berubah. Jika perangkat ini
+            memang memiliki data paling benar, gunakan penggantian khusus di bawah; proses itu membuat
+            backup lokal dan backup Supabase sebelum mengganti seluruh data server.
           </p>
           {localSnapshotStatus === 'loading' ? (
             <p className="text-sm text-muted-foreground">Memeriksa data lokal...</p>
@@ -1113,15 +1178,28 @@ export default function Settings() {
             )}
             {localSnapshotStatus === 'available' && (
               <>
-                <Button onClick={() => void syncLocalData()} disabled={syncingLocalData || initializingLocalData}>
+                <Button
+                  onClick={() => void syncLocalData()}
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
+                >
                   {syncingLocalData
                     ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
                     : <Upload className="h-4 w-4" />}
                   {syncingLocalData ? 'Mengirim seluruh data aplikasi...' : 'Kirim seluruh data aplikasi ke Server'}
                 </Button>
                 <Button
+                  variant="destructive"
+                  onClick={() => void replaceServerWithLocalData()}
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
+                >
+                  {replacingServerData
+                    ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
+                    : <AlertTriangle className="h-4 w-4" />}
+                  {replacingServerData ? 'Membackup dan mengganti data server...' : 'Ganti data server dengan data lokal'}
+                </Button>
+                <Button
                   variant="outline"
-                  disabled
+                  disabled={syncingLocalData || replacingServerData || initializingLocalData}
                   title="Refresh dari server dinonaktifkan sementara"
                 >
                   <Download className="h-4 w-4" />

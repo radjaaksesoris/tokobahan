@@ -6,6 +6,7 @@ import {
   endOperationalSnapshotSync,
   OPERATIONAL_SNAPSHOT_TABLES,
 } from '@/lib/offlineOperationalSnapshot'
+import type { OperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { validateOperationalSnapshotIntegrity } from '@/lib/validateOperationalSnapshotIntegrity'
 
 interface SyncResult {
@@ -13,6 +14,10 @@ interface SyncResult {
   backupCreatedAt: string
   tableCount: number
   rowCount: number
+}
+
+interface SyncOptions {
+  prepareServerReplacement?: (snapshot: OperationalSnapshot) => Promise<string>
 }
 
 function toJson(value: unknown): Json {
@@ -26,17 +31,26 @@ function toJson(value: unknown): Json {
   return JSON.parse(serialized) as Json
 }
 
-export async function syncOperationalSnapshot(): Promise<SyncResult> {
+export async function syncOperationalSnapshot(options: SyncOptions = {}): Promise<SyncResult> {
   if (!navigator.onLine) throw new Error('Perangkat tidak terhubung ke internet')
 
   const { snapshot, lockToken } = await beginOperationalSnapshotSync()
   try {
-    if (!snapshot.server_revision || !/^\d+$/.test(snapshot.server_revision)) {
-      throw new Error('Snapshot lokal belum memiliki versi dasar server. Salin ulang data server atau pulihkan backup lokal terlebih dahulu.')
-    }
     validateOperationalSnapshotIntegrity(snapshot)
+    const serverRevision = options.prepareServerReplacement
+      ? await options.prepareServerReplacement(snapshot)
+      : snapshot.server_revision
+    if (!serverRevision || !/^\d+$/.test(serverRevision)) {
+      throw new Error(options.prepareServerReplacement
+        ? 'Backup Supabase tidak mengembalikan versi data yang valid'
+        : 'Snapshot lokal belum memiliki versi dasar server. Salin ulang data server atau pulihkan backup lokal terlebih dahulu.')
+    }
     const { data, error } = await supabase.rpc('sync_operational_snapshot', {
-      p_payload: toJson(snapshot),
+      p_payload: toJson(
+        serverRevision === snapshot.server_revision
+          ? snapshot
+          : { ...snapshot, server_revision: serverRevision },
+      ),
     })
     if (error) throw new Error(`Gagal mengirim snapshot operasional: ${error.message}`)
     if (!data || typeof data !== 'object' || Array.isArray(data)) {

@@ -94,6 +94,36 @@ describe('operational snapshot sync', () => {
     await expect(readOperationalSnapshot()).resolves.toMatchObject({ server_revision: '8' })
   })
 
+  it('uses the revision from a backed-up server snapshot when replacing server data', async () => {
+    const prepareServerReplacement = vi.fn().mockResolvedValue('9')
+    rpc.mockResolvedValue({
+      data: { id: 'backup-2', created_at: '2026-10-01T02:00:00.000Z', server_revision: '10' },
+      error: null,
+    })
+
+    await expect(syncOperationalSnapshot({ prepareServerReplacement })).resolves.toMatchObject({
+      backupId: 'backup-2',
+      rowCount: 1,
+    })
+
+    expect(prepareServerReplacement).toHaveBeenCalledWith(snapshot)
+    expect(rpc).toHaveBeenCalledWith('sync_operational_snapshot', {
+      p_payload: expect.objectContaining({ server_revision: '9' }),
+    })
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({ server_revision: '10' })
+  })
+
+  it('unlocks without syncing when preparing the server replacement fails', async () => {
+    const prepareServerReplacement = vi.fn().mockRejectedValue(new Error('backup failed'))
+
+    await expect(syncOperationalSnapshot({ prepareServerReplacement })).rejects.toThrow('backup failed')
+    expect(rpc).not.toHaveBeenCalled()
+    await expect(updateOperationalSnapshot((current) => ({
+      snapshot: current,
+      result: 'unlocked',
+    }))).resolves.toBe('unlocked')
+  })
+
   it('preserves local data and unlocks when the server rejects the snapshot', async () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'server rejected snapshot' } })
 
