@@ -972,7 +972,7 @@ export default function TransactionHistory() {
                   const prices = product ? parseProductPrices(product.prices) : []
                   const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
                   return (
-                    <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                    <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.7fr)_auto] sm:items-end">
                       <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                         Barang
                         <select
@@ -1007,8 +1007,8 @@ export default function TransactionHistory() {
                           ))}
                         </select>
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="text-xs font-semibold text-muted-foreground">
+                      <div className="grid min-w-0 grid-cols-2 gap-2">
+                        <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                           Jumlah
                           <Input
                             type="number"
@@ -1017,10 +1017,10 @@ export default function TransactionHistory() {
                             value={item.quantity}
                             disabled={editSaving}
                             onChange={(event) => updateEditItem(index, { quantity: event.target.value })}
-                            className="mt-1 bg-white"
+                            className="mt-1 bg-white px-2 text-sm"
                           />
                         </label>
-                        <label className="text-xs font-semibold text-muted-foreground">
+                        <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                           Harga
                           <Input
                             type="number"
@@ -1029,7 +1029,7 @@ export default function TransactionHistory() {
                             value={item.unitPrice}
                             disabled={editSaving}
                             onChange={(event) => updateEditItem(index, { unitPrice: event.target.value })}
-                            className="mt-1 bg-white"
+                            className="mt-1 bg-white px-2 text-sm"
                           />
                         </label>
                       </div>
