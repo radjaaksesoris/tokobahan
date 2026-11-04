@@ -984,11 +984,12 @@ export default function TransactionHistory() {
                           className="mt-1 w-full min-w-0"
                           searchable
                           compact
+                          selectedLabel={product?.name}
                           options={[
                             { value: '', label: 'Pilih barang' },
-                            ...editProducts.map((entry) => ({
+                            ...editProducts.filter((entry) => entry.is_active).map((entry) => ({
                               value: entry.id,
-                              label: `${entry.name}${entry.is_active ? '' : ' (nonaktif)'}`,
+                              label: entry.name,
                             })),
                           ]}
                         />
