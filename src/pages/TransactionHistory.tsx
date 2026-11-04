@@ -7,7 +7,7 @@ import { Select } from '@/components/ui/Select'
 import { formatCurrency, formatNumber, toTitleCase } from '@/lib/utils'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Plus, Printer, Search, Trash2, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, CreditCard, Eye, Plus, Printer, Search, X } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
@@ -973,7 +973,7 @@ export default function TransactionHistory() {
                   const prices = product ? parseProductPrices(product.prices) : []
                   const itemTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
                   return (
-                    <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.7fr)_auto] sm:items-end">
+                    <div key={item.sourceItemId || `new-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-stone-200 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.7fr)] sm:items-end">
                       <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                         Barang
                         <Select
@@ -1043,17 +1043,7 @@ export default function TransactionHistory() {
                           />
                         </label>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        aria-label={`Hapus ${product?.name || 'barang'} dari transaksi`}
-                        disabled={editSaving || editItems.length <= (editHasReturns ? 0 : 1)}
-                        onClick={() => setEditItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                        className="w-full sm:w-10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center justify-between border-t border-stone-100 pt-2 text-sm sm:col-span-4">
+                      <div className="flex items-center justify-between border-t border-stone-100 pt-2 text-sm sm:col-span-3">
                         <span className="text-muted-foreground">Total item</span>
                         <strong className="text-ink">{formatCurrency(itemTotal)}</strong>
                       </div>
