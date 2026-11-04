@@ -68,6 +68,14 @@ interface SaleEditDraft extends Omit<SaleEditItemInput, 'quantity' | 'unitPrice'
   unitPrice: string
 }
 
+interface ReturnedSaleItem {
+  id: string
+  productName: string
+  quantity: number
+  unit: string
+  refundAmount: number
+}
+
 const PAGE_SIZE = 20
 type PageCursor = { created_at: string; id: string } | null
 
@@ -122,6 +130,7 @@ export default function TransactionHistory() {
   const [editSaving, setEditSaving] = useState(false)
   const [editProducts, setEditProducts] = useState<Product[]>([])
   const [editItems, setEditItems] = useState<SaleEditDraft[]>([])
+  const [editReturnedItems, setEditReturnedItems] = useState<ReturnedSaleItem[]>([])
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('cash')
   const [editCustomerName, setEditCustomerName] = useState('')
   const loadRequestId = useRef(0)
@@ -409,6 +418,18 @@ export default function TransactionHistory() {
           ? [{ ...item, quantity: remainingQuantity }]
           : []
       })
+      setEditReturnedItems(items.flatMap((item) => {
+        const returnedQuantity = returnedQuantities.get(item.id) || 0
+        return returnedQuantity > 0
+          ? [{
+              id: item.id,
+              productName: item.product_name,
+              quantity: returnedQuantity,
+              unit: item.unit,
+              refundAmount: item.returned_amount,
+            }]
+          : []
+      }))
       setEditProducts(products)
       setEditHasReturns(hasReturns)
       setEditItems(editableItems.map((item) => ({
@@ -427,23 +448,12 @@ export default function TransactionHistory() {
   }
 
   function addEditItem() {
-    const product = editProducts.find((entry) => entry.is_active) || editProducts[0]
-    if (!product) {
-      toast.error('Tidak ada produk di katalog lokal')
-      return
-    }
-    const prices = parseProductPrices(product.prices)
-    const price = prices.find((entry) => entry.unit === product.stock_unit) || prices[0]
-    if (!price) {
-      toast.error(`Produk ${product.name} belum memiliki satuan harga`)
-      return
-    }
     setEditItems((current) => [...current, {
       sourceItemId: null,
-      productId: product.id,
-      unit: price.unit,
-      quantity: '1',
-      unitPrice: String(price.price),
+      productId: '',
+      unit: '',
+      quantity: '',
+      unitPrice: '',
     }])
   }
 
@@ -454,6 +464,10 @@ export default function TransactionHistory() {
   }
 
   function changeEditProduct(index: number, productId: string) {
+    if (!productId) {
+      updateEditItem(index, { productId: '', unit: '', quantity: '', unitPrice: '' })
+      return
+    }
     const product = editProducts.find((entry) => entry.id === productId)
     if (!product) return
     const prices = parseProductPrices(product.prices)
@@ -467,6 +481,17 @@ export default function TransactionHistory() {
 
   async function saveSaleEdit() {
     if (!selectedSale) return
+    if (editItems.some((item) =>
+      !item.productId ||
+      !item.unit ||
+      !Number.isFinite(Number(item.quantity)) ||
+      Number(item.quantity) <= 0 ||
+      !Number.isFinite(Number(item.unitPrice)) ||
+      Number(item.unitPrice) <= 0,
+    )) {
+      toast.error('Pilih barang dan lengkapi satuan, jumlah, serta harga terlebih dahulu')
+      return
+    }
     setEditSaving(true)
     try {
       await editOfflineSale({
@@ -896,7 +921,7 @@ export default function TransactionHistory() {
                 <CardTitle className="mt-1">{selectedSale.invoice_no}</CardTitle>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {editHasReturns
-                    ? 'Item lama dikunci. Tambahkan barang baru; retur tetap mengurangi omzet bersih.'
+                    ? 'Barang yang sudah diretur tetap tercatat di riwayat. Koreksi barang yang belum diretur atau tambahkan barang baru.'
                     : 'Stok dan total akan dihitung ulang saat disimpan.'}
                 </p>
               </div>
@@ -906,6 +931,19 @@ export default function TransactionHistory() {
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               <div className="space-y-3">
+                {editReturnedItems.length > 0 && (
+                  <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs font-semibold text-amber-900">Barang yang sudah diretur · riwayat tetap</p>
+                    {editReturnedItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-3 text-sm text-amber-950">
+                        <span className="min-w-0 truncate">
+                          {item.productName} · {item.quantity} {UNIT_LABELS[item.unit] || item.unit}
+                        </span>
+                        <span className="shrink-0">{formatCurrency(item.refundAmount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {editHasReturns && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                     Total setelah retur: {formatCurrency(selectedSale.total_amount)}
@@ -919,11 +957,12 @@ export default function TransactionHistory() {
                       <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                         Barang
                         <select
-                          value={item.productId}
+                          value={item.productId || ''}
                           disabled={editSaving}
                           onChange={(event) => changeEditProduct(index, event.target.value)}
                           className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
                         >
+                          <option value="">Pilih barang</option>
                           {editProducts.map((entry) => (
                             <option key={entry.id} value={entry.id}>{entry.name}{entry.is_active ? '' : ' (nonaktif)'}</option>
                           ))}
@@ -933,7 +972,7 @@ export default function TransactionHistory() {
                         Satuan
                         <select
                           value={item.unit}
-                          disabled={editSaving}
+                          disabled={editSaving || !product}
                           onChange={(event) => {
                             const price = prices.find((entry) => entry.unit === event.target.value)
                             updateEditItem(index, {
@@ -943,6 +982,7 @@ export default function TransactionHistory() {
                           }}
                           className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-normal text-ink"
                         >
+                          <option value="">Pilih satuan</option>
                           {prices.map((price) => (
                             <option key={price.unit} value={price.unit}>{UNIT_LABELS[price.unit] || price.unit}</option>
                           ))}
