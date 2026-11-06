@@ -241,31 +241,23 @@ export default function Dashboard() {
     setRefreshing(true)
     try {
       const snapshot = await readOperationalSnapshot()
-      if (snapshot && hasUnsyncedLocalChanges(snapshot)) {
-        if (!window.confirm(
-          'Ada perubahan lokal yang belum terkirim. Agar transaksi tidak hilang, data server tidak akan diunduh. ' +
-          'Tetap periksa dan muat ulang aplikasi terbaru?',
-        )) return
-        toast.info('Data lokal dipertahankan. Memeriksa versi aplikasi terbaru...')
-        updateAppAndReload()
-        return
-      }
-
-      if (snapshot && !window.confirm(
-        'Ambil pembaruan akan mengganti data lokal dengan data terbaru dari server. ' +
-        'File backup data lokal akan diunduh terlebih dahulu. Lanjutkan?',
-      )) return
-
       if (snapshot) {
         downloadSnapshotBackup(snapshot)
-        const result = await refreshOperationalSnapshotFromServer()
+        const result = await refreshOperationalSnapshotFromServer(
+          hasUnsyncedLocalChanges(snapshot)
+            ? {
+                replaceUnsyncedLocalChanges: true,
+                expectedLocalGeneratedAt: snapshot.generated_at,
+              }
+            : {},
+        )
         toast.success(`Data server diperbarui (${result.rows} baris). Memuat versi aplikasi terbaru...`)
       } else {
         const result = await initializeOperationalSnapshot()
         toast.success(`Data awal diunduh (${result.rows} baris). Memuat versi aplikasi terbaru...`)
       }
 
-      updateAppAndReload()
+      await updateAppAndReload()
     } catch (refreshError) {
       toast.error(`Pembaruan gagal: ${refreshError instanceof Error ? refreshError.message : 'Kesalahan tidak diketahui'}`)
     } finally {
@@ -273,8 +265,34 @@ export default function Dashboard() {
     }
   }
 
-  function updateAppAndReload() {
-    window.setTimeout(() => window.location.reload(), 1200)
+  async function updateAppAndReload() {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration()
+        if (registration) {
+          await registration.update()
+          const worker = registration.installing
+          if (worker && worker.state !== 'activated' && worker.state !== 'redundant') {
+            await new Promise<void>((resolve) => {
+              const finish = () => {
+                window.clearTimeout(timeout)
+                worker.removeEventListener('statechange', handleStateChange)
+                resolve()
+              }
+              const handleStateChange = () => {
+                if (worker.state === 'activated' || worker.state === 'redundant') finish()
+              }
+              const timeout = window.setTimeout(finish, 10000)
+              worker.addEventListener('statechange', handleStateChange)
+            })
+          }
+        }
+      }
+    } catch (error) {
+      toast.error(`Data sudah diperbarui, tetapi pemeriksaan versi aplikasi gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    }
+
+    window.location.reload()
   }
 
   function notifyLowStock(products: LowStockProduct[]) {

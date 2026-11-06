@@ -17,24 +17,19 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
-  HardDriveDownload,
-  Upload,
   X,
   Delete,
 } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import {
-  OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
   readOperationalSnapshot,
   type OperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
-import { syncOperationalSnapshot } from '@/lib/offlineOperationalSync'
 import { formatMixedStockQuantity, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
-import { getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -96,13 +91,9 @@ export default function POS() {
   const paymentInputRef = useRef<HTMLInputElement>(null)
   const finishPaymentButtonRef = useRef<HTMLButtonElement>(null)
   const [showKeypadPanel, setShowKeypadPanel] = useState(false)
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [receiptAutoPrint, setReceiptAutoPrint] = useState(false)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
-  const [snapshotSyncStatus, setSnapshotSyncStatus] = useState<'loading' | 'synced' | 'pending' | 'setup' | 'error'>('loading')
-  const [syncingSnapshot, setSyncingSnapshot] = useState(false)
-  const [backingUpLocal, setBackingUpLocal] = useState(false)
 
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
@@ -145,61 +136,6 @@ export default function POS() {
       })),
     }
   }
-
-  useEffect(() => {
-    const updateOnlineState = () => setIsOnline(navigator.onLine)
-    window.addEventListener('online', updateOnlineState)
-    window.addEventListener('offline', updateOnlineState)
-    return () => {
-      window.removeEventListener('online', updateOnlineState)
-      window.removeEventListener('offline', updateOnlineState)
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    let checking = false
-    const refreshSnapshotSyncStatus = async () => {
-      if (checking) return
-      checking = true
-      try {
-        const snapshot = await readOperationalSnapshot()
-        if (cancelled) return
-        setSnapshotSyncStatus(
-          !snapshot
-            ? 'error'
-            : !snapshot.server_revision
-              ? 'setup'
-              : snapshot.synced_generated_at && snapshot.synced_generated_at !== snapshot.generated_at
-                ? 'pending'
-                : 'synced',
-        )
-      } catch {
-        if (!cancelled) setSnapshotSyncStatus('error')
-      } finally {
-        checking = false
-      }
-    }
-
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') void refreshSnapshotSyncStatus()
-    }
-
-    void refreshSnapshotSyncStatus()
-    const timer = window.setInterval(refreshWhenVisible, 30000)
-    window.addEventListener('focus', refreshWhenVisible)
-    document.addEventListener('visibilitychange', refreshWhenVisible)
-    window.addEventListener('online', refreshWhenVisible)
-    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
-    return () => {
-      cancelled = true
-      window.clearInterval(timer)
-      window.removeEventListener('focus', refreshWhenVisible)
-      document.removeEventListener('visibilitychange', refreshWhenVisible)
-      window.removeEventListener('online', refreshWhenVisible)
-      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
-    }
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -423,70 +359,6 @@ export default function POS() {
     setCashReceived('')
   }
 
-  async function syncSnapshotFromHeader() {
-    let snapshot: Awaited<ReturnType<typeof readOperationalSnapshot>>
-    try {
-      snapshot = await readOperationalSnapshot()
-    } catch (error) {
-      setSnapshotSyncStatus('error')
-      toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      return
-    }
-    if (!snapshot?.server_revision) {
-      setSnapshotSyncStatus('setup')
-      toast.info('Buka Pengaturan lalu pilih Ambil ulang data server untuk menyiapkan sinkronisasi.')
-      navigate('/settings')
-      return
-    }
-
-    const rowCount = Object.values(snapshot.tables).reduce((total, rows) => total + rows.length, 0)
-    if (!window.confirm(
-      `PERINGATAN: seluruh data lokal (${rowCount} baris) akan dikirim ke Supabase. ` +
-      'Pastikan data lokal ini lengkap sebelum melanjutkan. Lanjutkan?',
-    )) return
-
-    setSyncingSnapshot(true)
-    try {
-      const result = await syncOperationalSnapshot()
-      setSnapshotSyncStatus('synced')
-      toast.success(`Data terbaru tersimpan ke Supabase (${result.rowCount} baris)`)
-    } catch (error) {
-      setSnapshotSyncStatus('error')
-      const message = error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
-      if (message.includes('Data server berubah sejak snapshot lokal dibuat')) {
-        toast.error(
-          'Sinkronisasi biasa ditolak karena versi server berubah. Jika data lokal adalah sumber yang benar, buka Pengaturan > Backup untuk mengganti data server dengan backup pengaman.',
-          { action: { label: 'Pengaturan', onClick: () => navigate('/settings') } },
-        )
-      } else {
-        toast.error(`Sinkronisasi gagal: ${message}`)
-      }
-    } finally {
-      setSyncingSnapshot(false)
-    }
-  }
-
-  async function backupFromHeader() {
-    setBackingUpLocal(true)
-    try {
-      const status = await getLocalBackupStatus()
-      if (!status.configured) {
-        toast.info('Pilih folder backup HDD terlebih dahulu di Pengaturan → Backup.')
-        navigate('/settings')
-        return
-      }
-      if (await saveLocalBackup({ archive: true })) {
-        toast.success('Backup penuh berhasil disimpan ke HDD')
-      } else {
-        toast.error('Backup gagal. Periksa izin folder HDD dan data lokal.')
-      }
-    } catch (error) {
-      toast.error(`Backup gagal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-    } finally {
-      setBackingUpLocal(false)
-    }
-  }
-
   async function processCheckout() {
     if (items.length === 0) return
     setCheckoutLoading(true)
@@ -559,60 +431,6 @@ export default function POS() {
             <h2 className="whitespace-nowrap text-sm font-bold tracking-tight text-ink sm:text-base lg:text-2xl">RAJA AKSESORIS</h2>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1">
-              <span
-                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isOnline ? 'text-primary' : 'text-amber-800'
-                }`}
-                title={isOnline
-                  ? 'Transaksi tersimpan di perangkat. Sinkronisasi ke Supabase dilakukan manual.'
-                  : 'Offline. Transaksi tetap tersimpan di perangkat.'}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-primary' : 'bg-amber-500'}`} />
-                Data lokal
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void backupFromHeader()}
-                disabled={backingUpLocal}
-                className="h-7 w-7 min-h-0 shrink-0 rounded-lg p-0"
-                aria-label="Backup data lokal ke HDD"
-                title="Backup data lokal ke HDD"
-                aria-busy={backingUpLocal}
-              >
-                {backingUpLocal ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <HardDriveDownload className="h-4 w-4" />}
-              </Button>
-              <Button
-                type="button"
-                variant={snapshotSyncStatus === 'pending' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => void syncSnapshotFromHeader()}
-                disabled={!isOnline || syncingSnapshot || snapshotSyncStatus === 'loading' || snapshotSyncStatus === 'synced'}
-                className={`h-7 w-7 min-h-0 shrink-0 rounded-lg p-0 ${
-                  snapshotSyncStatus === 'pending'
-                    ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
-                    : snapshotSyncStatus === 'error'
-                      ? 'border-red-300 text-red-700 hover:bg-red-50'
-                      : ''
-                }`}
-                aria-label={snapshotSyncStatus === 'pending'
-                  ? 'Kirim seluruh data aplikasi ke Server'
-                  : snapshotSyncStatus === 'setup'
-                    ? 'Siapkan data lokal untuk sinkronisasi'
-                    : 'Status sinkronisasi data'}
-                title={snapshotSyncStatus === 'pending'
-                  ? 'Sinkronkan data terbaru ke Supabase'
-                  : snapshotSyncStatus === 'setup'
-                    ? 'Buka Pengaturan untuk mengambil ulang data server sebelum sinkronisasi'
-                    : snapshotSyncStatus === 'synced'
-                      ? 'Data lokal sudah tersinkron ke Supabase'
-                      : 'Sinkronisasi belum tersedia'}
-              >
-                {syncingSnapshot ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : <Upload className="h-4 w-4" />}
-              </Button>
-            </div>
             <button
               type="button"
               onClick={() => navigate('/')}
