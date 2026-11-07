@@ -805,6 +805,11 @@ html::-webkit-scrollbar {
   text-transform: uppercase;
 }
 
+.receipt-customer-optional strong {
+  font-size: 10px;
+  font-weight: 600;
+}
+
 .receipt-total-highlight {
   margin-top: 8px;
   padding: 8px 4px;
@@ -1110,6 +1115,11 @@ html::-webkit-scrollbar {
     font-size: 14px;
     font-weight: 800;
     text-transform: uppercase;
+  }
+
+  .receipt-customer-optional strong {
+    font-size: 10px;
+    font-weight: 600;
   }
 
   .receipt-total-highlight {

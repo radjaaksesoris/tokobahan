@@ -198,7 +198,10 @@ export default function POS() {
         const snapshot = await readOperationalSnapshot()
         if (snapshot) {
           const rows = await readOperationalTable<{ id: string; name: string }>('customers', snapshot)
-          if (!cancelled) setCustomers(rows.sort((a, b) => a.name.localeCompare(b.name, 'id')))
+          const validCustomers = rows.filter((customer) =>
+            customer && typeof customer.name === 'string' && customer.name.trim(),
+          )
+          if (!cancelled) setCustomers(validCustomers.sort((a, b) => a.name.localeCompare(b.name, 'id')))
           return
         }
         if (!cancelled) {
@@ -995,7 +998,11 @@ function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         <span>No. {receipt.invoiceNo}</span>
         <span>{new Date(receipt.createdAt).toLocaleString('id-ID')}</span>
       </div>
-      {receipt.customerName && <div className="receipt-customer">Pelanggan: <strong>{receipt.customerName}</strong></div>}
+      {receipt.customerName && (
+        <div className={`receipt-customer ${receipt.paymentMethod !== 'credit' ? 'receipt-customer-optional' : ''}`}>
+          Pelanggan: <strong>{receipt.customerName}</strong>
+        </div>
+      )}
       <div className="receipt-rule" />
       <div className="receipt-items">
         {receipt.items.filter((item) => item.quantity > 0).map((item, index) => (
@@ -1231,7 +1238,10 @@ function CartPanel({
   const [customerNameNeedsAttention, setCustomerNameNeedsAttention] = useState(false)
   const customerNameInputRef = useRef<HTMLInputElement>(null)
   const customerSuggestions = customers
-    .filter((customer) => customer.name.toLowerCase().includes(customerName.trim().toLowerCase()))
+    .filter((customer) =>
+      typeof customer.name === 'string' &&
+      customer.name.toLowerCase().includes(customerName.trim().toLowerCase()),
+    )
     .slice(0, 8)
 
   useEffect(() => {
