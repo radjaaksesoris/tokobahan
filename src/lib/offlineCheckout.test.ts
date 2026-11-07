@@ -141,6 +141,30 @@ describe('offline checkout', () => {
     },
   )
 
+  it('associates an optional customer with a non-credit transaction', async () => {
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-CASH-CUSTOMER-1',
+      items: [item],
+      paymentMethod: 'cash',
+      customerName: 'Pelanggan Tunai',
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        sales: [{
+          payment_method: 'cash',
+          customer_id: expect.any(String),
+        }],
+        customers: [{
+          name: 'Pelanggan Tunai',
+          normalized_name: 'pelanggan tunai',
+        }],
+      },
+    })
+  })
+
   it('deducts stock proportionally to the selected unit conversion', async () => {
     const dozen: CartItem = {
       ...item,

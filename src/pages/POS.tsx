@@ -122,7 +122,7 @@ export default function POS() {
       invoiceNo,
       createdAt: new Date().toISOString(),
       paymentMethod,
-      customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
+      customerName: customerName.trim() || null,
       amountPaid,
       cashReceived: paymentMethod === 'cash' ? Number(cashReceived) || 0 : null,
       change: paymentMethod === 'cash' ? Math.max(0, amountPaid - totals.subtotal) : 0,
@@ -192,7 +192,6 @@ export default function POS() {
   }, [showPaymentModal])
 
   useEffect(() => {
-    if (paymentMethod !== 'credit') return
     let cancelled = false
     async function loadCustomers() {
       try {
@@ -214,7 +213,7 @@ export default function POS() {
     return () => {
       cancelled = true
     }
-  }, [paymentMethod])
+  }, [])
 
   async function loadProducts(signal?: AbortSignal) {
     if (!initialLoadComplete.current) setLoading(true)
@@ -394,7 +393,7 @@ export default function POS() {
         invoiceNo,
         items,
         paymentMethod,
-        customerName: paymentMethod === 'credit' ? customerName.trim() || null : null,
+        customerName: customerName.trim() || null,
         amountPaid: paymentMethod === 'credit' ? Number(cashReceived) || 0 : totals.subtotal,
         cashReceived: paymentMethod === 'cash' ? Number(cashReceived) || 0 : null,
         cashierId: profile?.id || null,
@@ -775,8 +774,8 @@ export default function POS() {
                   <span className="text-sm font-medium text-muted-foreground">Total transaksi</span>
                   <span className="text-xl font-bold text-primary">{formatCurrency(totals.subtotal)}</span>
                 </div>
-                {paymentMethod === 'credit' && <div className="border-b border-stone-200 px-4 py-3">
-                  <label htmlFor="credit-customer-name" className="mb-1 block text-xs font-medium text-muted-foreground">Pelanggan kredit</label>
+                {(paymentMethod === 'credit' || customerName.trim()) && <div className="border-b border-stone-200 px-4 py-3">
+                  <label htmlFor="credit-customer-name" className="mb-1 block text-xs font-medium text-muted-foreground">Nama pelanggan</label>
                   <Input
                     id="credit-customer-name"
                     value={customerName}
@@ -1327,21 +1326,20 @@ function CartPanel({
           ))}
         </div>
 
-        {paymentMethod === 'credit' && (
-          <div className="relative">
+        <div className="relative">
             <Input
               ref={customerNameInputRef}
               value={customerName}
               onChange={(event) => {
                 const nextName = toTitleCase(event.target.value)
                 setCustomerName(nextName)
-                setCustomerNameNeedsAttention(!nextName.trim())
+                setCustomerNameNeedsAttention(paymentMethod === 'credit' && !nextName.trim())
                 setActiveCustomerIndex(-1)
               }}
               onFocus={() => setCustomerNameFocused(true)}
               onBlur={() => window.setTimeout(() => setCustomerNameFocused(false), 150)}
-              placeholder="Nama pelanggan (wajib)"
-              aria-label="Nama pelanggan untuk transaksi kredit"
+              placeholder={paymentMethod === 'credit' ? 'Nama pelanggan (wajib)' : 'Nama pelanggan (opsional)'}
+              aria-label={paymentMethod === 'credit' ? 'Nama pelanggan untuk transaksi kredit' : 'Nama pelanggan'}
               aria-invalid={customerNameNeedsAttention}
               onKeyDown={(event) => {
                 if (event.key === 'Tab') {
@@ -1393,8 +1391,7 @@ function CartPanel({
                 ))}
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         <Button
           ref={checkoutButtonRef}

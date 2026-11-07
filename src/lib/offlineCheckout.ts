@@ -33,9 +33,11 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
 
     let customerId: string | null = null
     let customers = snapshot.tables.customers
+    const name = input.customerName?.trim() || ''
     if (input.paymentMethod === 'credit') {
-      const name = input.customerName?.trim() || ''
       if (!name) throw new Error('Nama pelanggan wajib diisi untuk transaksi kredit')
+    }
+    if (name) {
       const normalizedName = name.toLocaleLowerCase()
       const existing = customers.find((customer) =>
         String(customer.normalized_name || String(customer.name).trim().toLocaleLowerCase()) === normalizedName,
