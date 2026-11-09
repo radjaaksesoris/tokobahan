@@ -553,11 +553,11 @@ export default function Settlements() {
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className="min-w-0">
             {tab === 'customer' ? (
-              <div className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_minmax(4.5rem,auto)_auto] items-baseline gap-x-2">
+              <div className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_5.25rem] items-baseline gap-x-2">
                 <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
                 <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
                 <p className="truncate text-[11px] text-muted-foreground">{debt.reference}</p>
-                <p className="whitespace-nowrap text-[11px] text-muted-foreground">
+                <p className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-ink">
                   {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
               </div>
@@ -569,7 +569,7 @@ export default function Settlements() {
                 </p>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
+            <p className={`${tab === 'customer' ? 'ml-[2.25rem]' : ''} text-xs text-muted-foreground`}>Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
           <div className="flex w-full gap-1.5 sm:w-auto">
             {tab === 'customer' && (
