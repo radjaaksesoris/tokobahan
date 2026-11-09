@@ -484,8 +484,8 @@ export default function POS() {
                     activeProductIndex === index
                       ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
                       : zebraRow
-                        ? 'border-[#e1e7d9] bg-[#f0f3eb]'
-                        : 'border-stone-200/80 bg-surface'
+                        ? 'border-[#e1e7d9] bg-[#f0f3eb]/80'
+                        : 'border-stone-200/80 bg-surface/80'
                   } ${
                     availableStock <= 0
                       ? 'cursor-not-allowed opacity-60'
