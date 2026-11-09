@@ -440,7 +440,7 @@ export default function POS() {
               ref={searchInputRef}
               aria-label="Cari produk, SKU, atau barcode"
               placeholder="Cari produk / SKU / barcode..."
-              className="border-primary bg-primary pl-9 pr-10 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30"
+              className="border-ink bg-ink pl-9 pr-10 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30"
               value={search}
               onClick={openSearchKeypad}
               onChange={(e) => {
