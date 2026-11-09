@@ -486,14 +486,17 @@ export default function POS() {
               {filtered.map((p, index) => (
                 (() => {
                   const availableStock = getAvailableStock(p)
+                  const zebraRow = Math.floor(index / 2) % 2 === 1
                   return (
                 <button
                   key={p.id}
                   onClick={() => openAdd(p)}
-                  className={`group flex min-h-12 items-center gap-1.5 rounded-xl border bg-surface p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
+                  className={`group flex min-h-12 items-center gap-1.5 rounded-xl border p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
                     activeProductIndex === index
                       ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
-                      : 'border-stone-200/80'
+                      : zebraRow
+                        ? 'border-[#e1e7d9] bg-[#f0f3eb]'
+                        : 'border-stone-200/80 bg-surface'
                   } ${
                     availableStock <= 0
                       ? 'cursor-not-allowed opacity-60'
