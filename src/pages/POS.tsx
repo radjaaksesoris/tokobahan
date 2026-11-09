@@ -1381,7 +1381,7 @@ function CartPanel({
               }}
               className={`border-white/15 bg-white/10 text-white placeholder:text-stone-400 focus:border-accent focus:ring-accent/20 ${
                 customerNameNeedsAttention
-                  ? 'border-red-400 focus:border-red-300 focus:ring-red-400/30 motion-safe:animate-pulse'
+                  ? 'border-accent focus:border-accent focus:ring-accent/40 motion-safe:animate-pulse'
                   : ''
               }`}
             />
