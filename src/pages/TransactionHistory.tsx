@@ -742,9 +742,13 @@ export default function TransactionHistory() {
                       </td>
                       <td className="hidden whitespace-nowrap px-4 py-2.5 text-center text-xs capitalize lg:table-cell">
                         <span className={`inline-flex w-20 justify-center rounded-full px-2.5 py-1 font-semibold ${
-                          sale.payment_method.toLowerCase() === 'credit'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
+                          sale.payment_method.toLowerCase() === 'cash'
+                            ? 'bg-ink text-white'
+                            : sale.payment_method.toLowerCase() === 'transfer'
+                              ? 'bg-accent text-ink'
+                              : sale.payment_method.toLowerCase() === 'credit'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-emerald-100 text-emerald-800'
                         }`}>
                           {getPaymentMethodLabel(sale.payment_method)}
                         </span>
