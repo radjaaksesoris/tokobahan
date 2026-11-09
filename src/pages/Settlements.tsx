@@ -551,12 +551,12 @@ export default function Settlements() {
     ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
       {openDebts.map((debt, index) => <Card key={debt.id} className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
-          <div className="min-w-0">
+          <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
             {tab === 'customer' ? (
-              <div className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_5.25rem] items-baseline gap-x-2">
+              <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_6.25rem] items-center gap-x-2">
                 <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
                 <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">{debt.reference}</p>
+                <p className="w-full truncate text-[11px] text-muted-foreground">{debt.reference}</p>
                 <p className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-ink">
                   {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
@@ -601,7 +601,7 @@ export default function Settlements() {
               aria-label={`Nominal pembayaran ${debt.name}`}
               className={`${tab === 'customer' ? 'h-8 min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
             />
-            <Button className={tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} variant="outline" onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
+            <Button className={`${tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} border-accent bg-accent text-ink shadow-sm hover:border-accent/90 hover:bg-accent/90`} onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
             </Button>
             <Button className={`${tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} bg-ink text-white shadow-[0_6px_16px_rgba(32,42,46,0.16)] hover:bg-ink/90`} onClick={() => settle(debt)}><WalletCards className={tab === 'customer' ? 'h-3.5 w-3.5' : 'h-4 w-4'} /> Bayar</Button>
