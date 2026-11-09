@@ -1271,7 +1271,7 @@ function CartPanel({
             >
               <div className="flex justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium leading-tight text-white">{item.product.name}</p>
+                  <p className="truncate text-[13px] font-bold leading-tight text-white">{item.product.name}</p>
                   <p className="mt-0.5 text-[11px] leading-tight text-stone-400">
                     {UNIT_LABELS[item.unit]} × {formatCurrency(item.unit_price)}
                   </p>
