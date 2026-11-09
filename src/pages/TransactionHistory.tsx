@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -113,6 +113,7 @@ export default function TransactionHistory() {
   const [page, setPage] = useState(0)
   const [cursorHistory, setCursorHistory] = useState<PageCursor[]>([null])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [selectedSale, setSelectedSale] = useState<SaleRow | null>(null)
   const [items, setItems] = useState<SaleItemRow[]>([])
@@ -157,7 +158,8 @@ export default function TransactionHistory() {
           sale.created_at <= endOfDay(new Date(`${date}T00:00:00`)).toISOString())
         .filter((sale) => !term ||
           sale.invoice_no.toLocaleLowerCase().includes(term) ||
-          sale.payment_method.toLocaleLowerCase().includes(term))
+          sale.payment_method.toLocaleLowerCase().includes(term) ||
+          getPaymentMethodLabel(sale.payment_method).toLocaleLowerCase().includes(term))
         .sort((a, b) =>
           b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
         )
@@ -171,6 +173,7 @@ export default function TransactionHistory() {
       setSales(visibleRows)
       setHasNextPage(afterCursor.length > PAGE_SIZE)
       setCachedAt(Date.now())
+      setHasLoaded(true)
       setLoading(false)
       return
     } catch (error) {
@@ -178,6 +181,7 @@ export default function TransactionHistory() {
       toast.error(`Gagal membaca riwayat lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setSales([])
       setHasNextPage(false)
+      setHasLoaded(true)
       setLoading(false)
       return
     }
@@ -604,16 +608,6 @@ export default function TransactionHistory() {
     }
   }
 
-  const filteredSales = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return sales
-    return sales.filter(
-      (sale) =>
-        sale.invoice_no.toLowerCase().includes(query) ||
-        sale.payment_method.toLowerCase().includes(query)
-    )
-  }, [sales, search])
-
   function openDatePicker() {
     const dateInput = dateInputRef.current
     if (!dateInput) return
@@ -705,9 +699,9 @@ export default function TransactionHistory() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
-          {loading ? (
+          {loading && !hasLoaded ? (
             <TransactionTableSkeleton />
-          ) : filteredSales.length === 0 ? (
+          ) : sales.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Belum ada transaksi yang cocok.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -727,7 +721,7 @@ export default function TransactionHistory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSales.map((sale, index) => (
+                  {sales.map((sale, index) => (
                     <tr
                       key={sale.id}
                       className={`border-b border-stone-100 transition-colors hover:bg-primary/5 ${
@@ -775,7 +769,7 @@ export default function TransactionHistory() {
               </table>
             </div>
           )}
-          {!loading && (page > 0 || hasNextPage) && (
+          {hasLoaded && (page > 0 || hasNextPage) && (
             <div className="flex items-center justify-between border-t border-stone-100 p-4">
               <button
                 className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
