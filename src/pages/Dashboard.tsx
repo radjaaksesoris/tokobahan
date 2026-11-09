@@ -602,7 +602,7 @@ export default function Dashboard() {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Aktivitas penjualan</p>
               <CardTitle className="mt-1 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
             </div>
-            <div className="shrink-0 rounded-xl bg-primary px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(64,87,55,0.16)]">
+            <div className="shrink-0 rounded-xl bg-ink px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">Total</p>
               <p className="text-2xl font-bold leading-none tabular-nums">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
             </div>

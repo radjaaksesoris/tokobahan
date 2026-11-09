@@ -1028,7 +1028,7 @@ export default function Products() {
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
-              <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
+              <thead className="border-b border-white/10 bg-ink text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   <th className="w-[8%] px-0.5 py-1.5 font-semibold lg:w-12 lg:px-2">No.</th>
                   <th className="w-[32%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Produk</th>
@@ -1261,7 +1261,7 @@ export default function Products() {
                     </div>
                     <div className="hidden sm:block">
                       <table className="w-full table-fixed text-xs">
-                        <thead className="bg-primary text-center text-[10px] uppercase tracking-wide text-white">
+                        <thead className="bg-ink text-center text-[10px] uppercase tracking-wide text-white">
                           <tr>
                             <th className="w-[9%] px-1 py-1.5 font-semibold">No.</th>
                             <th className="w-[19%] px-1 py-1.5 font-semibold">Satuan</th>

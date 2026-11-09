@@ -305,7 +305,7 @@ export default function StockHistory() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="min-w-[820px] w-full table-auto text-[11px] sm:text-sm">
-                  <thead className="border-b border-primary/80 bg-primary text-center text-[11px] uppercase tracking-wide text-white">
+                  <thead className="border-b border-white/10 bg-ink text-center text-[11px] uppercase tracking-wide text-white">
                     <tr>
                       <th className="w-[7%] px-1 py-2 sm:w-12 sm:px-3">No.</th>
                       <th className="w-[19%] px-1 py-2 sm:w-auto sm:px-3">Tanggal</th>

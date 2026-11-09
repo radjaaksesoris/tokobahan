@@ -499,7 +499,7 @@ export default function Settlements() {
         <Card className="border-blue-200 bg-blue-100"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-blue-300">
             <table className="w-full min-w-[42rem] text-center text-sm">
-              <thead className="sticky top-0 z-10 border-y border-blue-300 bg-blue-200 text-xs text-blue-950 shadow-[0_2px_0_rgba(29,78,216,0.12)]">
+              <thead className="sticky top-0 z-10 border-y border-white/10 bg-ink text-xs text-white shadow-[0_2px_0_rgba(32,42,46,0.2)]">
                 <tr>
                   <th className="py-2 font-medium">Tanggal</th>
                   <th className="py-2 font-medium">Vendor</th>
@@ -526,7 +526,7 @@ export default function Settlements() {
         <Card className="border-violet-200 bg-violet-100"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-violet-300">
             <table className="w-full min-w-[38rem] text-center text-sm">
-              <thead className="sticky top-0 z-10 border-y border-violet-300 bg-violet-200 text-xs text-violet-950 shadow-[0_2px_0_rgba(109,40,217,0.12)]">
+              <thead className="sticky top-0 z-10 border-y border-white/10 bg-ink text-xs text-white shadow-[0_2px_0_rgba(32,42,46,0.2)]">
                 <tr>
                   <th className="py-2 font-medium">Tanggal</th>
                   <th className="py-2 font-medium">Pelanggan</th>
@@ -605,7 +605,7 @@ export default function Settlements() {
               <p className="mb-2 font-semibold text-ink">Rincian item</p>
               <div className="max-h-64 overflow-auto border-t border-amber-200/80">
                 <table className="w-full min-w-[28rem] text-center text-xs">
-                  <thead className="sticky top-0 z-10 border-y border-amber-200 bg-amber-50 text-muted-foreground shadow-[0_2px_0_rgba(180,83,9,0.12)]">
+                  <thead className="sticky top-0 z-10 border-y border-white/10 bg-ink text-xs text-white shadow-[0_2px_0_rgba(32,42,46,0.2)]">
                     <tr>
                       <th className="py-1 font-medium">Item</th>
                       <th className="py-1 font-medium">Jumlah</th>
