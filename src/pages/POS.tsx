@@ -447,12 +447,12 @@ export default function POS() {
         </div>
         <div className="mb-2 flex gap-2 lg:mb-3">
           <div ref={searchFilterRef} className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/85" />
             <Input
               ref={searchInputRef}
               aria-label="Cari produk, SKU, atau barcode"
               placeholder="Cari produk / SKU / barcode..."
-              className="pl-9 pr-10"
+              className="border-primary bg-primary pl-9 pr-10 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30"
               value={search}
               onClick={openSearchKeypad}
               onChange={(e) => {
@@ -466,7 +466,7 @@ export default function POS() {
                 type="button"
                 aria-label="Reset pencarian"
                 onClick={clearSearch}
-                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-stone-200 hover:text-ink/85"
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1410,7 +1410,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
+          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/50 disabled:text-ink/70 focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
           size="lg"
           disabled={items.length === 0 || loading || (paymentMethod === 'credit' && !customerName.trim())}
           onClick={onCheckout}
