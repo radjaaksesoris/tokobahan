@@ -552,14 +552,24 @@ export default function Settlements() {
       {openDebts.map((debt) => <Card key={debt.id} className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {debt.reference}
-                {tab === 'customer' && ` · ${new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
-                {debt.due ? ` · jatuh tempo ${debt.due}` : ''}
-              </p>
-            </div>
+            {tab === 'customer' ? (
+              <>
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
+                  <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
+                  <p className="whitespace-nowrap text-[11px] text-muted-foreground">
+                    {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <p className="truncate text-[11px] text-muted-foreground">{debt.reference}</p>
+              </>
+            ) : (
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}
+                </p>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
           <div className="flex w-full gap-1.5 sm:w-auto">
