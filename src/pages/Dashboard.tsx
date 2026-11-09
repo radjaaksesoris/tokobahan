@@ -9,6 +9,10 @@ import {
   ShoppingBag,
   Package,
   DollarSign,
+  Banknote,
+  CreditCard,
+  ArrowLeftRight,
+  QrCode,
   PackageSearch,
   RefreshCw,
   X,
@@ -606,13 +610,16 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border-ink bg-ink text-white'],
-            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
-            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
-            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
-          ] as const).map(([label, total, count, color]) => (
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, Banknote, 'border-ink bg-ink text-white'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, CreditCard, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, ArrowLeftRight, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, QrCode, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
+          ] as const).map(([label, total, count, Icon, color]) => (
             <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
-              <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${label === 'CASH' ? 'text-white/70' : 'opacity-70'}`}>{label}</p>
+              <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] ${label === 'CASH' ? 'text-white/70' : 'opacity-70'}`}>
+                <Icon className={`h-4 w-4 ${label === 'CASH' ? 'text-accent' : ''}`} aria-hidden="true" />
+                <p>{label}</p>
+              </div>
               <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(total)}</p>
               <p className={`mt-1 text-xs ${label === 'CASH' ? 'text-white/70' : 'opacity-70'}`}>{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
