@@ -145,7 +145,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <nav className="relative z-10 flex w-full flex-1 overflow-hidden p-2 lg:block lg:space-y-1.5 lg:overflow-visible lg:p-3">
+        <nav className="relative z-10 flex w-full flex-1 overflow-hidden p-2 lg:block lg:space-y-2 lg:overflow-visible lg:p-3">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -155,13 +155,12 @@ export function AppLayout() {
               onFocus={() => preloadPageChunk(item.to)}
               className={({ isActive }) =>
                 cn(
-                  'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 lg:flex-row lg:justify-start lg:gap-3 lg:py-3 lg:text-sm',
+                  'group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[0.62rem] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink lg:flex-row lg:justify-start lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-3.5 lg:text-sm',
                   item.className,
                   item.to === '/pos' && 'hidden lg:flex',
-                  'lg:px-3',
                   isActive
-                    ? 'bg-surface text-ink shadow-[0_8px_20px_rgba(32,42,46,0.12)]'
-                    : 'text-stone-300 hover:bg-white/10 hover:text-white'
+                    ? 'bg-accent text-ink shadow-[0_8px_20px_rgba(228,168,83,0.16)]'
+                    : 'text-stone-300 hover:bg-white/10 hover:text-accent lg:bg-white/[0.04] lg:hover:bg-accent/10'
                 )
               }
             >
