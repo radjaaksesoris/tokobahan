@@ -432,7 +432,6 @@ export default function Dashboard() {
       <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 overflow-hidden border-b border-accent/30 bg-ink px-4 py-4 text-white shadow-[0_8px_24px_rgba(32,42,46,0.16)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-start sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:items-end lg:px-8 lg:py-5">
         <div className="pointer-events-none absolute -right-10 -top-20 h-48 w-48 rounded-full bg-accent/10 blur-3xl" aria-hidden="true" />
         <div>
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Ringkasan toko</p>
           <h2 className="text-2xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
           <p className="mt-1 text-sm font-medium text-white/65">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
         </div>
@@ -566,7 +565,6 @@ export default function Dashboard() {
         <CardHeader className="border-b border-[#e9e9df] px-5 pb-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Arus pembayaran</p>
           <CardTitle className="text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
-          <p className="mt-0.5 text-xs text-muted-foreground">Pelunasan dari pelanggan dan pembayaran ke supplier</p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-2xl border border-[#d6e0ce] bg-[#eff4ea] px-4 py-4 text-[#354a30]">
@@ -599,7 +597,6 @@ export default function Dashboard() {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Aktivitas penjualan</p>
               <CardTitle className="mt-1 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Transaksi non-kredit; pembayaran kredit ditampilkan terpisah</p>
             </div>
             <div className="shrink-0 rounded-xl bg-primary px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(64,87,55,0.16)]">
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">Total</p>
