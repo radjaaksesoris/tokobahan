@@ -41,9 +41,19 @@ html {
   top: 0 !important;
 }
 
+.page-header {
+  padding-block: 0.75rem;
+}
+
+.page-header h1,
+.page-header h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
 @media (min-width: 1024px) {
   .page-header {
-    min-height: 6.25rem;
+    min-height: 5.5rem;
   }
 
   #main-content .page-header-tabs {
