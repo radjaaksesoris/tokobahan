@@ -66,6 +66,17 @@ body {
   color: #202a2e;
 }
 
+.app-tab-background {
+  background-color: #fbfaf5;
+  background-image:
+    linear-gradient(rgba(251, 250, 245, 0.94), rgba(251, 250, 245, 0.94)),
+    var(--tab-background-image);
+  background-position: center, center top;
+  background-size: cover, auto 100vh;
+  background-repeat: no-repeat, repeat-y;
+  background-attachment: scroll;
+}
+
 @media (max-width: 1023px) {
   .pos-mobile-nav {
     padding-bottom: env(safe-area-inset-bottom);

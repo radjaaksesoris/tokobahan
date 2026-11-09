@@ -9,7 +9,7 @@ import {
   Settings,
   WalletCards,
 } from 'lucide-react'
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { preloadPageChunk } from '@/lib/pageChunks'
 import { CurrentDate } from '@/components/layout/CurrentDate'
@@ -200,7 +200,13 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main id="main-content" className="min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8">
+        <main
+          id="main-content"
+          className="app-tab-background min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8"
+          style={{
+            '--tab-background-image': `url("${import.meta.env.BASE_URL}tab-background.jpg")`,
+          } as CSSProperties}
+        >
           <Outlet context={{ setSnapshotGeneratedAt, setDashboardReady, setStartupPhase }} />
         </main>
         <div
