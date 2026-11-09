@@ -1026,15 +1026,15 @@ export default function Products() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:table-auto lg:text-sm">
+            <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:text-sm">
               <thead className="border-b border-white/10 bg-ink text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-[8%] px-0.5 py-1.5 font-semibold lg:w-12 lg:px-2">No.</th>
-                  <th className="w-[32%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Produk</th>
-                  <th className="w-[17%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Stok</th>
-                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Modal</th>
-                  <th className="w-[23%] px-0.5 py-1.5 font-semibold lg:w-auto lg:px-2">Harga jual</th>
-                  <th className="hidden whitespace-nowrap px-0.5 py-1.5 font-semibold lg:table-cell lg:w-28 lg:px-2">Aksi</th>
+                  <th className="w-[8%] px-0.5 py-1.5 font-semibold lg:w-[5%] lg:px-2">No.</th>
+                  <th className="w-[32%] px-0.5 py-1.5 font-semibold lg:w-[28%] lg:px-2">Produk</th>
+                  <th className="w-[17%] px-0.5 py-1.5 font-semibold lg:w-[15%] lg:px-2">Stok</th>
+                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-[19%] lg:px-2">Modal</th>
+                  <th className="w-[23%] px-0.5 py-1.5 font-semibold lg:w-[20%] lg:px-2">Harga jual</th>
+                  <th className="hidden whitespace-nowrap px-0.5 py-1.5 font-semibold lg:table-cell lg:w-[13%] lg:px-2">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e2e6dc]">
