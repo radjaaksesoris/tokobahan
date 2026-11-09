@@ -129,7 +129,7 @@ export function AppLayout() {
           sidebarOpen ? 'translate-x-0' : 'translate-x-0 lg:-translate-x-full lg:w-0 lg:overflow-hidden'
         )}
       >
-        <div className="hidden h-[4.5rem] items-center gap-3 border-b border-white/10 px-4 lg:flex">
+        <div className="hidden h-[5.5rem] items-center gap-3 border-b border-white/10 px-4 lg:flex">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink shadow-[0_0_0_4px_rgba(228,168,83,0.14)]">
             <img
               src={`${import.meta.env.BASE_URL}icon-96.png`}
