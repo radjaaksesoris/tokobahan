@@ -549,19 +549,18 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
-      {openDebts.map((debt) => <Card key={debt.id} className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
+      {openDebts.map((debt, index) => <Card key={debt.id} className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className="min-w-0">
             {tab === 'customer' ? (
-              <>
-                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
-                  <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-                  <p className="whitespace-nowrap text-[11px] text-muted-foreground">
-                    {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
+              <div className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_minmax(4.5rem,auto)_auto] items-baseline gap-x-2">
+                <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
+                <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
                 <p className="truncate text-[11px] text-muted-foreground">{debt.reference}</p>
-              </>
+                <p className="whitespace-nowrap text-[11px] text-muted-foreground">
+                  {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
             ) : (
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
