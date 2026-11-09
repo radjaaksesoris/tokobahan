@@ -55,7 +55,6 @@ function ProductTableSkeleton() {
     <Card role="status" aria-label="Memuat produk">
       <span className="sr-only">Memuat produk...</span>
       <div className="hidden overflow-hidden rounded-xl border border-border sm:block">
-        <div className="h-10 bg-primary/80" />
         <div className="divide-y divide-border">
           {Array.from({ length: 8 }, (_, index) => (
             <div key={index} className="grid grid-cols-[2.5rem_1.4fr_1fr_1fr_1fr_1fr_3rem] items-center gap-3 px-4 py-3">

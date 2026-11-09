@@ -84,7 +84,6 @@ function TransactionTableSkeleton() {
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface" role="status" aria-label="Memuat riwayat transaksi">
       <span className="sr-only">Memuat riwayat transaksi...</span>
-      <div className="h-9 bg-primary/80" />
       <div className="divide-y divide-stone-100">
         {Array.from({ length: 8 }, (_, index) => (
           <div key={index} className="grid grid-cols-[2.25rem_1.1fr_1fr_1fr_1fr_2.25rem] items-center gap-2 px-2 py-3 lg:grid-cols-[3rem_1.2fr_1.4fr_1fr_1fr_3rem] lg:px-4">
