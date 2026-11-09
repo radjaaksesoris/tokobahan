@@ -421,29 +421,17 @@ export default function POS() {
     <div className="mobile-page-background mx-auto flex min-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] max-w-[1440px] flex-row gap-3 pt-2 lg:min-h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-4rem)] lg:gap-4 lg:pt-0">
       {/* Product list */}
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 lg:mb-4 lg:gap-3">
-          <div className="flex shrink-0 items-center gap-2">
-            <img
-              src={`${import.meta.env.BASE_URL}icon-96.png`}
-              srcSet={`${import.meta.env.BASE_URL}icon-96.png 96w, ${import.meta.env.BASE_URL}icon-192.png 501w`}
-              sizes="(min-width: 1024px) 40px, 32px"
-              alt="RAJA Aksesoris"
-              className="h-7 w-7 rounded-lg object-cover shadow-sm lg:h-9 lg:w-9 lg:rounded-xl"
-            />
-            <h2 className="whitespace-nowrap text-sm font-bold tracking-tight text-ink sm:text-base lg:text-2xl">RAJA AKSESORIS</h2>
-          </div>
-          <div className="flex shrink-0 items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3 lg:hidden"
-              aria-label="Kembali ke Dashboard"
-              title="Kembali ke Dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </button>
-          </div>
+        <div className="mb-1 flex justify-end lg:hidden">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
+            aria-label="Kembali ke Dashboard"
+            title="Kembali ke Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </button>
         </div>
         <div className="mb-2 flex gap-2 lg:mb-3">
           <div ref={searchFilterRef} className="relative flex-1">
