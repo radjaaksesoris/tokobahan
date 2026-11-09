@@ -124,7 +124,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'pos-mobile-nav fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col border-t border-white/10 bg-ink text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-dvh lg:max-h-dvh lg:w-64 lg:shrink-0 lg:translate-x-0 lg:border-t-0',
+          'pos-mobile-nav fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col border-t border-white/10 bg-ink text-white transition-all duration-300 lg:sticky lg:top-0 lg:h-dvh lg:max-h-dvh lg:w-56 lg:shrink-0 lg:translate-x-0 lg:border-t-0',
           isPosRoute && 'is-pos-route',
           sidebarOpen ? 'translate-x-0' : 'translate-x-0 lg:-translate-x-full lg:w-0 lg:overflow-hidden'
         )}
