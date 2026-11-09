@@ -1267,41 +1267,44 @@ function CartPanel({
           items.map((item) => (
             <div
               key={`${item.product.id}-${item.unit}`}
-              className="rounded-xl border border-white/10 bg-white/5 p-3"
+              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"
             >
               <div className="flex justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{item.product.name}</p>
-                  <p className="text-xs text-stone-400">
+                  <p className="truncate text-[13px] font-medium leading-tight text-white">{item.product.name}</p>
+                  <p className="mt-0.5 text-[11px] leading-tight text-stone-400">
                     {UNIT_LABELS[item.unit]} × {formatCurrency(item.unit_price)}
                   </p>
                 </div>
                 <button
                   onClick={() => removeItem(item.product.id, item.unit)}
-                  className="text-stone-400 hover:text-red-300"
+                  className="shrink-0 p-1 text-stone-400 hover:text-red-300"
+                  aria-label={`Hapus ${item.product.name} dari keranjang`}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
+              <div className="mt-1.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
                   <button
-                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-md border border-white/10 bg-white/10 p-1.5 text-white disabled:cursor-not-allowed disabled:opacity-40"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity - 1)}
+                    aria-label={`Kurangi jumlah ${item.product.name}`}
                   >
                     <Minus className="h-3 w-3" />
                   </button>
-                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                  <span className="w-7 text-center text-xs font-medium tabular-nums">{item.quantity}</span>
                   <button
-                    className="rounded-lg border border-white/10 bg-white/10 p-2 text-white"
+                    className="rounded-md border border-white/10 bg-white/10 p-1.5 text-white"
                     onClick={() => updateQuantity(item.product.id, item.unit, item.quantity + 1)}
                     disabled={item.quantity >= getAvailableStock(item.product, item.unit) + item.quantity}
                     title={item.quantity >= getAvailableStock(item.product, item.unit) + item.quantity ? 'Jumlah sudah mencapai stok' : 'Tambah jumlah'}
+                    aria-label={`Tambah jumlah ${item.product.name}`}
                   >
                     <Plus className="h-3 w-3" />
                   </button>
                 </div>
-                <p className="text-sm font-semibold text-accent">
+                <p className="text-right text-[13px] font-semibold leading-tight text-accent">
                   {formatCurrency(item.line_total)}
                 </p>
               </div>
