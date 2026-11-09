@@ -554,7 +554,11 @@ export default function Settlements() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-              <p className="text-[11px] text-muted-foreground">{debt.reference}{debt.due ? ` · jatuh tempo ${debt.due}` : ''}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {debt.reference}
+                {tab === 'customer' && ` · ${new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                {debt.due ? ` · jatuh tempo ${debt.due}` : ''}
+              </p>
             </div>
             <p className="text-xs text-muted-foreground">Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
