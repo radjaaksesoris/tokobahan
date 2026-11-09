@@ -576,6 +576,7 @@ export default function Dashboard() {
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Diterima dari pelanggan</p>
               <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayCustomerDebtPayments.amount)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-2xl border border-[#dce0ca] bg-[#f1f2e7] px-4 py-4 text-[#4a5432]">
@@ -585,6 +586,7 @@ export default function Dashboard() {
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Dibayarkan ke supplier</p>
               <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayVendorDebtPayments.amount)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayVendorDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
         </CardContent>
@@ -607,14 +609,15 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, 'border-[#c9d6c1] bg-[#f0f4eb] text-[#354a30]'],
-            ['KREDIT', stats.todayPaymentTotals.credit, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
-            ['TRANSFER', stats.todayPaymentTotals.transfer, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
-            ['QR', stats.todayPaymentTotals.qris, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
-          ] as const).map(([label, total, color]) => (
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border-[#c9d6c1] bg-[#f0f4eb] text-[#354a30]'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
+          ] as const).map(([label, total, count, color]) => (
             <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">{label}</p>
               <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(total)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
           ))}
         </CardContent>
