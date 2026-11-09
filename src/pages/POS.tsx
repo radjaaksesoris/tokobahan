@@ -17,6 +17,7 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
+  Package,
   X,
   Delete,
 } from 'lucide-react'
@@ -491,12 +492,12 @@ export default function POS() {
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors lg:h-9 lg:w-9 lg:text-base ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors lg:h-9 lg:w-9 ${
                     activeProductIndex === index
                       ? 'bg-primary text-white'
-                      : 'bg-muted text-stone-300 group-hover:bg-primary/10 group-hover:text-primary'
+                      : 'bg-muted text-stone-400 group-hover:bg-primary/10 group-hover:text-primary'
                   }`}>
-                    {p.name.charAt(0)}
+                    <Package className="h-4 w-4 lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-xs font-medium lg:text-[13px] ${
