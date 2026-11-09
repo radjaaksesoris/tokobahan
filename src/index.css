@@ -71,9 +71,9 @@ body {
   background-image:
     linear-gradient(rgba(251, 250, 245, 0.94), rgba(251, 250, 245, 0.94)),
     var(--tab-background-image);
-  background-position: center, center top;
-  background-size: cover, auto 100vh;
-  background-repeat: no-repeat, repeat-y;
+  background-position: center, top left;
+  background-size: 100% 100%, 768px 1365px;
+  background-repeat: no-repeat, repeat;
   background-attachment: scroll;
 }
 
