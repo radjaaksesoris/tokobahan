@@ -396,7 +396,8 @@ export default function Dashboard() {
       icon: ShoppingBag,
       color: 'bg-[#dce6d5] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#f1f5ee]/80 ring-1 ring-[#cbd7c3]',
+      surface: 'bg-primary text-white ring-1 ring-primary',
+      featured: true,
     },
     {
       title: 'Nilai Transaksi Hari Ini',
@@ -404,7 +405,7 @@ export default function Dashboard() {
       icon: DollarSign,
       color: 'bg-[#d8e2d0] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#eef3ea]/80 ring-1 ring-[#c5d2bb]',
+      surface: 'bg-[#f5f7f1]/90 ring-1 ring-[#c5d2bb]',
     },
     {
       title: 'Laba Bersih Hari Ini',
@@ -412,7 +413,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: 'bg-[#e2e9d8] text-[#3d5035]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#f3f5ef]/80 ring-1 ring-[#d0dac6]',
+      surface: 'bg-[#f5f7f1]/90 ring-1 ring-[#d0dac6]',
       className: 'lg:hidden',
     },
     {
@@ -421,17 +422,19 @@ export default function Dashboard() {
       icon: Package,
       color: 'bg-[#d5dfcc] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#edf2e8]/80 ring-1 ring-[#c2cfb7]',
+      surface: 'bg-[#f2f5ee]/90 ring-1 ring-[#c2cfb7]',
       isProductCard: true,
     },
   ]
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-7">
-      <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-start sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:items-end lg:px-8 lg:py-5">
+    <div className="mx-auto max-w-[1440px] space-y-5">
+      <div className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 overflow-hidden border-b border-accent/30 bg-ink px-4 py-4 text-white shadow-[0_8px_24px_rgba(32,42,46,0.16)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:flex-row sm:items-start sm:justify-between sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:items-end lg:px-8 lg:py-5">
+        <div className="pointer-events-none absolute -right-10 -top-20 h-48 w-48 rounded-full bg-accent/10 blur-3xl" aria-hidden="true" />
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
-          <p className="mt-1 text-sm font-medium text-accent">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Ringkasan toko</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">Transaksi Hari Ini</h2>
+          <p className="mt-1 text-sm font-medium text-white/65">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}</p>
         </div>
         <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-nowrap">
           {isMobileDevice() && (
@@ -471,11 +474,11 @@ export default function Dashboard() {
           ) : (
             <>
               <div
-                className="min-w-0 flex-1 rounded-2xl bg-ink px-3 py-3 text-center text-white lg:flex-none lg:px-4 lg:text-left"
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-center text-white lg:flex-none lg:px-4 lg:text-left"
                 aria-label="Status toko aktif"
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Status toko</p>
-                <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> Aktif</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">Status toko</p>
+                <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]" /> Aktif</p>
               </div>
             </>
           )}
@@ -517,18 +520,18 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
-          <Card key={c.title} className={`relative overflow-hidden border-0 ${c.surface} ${'className' in c ? c.className : ''}`}>
+          <Card key={c.title} className={`relative overflow-hidden border-0 ${c.surface} ${'className' in c ? c.className : ''} ${'featured' in c && c.featured ? 'shadow-[0_12px_28px_rgba(64,87,55,0.18)]' : 'shadow-[0_8px_24px_rgba(32,42,46,0.05)]'}`}>
                 <c.icon
                   aria-hidden="true"
-                  className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 ${c.watermark}`}
+                  className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 rotate-12 ${'featured' in c && c.featured ? 'text-white/[0.08]' : c.watermark}`}
                 />
-                <CardContent className="relative z-10 flex items-start gap-3 p-4">
-              <div className={`rounded-xl p-2.5 ${c.color}`}>
+                <CardContent className="relative z-10 flex min-h-28 items-center gap-3 p-4">
+              <div className={`rounded-xl p-2.5 ${'featured' in c && c.featured ? 'bg-accent text-ink' : c.color}`}>
                 <c.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-xs text-muted-foreground">{c.title}</p>
-                <p className="truncate text-lg font-bold text-ink">
+                <p className={`truncate text-[11px] font-semibold uppercase tracking-[0.1em] ${'featured' in c && c.featured ? 'text-white/70' : 'text-muted-foreground'}`}>{c.title}</p>
+                <p className={`mt-0.5 truncate text-xl font-bold tracking-tight tabular-nums ${'featured' in c && c.featured ? 'text-white' : 'text-ink'}`}>
                   {loading ? '...' : c.value}
                 </p>
                 {'isProductCard' in c && c.isProductCard && stats.lowStock > 0 && (
@@ -559,56 +562,62 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <Card className="relative overflow-hidden border-0">
-        <CardHeader className="border-b border-stone-100 pb-4">
-          <CardTitle className="text-base">Pembayaran Hutang Hari Ini</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">Ringkasan pelunasan hutang pelanggan dan pembayaran ke supplier</p>
+      <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
+        <CardHeader className="border-b border-[#e9e9df] px-5 pb-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Arus pembayaran</p>
+          <CardTitle className="text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
+          <p className="mt-0.5 text-xs text-muted-foreground">Pelunasan dari pelanggan dan pembayaran ke supplier</p>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3 rounded-xl border border-[#c9d6c1] bg-[#e3ebdc] px-4 py-3 text-[#354a30]">
-            <ArrowDownLeft className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#d6e0ce] bg-[#eff4ea] px-4 py-4 text-[#354a30]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/75 text-primary shadow-sm">
+              <ArrowDownLeft className="h-5 w-5" aria-hidden="true" />
+            </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Diterima dari pelanggan</p>
-              <p className="mt-1 truncate text-lg font-bold">{loading ? '...' : formatCurrency(stats.todayCustomerDebtPayments.amount)}</p>
-              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Diterima dari pelanggan</p>
+              <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayCustomerDebtPayments.amount)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-[#d1d8bd] bg-[#e8ebd9] px-4 py-3 text-[#4a5432]">
-            <ArrowUpRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <div className="flex items-center gap-3 rounded-2xl border border-[#dce0ca] bg-[#f1f2e7] px-4 py-4 text-[#4a5432]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/75 text-[#596642] shadow-sm">
+              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+            </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Dibayarkan ke supplier</p>
-              <p className="mt-1 truncate text-lg font-bold">{loading ? '...' : formatCurrency(stats.todayVendorDebtPayments.amount)}</p>
-              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(stats.todayVendorDebtPayments.count)} pembayaran`}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Dibayarkan ke supplier</p>
+              <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayVendorDebtPayments.amount)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayVendorDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="relative overflow-hidden border-0">
-        <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-[#657b52]/[0.12]" />
-        <CardHeader className="relative z-10 border-b border-stone-100 pb-4">
-          <div className="flex items-end justify-between gap-4">
+      <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
+        <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-[#657b52]/[0.08]" />
+        <CardHeader className="relative z-10 border-b border-[#e9e9df] px-5 pb-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-base">Rincian Transaksi Hari Ini</CardTitle>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Aktivitas penjualan</p>
+              <CardTitle className="mt-1 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
               <p className="mt-1 text-xs text-muted-foreground">Transaksi non-kredit; pembayaran kredit ditampilkan terpisah</p>
             </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold text-ink">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
+            <div className="shrink-0 rounded-xl bg-primary px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(64,87,55,0.16)]">
+              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">Total</p>
+              <p className="text-2xl font-bold leading-none tabular-nums">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="relative z-10 grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
+        <CardContent className="relative z-10 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border border-[#c9d6c1] bg-[#e3ebdc] text-[#354a30]'],
-            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border border-[#d1d8bd] bg-[#e8ebd9] text-[#4a5432]'],
-            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border border-[#c5d3c5] bg-[#e0e9df] text-[#354a3a]'],
-            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border border-[#c6d1bc] bg-[#dce5d3] text-[#3b4d32]'],
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, 'border-[#c9d6c1] bg-[#f0f4eb] text-[#354a30]'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
           ] as const).map(([label, total, count, color]) => (
-            <div key={label} className={`rounded-xl px-4 py-3 ${color}`}>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">{label}</p>
-              <p className="mt-1 text-lg font-bold">{loading ? '...' : formatCurrency(total)}</p>
-              <p className="mt-0.5 text-xs opacity-75">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
+            <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">{label}</p>
+              <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(total)}</p>
+              <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
           ))}
         </CardContent>
