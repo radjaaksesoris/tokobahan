@@ -1101,7 +1101,6 @@ export default function Products() {
               </Button>
             </div>
           )}
-
           {stockProduct && (
             <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 sm:items-center sm:p-4">
               <Card className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col rounded-t-2xl sm:max-h-[90vh] sm:rounded-2xl">
@@ -1304,6 +1303,63 @@ export default function Products() {
         </div>
       )}
 
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="flex-row items-center justify-between border-b">
+              <CardTitle>Konfirmasi nonaktifkan produk</CardTitle>
+              <button
+                type="button"
+                aria-label="Tutup konfirmasi"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                onClick={() => {
+                  setDeleteTarget(null)
+                  setDeleteName('')
+                }}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <p className="text-sm text-muted-foreground">
+                Produk akan disembunyikan dari POS. Riwayat transaksi tetap tersimpan.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Ketik <strong>{deleteTarget.name}</strong> untuk melanjutkan.
+              </p>
+              <Input
+                value={deleteName}
+                onChange={(event) => setDeleteName(toTitleCase(event.target.value))}
+                placeholder="Nama produk"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setDeleteTarget(null)
+                    setDeleteName('')
+                  }}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={deleteName.trim() !== deleteTarget.name}
+                  onClick={handleDelete}
+                >
+                  Nonaktifkan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 bg-black/40">
@@ -1313,7 +1369,7 @@ export default function Products() {
             className="absolute inset-0 cursor-default"
             onClick={() => setModal(false)}
           />
-          <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 border-l-4 border-l-accent bg-[#fffdf7] shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
+          <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 bg-[#fffdf7] shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
             <CardHeader className="relative z-10 flex-row items-center justify-between border-b-2 border-accent bg-ink px-5 py-4 text-white">
               <CardTitle className="text-white">{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
               <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-white/75 transition-colors hover:bg-white/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -1624,49 +1680,6 @@ export default function Products() {
                         </button>
                       )}
 
-                      {deleteTarget && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                          <Card className="w-full max-w-md">
-                            <CardHeader className="flex-row items-center justify-between border-b">
-                              <CardTitle>Konfirmasi nonaktifkan produk</CardTitle>
-                              <button type="button" aria-label="Tutup konfirmasi" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" onClick={() => setDeleteTarget(null)}>
-                                <X className="h-5 w-5" />
-                              </button>
-                            </CardHeader>
-                            <CardContent className="space-y-4 pt-4">
-                              <p className="text-sm text-muted-foreground">
-                                Produk akan disembunyikan dari POS. Riwayat transaksi tetap tersimpan.
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Ketik <strong>{deleteTarget.name}</strong> untuk melanjutkan.
-                              </p>
-                              <Input
-                                value={deleteName}
-                                onChange={(e) => setDeleteName(toTitleCase(e.target.value))}
-                                placeholder="Nama produk"
-                                autoFocus
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  className="flex-1"
-                                  onClick={() => setDeleteTarget(null)}
-                                >
-                                  Batal
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  className="flex-1"
-                                  disabled={deleteName.trim() !== deleteTarget.name}
-                                  onClick={handleDelete}
-                                >
-                                  Nonaktifkan
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
