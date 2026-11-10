@@ -599,8 +599,10 @@ export default function POS() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
           <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
             <CardContent className="p-5">
-              <h3 className="mb-1 text-lg font-semibold">{selectedProduct.name}</h3>
-              <p className="mb-4 text-sm text-muted-foreground">Pilih satuan & jumlah</p>
+              <div className="-mx-5 -mt-5 mb-4 rounded-t-2xl bg-ink px-5 py-4 text-white">
+                <h3 className="text-lg font-semibold">{selectedProduct.name}</h3>
+                <p className="mt-1 text-sm text-white/70">Pilih satuan & jumlah</p>
+              </div>
 
               <div className="mb-4 flex items-center gap-2">
                 <div className="grid min-w-0 flex-1 grid-cols-3 gap-2">
@@ -618,8 +620,8 @@ export default function POS() {
                       }}
                       className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
                         selectedUnit === u
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-slate-200 hover:border-slate-300'
+                          ? 'border-accent bg-accent text-ink'
+                          : 'border-ink bg-ink text-white hover:bg-ink/90'
                       }`}
                     >
                       {UNIT_LABELS[u as UnitType] || u}
@@ -685,16 +687,16 @@ export default function POS() {
               </div>
 
               <div className="mb-4 grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-slate-50 p-3 text-center">
-                  <p className="text-xs text-muted-foreground">HPP</p>
-                  <p className="text-lg font-bold text-ink">
+                <div className="rounded-lg bg-ink p-3 text-center text-white">
+                  <p className="text-xs text-white/70">HPP</p>
+                  <p className="text-lg font-bold text-white">
                     {selectedFifoUnitCost === null
                       ? 'Tidak tersedia'
                       : `${formatCurrency(selectedFifoUnitCost)} / ${UNIT_LABELS[selectedUnit] || selectedUnit}`}
                   </p>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-3 text-center">
-                  <label htmlFor="sale-price" className="mb-1 block text-xs text-muted-foreground">Harga Jual</label>
+                <div className="rounded-lg bg-ink p-3 text-center text-white">
+                  <label htmlFor="sale-price" className="mb-1 block text-xs text-white/70">Harga Jual</label>
                   <Input
                     id="sale-price"
                     type="text"
@@ -717,7 +719,7 @@ export default function POS() {
                         confirmAdd()
                       }
                     }}
-                    className={`h-9 px-2 text-center text-lg font-bold text-primary ${
+                    className={`h-9 border-surface bg-surface px-2 text-center text-lg font-bold text-ink ${
                       salePriceError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
                     }`}
                     aria-label="Harga jual"
@@ -726,9 +728,9 @@ export default function POS() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-lg bg-slate-50 p-3 text-center">
-                <p className="text-xs text-muted-foreground">Total</p>
-                <p className="text-xl font-bold text-primary">
+              <div className="mb-4 rounded-lg bg-ink p-3 text-center text-white">
+                <p className="text-xs text-white/70">Total</p>
+                <p className="text-xl font-bold text-white">
                   {formatCurrency((Number(salePriceInput) || 0) * (Number(qtyInput) || 0))}
                 </p>
               </div>
