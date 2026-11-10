@@ -926,7 +926,7 @@ export default function Settings() {
         {renderTabNavigation('mt-4 hidden w-full grid-cols-4 gap-2 lg:grid', true)}
       </div>
 
-      {activeTab === 'master' && <section aria-labelledby="master-data-heading" className="space-y-3">
+      {activeTab === 'master' && <section aria-labelledby="master-data-heading" className="space-y-3 lg:pt-3">
         <div>
           <h3 id="master-data-heading" className="text-lg font-bold tracking-tight text-ink">Data dasar dan akses admin</h3>
           <p className="mt-1 text-sm text-muted-foreground">Kelola data yang dipakai saat membuat produk, mencatat transaksi, dan menjaga aplikasi.</p>
@@ -1072,7 +1072,7 @@ export default function Settings() {
       </div>
       </section>}
 
-      {activeTab === 'stock' && <section aria-labelledby="stock-heading" className="space-y-3">
+      {activeTab === 'stock' && <section aria-labelledby="stock-heading" className="space-y-3 lg:pt-3">
       <div>
         <h3 id="stock-heading" className="text-lg font-bold tracking-tight text-ink">Stok</h3>
         <p className="mt-1 text-sm text-muted-foreground">Periksa dan sesuaikan stok fisik dengan catatan di aplikasi.</p>
@@ -1125,7 +1125,7 @@ export default function Settings() {
       </Card>
       </section>}
 
-      {activeTab === 'backup' && <section aria-labelledby="backup-heading" className="space-y-3">
+      {activeTab === 'backup' && <section aria-labelledby="backup-heading" className="space-y-3 lg:pt-3">
       <div>
         <h3 id="backup-heading" className="text-lg font-bold tracking-tight text-ink">Backup dan pemulihan</h3>
         <p className="mt-1 text-sm text-muted-foreground">Simpan salinan data sebelum melakukan perubahan besar atau pindah perangkat.</p>
@@ -1392,7 +1392,7 @@ export default function Settings() {
       </Card>
       </section>}
 
-      {activeTab === 'notification' && <section aria-labelledby="notification-heading" className="space-y-3">
+      {activeTab === 'notification' && <section aria-labelledby="notification-heading" className="space-y-3 lg:pt-3">
       <div>
         <h3 id="notification-heading" className="text-lg font-bold tracking-tight text-ink">Notifikasi</h3>
         <p className="mt-1 text-sm text-muted-foreground">Pilih cara aplikasi memberi tahu admin saat stok perlu diperiksa.</p>
