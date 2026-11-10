@@ -1,8 +1,3 @@
-import { useEffect, useState } from 'react'
-
-const MIN_STARTUP_LOADING_MS = 5000
-const startupStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-
 export type StartupLoadingPhase = 'access' | 'data' | 'page'
 
 const phases: { id: StartupLoadingPhase; label: string }[] = [
@@ -10,24 +5,6 @@ const phases: { id: StartupLoadingPhase; label: string }[] = [
   { id: 'data', label: 'Data toko lokal' },
   { id: 'page', label: 'Ringkasan hari ini' },
 ]
-
-export function useStartupMinimumTime(isReady: boolean) {
-  const [minimumTimeElapsed, setMinimumTimeElapsed] = useState(
-    () => performance.now() - startupStartedAt >= MIN_STARTUP_LOADING_MS,
-  )
-
-  useEffect(() => {
-    if (!isReady || minimumTimeElapsed) return
-    const remaining = Math.max(
-      0,
-      MIN_STARTUP_LOADING_MS - (performance.now() - startupStartedAt),
-    )
-    const timer = window.setTimeout(() => setMinimumTimeElapsed(true), remaining)
-    return () => window.clearTimeout(timer)
-  }, [isReady, minimumTimeElapsed])
-
-  return minimumTimeElapsed
-}
 
 export function StartupLoadingScreen({ phase }: { phase: StartupLoadingPhase }) {
   const activeIndex = phases.findIndex((item) => item.id === phase)

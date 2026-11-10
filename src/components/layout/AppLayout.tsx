@@ -15,7 +15,6 @@ import { preloadPageChunk } from '@/lib/pageChunks'
 import { CurrentDate } from '@/components/layout/CurrentDate'
 import {
   StartupLoadingScreen,
-  useStartupMinimumTime,
   type StartupLoadingPhase,
 } from '@/components/ui/StartupLoadingScreen'
 
@@ -41,9 +40,8 @@ export function AppLayout() {
   const location = useLocation()
   const startupScreenAllowedRef = useRef(location.pathname === '/')
   if (location.pathname !== '/') startupScreenAllowedRef.current = false
-  const minimumStartupTimeElapsed = useStartupMinimumTime(dashboardReady)
   const showStartupScreen = startupScreenAllowedRef.current && location.pathname === '/' &&
-    (!dashboardReady || !minimumStartupTimeElapsed)
+    !dashboardReady
   const isPosRoute = location.pathname.endsWith('/pos')
   const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
   const scrollPercent = scrollMetrics.max > 0
