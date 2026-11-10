@@ -563,7 +563,7 @@ export default function Dashboard() {
 
       <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
         <CardHeader className="gap-0 border-b border-[#e9e9df] px-5 pb-4">
-          <p className="w-fit rounded-md bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.16em] text-ink">Arus pembayaran</p>
+          <p className="w-fit bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.16em] text-ink">Arus pembayaran</p>
           <CardTitle className="-mt-1 text-lg leading-tight tracking-tight">Pembayaran hutang hari ini</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
@@ -572,7 +572,7 @@ export default function Dashboard() {
               <ArrowDownLeft className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="w-fit rounded-md bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ink">Diterima dari pelanggan</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Diterima dari pelanggan</p>
               <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayCustomerDebtPayments.amount)}</p>
               <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
             </div>
@@ -582,7 +582,7 @@ export default function Dashboard() {
               <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="w-fit rounded-md bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ink">Dibayarkan ke supplier</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Dibayarkan ke supplier</p>
               <p className="mt-1 truncate text-xl font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(stats.todayVendorDebtPayments.amount)}</p>
               <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayVendorDebtPayments.count)} pembayaran`}</p>
             </div>
@@ -595,7 +595,7 @@ export default function Dashboard() {
         <CardHeader className="relative z-10 gap-0 border-b border-[#e9e9df] px-5 pb-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="w-fit rounded-md bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.16em] text-ink">Aktivitas penjualan</p>
+              <p className="w-fit bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.16em] text-ink">Aktivitas penjualan</p>
               <CardTitle className="-mt-1 text-lg leading-tight tracking-tight">Rincian transaksi hari ini</CardTitle>
             </div>
             <div className="shrink-0 rounded-xl bg-ink px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
@@ -612,7 +612,7 @@ export default function Dashboard() {
             ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, QrCode, 'border-border bg-muted/50 text-ink'],
           ] as const).map(([label, total, count, Icon, color]) => (
             <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
-              <div className="flex w-fit items-center gap-2 rounded-md bg-accent px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ink">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 <Icon className={`h-4 w-4 ${label === 'CASH' ? 'text-accent' : 'text-primary'}`} aria-hidden="true" />
                 <p>{label}</p>
               </div>
