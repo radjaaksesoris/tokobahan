@@ -550,13 +550,36 @@ export default function POS() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
           <Card className="w-full max-w-md rounded-t-2xl sm:rounded-2xl">
             <CardContent className="p-5">
-              <div className="-mx-5 -mt-5 mb-4 rounded-t-2xl bg-ink px-5 py-4 text-white">
-                <h3 className="text-lg font-semibold">{selectedProduct.name}</h3>
-                <p className="mt-1 text-sm text-white/70">Pilih satuan & jumlah</p>
+              <div className="-mx-5 -mt-5 mb-4 flex items-center justify-between gap-3 rounded-t-2xl bg-ink px-5 py-4 text-white">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-semibold">{selectedProduct.name}</h3>
+                  <p className="mt-1 text-sm text-white/70">Pilih satuan & jumlah</p>
+                </div>
+                <div className="w-40 shrink-0 rounded-xl border border-primary/70 bg-surface/5 px-3 py-2 text-center">
+                  <p className="text-[10px] text-white/65">Sisa stok</p>
+                  <p
+                    className={`truncate text-sm font-bold ${
+                      getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0
+                        ? 'text-red-400'
+                        : 'text-white'
+                    }`}
+                    title={formatAvailableStockInUnit(
+                      selectedProduct,
+                      selectedUnit,
+                      Math.max(0, getAvailableStockBaseUnits(selectedProduct) - (Number(qtyInput) || 0) * getUnitConversion(selectedProduct, selectedUnit)),
+                    )}
+                  >
+                    {formatAvailableStockInUnit(
+                      selectedProduct,
+                      selectedUnit,
+                      Math.max(0, getAvailableStockBaseUnits(selectedProduct) - (Number(qtyInput) || 0) * getUnitConversion(selectedProduct, selectedUnit)),
+                    )}
+                  </p>
+                </div>
               </div>
 
-              <div className="mb-4 flex items-center gap-2">
-                <div className="grid min-w-0 flex-1 auto-cols-fr grid-flow-col gap-2 [&>button]:min-w-0 [&>button]:truncate">
+              <div className="mb-4">
+                <div className="grid min-w-0 auto-cols-fr grid-flow-col gap-2 [&>button]:min-w-0 [&>button]:truncate">
                   {(selectedProduct.prices?.length
                     ? selectedProduct.prices.map((p) => p.unit)
                     : [selectedProduct.stock_unit || 'satuan']
@@ -578,18 +601,6 @@ export default function POS() {
                       {UNIT_LABELS[u as UnitType] || u}
                     </button>
                   ))}
-                </div>
-                <div className="shrink-0 rounded-lg border border-primary bg-primary/5 px-3 py-2 text-center">
-                  <p className="text-[10px] text-muted-foreground">Sisa stok</p>
-                  <p className={`text-sm font-bold ${
-                    getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-primary'
-                  }`}>
-                    {formatAvailableStockInUnit(
-                      selectedProduct,
-                      selectedUnit,
-                      Math.max(0, getAvailableStockBaseUnits(selectedProduct) - (Number(qtyInput) || 0) * getUnitConversion(selectedProduct, selectedUnit)),
-                    )}
-                  </p>
                 </div>
               </div>
 
@@ -1315,7 +1326,7 @@ function CartPanel({
           <ShoppingCart className="h-5 w-5" aria-hidden="true" />
           <span>{items.length}</span>
         </h3>
-        <p className="text-right text-base font-bold tracking-tight tabular-nums" aria-label={`Nominal pembayaran ${formatCurrency(totals.subtotal)}`}>
+        <p className="text-right text-2xl font-bold leading-none tracking-tight tabular-nums sm:text-3xl" aria-label={`Nominal pembayaran ${formatCurrency(totals.subtotal)}`}>
           {formatCurrency(totals.subtotal)}
         </p>
       </div>
