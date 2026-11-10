@@ -81,6 +81,39 @@ export function getUnitConversion(product: Pick<Product, 'prices'>, unit: UnitTy
   return getPriceConversion(product.prices || [], unit)
 }
 
+export function formatAvailableStockInUnit(
+  product: Pick<Product, 'prices' | 'stock_unit_mode'>,
+  unit: UnitType,
+  availableBaseUnits: number,
+) {
+  const unitLabel = UNIT_LABELS[unit] || unit
+  const unitConversion = getUnitConversion(product, unit)
+  const baseUnit = getSmallestConfiguredUnit(product.prices || [])
+
+  if (
+    product.stock_unit_mode === 'integer-base' &&
+    baseUnit &&
+    unitConversion > baseUnit.conversion &&
+    Number.isInteger(unitConversion / baseUnit.conversion) &&
+    Number.isFinite(availableBaseUnits) &&
+    availableBaseUnits >= 0
+  ) {
+    const baseQuantity = availableBaseUnits / baseUnit.conversion
+    const roundedBaseQuantity = Math.round(baseQuantity)
+    if (Math.abs(baseQuantity - roundedBaseQuantity) <= 1e-8) {
+      const baseUnitsPerSelectedUnit = unitConversion / baseUnit.conversion
+      const wholeQuantity = Math.floor(roundedBaseQuantity / baseUnitsPerSelectedUnit)
+      const remainder = roundedBaseQuantity % baseUnitsPerSelectedUnit
+      const baseLabel = UNIT_LABELS[baseUnit.unit] || baseUnit.unit
+      if (remainder === 0) return `${formatStockQuantity(wholeQuantity)} ${unitLabel}`
+      if (wholeQuantity === 0) return `${formatStockQuantity(remainder)} ${baseLabel}`
+      return `${formatStockQuantity(wholeQuantity)} ${unitLabel} + ${formatStockQuantity(remainder)} ${baseLabel}`
+    }
+  }
+
+  return `${formatStockQuantity(availableBaseUnits / unitConversion)} ${unitLabel}`
+}
+
 export function getStockConversion(product: { prices?: unknown; stock_conversion?: unknown; stock_unit?: unknown }) {
   const prices = Array.isArray(product.prices) ? product.prices as ProductPrice[] : []
   const stockUnit = typeof product.stock_unit === 'string' ? product.stock_unit : 'satuan'

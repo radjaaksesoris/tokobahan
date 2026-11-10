@@ -5,7 +5,7 @@ import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { Product, UnitType } from '@/types'
 import { parseProductPrices, UNIT_LABELS } from '@/types'
-import { formatCurrency, formatCurrencyInput, formatStockQuantity, parseCurrencyInput, toTitleCase } from '@/lib/utils'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -31,7 +31,7 @@ import {
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
-import { formatMixedStockQuantity, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
+import { formatAvailableStockInUnit, formatMixedStockQuantity, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -100,16 +100,19 @@ export default function POS() {
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
-  const getAvailableStock = useCallback((product: Product, unit: UnitType = product.stock_unit) => {
+  const getAvailableStockBaseUnits = useCallback((product: Product) => {
     const reservedBaseUnits = items
       .filter((item) => item.product.id === product.id)
       .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
-    const availableBaseUnits = Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
+    return Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
+  }, [items])
+  const getAvailableStock = useCallback((product: Product, unit: UnitType = product.stock_unit) => {
+    const availableBaseUnits = getAvailableStockBaseUnits(product)
     const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
     return product.stock_unit_mode === 'integer-base'
       ? Math.floor(availableQuantity + 1e-8)
       : availableQuantity
-  }, [items])
+  }, [getAvailableStockBaseUnits])
   const selectedFifoQuantity = Math.max(1, Number(qtyInput) || 1)
   const selectedFifoCost = selectedProduct
     ? getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, selectedFifoQuantity)
@@ -581,7 +584,11 @@ export default function POS() {
                   <p className={`text-sm font-bold ${
                     getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0) <= 0 ? 'text-red-600' : 'text-primary'
                   }`}>
-                    {formatStockQuantity(Math.max(0, getAvailableStock(selectedProduct, selectedUnit) - (Number(qtyInput) || 0)))} {UNIT_LABELS[selectedUnit] || selectedUnit}
+                    {formatAvailableStockInUnit(
+                      selectedProduct,
+                      selectedUnit,
+                      Math.max(0, getAvailableStockBaseUnits(selectedProduct) - (Number(qtyInput) || 0) * getUnitConversion(selectedProduct, selectedUnit)),
+                    )}
                   </p>
                 </div>
               </div>
@@ -689,7 +696,7 @@ export default function POS() {
                 </Button>
                 <Button
                   ref={addItemButtonRef}
-                  className="flex-1 bg-accent text-ink hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                  className="flex-1 border border-accent bg-accent text-ink hover:bg-accent/90 active:bg-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                   onClick={confirmAdd}
                   disabled={getAvailableStock(selectedProduct, selectedUnit) <= 0 || Boolean(salePriceError)}
                 >
@@ -1303,11 +1310,14 @@ function CartPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="mx-2 mt-2 rounded-xl border border-accent/80 bg-accent px-3 py-2 text-ink shadow-sm">
+      <div className="mx-2 mt-2 flex items-center justify-between rounded-xl border border-accent/80 bg-accent px-3 py-2 text-ink shadow-sm">
         <h3 className="flex items-center gap-2 font-heading text-lg font-semibold" aria-label={`Keranjang (${items.length})`}>
           <ShoppingCart className="h-5 w-5" aria-hidden="true" />
           <span>{items.length}</span>
         </h3>
+        <p className="text-right text-base font-bold tracking-tight tabular-nums" aria-label={`Nominal pembayaran ${formatCurrency(totals.subtotal)}`}>
+          {formatCurrency(totals.subtotal)}
+        </p>
       </div>
 
       <div className="pos-cart-items-scrollbar min-h-0 flex-1 overflow-y-auto p-3 space-y-2">

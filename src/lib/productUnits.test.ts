@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseProductPrices, type Product } from '@/types'
-import { formatMixedStockQuantity, getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
+import { formatAvailableStockInUnit, formatMixedStockQuantity, getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
 
 describe('stock unit conversions', () => {
   const product: Pick<Product, 'stock_unit' | 'stock_conversion' | 'prices'> = {
@@ -53,6 +53,22 @@ describe('stock unit conversions', () => {
       stock: 44 + 5 / 6,
     })).toBe('44 Pack + 5 Roll')
     expect(packStockProduct.stock).toBe(43.498)
+  })
+
+  it('shows leftover base units when displaying available stock in a larger unit', () => {
+    const productWithPackStock = {
+      stock_unit: 'pack',
+      stock_conversion: 6,
+      stock_unit_mode: 'integer-base' as const,
+      prices: [
+        { unit: 'pack', price: 60000, conversion: 6 },
+        { unit: 'satuan', price: 10000, conversion: 1 },
+      ],
+    }
+
+    expect(formatAvailableStockInUnit(productWithPackStock, 'pack', 641)).toBe('106 Pack + 5 Satuan')
+    expect(formatAvailableStockInUnit(productWithPackStock, 'satuan', 641)).toBe('641 Satuan')
+    expect(formatAvailableStockInUnit(productWithPackStock, 'pack', 636)).toBe('106 Pack')
   })
 
   it('converts returned sale-unit cost back to cost per stock unit', () => {
