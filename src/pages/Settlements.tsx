@@ -549,7 +549,7 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
-      {openDebts.map((debt, index) => <Card key={debt.id} className={tab === 'customer' ? 'border-border bg-muted/50' : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
+      {openDebts.map((debt, index) => <Card key={debt.id} className={tab === 'customer' ? `border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}` : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
             {tab === 'customer' ? (
