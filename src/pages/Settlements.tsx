@@ -496,8 +496,8 @@ export default function Settlements() {
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card className="border-blue-200 bg-blue-100"><CardContent className="p-6 text-center text-sm text-blue-950">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
-        <Card className="border-blue-200 bg-blue-100"><CardContent className="p-3">
-          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-blue-300">
+        <Card className="border-border bg-surface"><CardContent className="p-3">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-border">
             <table className="w-full min-w-[42rem] text-center text-sm">
               <thead className="sticky top-0 z-10 border-y border-white/10 bg-ink text-xs text-white shadow-[0_2px_0_rgba(32,42,46,0.2)]">
                 <tr>
@@ -509,7 +509,7 @@ export default function Settlements() {
               </thead>
               <tbody className="divide-y divide-border/70">
                 {filteredVendorPaymentHistory.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
                     <td className="py-2 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
                     <td className="py-2 font-medium text-ink">{item.stock_batch?.vendor?.name || 'Vendor'}</td>
                     <td className="py-2">{item.stock_batch?.product?.name || 'Produk tidak ditemukan'}</td>
@@ -523,8 +523,8 @@ export default function Settlements() {
       )
     ) : tab === 'customer-history' ? (
       filteredCustomerPaymentHistory.length === 0 ? <Card className="border-violet-200 bg-violet-100"><CardContent className="p-6 text-center text-sm text-violet-950">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
-        <Card className="border-violet-200 bg-violet-100"><CardContent className="p-3">
-          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-violet-300">
+        <Card className="border-border bg-surface"><CardContent className="p-3">
+          <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-border">
             <table className="w-full min-w-[38rem] text-center text-sm">
               <thead className="sticky top-0 z-10 border-y border-white/10 bg-ink text-xs text-white shadow-[0_2px_0_rgba(32,42,46,0.2)]">
                 <tr>
@@ -536,7 +536,7 @@ export default function Settlements() {
               </thead>
               <tbody className="divide-y divide-border/70">
                 {filteredCustomerPaymentHistory.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
                     <td className="py-2 text-muted-foreground">{new Date(item.paid_at).toLocaleDateString('id-ID')}</td>
                     <td className="py-2 font-medium text-ink">{item.sale?.customer?.name || 'Pelanggan'}</td>
                     <td className="py-2">{item.sale?.invoice_no || '-'}</td>
@@ -549,7 +549,7 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
-      {openDebts.map((debt, index) => <Card key={debt.id} className={tab === 'customer' ? `border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}` : 'border-amber-200 bg-amber-100'}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
+      {openDebts.map((debt, index) => <Card key={debt.id} className={`border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}`}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
             {tab === 'customer' ? (
