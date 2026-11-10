@@ -1234,6 +1234,20 @@ function CartPanel({
     )
     .slice(0, 8)
 
+  function handleCheckoutClick() {
+    if (items.length === 0) {
+      toast.error('Keranjang masih kosong. Tambahkan item sebelum melanjutkan pembayaran.')
+      return
+    }
+    if (paymentMethod === 'credit' && !customerName.trim()) {
+      setCustomerNameNeedsAttention(true)
+      toast.error('Nama pelanggan wajib diisi untuk transaksi kredit.')
+      customerNameInputRef.current?.focus()
+      return
+    }
+    onCheckout()
+  }
+
   useEffect(() => {
     if (paymentMethod === 'credit') customerNameInputRef.current?.focus()
   }, [paymentMethod])
@@ -1400,14 +1414,10 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className={`w-full bg-accent text-ink hover:bg-amber-300 ${
-            items.length === 0
-              ? 'disabled:bg-accent disabled:text-ink disabled:opacity-100'
-              : 'disabled:bg-accent/50 disabled:text-ink/70'
-          } focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink`}
+          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/70 disabled:text-ink/70 focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
           size="lg"
-          disabled={items.length === 0 || loading || (paymentMethod === 'credit' && !customerName.trim())}
-          onClick={onCheckout}
+          disabled={loading}
+          onClick={handleCheckoutClick}
         >
           {loading ? (
             <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
