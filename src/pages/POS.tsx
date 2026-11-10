@@ -1242,7 +1242,7 @@ function CartPanel({
         <h3 className="font-heading text-lg font-semibold text-accent">Keranjang ({items.length})</h3>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="pos-cart-items-scrollbar min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
         {items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
             <ShoppingCart className="h-10 w-10 opacity-60" aria-hidden="true" />
