@@ -598,9 +598,9 @@ export default function Dashboard() {
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink/70">Aktivitas penjualan</p>
               <CardTitle className="-mt-1 text-lg leading-tight tracking-tight text-ink">Rincian transaksi hari ini</CardTitle>
             </div>
-            <div className="shrink-0 rounded-xl bg-ink px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
-              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-accent">Total</p>
-              <p className="text-2xl font-bold leading-none tabular-nums">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
+            <div className="shrink-0 rounded-lg bg-ink px-2.5 py-1.5 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
+              <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-accent">Total</p>
+              <p className="text-xl font-bold leading-none tabular-nums">{loading ? '...' : formatNumber(stats.todayOrders)}</p>
             </div>
           </div>
         </CardHeader>
