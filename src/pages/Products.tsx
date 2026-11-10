@@ -1189,7 +1189,7 @@ export default function Products() {
                     </div>
                   )}
                   <div className="rounded-lg border border-stone-200">
-                    <div className="border-b border-stone-200 bg-muted/50 px-3 py-2">
+                    <div className="border-b border-stone-200 bg-muted/50 px-3 py-1.5">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1215,7 +1215,7 @@ export default function Products() {
                         const margin = getBatchMargin(stockProduct, price, stockCost)
                         const profitable = margin.margin > 0
                         return (
-                          <article key={price.unit} className="space-y-2.5 p-3">
+                          <article key={price.unit} className="space-y-2 p-2.5">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex min-w-0 items-center gap-2">
                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-semibold text-primary">
@@ -1257,11 +1257,11 @@ export default function Products() {
                       <table className="w-full table-fixed text-xs">
                         <thead className="bg-ink text-center text-[10px] uppercase tracking-wide text-white">
                           <tr>
-                            <th className="w-[9%] px-1 py-1.5 font-semibold">No.</th>
-                            <th className="w-[19%] px-1 py-1.5 font-semibold">Satuan</th>
-                            <th className="w-[22%] px-1 py-1.5 font-semibold">Harga jual</th>
-                            <th className="w-[20%] px-1 py-1.5 font-semibold">HPP</th>
-                            <th className="w-[30%] px-1 py-1.5 font-semibold">Margin</th>
+                            <th className="w-[9%] px-1 py-1 font-semibold">No.</th>
+                            <th className="w-[19%] px-1 py-1 font-semibold">Satuan</th>
+                            <th className="w-[22%] px-1 py-1 font-semibold">Harga jual</th>
+                            <th className="w-[20%] px-1 py-1 font-semibold">HPP</th>
+                            <th className="w-[30%] px-1 py-1 font-semibold">Margin</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
@@ -1270,11 +1270,11 @@ export default function Products() {
                             const profitable = margin.margin > 0
                             return (
                               <tr key={price.unit} className="text-center">
-                                <td className="px-1 py-1.5 text-muted-foreground">{index + 1}</td>
-                                <td className="truncate px-1 py-1.5 font-medium text-ink/85">{UNIT_LABELS[price.unit] || price.unit}</td>
-                                <td className="truncate px-1 py-1.5 text-muted-foreground">{formatCurrency(price.price)}</td>
-                                <td className="truncate px-1 py-1.5 text-muted-foreground">{formatCurrency(margin.unitCost)}</td>
-                                <td className={`truncate px-1 py-1.5 font-semibold ${profitable ? 'text-emerald-600' : 'text-red-600'}`}>
+                                <td className="px-1 py-1 text-muted-foreground">{index + 1}</td>
+                                <td className="truncate px-1 py-1 font-medium text-ink/85">{UNIT_LABELS[price.unit] || price.unit}</td>
+                                <td className="truncate px-1 py-1 text-muted-foreground">{formatCurrency(price.price)}</td>
+                                <td className="truncate px-1 py-1 text-muted-foreground">{formatCurrency(margin.unitCost)}</td>
+                                <td className={`truncate px-1 py-1 font-semibold ${profitable ? 'text-emerald-600' : 'text-red-600'}`}>
                                   {formatCurrency(margin.margin)} ({margin.marginPercent.toFixed(1)}%)
                                 </td>
                               </tr>
@@ -1289,7 +1289,7 @@ export default function Products() {
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-4">
                     <Button variant="outline" className="flex-1" onClick={() => setStockProduct(null)}>
                       Batal
                     </Button>
