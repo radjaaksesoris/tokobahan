@@ -82,16 +82,16 @@ body:has(.idle-screensaver) {
   min-width: 0;
   flex-direction: column;
   will-change: transform;
-  animation: idle-screensaver-scroll 38s linear infinite;
+  animation: idle-screensaver-scroll 24s linear infinite;
 }
 
 .idle-screensaver__column:nth-child(2) {
   animation-direction: reverse;
-  animation-duration: 46s;
+  animation-duration: 30s;
 }
 
 .idle-screensaver__column:nth-child(3) {
-  animation-duration: 33s;
+  animation-duration: 20s;
 }
 
 .idle-screensaver__set {
@@ -857,6 +857,11 @@ html::-webkit-scrollbar {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+
+  .idle-screensaver .idle-screensaver__column {
+    animation-duration: 40s !important;
     animation-delay: 0ms !important;
   }
 

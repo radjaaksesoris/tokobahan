@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { reconcileStockBatches, type StockBatch } from '@/lib/stockOpname'
@@ -9,7 +9,7 @@ import type { Product } from '@/types'
 import { UNIT_LABELS } from '@/types'
 import { toTitleCase } from '@/lib/utils'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
   formatMixedStockQuantity,
@@ -25,14 +25,25 @@ type ProductRow = Pick<
 const PAGE_SIZE = 50
 
 export default function StockOpname() {
-  const [products, setProducts] = useState<ProductRow[]>([])
+  const [allProducts, setAllProducts] = useState<ProductRow[]>([])
   const [physical, setPhysical] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [page, setPage] = useState(0)
-  const [hasNextPage, setHasNextPage] = useState(false)
   const userId = useAuthStore((state) => state.user?.id ?? null)
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase('id')
+    return query
+      ? allProducts.filter((product) => product.name.toLocaleLowerCase('id').includes(query))
+      : allProducts
+  }, [allProducts, searchQuery])
+  const pageProducts = useMemo(
+    () => filteredProducts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [filteredProducts, page],
+  )
+  const hasNextPage = (page + 1) * PAGE_SIZE < filteredProducts.length
 
   async function load() {
     setLoading(true)
@@ -41,8 +52,7 @@ export default function StockOpname() {
       snapshot = await readOperationalSnapshot()
     } catch (error) {
       toast.error(`Gagal membaca snapshot produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      setProducts([])
-      setHasNextPage(false)
+      setAllProducts([])
       setLoading(false)
       return
     }
@@ -52,23 +62,19 @@ export default function StockOpname() {
         const activeProducts = localProducts
           .filter((product) => product.is_active)
           .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))
-        const start = page * PAGE_SIZE
-        setProducts(activeProducts.slice(start, start + PAGE_SIZE))
-        setHasNextPage(activeProducts.length > start + PAGE_SIZE)
+        setAllProducts(activeProducts)
       } catch (error) {
         toast.error(`Gagal memuat produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-        setProducts([])
-        setHasNextPage(false)
+        setAllProducts([])
       }
       setLoading(false)
       return
     }
     toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
-    setProducts([])
-    setHasNextPage(false)
+    setAllProducts([])
     setLoading(false)
   }
-  useEffect(() => { void load() }, [page])
+  useEffect(() => { void load() }, [])
 
   async function save(product: ProductRow) {
     const rawValue = physical[product.id]?.trim()
@@ -172,9 +178,23 @@ export default function StockOpname() {
         <h1 className="text-3xl font-bold tracking-tight text-white">Stok Opname</h1>
         <p className="mt-1 text-sm text-accent">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
       </header>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/85" aria-hidden="true" />
+        <Input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => {
+            setSearchQuery(event.target.value)
+            setPage(0)
+          }}
+          placeholder="Cari nama produk..."
+          aria-label="Cari produk untuk stok opname"
+          className="border-ink bg-ink pl-9 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30"
+        />
+      </div>
       {loading ? <p className="text-sm text-muted-foreground">Memuat produk...</p> : (
         <div className="grid gap-3">
-          {products.map((product) => (
+          {pageProducts.map((product) => (
             <Card key={product.id}>
               <CardContent className="grid gap-3 p-4 lg:grid-cols-[1.4fr_0.7fr_1.4fr_auto] lg:items-end">
                 <div>
@@ -187,8 +207,8 @@ export default function StockOpname() {
               </CardContent>
             </Card>
           ))}
-          {products.length === 0 && <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Belum ada produk aktif.</CardContent></Card>}
-          {products.length > 0 && (
+          {pageProducts.length === 0 && <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{searchQuery.trim() ? 'Produk tidak ditemukan.' : 'Belum ada produk aktif.'}</CardContent></Card>}
+          {pageProducts.length > 0 && (
             <div className="flex items-center justify-between border-t border-border pt-3">
               <span className="text-xs text-muted-foreground">Halaman {page + 1}</span>
               <div className="flex gap-2">
