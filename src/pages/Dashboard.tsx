@@ -478,10 +478,13 @@ export default function Dashboard() {
             <>
               <div
                 className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-center text-white lg:flex-none lg:px-4 lg:text-left"
-                aria-label="Status toko aktif"
+                aria-label={`Status toko ${isOnline ? 'aktif' : 'offline'}`}
               >
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">Status toko</p>
-                <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]" /> Aktif</p>
+                <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold lg:justify-start">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]' : 'bg-red-400 shadow-[0_0_0_3px_rgba(248,113,113,0.15)]'}`} />
+                  {isOnline ? 'Aktif' : 'Offline'}
+                </p>
               </div>
             </>
           )}
