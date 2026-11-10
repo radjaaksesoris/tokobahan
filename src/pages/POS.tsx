@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, type KeyboardEvent, type RefObject } from 'react'
+import { memo, useCallback, useEffect, useState, useMemo, useRef, type KeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { getPriceForUnit, useCartStore } from '@/store/useCartStore'
@@ -100,7 +100,7 @@ export default function POS() {
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
-  const getAvailableStock = (product: Product, unit: UnitType = product.stock_unit) => {
+  const getAvailableStock = useCallback((product: Product, unit: UnitType = product.stock_unit) => {
     const reservedBaseUnits = items
       .filter((item) => item.product.id === product.id)
       .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
@@ -109,7 +109,7 @@ export default function POS() {
     return product.stock_unit_mode === 'integer-base'
       ? Math.floor(availableQuantity + 1e-8)
       : availableQuantity
-  }
+  }, [items])
   const selectedFifoQuantity = Math.max(1, Number(qtyInput) || 1)
   const selectedFifoCost = selectedProduct
     ? getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, selectedFifoQuantity)
@@ -297,7 +297,7 @@ export default function POS() {
     }
   }
 
-  function openAdd(product: Product) {
+  const openAdd = useCallback((product: Product) => {
     const availableStock = getAvailableStock(product)
     if (availableStock <= 0) {
       toast.error(`${product.name} habis`)
@@ -311,7 +311,7 @@ export default function POS() {
     setQtyInput('1')
     setSalePriceInput(String(getPriceForUnit(product, firstUnit).price))
     setSalePriceError('')
-  }
+  }, [getAvailableStock])
 
   function confirmAdd() {
     if (!selectedProduct) return
@@ -464,66 +464,13 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="h-[35dvh] min-h-0 flex-none overflow-y-auto lg:h-auto lg:flex-1">
-          {loading ? (
-            <div className="flex h-40 items-center justify-center">
-              <LoadingDots dotClassName="h-2 w-2" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className="py-12 text-center text-muted-foreground">Produk tidak ditemukan</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-1 xl:grid-cols-2 xl:gap-1.5">
-              {filtered.map((p, index) => (
-                (() => {
-                  const availableStock = getAvailableStock(p)
-                  const zebraRow = Math.floor(index / 2) % 2 === 1
-                  return (
-                <button
-                  key={p.id}
-                  onClick={() => openAdd(p)}
-                  className={`group flex min-h-12 items-center gap-1.5 rounded-xl border p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
-                    activeProductIndex === index
-                      ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
-                      : zebraRow
-                        ? 'border-border bg-muted/50'
-                        : 'border-border bg-surface'
-                  } ${
-                    availableStock <= 0
-                      ? 'cursor-not-allowed opacity-60'
-                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
-                  }`}
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-accent transition-colors group-hover:bg-ink/90 lg:h-9 lg:w-9">
-                    <Package className="h-4 w-4 lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`truncate text-xs font-medium lg:text-[13px] ${
-                      activeProductIndex === index ? 'text-primary' : 'text-ink/90'
-                    }`}>{p.name}</p>
-                    <p className={`mt-0.5 text-[10px] ${
-                      availableStock <= 0
-                        ? 'font-semibold text-red-500'
-                        : activeProductIndex === index
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                    }`}>
-                      {availableStock <= 0
-                        ? 'Barang habis'
-                        : `Stok: ${formatMixedStockQuantity({ ...p, stock: availableStock })}`}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-[11px] font-semibold text-primary lg:text-xs">
-                    {formatCurrency(
-                      p.prices?.find((x) => x.unit === 'satuan')?.price ?? p.cost_price
-                    )}
-                  </p>
-                </button>
-                  )
-                })()
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductCatalog
+          products={filtered}
+          loading={loading}
+          activeProductIndex={activeProductIndex}
+          getAvailableStock={getAvailableStock}
+          onSelectProduct={openAdd}
+        />
       </div>
 
       <Button
@@ -1195,6 +1142,81 @@ function TextKeypad({
   )
 }
 
+const ProductCatalog = memo(function ProductCatalog({
+  products,
+  loading,
+  activeProductIndex,
+  getAvailableStock,
+  onSelectProduct,
+}: {
+  products: Product[]
+  loading: boolean
+  activeProductIndex: number
+  getAvailableStock: (product: Product, unit?: UnitType) => number
+  onSelectProduct: (product: Product) => void
+}) {
+  return (
+    <div className="h-[35dvh] min-h-0 flex-none overflow-y-auto lg:h-auto lg:flex-1">
+      {loading ? (
+        <div className="flex h-40 items-center justify-center">
+          <LoadingDots dotClassName="h-2 w-2" />
+        </div>
+      ) : products.length === 0 ? (
+        <p className="py-12 text-center text-muted-foreground">Produk tidak ditemukan</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-1 xl:grid-cols-2 xl:gap-1.5">
+          {products.map((product, index) => {
+            const availableStock = getAvailableStock(product)
+            const zebraRow = Math.floor(index / 2) % 2 === 1
+            return (
+              <button
+                key={product.id}
+                onClick={() => onSelectProduct(product)}
+                className={`group flex min-h-12 items-center gap-1.5 rounded-xl border p-1.5 text-left transition-all duration-200 lg:min-h-14 lg:gap-2 lg:p-2 ${
+                  activeProductIndex === index
+                    ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
+                    : zebraRow
+                      ? 'border-border bg-muted/50'
+                      : 'border-border bg-surface'
+                } ${
+                  availableStock <= 0
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
+                }`}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-accent transition-colors group-hover:bg-ink/90 lg:h-9 lg:w-9">
+                  <Package className="h-4 w-4 lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-xs font-medium lg:text-[13px] ${
+                    activeProductIndex === index ? 'text-primary' : 'text-ink/90'
+                  }`}>{product.name}</p>
+                  <p className={`mt-0.5 text-[10px] ${
+                    availableStock <= 0
+                      ? 'font-semibold text-red-500'
+                      : activeProductIndex === index
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                  }`}>
+                    {availableStock <= 0
+                      ? 'Barang habis'
+                      : `Stok: ${formatMixedStockQuantity({ ...product, stock: availableStock })}`}
+                  </p>
+                </div>
+                <p className="shrink-0 text-[11px] font-semibold text-primary lg:text-xs">
+                  {formatCurrency(
+                    product.prices?.find((price) => price.unit === 'satuan')?.price ?? product.cost_price
+                  )}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+})
+
 function CartPanel({
   items,
   totals,
@@ -1441,7 +1463,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/70 disabled:text-ink/70 focus-visible:bg-[#d6b879] focus-visible:ring-2 focus-visible:ring-[#d6b879]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+          className="w-full bg-[#d6b879] text-ink hover:bg-[#c9aa6e] disabled:bg-[#d6b879] disabled:text-ink/70 focus-visible:bg-[#c9aa6e] focus-visible:ring-2 focus-visible:ring-[#c9aa6e]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
           size="lg"
           disabled={loading}
           onClick={handleCheckoutClick}
