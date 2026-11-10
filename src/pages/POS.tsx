@@ -62,6 +62,12 @@ interface ReceiptData {
   }[]
 }
 
+function getProductSaleUnits(product: Product): UnitType[] {
+  return product.prices?.length
+    ? product.prices.map((price) => price.unit)
+    : [product.stock_unit || 'satuan']
+}
+
 export default function POS() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
@@ -301,18 +307,18 @@ export default function POS() {
   }
 
   const openAdd = useCallback((product: Product) => {
-    const availableStock = getAvailableStock(product)
-    if (availableStock <= 0) {
+    const firstAvailableUnit = getProductSaleUnits(product)
+      .find((unit) => getAvailableStock(product, unit) > 0)
+    if (!firstAvailableUnit) {
       toast.error(`${product.name} habis`)
       return
     }
     setSelectedProduct(product)
     setShowKeypadPanel(false)
-    const firstUnit = product.prices?.[0]?.unit || 'satuan'
-    setSelectedUnit(firstUnit as UnitType)
+    setSelectedUnit(firstAvailableUnit)
     setQty(1)
     setQtyInput('1')
-    setSalePriceInput(String(getPriceForUnit(product, firstUnit).price))
+    setSalePriceInput(String(getPriceForUnit(product, firstAvailableUnit).price))
     setSalePriceError('')
   }, [getAvailableStock])
 
@@ -580,27 +586,35 @@ export default function POS() {
 
               <div className="mb-4">
                 <div className="grid min-w-0 auto-cols-fr grid-flow-col gap-2 [&>button]:min-w-0 [&>button]:truncate">
-                  {(selectedProduct.prices?.length
-                    ? selectedProduct.prices.map((p) => p.unit)
-                    : [selectedProduct.stock_unit || 'satuan']
-                  ).map((u) => (
-                    <button
-                      key={u}
-                      onClick={() => {
-                        const nextUnit = u as UnitType
-                        setSelectedUnit(nextUnit)
-                        setSalePriceInput(String(getPriceForUnit(selectedProduct, nextUnit).price))
-                        setSalePriceError('')
-                      }}
-                      className={`w-full rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
-                        selectedUnit === u
-                          ? 'border-accent bg-accent text-ink'
-                          : 'border-ink bg-ink text-white hover:bg-ink/90'
-                      }`}
-                    >
-                      {UNIT_LABELS[u as UnitType] || u}
-                    </button>
-                  ))}
+                  {getProductSaleUnits(selectedProduct).map((unit) => {
+                    const hasStock = getAvailableStock(selectedProduct, unit) > 0
+                    return (
+                      <button
+                        key={unit}
+                        disabled={!hasStock}
+                        onClick={() => {
+                          const nextQuantity = Math.min(
+                            Math.max(1, Number(qtyInput) || 1),
+                            getAvailableStock(selectedProduct, unit),
+                          )
+                          setSelectedUnit(unit)
+                          setQty(nextQuantity)
+                          setQtyInput(String(nextQuantity))
+                          setSalePriceInput(String(getPriceForUnit(selectedProduct, unit).price))
+                          setSalePriceError('')
+                        }}
+                        className={`w-full rounded-lg border px-2 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed ${
+                          !hasStock
+                            ? 'border-red-600 bg-red-600 text-white'
+                            : selectedUnit === unit
+                              ? 'border-accent bg-accent text-ink'
+                              : 'border-ink bg-ink text-white hover:bg-ink/90'
+                        }`}
+                      >
+                        {UNIT_LABELS[unit] || unit}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
