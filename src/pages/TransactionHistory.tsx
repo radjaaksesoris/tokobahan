@@ -661,11 +661,11 @@ export default function TransactionHistory() {
               </button>
             )}
           </div>
-          <div className="relative h-10 w-[38%] min-w-[7.5rem] shrink-0 rounded-xl border border-border bg-surface sm:w-48">
+          <div className="relative h-10 w-[38%] min-w-[7.5rem] shrink-0 rounded-xl border border-accent bg-accent sm:w-48">
             <button
               type="button"
               onClick={openDatePicker}
-              className="flex h-full w-full items-center gap-2 rounded-xl px-3 text-left text-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-full w-full items-center gap-2 rounded-xl px-3 text-left text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label={date ? `Filter tanggal transaksi: ${format(new Date(`${date}T00:00:00`), 'dd MMM yyyy', { locale: localeId })}` : 'Pilih tanggal transaksi'}
             >
               <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -682,6 +682,7 @@ export default function TransactionHistory() {
                 setDate(event.target.value)
                 setPage(0)
                 setCursorHistory([null])
+                event.currentTarget.blur()
               }}
               aria-hidden="true"
               tabIndex={-1}
