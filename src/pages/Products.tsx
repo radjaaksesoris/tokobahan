@@ -865,44 +865,42 @@ export default function Products() {
           <p className="mt-1 text-sm text-accent">Kelola katalog dan harga multi-satuan.</p>
         </div>
         <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
-          <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
-            <Button
-              variant="outline"
-              className="h-11 shrink-0 border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
-              onPointerEnter={() => preloadPageChunk('/products/history')}
-              onFocus={() => preloadPageChunk('/products/history')}
-              onClick={() => navigate('/products/history')}
-            >
-              <History className="h-4 w-4" />
-              Riwayat Input
-            </Button>
-            <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                aria-label="Cari produk"
-                className="pl-9 pr-10"
-                placeholder="Cari"
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value)
+          <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Cari produk"
+              className="pl-9 pr-10"
+              placeholder="Cari"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(0)
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                aria-label="Reset pencarian"
+                onClick={() => {
+                  setSearch('')
                   setPage(0)
                 }}
-              />
-              {search && (
-                <button
-                  type="button"
-                  aria-label="Reset pencarian"
-                  onClick={() => {
-                    setSearch('')
-                    setPage(0)
-                  }}
-                  className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
+          <Button
+            variant="outline"
+            className="h-11 shrink-0 border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+            onPointerEnter={() => preloadPageChunk('/products/history')}
+            onFocus={() => preloadPageChunk('/products/history')}
+            onClick={() => navigate('/products/history')}
+          >
+            <History className="h-4 w-4" />
+            Riwayat Input
+          </Button>
           <Button className="relative z-10 hidden h-11 w-full shrink-0 justify-center bg-accent text-ink shadow-[0_6px_16px_rgba(228,168,83,0.22)] hover:bg-accent/90 lg:inline-flex lg:w-auto" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Tambah
