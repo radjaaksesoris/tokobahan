@@ -1,9 +1,12 @@
 const RELOAD_KEY_PREFIX = 'vite-build-reload:'
 export const STALE_BUILD_RECOVERY_PARAM = '__app_recovery'
+let recoveryFallbackShown = false
 
 function showRecoveryFallback(reloadKey: string): void {
+  if (recoveryFallbackShown) return
   const root = document.getElementById('root')
   if (!root) return
+  recoveryFallbackShown = true
 
   const section = document.createElement('section')
   section.className = 'stale-build-recovery'
@@ -22,6 +25,10 @@ function showRecoveryFallback(reloadKey: string): void {
   button.type = 'button'
   button.textContent = 'Coba muat ulang'
   button.addEventListener('click', () => {
+    button.disabled = true
+    void navigator.serviceWorker?.getRegistration()
+      .then((registration) => registration?.update())
+      .catch((error) => console.warn('Gagal memeriksa pembaruan aplikasi saat pemulihan:', error))
     sessionStorage.removeItem(reloadKey)
     window.location.reload()
   })
@@ -53,25 +60,11 @@ export function clearStaleBuildRecoveryParam(): void {
 
 export async function recoverFromStaleBuild(): Promise<void> {
   const reloadKey = `${RELOAD_KEY_PREFIX}${window.location.origin}${window.location.pathname}`
+  if (recoveryFallbackShown) return
   if (sessionStorage.getItem(reloadKey)) {
     showRecoveryFallback(reloadKey)
     return
   }
   sessionStorage.setItem(reloadKey, '1')
-  if (!navigator.onLine) {
-    showRecoveryFallback(reloadKey)
-    return
-  }
-
-  try {
-    void navigator.serviceWorker?.getRegistration()
-      .then((registration) => registration?.update())
-      .catch((error) => console.warn('Gagal memeriksa pembaruan aplikasi saat pemulihan:', error))
-  } catch (error) {
-    console.warn('Gagal memeriksa service worker saat pemulihan aplikasi:', error)
-  } finally {
-    const url = new URL(window.location.href)
-    url.searchParams.set(STALE_BUILD_RECOVERY_PARAM, Date.now().toString())
-    window.location.replace(url.toString())
-  }
+  showRecoveryFallback(reloadKey)
 }
