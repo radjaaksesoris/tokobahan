@@ -112,9 +112,7 @@ export default function Products() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [hasNextPage, setHasNextPage] = useState(false)
-  const [pageSize, setPageSize] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 15 : 20
-  ))
+  const pageSize = 20
   const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
@@ -149,16 +147,6 @@ export default function Products() {
   const [prices, setPrices] = useState<ProductPrice[]>([
     { unit: 'satuan', price: 0, conversion: 1 },
   ])
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 639px)')
-    const updatePageSize = (event: MediaQueryListEvent) => {
-      setPageSize(event.matches ? 15 : 20)
-      setPage(0)
-    }
-    mediaQuery.addEventListener('change', updatePageSize)
-    return () => mediaQuery.removeEventListener('change', updatePageSize)
-  }, [])
 
   const allUnits = [...ALL_UNITS, ...customUnits.filter((unit) => !ALL_UNITS.includes(unit))]
   const unitOptions = allUnits.map((unit) => ({
@@ -893,7 +881,7 @@ export default function Products() {
           </div>
           <Button
             variant="outline"
-            className="h-11 shrink-0 whitespace-nowrap border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+            className="h-11 shrink-0 whitespace-nowrap border-accent bg-accent px-3 text-ink hover:border-accent/90 hover:bg-accent/90 hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink lg:border-white/25 lg:bg-white lg:hover:border-accent lg:hover:bg-accent"
             onPointerEnter={() => preloadPageChunk('/products/history')}
             onFocus={() => preloadPageChunk('/products/history')}
             onClick={() => navigate('/products/history')}
