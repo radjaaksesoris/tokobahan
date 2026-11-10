@@ -1492,7 +1492,7 @@ export default function Products() {
                 </div>
               </div>
               {!editing && (
-                <div className="grid grid-cols-1 gap-4 rounded-xl border border-accent/70 bg-accent/15 p-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 rounded-xl border border-accent bg-accent p-3 sm:grid-cols-2">
                   <div className="min-w-0">
                     <label htmlFor="initial-stock-vendor" className="mb-1 block text-sm font-medium">Nama Vendor</label>
                     <Select
@@ -1625,7 +1625,7 @@ export default function Products() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-accent/70 bg-[#fff4d8] p-3">
+              <div className="rounded-xl border border-accent bg-accent p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span id="sale-prices-label" className="text-sm font-semibold text-ink">Harga jual & konversi satuan</span>
                   <Button variant="outline" size="sm" className="shrink-0 border-accent bg-accent text-ink hover:border-accent/90 hover:bg-accent/90" onClick={addPriceRow} disabled={editingPricesOnly}>
