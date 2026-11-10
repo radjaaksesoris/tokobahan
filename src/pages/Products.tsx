@@ -1063,8 +1063,8 @@ export default function Products() {
                         {p.prices?.map((pr) => (
                           <span
                             key={pr.unit}
-                            className={`rounded bg-ink px-1.5 py-0.5 text-[10px] text-white lg:shrink-0 lg:whitespace-nowrap lg:text-center ${
-                              p.prices.length === 1 ? 'lg:w-[180px]' : 'lg:w-[88px]'
+                            className={`rounded bg-ink px-2 py-0.5 text-[10px] text-white lg:shrink-0 lg:whitespace-nowrap lg:text-center ${
+                              p.prices.length === 1 ? 'lg:w-[180px]' : 'lg:w-[104px]'
                             }`}
                           >
                             <span className="hidden lg:inline">{UNIT_LABELS[pr.unit] || pr.unit}: </span>{formatCurrency(pr.price)}
