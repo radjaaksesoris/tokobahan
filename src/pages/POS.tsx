@@ -741,7 +741,7 @@ export default function POS() {
                 </Button>
                 <Button
                   ref={addItemButtonRef}
-                  className="flex-1 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                  className="flex-1 bg-accent text-ink hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   onClick={confirmAdd}
                   disabled={getAvailableStock(selectedProduct, selectedUnit) <= 0 || Boolean(salePriceError)}
                 >
@@ -1400,7 +1400,11 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/50 disabled:text-ink/70 focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
+          className={`w-full bg-accent text-ink hover:bg-amber-300 ${
+            items.length === 0
+              ? 'disabled:bg-accent disabled:text-ink disabled:opacity-100'
+              : 'disabled:bg-accent/50 disabled:text-ink/70'
+          } focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink`}
           size="lg"
           disabled={items.length === 0 || loading || (paymentMethod === 'credit' && !customerName.trim())}
           onClick={onCheckout}
@@ -1409,7 +1413,9 @@ function CartPanel({
             <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />
           ) : (
             <>
-              <CheckCircle2 className="h-5 w-5" />
+              {items.length === 0
+                ? <X className="h-5 w-5" aria-hidden="true" />
+                : <CheckCircle2 className="h-5 w-5" aria-hidden="true" />}
               Bayar {formatCurrency(totals.subtotal)}
             </>
           )}
