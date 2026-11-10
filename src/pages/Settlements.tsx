@@ -495,7 +495,7 @@ export default function Settlements() {
       />
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
-      filteredVendorPaymentHistory.length === 0 ? <Card className="border-blue-200 bg-blue-100"><CardContent className="p-6 text-center text-sm text-blue-950">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
+      filteredVendorPaymentHistory.length === 0 ? <Card className="border-border bg-surface"><CardContent className="p-6 text-center text-sm text-ink">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
         <Card className="border-border bg-surface"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-border">
             <table className="w-full min-w-[42rem] text-center text-sm">
@@ -522,7 +522,7 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : tab === 'customer-history' ? (
-      filteredCustomerPaymentHistory.length === 0 ? <Card className="border-violet-200 bg-violet-100"><CardContent className="p-6 text-center text-sm text-violet-950">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
+      filteredCustomerPaymentHistory.length === 0 ? <Card className="border-border bg-muted/50"><CardContent className="p-6 text-center text-sm text-ink">Belum ada riwayat pembayaran pelanggan.</CardContent></Card> : (
         <Card className="border-border bg-surface"><CardContent className="p-3">
           <div className="max-h-[calc(100dvh-22rem)] overflow-auto border-t border-border">
             <table className="w-full min-w-[38rem] text-center text-sm">
@@ -548,7 +548,7 @@ export default function Settlements() {
           </div>
         </CardContent></Card>
       )
-    ) : openDebts.length === 0 ? <Card className={tab === 'customer' ? 'border-[#c9d6c1] bg-[#e3ebdc]' : 'border-amber-200 bg-amber-100'}><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
+    ) : openDebts.length === 0 ? <Card className="border-border bg-muted/50"><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
       {openDebts.map((debt, index) => <Card key={debt.id} className={`border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}`}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
