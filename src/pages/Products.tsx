@@ -1113,7 +1113,7 @@ export default function Products() {
                     <X className="h-5 w-5" />
                   </button>
                 </CardHeader>
-                <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4">
+                <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
                   <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                     Stok saat ini: <strong>{formatMixedStockQuantity(stockProduct)}</strong>
                   </div>

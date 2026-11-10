@@ -1,5 +1,5 @@
 // Keep the previous cache briefly so open tabs can finish loading their chunks.
-const CACHE_NAME = 'konveksipos-v8'
+const CACHE_NAME = 'konveksipos-v9'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -34,16 +34,6 @@ self.addEventListener('activate', (event) => {
             .map((key) => caches.delete(key)),
         )
         await self.clients.claim()
-        if (!previousCache) return
-
-        const openWindows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-        await Promise.all(openWindows.map(async (client) => {
-          try {
-            await client.navigate(client.url)
-          } catch (error) {
-            console.error('Gagal memuat ulang aplikasi setelah update:', error)
-          }
-        }))
       })
   )
 })
@@ -95,10 +85,16 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(`${BASE_PATH}index.html`, copy))
+          event.waitUntil(
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(`${BASE_PATH}index.html`, copy))
+              .catch((error) => console.error('Gagal menyimpan halaman aplikasi ke cache:', error)),
+          )
           return response
         })
-        .catch(() => caches.match(`${BASE_PATH}index.html`)),
+        .catch(() => caches.open(CACHE_NAME)
+          .then((cache) => cache.match(`${BASE_PATH}index.html`))
+          .then((cached) => cached || caches.match(`${BASE_PATH}index.html`))),
     )
     return
   }
