@@ -1240,7 +1240,7 @@ function CartPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-ink/15 bg-accent px-4 py-2.5 text-ink">
+      <div className="mx-2 mt-2 rounded-xl border border-accent/80 bg-accent px-3 py-2 text-ink shadow-sm">
         <h3 className="flex items-center gap-2 font-heading text-lg font-semibold" aria-label={`Keranjang (${items.length})`}>
           <ShoppingCart className="h-5 w-5" aria-hidden="true" />
           <span>{items.length}</span>
