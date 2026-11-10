@@ -471,18 +471,18 @@ export default function Settlements() {
       )}
     </header>
     <div className="grid gap-3 lg:grid-cols-2">
-      <section className="rounded-2xl border border-[#cbd3bc] bg-[#e8ebdc] p-2.5 shadow-sm">
-        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#526344]">Hutang yang harus dibayar</p>
+      <section className="rounded-2xl border border-border bg-surface p-2.5 shadow-sm">
+        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Hutang yang harus dibayar</p>
         <div className="grid grid-cols-2 gap-2">
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor' ? 'bg-ink text-white shadow-sm' : 'bg-[#d6dfcb] text-[#3d5035] hover:bg-[#cbd6be]'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-ink text-white shadow-sm' : 'bg-[#d6dfcb] text-[#3d5035] hover:bg-[#cbd6be]'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor' ? 'bg-ink text-white shadow-sm' : 'bg-muted/50 text-ink hover:bg-muted'}`} onClick={() => setTab('vendor')}>Hutang Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-ink text-white shadow-sm' : 'bg-muted/50 text-ink hover:bg-muted'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
         </div>
       </section>
-      <section className="rounded-2xl border border-[#c4d2c0] bg-[#e3eade] p-2.5 shadow-sm">
-        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#52694a]">Catatan pembayaran</p>
+      <section className="rounded-2xl border border-border bg-muted/50 p-2.5 shadow-sm">
+        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Catatan pembayaran</p>
         <div className="grid grid-cols-2 gap-2">
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-ink text-white shadow-sm' : 'bg-[#d2ddce] text-[#3d503a] hover:bg-[#c5d3c0]'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-ink text-white shadow-sm' : 'bg-[#d2ddce] text-[#3d503a] hover:bg-[#c5d3c0]'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-ink text-white shadow-sm' : 'bg-surface text-ink hover:bg-muted'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-ink text-white shadow-sm' : 'bg-surface text-ink hover:bg-muted'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
         </div>
       </section>
     </div>
