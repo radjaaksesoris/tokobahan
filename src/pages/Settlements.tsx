@@ -477,7 +477,7 @@ export default function Settlements() {
     })
   }
 
-  return <div className="space-y-6">
+  return <div className="space-y-4">
     <header className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 flex flex-col gap-4 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:-mt-8 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-5">
       <div>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Pelunasan Hutang</h1>
@@ -490,7 +490,7 @@ export default function Settlements() {
             onChange={(event) => setHistorySearch(event.target.value)}
             placeholder={tab === 'vendor-history' ? 'Cari vendor atau item...' : 'Cari pelanggan atau invoice...'}
             aria-label={tab === 'vendor-history' ? 'Cari nama vendor atau item' : 'Cari nama pelanggan atau invoice'}
-            className="min-w-0 sm:w-64"
+            className="min-w-0 border-ink bg-ink text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30 sm:w-64"
           />
           <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-44">
             <span className="pointer-events-none mr-2 shrink-0">Tanggal</span>
@@ -527,6 +527,7 @@ export default function Settlements() {
         onChange={(event) => setCustomerSearch(event.target.value)}
         placeholder="Cari nama pelanggan..."
         aria-label="Cari nama pelanggan"
+        className="border-ink bg-ink text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30"
       />
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
