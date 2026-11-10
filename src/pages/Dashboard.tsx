@@ -409,7 +409,7 @@ export default function Dashboard() {
       icon: DollarSign,
       color: 'bg-[#d8e2d0] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#f5f7f1]/90 ring-1 ring-[#c5d2bb]',
+      surface: 'bg-surface/95 ring-1 ring-border',
     },
     {
       title: 'Laba Bersih Hari Ini',
@@ -417,7 +417,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: 'bg-[#e2e9d8] text-[#3d5035]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#f5f7f1]/90 ring-1 ring-[#d0dac6]',
+      surface: 'bg-muted/50 ring-1 ring-border',
       className: 'lg:hidden',
     },
     {
@@ -426,7 +426,7 @@ export default function Dashboard() {
       icon: Package,
       color: 'bg-[#d5dfcc] text-[#344b2f]',
       watermark: 'text-[#526b49]/[0.12]',
-      surface: 'bg-[#f2f5ee]/90 ring-1 ring-[#c2cfb7]',
+      surface: 'bg-surface/95 ring-1 ring-border',
       isProductCard: true,
     },
   ]
@@ -571,8 +571,8 @@ export default function Dashboard() {
           <CardTitle className="text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
-          <div className="flex items-center gap-3 rounded-2xl border border-[#d6e0ce] bg-[#eff4ea] px-4 py-4 text-[#354a30]">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/75 text-primary shadow-sm">
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-4 text-ink">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-primary shadow-sm">
               <ArrowDownLeft className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -581,8 +581,8 @@ export default function Dashboard() {
               <p className="mt-1 text-xs opacity-70">{loading ? '...' : `${formatNumber(stats.todayCustomerDebtPayments.count)} pembayaran`}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-[#dce0ca] bg-[#f1f2e7] px-4 py-4 text-[#4a5432]">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/75 text-[#596642] shadow-sm">
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-4 text-ink">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-primary shadow-sm">
               <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -610,18 +610,18 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, Banknote, 'border-ink bg-ink text-white'],
-            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, CreditCard, 'border-[#d1d8bd] bg-[#f2f2e8] text-[#4a5432]'],
-            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, ArrowLeftRight, 'border-[#c5d3c5] bg-[#eef3ed] text-[#354a3a]'],
-            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, QrCode, 'border-[#c6d1bc] bg-[#edf2e8] text-[#3b4d32]'],
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, Banknote, 'border-border bg-surface text-ink'],
+            ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, CreditCard, 'border-border bg-muted/50 text-ink'],
+            ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, ArrowLeftRight, 'border-border bg-surface text-ink'],
+            ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, QrCode, 'border-border bg-muted/50 text-ink'],
           ] as const).map(([label, total, count, Icon, color]) => (
             <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
-              <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] ${label === 'CASH' ? 'text-white/70' : 'opacity-70'}`}>
-                <Icon className={`h-4 w-4 ${label === 'CASH' ? 'text-accent' : ''}`} aria-hidden="true" />
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
                 <p>{label}</p>
               </div>
               <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(total)}</p>
-              <p className={`mt-1 text-xs ${label === 'CASH' ? 'text-white/70' : 'opacity-70'}`}>{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
           ))}
         </CardContent>
