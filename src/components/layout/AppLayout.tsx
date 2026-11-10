@@ -16,7 +16,7 @@ import { CurrentDate } from '@/components/layout/CurrentDate'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
-  { to: '/', icon: LayoutDashboard, label: 'Transaksi Hari Ini', className: '' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Transaksi Hari Ini', className: '' },
   { to: '/transactions', icon: History, label: 'Riwayat Transaksi', className: '' },
   { to: '/products', icon: Package, label: 'Produk', className: '' },
   { to: '/settlements', icon: WalletCards, label: 'Pelunasan Hutang', className: '' },

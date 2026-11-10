@@ -101,6 +101,7 @@ function PageLoader() {
   const { pathname } = useLocation()
   const pageName = ({
     '/': 'Ringkasan',
+    '/dashboard': 'Ringkasan',
     '/pos': 'Kasir',
     '/products': 'Produk',
     '/products/history': 'Riwayat stok',
@@ -310,7 +311,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<PageSuspense><Dashboard /></PageSuspense>} />
+            <Route index element={<Navigate to="/pos" replace />} />
+            <Route path="dashboard" element={<PageSuspense><Dashboard /></PageSuspense>} />
             <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
             <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
             <Route path="products/history" element={<PageSuspense><StockHistory /></PageSuspense>} />

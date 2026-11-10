@@ -562,9 +562,9 @@ export default function Dashboard() {
       </div>
 
       <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
-        <CardHeader className="border-b border-[#e9e9df] px-5 pb-4">
+        <CardHeader className="gap-0 border-b border-[#e9e9df] px-5 pb-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Arus pembayaran</p>
-          <CardTitle className="-mt-1 text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
+          <CardTitle className="-mt-1 text-lg leading-tight tracking-tight">Pembayaran hutang hari ini</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-4 text-ink">
@@ -592,11 +592,11 @@ export default function Dashboard() {
 
       <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
         <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-3 -top-3 h-24 w-24 -rotate-12 text-[#657b52]/[0.08]" />
-        <CardHeader className="relative z-10 border-b border-[#e9e9df] px-5 pb-4">
+        <CardHeader className="relative z-10 gap-0 border-b border-[#e9e9df] px-5 pb-4">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Aktivitas penjualan</p>
-              <CardTitle className="-mt-0.5 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
+              <CardTitle className="-mt-1 text-lg leading-tight tracking-tight">Rincian transaksi hari ini</CardTitle>
             </div>
             <div className="shrink-0 rounded-xl bg-ink px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">Total</p>

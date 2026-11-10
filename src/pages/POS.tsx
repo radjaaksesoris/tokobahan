@@ -425,7 +425,7 @@ export default function POS() {
         <div className="mb-1 flex justify-end lg:hidden">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:min-h-10 lg:gap-2 lg:px-3"
             aria-label="Kembali ke Dashboard"
             title="Kembali ke Dashboard"
@@ -1238,8 +1238,11 @@ function CartPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-white/10 px-4 py-4">
-        <h3 className="font-heading text-lg font-semibold text-accent">Keranjang ({items.length})</h3>
+      <div className="border-b border-ink/15 bg-accent px-4 py-2.5 text-ink">
+        <h3 className="flex items-center gap-2 font-heading text-lg font-semibold" aria-label={`Keranjang (${items.length})`}>
+          <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+          <span>{items.length}</span>
+        </h3>
       </div>
 
       <div className="pos-cart-items-scrollbar min-h-0 flex-1 overflow-y-auto p-3 space-y-2">

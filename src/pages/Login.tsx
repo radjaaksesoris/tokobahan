@@ -53,7 +53,7 @@ export default function Login() {
         return
       }
       toast.success('Berhasil masuk')
-      navigate('/')
+      navigate('/pos')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal masuk ke aplikasi')
     } finally {
