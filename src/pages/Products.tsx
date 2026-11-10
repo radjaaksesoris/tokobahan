@@ -14,7 +14,7 @@ import { Select } from '@/components/ui/Select'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import {
-  getInactiveProductDeletionBlockReason,
+  createInactiveProductDeletionBlockReason,
   permanentlyDeleteUnusedInactiveProduct,
 } from '@/lib/offlineInactiveProductCleanup'
 import {
@@ -182,8 +182,8 @@ export default function Products() {
           return
         }
         const [localVendors, localUnits] = await Promise.all([
-          readOperationalTable<{ id: string; name: string }>('vendors'),
-          readOperationalTable<{ id: string; name: string }>('custom_units'),
+          readOperationalTable<{ id: string; name: string }>('vendors', localSnapshot),
+          readOperationalTable<{ id: string; name: string }>('custom_units', localSnapshot),
         ])
         if (cancelled) return
         setVendors(localVendors)
@@ -225,6 +225,7 @@ export default function Products() {
       try {
         const localProducts = await readOperationalTable<Product>('products', localSnapshot)
         if (signal?.aborted || requestId !== loadRequestId.current) return
+        const getDeletionBlockReason = createInactiveProductDeletionBlockReason(localSnapshot)
         const normalizedTerm = term.toLocaleLowerCase()
         const matchesSearch = (product: Product) => !normalizedTerm ||
             product.name.toLocaleLowerCase().includes(normalizedTerm) ||
@@ -243,7 +244,7 @@ export default function Products() {
           .sort((a, b) => a.name.localeCompare(b.name, 'id'))
           .map((product) => ({
             product,
-            deletionBlockReason: getInactiveProductDeletionBlockReason(localSnapshot, product.id),
+            deletionBlockReason: getDeletionBlockReason(product.id),
           })))
         const start = page * pageSize
         setProducts(filteredProducts.slice(start, start + pageSize))
@@ -485,8 +486,9 @@ export default function Products() {
     }
 
     try {
-      if (await readOperationalSnapshot()) {
-        const products = await readOperationalTable<Product>('products')
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const products = await readOperationalTable<Product>('products', snapshot)
         const taken = products.some((product) =>
           product.id !== editing?.id && normalizeProductName(product.name) === normalizedName,
         )
@@ -521,8 +523,9 @@ export default function Products() {
     }
 
     try {
-      if (await readOperationalSnapshot()) {
-        const products = await readOperationalTable<Product>('products')
+      const snapshot = await readOperationalSnapshot()
+      if (snapshot) {
+        const products = await readOperationalTable<Product>('products', snapshot)
         const taken = products.some((product) =>
           product.id !== editing?.id && product.sku?.trim().toLocaleLowerCase() === normalizedSku,
         )

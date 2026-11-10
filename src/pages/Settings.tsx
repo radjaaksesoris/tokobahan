@@ -144,10 +144,6 @@ export default function Settings() {
     }
   }
 
-  useEffect(() => {
-    void loadVendors()
-  }, [])
-
   async function addVendor() {
     const name = vendorName.trim()
     if (!name) return
@@ -223,10 +219,6 @@ export default function Settings() {
     }
   }
 
-  useEffect(() => {
-    void loadUnits()
-  }, [])
-
   async function loadCloudBackups() {
     setCloudBackupError(null)
     const { data, error } = await supabase
@@ -280,11 +272,16 @@ export default function Settings() {
   }
 
   useEffect(() => {
-    void loadCloudBackups()
-    void loadLocalSnapshotStatus()
-    void loadLegacyQueueStatus()
-    void getLocalBackupStatus().then(setLocalBackupStatus).catch(() => undefined)
-  }, [])
+    if (activeTab === 'master') {
+      void loadVendors()
+      void loadUnits()
+    } else if (activeTab === 'backup') {
+      void loadCloudBackups()
+      void loadLocalSnapshotStatus()
+      void loadLegacyQueueStatus()
+      void getLocalBackupStatus().then(setLocalBackupStatus).catch(() => undefined)
+    }
+  }, [activeTab])
 
   async function configureLocalBackup() {
     setLocalBackupLoading(true)

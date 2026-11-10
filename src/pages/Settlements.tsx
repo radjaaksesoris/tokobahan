@@ -98,14 +98,52 @@ export default function Settlements() {
         throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       }
       const { tables } = snapshot
+      const vendorById = new Map<unknown, (typeof tables.vendors)[number]>()
+      for (const vendor of tables.vendors) {
+        if (!vendorById.has(vendor.id)) vendorById.set(vendor.id, vendor)
+      }
+      const productById = new Map<unknown, (typeof tables.products)[number]>()
+      for (const product of tables.products) {
+        if (!productById.has(product.id)) productById.set(product.id, product)
+      }
+      const customerById = new Map<unknown, (typeof tables.customers)[number]>()
+      for (const customer of tables.customers) {
+        if (!customerById.has(customer.id)) customerById.set(customer.id, customer)
+      }
+      const batchById = new Map<unknown, (typeof tables.product_stock_batches)[number]>()
+      for (const batch of tables.product_stock_batches) {
+        if (!batchById.has(batch.id)) batchById.set(batch.id, batch)
+      }
+      const saleById = new Map<unknown, (typeof tables.sales)[number]>()
+      for (const sale of tables.sales) {
+        if (!saleById.has(sale.id)) saleById.set(sale.id, sale)
+      }
+      const vendorPaymentsByBatch = new Map<unknown, (typeof tables.vendor_debt_payments)[number][]>()
+      for (const payment of tables.vendor_debt_payments) {
+        const payments = vendorPaymentsByBatch.get(payment.stock_batch_id) || []
+        payments.push(payment)
+        vendorPaymentsByBatch.set(payment.stock_batch_id, payments)
+      }
+      const customerPaymentsBySale = new Map<unknown, (typeof tables.customer_debt_payments)[number][]>()
+      for (const payment of tables.customer_debt_payments) {
+        const payments = customerPaymentsBySale.get(payment.sale_id) || []
+        payments.push(payment)
+        customerPaymentsBySale.set(payment.sale_id, payments)
+      }
+      const saleItemsBySale = new Map<unknown, (typeof tables.sale_items)[number][]>()
+      for (const item of tables.sale_items) {
+        const items = saleItemsBySale.get(item.sale_id) || []
+        items.push(item)
+        saleItemsBySale.set(item.sale_id, items)
+      }
         if (tab === 'vendor-history') {
           const payments = tables.vendor_debt_payments
             .filter((payment) => !historyDate || String(payment.paid_at).slice(0, 10) === historyDate)
             .sort((a, b) => String(b.paid_at).localeCompare(String(a.paid_at)))
           const rows: VendorPaymentHistory[] = payments.map((payment) => {
-            const batch = tables.product_stock_batches.find((row) => row.id === payment.stock_batch_id)
-            const product = tables.products.find((row) => row.id === batch?.product_id)
-            const vendor = tables.vendors.find((row) => row.id === batch?.vendor_id)
+            const batch = batchById.get(payment.stock_batch_id)
+            const product = batch ? productById.get(batch.product_id) : undefined
+            const vendor = batch ? vendorById.get(batch.vendor_id) : undefined
             return {
               id: String(payment.id),
               amount: Number(payment.amount),
@@ -126,9 +164,9 @@ export default function Settlements() {
             .filter((payment) => !historyDate || String(payment.paid_at).slice(0, 10) === historyDate)
             .sort((a, b) => String(b.paid_at).localeCompare(String(a.paid_at)))
           const rows: CustomerPaymentHistory[] = payments.map((payment) => {
-            const sale = tables.sales.find((row) => row.id === payment.sale_id)
+            const sale = saleById.get(payment.sale_id)
             const customer = sale?.customer_id
-              ? tables.customers.find((row) => row.id === sale.customer_id)
+              ? customerById.get(sale.customer_id)
               : null
             return {
               id: String(payment.id),
@@ -150,8 +188,8 @@ export default function Settlements() {
             .sort((a, b) => String(a.due_date || '').localeCompare(String(b.due_date || '')))
             .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE + 1)
             .map((batch) => {
-              const vendor = tables.vendors.find((row) => row.id === batch.vendor_id)
-              const product = tables.products.find((row) => row.id === batch.product_id)
+              const vendor = vendorById.get(batch.vendor_id)
+              const product = productById.get(batch.product_id)
               return {
                 id: String(batch.id),
                 quantity_received: Number(batch.quantity_received),
@@ -161,8 +199,7 @@ export default function Settlements() {
                 vendor_id: batch.vendor_id ? String(batch.vendor_id) : null,
                 vendor: vendor ? { name: String(vendor.name) } : null,
                 product: product ? { name: String(product.name), stock_unit: String(product.stock_unit) } : null,
-                vendor_debt_payments: tables.vendor_debt_payments
-                  .filter((payment) => payment.stock_batch_id === batch.id)
+                vendor_debt_payments: (vendorPaymentsByBatch.get(batch.id) || [])
                   .map((payment) => ({ amount: Number(payment.amount), paid_at: String(payment.paid_at) })),
               }
             })
@@ -214,12 +251,10 @@ export default function Settlements() {
           const pageSales = creditSales.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE + 1)
           setHasNextPage(pageSales.length > PAGE_SIZE)
           const debts = pageSales.slice(0, PAGE_SIZE).map((sale): Debt => {
-            const customer = tables.customers.find((row) => row.id === sale.customer_id)
-            const customerPayments = tables.customer_debt_payments
-              .filter((payment) => payment.sale_id === sale.id)
+            const customer = customerById.get(sale.customer_id)
+            const customerPayments = (customerPaymentsBySale.get(sale.id) || [])
               .map((payment) => ({ amount: Number(payment.amount), paid_at: String(payment.paid_at) }))
-            const saleItems = tables.sale_items
-              .filter((item) => item.sale_id === sale.id)
+            const saleItems = (saleItemsBySale.get(sale.id) || [])
               .map((item) => ({
                 name: String(item.product_name),
                 quantity: Number(item.quantity),

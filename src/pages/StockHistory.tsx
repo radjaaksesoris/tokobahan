@@ -144,7 +144,7 @@ export default function StockHistory() {
           }
           return
         }
-        const localVendors = await readOperationalTable<{ id: string; name: string }>('vendors')
+        const localVendors = await readOperationalTable<{ id: string; name: string }>('vendors', snapshot)
         if (cancelled) return
         setVendors(localVendors.sort((a, b) => a.name.localeCompare(b.name, 'id')))
       } catch (error) {
@@ -182,9 +182,9 @@ export default function StockHistory() {
       {
         try {
           const [batches, vendors, products] = await Promise.all([
-            readOperationalTable<Record<string, unknown>>('product_stock_batches'),
-            readOperationalTable<{ id: string; name: string }>('vendors'),
-            readOperationalTable<{ id: string; name: string; stock_unit: UnitType }>('products'),
+            readOperationalTable<Record<string, unknown>>('product_stock_batches', snapshot),
+            readOperationalTable<{ id: string; name: string }>('vendors', snapshot),
+            readOperationalTable<{ id: string; name: string; stock_unit: UnitType }>('products', snapshot),
           ])
           if (currentRequest !== requestId.current) return
           const vendorMap = new Map(vendors.map((vendor) => [vendor.id, vendor]))

@@ -132,7 +132,11 @@ function PageLoader() {
 }
 
 function PageSuspense({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+  const { pathname } = useLocation()
+  const fallback = pathname === '/'
+    ? <StartupLoadingScreen phase="data" />
+    : <PageLoader />
+  return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
 const LOCAL_SALES_RETENTION_MIGRATION_KEY = 'tokobahan.sales-retention-500-v1'

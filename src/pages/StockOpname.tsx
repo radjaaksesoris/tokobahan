@@ -48,7 +48,7 @@ export default function StockOpname() {
     }
     if (snapshot) {
       try {
-        const localProducts = await readOperationalTable<ProductRow>('products')
+        const localProducts = await readOperationalTable<ProductRow>('products', snapshot)
         const activeProducts = localProducts
           .filter((product) => product.is_active)
           .sort((a, b) => a.name.localeCompare(b.name, 'id') || a.id.localeCompare(b.id))

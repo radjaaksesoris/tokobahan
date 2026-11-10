@@ -121,6 +121,15 @@ function summarizeSales(
 ) {
   const summary = emptySummary()
   const daily = new Map<string, DailySummaryRow>()
+  const paymentMethods: PaymentMethodSummaries = {
+    cash: { amount: 0, transaction_count: 0 },
+    credit: { amount: 0, transaction_count: 0 },
+    transfer: { amount: 0, transaction_count: 0 },
+    qris: { amount: 0, transaction_count: 0 },
+  }
+  const paymentTotals = { cash: 0, credit: 0, transfer: 0, qris: 0 }
+  const paymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
+  let transactionValue = 0
   const getDay = (date: string) => {
     let row = daily.get(date)
     if (!row) {
@@ -142,6 +151,15 @@ function summarizeSales(
     summary.total_cost += cost
     summary.total_profit += profit
     summary.transaction_count += 1
+    const method = String(sale.payment_method || '').toLowerCase()
+    const paymentKey = method === 'qr' ? 'qris' : method
+    if (paymentKey === 'cash' || paymentKey === 'credit' || paymentKey === 'transfer' || paymentKey === 'qris') {
+      paymentMethods[paymentKey].amount += asNumber(sale.total_amount)
+      paymentMethods[paymentKey].transaction_count += 1
+      paymentCounts[paymentKey] += 1
+      paymentTotals[paymentKey] += paymentKey === 'credit' ? asNumber(sale.total_amount) : amountPaid
+    }
+    if (method !== 'credit') transactionValue += asNumber(sale.total_amount)
     const row = getDay(date)
     row.total_revenue += amountPaid
     row.total_credit += credit
@@ -167,6 +185,10 @@ function summarizeSales(
   return {
     summary,
     dailySummary: [...daily.values()].sort((left, right) => left.sale_date.localeCompare(right.sale_date)),
+    paymentMethods,
+    paymentTotals,
+    paymentCounts,
+    transactionValue,
   }
 }
 
@@ -175,21 +197,7 @@ export function getLocalReportAnalytics(
   start: Date,
   end: Date,
 ) {
-  const { summary, dailySummary } = summarizeSales(snapshot, start, end)
-  const paymentMethods: PaymentMethodSummaries = {
-    cash: { amount: 0, transaction_count: 0 },
-    credit: { amount: 0, transaction_count: 0 },
-    transfer: { amount: 0, transaction_count: 0 },
-    qris: { amount: 0, transaction_count: 0 },
-  }
-  for (const sale of asRows(snapshot, 'sales')) {
-    if (!inRange(sale.created_at, start, end)) continue
-    const method = String(sale.payment_method || '').toLowerCase()
-    const key = method === 'qr' ? 'qris' : method
-    if (key !== 'cash' && key !== 'credit' && key !== 'transfer' && key !== 'qris') continue
-    paymentMethods[key].amount += asNumber(sale.total_amount)
-    paymentMethods[key].transaction_count += 1
-  }
+  const { summary, dailySummary, paymentMethods } = summarizeSales(snapshot, start, end)
   const vendorPayments = new Map<string, number>()
   for (const payment of asRows(snapshot, 'vendor_debt_payments')) {
     if (!inRange(payment.paid_at, start, end)) continue
@@ -212,7 +220,12 @@ export function getLocalDashboardAnalytics(
 ): DashboardAnalytics {
   const todayStart = startOfDay(now)
   const todayEnd = endOfDay(now)
-  const { summary: todaySummary } = summarizeSales(snapshot, todayStart, todayEnd)
+  const {
+    summary: todaySummary,
+    paymentTotals: todayPaymentTotals,
+    paymentCounts: todayPaymentCounts,
+    transactionValue: todayTransactionValue,
+  } = summarizeSales(snapshot, todayStart, todayEnd)
   const todayCustomerDebtPayments = { amount: 0, count: 0 }
   const todayVendorDebtPayments = { amount: 0, count: 0 }
   for (const payment of asRows(snapshot, 'customer_debt_payments')) {
@@ -224,21 +237,6 @@ export function getLocalDashboardAnalytics(
     if (!inRange(payment.paid_at, todayStart, todayEnd)) continue
     todayVendorDebtPayments.amount += asNumber(payment.amount)
     todayVendorDebtPayments.count += 1
-  }
-  const todayPaymentCounts = { cash: 0, credit: 0, transfer: 0, qris: 0 }
-  const todayPaymentTotals = { cash: 0, credit: 0, transfer: 0, qris: 0 }
-  let todayTransactionValue = 0
-  for (const sale of asRows(snapshot, 'sales')) {
-    if (!inRange(sale.created_at, todayStart, todayEnd)) continue
-    const method = String(sale.payment_method || '').toLowerCase()
-    const total = asNumber(sale.total_amount)
-    const amountPaid = asNumber(sale.amount_paid)
-    if (method !== 'credit') todayTransactionValue += total
-    const paymentKey = method === 'qr' ? 'qris' : method
-    if (paymentKey === 'cash' || paymentKey === 'credit' || paymentKey === 'transfer' || paymentKey === 'qris') {
-      todayPaymentCounts[paymentKey] += 1
-      todayPaymentTotals[paymentKey] += paymentKey === 'credit' ? total : amountPaid
-    }
   }
   for (const saleReturn of asRows(snapshot, 'sale_returns')) {
     if (!inRange(saleReturn.created_at, todayStart, todayEnd)) continue

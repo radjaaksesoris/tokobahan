@@ -151,7 +151,7 @@ export default function TransactionHistory() {
     try {
       const snapshot = await readOperationalSnapshot()
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
-      const localSales = await readOperationalTable<SaleRow>('sales')
+      const localSales = await readOperationalTable<SaleRow>('sales', snapshot)
       if (requestId !== loadRequestId.current) return
       const filtered = localSales
         .filter((sale) => !date || sale.created_at >= startOfDay(new Date(`${date}T00:00:00`)).toISOString() &&
@@ -194,16 +194,22 @@ export default function TransactionHistory() {
       const snapshot = await readOperationalSnapshot()
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       const [saleItems, saleReturns] = await Promise.all([
-        readOperationalTable<SaleItemWithReturns & { sale_id: string; product_id: string; conversion: number }>('sale_items'),
+        readOperationalTable<SaleItemWithReturns & { sale_id: string; product_id: string; conversion: number }>('sale_items', snapshot),
         readOperationalTable<{
           sale_item_id: string
           quantity: number
           refund_amount: number
-        }>('sale_returns'),
+        }>('sale_returns', snapshot),
       ])
       const rows = saleItems.filter((item) => item.sale_id === sale.id)
+      const returnsByItemId = new Map<string, typeof saleReturns>()
+      for (const returned of saleReturns) {
+        const current = returnsByItemId.get(returned.sale_item_id) || []
+        current.push(returned)
+        returnsByItemId.set(returned.sale_item_id, current)
+      }
       setItems(rows.map((item) => {
-        const returns = saleReturns.filter((returned) => returned.sale_item_id === item.id)
+        const returns = returnsByItemId.get(item.id) || []
         return {
           id: item.id,
           product_id: item.product_id,
@@ -391,12 +397,12 @@ export default function TransactionHistory() {
   async function startEditingSale() {
     if (!selectedSale || itemsLoading || items.length === 0) return
     try {
-      const [snapshot, products, customers] = await Promise.all([
-        readOperationalSnapshot(),
-        readOperationalTable<Product>('products'),
-        readOperationalTable<{ id: string; name: string }>('customers'),
-      ])
+      const snapshot = await readOperationalSnapshot()
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
+      const [products, customers] = await Promise.all([
+        readOperationalTable<Product>('products', snapshot),
+        readOperationalTable<{ id: string; name: string }>('customers', snapshot),
+      ])
       const itemIds = new Set(items.map((item) => item.id))
       const hasReturns = snapshot.tables.sale_returns.some((row) =>
         row.sale_id === selectedSale.id || itemIds.has(String(row.sale_item_id)),
