@@ -605,7 +605,7 @@ export default function POS() {
               </div>
 
               <div className="mb-4 flex items-center gap-2">
-                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2">
+                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2 [&>button]:min-w-0 [&>button]:truncate">
                   {(selectedProduct.prices?.length
                     ? selectedProduct.prices.map((p) => p.unit)
                     : [selectedProduct.stock_unit || 'satuan']
@@ -618,7 +618,7 @@ export default function POS() {
                         setSalePriceInput(String(getPriceForUnit(selectedProduct, nextUnit).price))
                         setSalePriceError('')
                       }}
-                      className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
+                      className={`w-full rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
                         selectedUnit === u
                           ? 'border-accent bg-accent text-ink'
                           : 'border-ink bg-ink text-white hover:bg-ink/90'
