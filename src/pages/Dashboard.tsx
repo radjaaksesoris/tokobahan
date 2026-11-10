@@ -395,6 +395,7 @@ export default function Dashboard() {
       watermark: 'text-[#526b49]/[0.12]',
       surface: 'bg-ink text-white ring-1 ring-ink',
       featured: true,
+      className: 'col-span-2 lg:col-span-1',
     },
     {
       title: 'Nilai Transaksi Hari Ini',
@@ -421,6 +422,7 @@ export default function Dashboard() {
       watermark: 'text-[#526b49]/[0.12]',
       surface: 'bg-surface/95 ring-1 ring-border',
       isProductCard: true,
+      className: 'col-span-2 lg:col-span-1',
     },
   ]
 
@@ -517,7 +519,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {cards.map((c) => (
           <Card key={c.title} className={`relative overflow-hidden border-0 ${c.surface} ${'className' in c ? c.className : ''} ${'featured' in c && c.featured ? 'shadow-[0_12px_28px_rgba(64,87,55,0.18)]' : 'shadow-[0_8px_24px_rgba(32,42,46,0.05)]'}`}>
                 <c.icon
@@ -566,7 +568,7 @@ export default function Dashboard() {
           <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink/70">Arus pembayaran</p>
           <CardTitle className="-mt-1 text-lg leading-tight tracking-tight text-ink">Pembayaran hutang hari ini</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
+        <CardContent className="grid grid-cols-2 gap-3 p-5">
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-4 text-ink">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-primary shadow-sm">
               <ArrowDownLeft className="h-5 w-5" aria-hidden="true" />
