@@ -1,4 +1,6 @@
 const pageChunkImporters = {
+  dashboard: () => import('@/pages/Dashboard'),
+  login: () => import('@/pages/Login'),
   pos: () => import('@/pages/POS'),
   products: () => import('@/pages/Products'),
   stockHistory: () => import('@/pages/StockHistory'),
@@ -13,6 +15,8 @@ const pageChunkImporters = {
 type PageChunk = keyof typeof pageChunkImporters
 
 const routeChunks: Array<[string, PageChunk]> = [
+  ['/dashboard', 'dashboard'],
+  ['/login', 'login'],
   ['/products/stock-opname', 'stockOpname'],
   ['/products/history', 'stockHistory'],
   ['/transactions', 'transactions'],

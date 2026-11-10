@@ -20,8 +20,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { StartupLoadingScreen } from '@/components/ui/StartupLoadingScreen'
 import { getPageChunkImporter } from '@/lib/pageChunks'
-import Dashboard from '@/pages/Dashboard'
-import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
 
 function lazyWithRecovery<T extends React.ComponentType<unknown>>(
@@ -39,6 +37,8 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   })
 }
 
+const Dashboard = lazyWithRecovery(getPageChunkImporter('dashboard'), 'dashboard')
+const Login = lazyWithRecovery(getPageChunkImporter('login'), 'login')
 const POS = lazyWithRecovery(getPageChunkImporter('pos'), 'pos')
 const Products = lazyWithRecovery(getPageChunkImporter('products'), 'products')
 const StockHistory = lazyWithRecovery(getPageChunkImporter('stockHistory'), 'stock-history')

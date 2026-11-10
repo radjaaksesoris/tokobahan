@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Product, UnitType, ProductPrice } from '@/types'
 import { isUnitType, UNIT_LABELS, UNIT_FACTORS } from '@/types'
@@ -11,7 +11,11 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
 import { Select } from '@/components/ui/Select'
-import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
+import {
+  OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
+  readOperationalSnapshot,
+  updateOperationalSnapshot,
+} from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import {
   createInactiveProductDeletionBlockReason,
@@ -84,7 +88,7 @@ function ProductTableSkeleton() {
 
 export default function Products() {
   const navigate = useNavigate()
-  const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [inactiveProducts, setInactiveProducts] = useState<Array<{
     product: Product
     deletionBlockReason: string | null
@@ -110,10 +114,9 @@ export default function Products() {
   const [stockSaving, setStockSaving] = useState(false)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(0)
-  const [hasNextPage, setHasNextPage] = useState(false)
   const pageSize = 20
-  const initialLoadComplete = useRef(false)
   const loadRequestId = useRef(0)
   const stockUnitSelectRef = useRef<HTMLButtonElement>(null)
   const initialStockVendorSelectRef = useRef<HTMLButtonElement>(null)
@@ -185,28 +188,38 @@ export default function Products() {
   }, [])
 
   useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 200)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
+  useEffect(() => {
     const controller = new AbortController()
-    const timer = window.setTimeout(() => void load(controller.signal), 250)
+    let timer: number | undefined
+    const scheduleLoad = () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => void load(controller.signal), 100)
+    }
+
+    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, scheduleLoad)
+    scheduleLoad()
     return () => {
       controller.abort()
-      window.clearTimeout(timer)
+      if (timer !== undefined) window.clearTimeout(timer)
+      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, scheduleLoad)
     }
-  }, [search, page, pageSize])
+  }, [])
 
   async function load(signal?: AbortSignal) {
     const requestId = ++loadRequestId.current
-    const term = search.trim().replace(/[%_,]/g, ' ')
     let localSnapshot
     try {
       localSnapshot = await readOperationalSnapshot()
     } catch (error) {
       if (signal?.aborted || requestId !== loadRequestId.current) return
       toast.error(`Gagal membaca snapshot lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-      setProducts([])
+      setAllProducts([])
       setInactiveProducts([])
-      setHasNextPage(false)
       setLoading(false)
-      initialLoadComplete.current = true
       return
     }
     if (localSnapshot) {
@@ -214,14 +227,8 @@ export default function Products() {
         const localProducts = await readOperationalTable<Product>('products', localSnapshot)
         if (signal?.aborted || requestId !== loadRequestId.current) return
         const getDeletionBlockReason = createInactiveProductDeletionBlockReason(localSnapshot)
-        const normalizedTerm = term.toLocaleLowerCase()
-        const matchesSearch = (product: Product) => !normalizedTerm ||
-            product.name.toLocaleLowerCase().includes(normalizedTerm) ||
-            product.sku?.toLocaleLowerCase().includes(normalizedTerm) ||
-            product.barcode?.toLocaleLowerCase().includes(normalizedTerm)
-        const filteredProducts = localProducts
+        const activeProducts = localProducts
           .filter((product) => product.is_active)
-          .filter(matchesSearch)
           .sort((a, b) =>
             Number(a.stock <= 0) - Number(b.stock <= 0) ||
             a.name.localeCompare(b.name, 'id') ||
@@ -234,32 +241,41 @@ export default function Products() {
             product,
             deletionBlockReason: getDeletionBlockReason(product.id),
           })))
-        const start = page * pageSize
-        setProducts(filteredProducts.slice(start, start + pageSize))
-        setHasNextPage(filteredProducts.length > start + pageSize)
-        initialLoadComplete.current = true
+        setAllProducts(activeProducts)
         setLoading(false)
       } catch (error) {
         if (signal?.aborted || requestId !== loadRequestId.current) return
         toast.error(`Gagal membaca produk lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-        setProducts([])
+        setAllProducts([])
         setInactiveProducts([])
-        setHasNextPage(false)
         setLoading(false)
-        initialLoadComplete.current = true
       }
       return
     }
     if (!localSnapshot) {
       toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
-      setProducts([])
+      setAllProducts([])
       setInactiveProducts([])
-      setHasNextPage(false)
-      initialLoadComplete.current = true
       setLoading(false)
       return
     }
   }
+
+  const { products, hasNextPage } = useMemo(() => {
+    const term = debouncedSearch.trim().replace(/[%_,]/g, ' ').toLocaleLowerCase()
+    const filteredProducts = term
+      ? allProducts.filter((product) =>
+          product.name.toLocaleLowerCase().includes(term) ||
+          product.sku?.toLocaleLowerCase().includes(term) ||
+          product.barcode?.toLocaleLowerCase().includes(term),
+        )
+      : allProducts
+    const start = page * pageSize
+    return {
+      products: filteredProducts.slice(start, start + pageSize),
+      hasNextPage: filteredProducts.length > start + pageSize,
+    }
+  }, [allProducts, page, pageSize, debouncedSearch])
 
   function openCreate() {
     skuCheckRequestId.current += 1
@@ -407,7 +423,6 @@ export default function Products() {
         })
         toast.success(`Stok ${stockProduct.name} berhasil ditambahkan`)
         setStockProduct(null)
-        await load()
         setStockSaving(false)
         return
       }
@@ -749,7 +764,6 @@ export default function Products() {
         setEditing(null)
         setEditingPricesOnly(false)
         if (!editing) openCreate()
-        await load()
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
         if (message.includes('Nama produk')) {
@@ -804,7 +818,6 @@ export default function Products() {
       toast.success('Produk dinonaktifkan')
       setDeleteTarget(null)
       setDeleteName('')
-      await load()
     } catch (error) {
       toast.error(`Gagal menonaktifkan produk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
@@ -831,7 +844,6 @@ export default function Products() {
       toast.success('Produk dihapus permanen dari data lokal')
       setPermanentDeleteTarget(null)
       setPermanentDeleteName('')
-      await load()
     } catch (error) {
       toast.error(`Gagal menghapus produk permanen: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }

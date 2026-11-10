@@ -106,12 +106,20 @@ export default function POS() {
   const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
-  const getAvailableStockBaseUnits = useCallback((product: Product) => {
-    const reservedBaseUnits = items
-      .filter((item) => item.product.id === product.id)
-      .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
-    return Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
+  const reservedBaseUnitsByProduct = useMemo(() => {
+    const reserved = new Map<string, number>()
+    for (const item of items) {
+      reserved.set(
+        item.product.id,
+        (reserved.get(item.product.id) || 0) + item.quantity * item.conversion,
+      )
+    }
+    return reserved
   }, [items])
+  const getAvailableStockBaseUnits = useCallback((product: Product) => {
+    const reservedBaseUnits = reservedBaseUnitsByProduct.get(product.id) || 0
+    return Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
+  }, [reservedBaseUnitsByProduct])
   const getAvailableStock = useCallback((product: Product, unit: UnitType = product.stock_unit) => {
     const availableBaseUnits = getAvailableStockBaseUnits(product)
     const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
