@@ -628,7 +628,7 @@ export default function Settlements() {
                   </thead>
                   <tbody className="divide-y divide-border/70">
                     {debt.items.map((item, index) => (
-                      <tr key={`${debt.id}-item-${index}`}>
+                      <tr key={`${debt.id}-item-${index}`} className="odd:bg-surface even:bg-muted/50 hover:bg-primary/5">
                         <td className="py-1.5 text-ink">
                           {tab === 'vendor' && item.batchId && (
                             <input
