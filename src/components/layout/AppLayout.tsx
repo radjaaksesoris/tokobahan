@@ -130,6 +130,7 @@ export function AppLayout() {
           <div className="min-w-0">
             <h1 className="truncate whitespace-nowrap text-[0.82rem] font-semibold tracking-tight">RAJA AKSESORIS</h1>
             <p className="mt-0.5 whitespace-nowrap text-[0.56rem] font-medium uppercase tracking-[0.12em] text-accent">Aksesoris konveksi</p>
+            <p className="mt-0.5 whitespace-nowrap text-[0.5rem] leading-none tracking-[0.08em] text-white/55">Versi 1.0.0</p>
           </div>
         </div>
 

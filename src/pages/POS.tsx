@@ -17,6 +17,7 @@ import {
   Trash2,
   ShoppingCart,
   CheckCircle2,
+  CircleAlert,
   Package,
   X,
   Delete,
@@ -1234,14 +1235,40 @@ function CartPanel({
     )
     .slice(0, 8)
 
+  function showCheckoutNotice(title: string, message: string) {
+    toast.custom((toastId) => (
+      <div
+        role="alert"
+        className="relative flex w-full max-w-md items-start gap-3 overflow-hidden rounded-2xl border border-white/10 bg-ink p-4 text-white shadow-[0_18px_48px_rgba(17,24,26,0.28)]"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-ink shadow-inner">
+          <CircleAlert className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1 pr-5">
+          <span className="block font-semibold leading-tight">{title}</span>
+          <span className="mt-1 block text-sm leading-snug text-white/75">{message}</span>
+        </span>
+        <button
+          type="button"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          aria-label="Tutup pemberitahuan"
+          onClick={() => toast.dismiss(toastId)}
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <span className="absolute inset-x-0 bottom-0 h-1 bg-accent" aria-hidden="true" />
+      </div>
+    ), { duration: 4500 })
+  }
+
   function handleCheckoutClick() {
     if (items.length === 0) {
-      toast.error('Keranjang masih kosong. Tambahkan item sebelum melanjutkan pembayaran.')
+      showCheckoutNotice('Keranjang masih kosong', 'Tambahkan item terlebih dahulu untuk melanjutkan pembayaran.')
       return
     }
     if (paymentMethod === 'credit' && !customerName.trim()) {
       setCustomerNameNeedsAttention(true)
-      toast.error('Nama pelanggan wajib diisi untuk transaksi kredit.')
+      showCheckoutNotice('Nama pelanggan diperlukan', 'Isi nama pelanggan untuk melanjutkan transaksi kredit.')
       customerNameInputRef.current?.focus()
       return
     }
@@ -1414,7 +1441,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/70 disabled:text-ink/70 focus:ring-2 focus:ring-accent focus-visible:ring-accent focus:ring-offset-1 focus:ring-offset-ink"
+          className="w-full bg-accent text-ink hover:bg-amber-300 disabled:bg-accent/70 disabled:text-ink/70 focus-visible:bg-[#d6b879] focus-visible:ring-2 focus-visible:ring-[#d6b879]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
           size="lg"
           disabled={loading}
           onClick={handleCheckoutClick}
