@@ -492,7 +492,7 @@ export default function POS() {
                       : 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
                   }`}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors group-hover:bg-ink/90 lg:h-9 lg:w-9">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-accent transition-colors group-hover:bg-ink/90 lg:h-9 lg:w-9">
                     <Package className="h-4 w-4 lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
                   </div>
                   <div className="min-w-0 flex-1">
