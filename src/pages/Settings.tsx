@@ -923,8 +923,8 @@ export default function Settings() {
         <h2 className="text-3xl font-bold tracking-tight text-white">Pengaturan</h2>
         <p className="mt-1 max-w-2xl text-sm text-accent">Kelola data dasar, stok, backup, dan notifikasi aplikasi.</p>
         {renderTabNavigation('mt-4 -mx-1 grid w-full grid-cols-4 gap-1 pb-1 lg:hidden')}
+        {renderTabNavigation('mt-4 hidden w-full grid-cols-4 gap-2 lg:grid', true)}
       </div>
-      {renderTabNavigation('page-header-tabs hidden w-full grid-cols-4 gap-2 overflow-x-auto border-b border-border pb-1 lg:!mt-4 lg:sticky lg:z-20 lg:grid lg:bg-canvas', true)}
 
       {activeTab === 'master' && <section aria-labelledby="master-data-heading" className="space-y-3">
         <div>
