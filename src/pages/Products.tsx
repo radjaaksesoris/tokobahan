@@ -864,7 +864,7 @@ export default function Products() {
           <h2 className="text-3xl font-bold tracking-tight text-white">Produk</h2>
           <p className="mt-1 text-sm text-accent">Kelola katalog dan harga multi-satuan.</p>
         </div>
-        <div className="relative z-10 flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+        <div className="relative z-10 flex w-full flex-row items-center gap-2 lg:w-auto lg:gap-3">
           <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -893,7 +893,7 @@ export default function Products() {
           </div>
           <Button
             variant="outline"
-            className="h-11 shrink-0 border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
+            className="h-11 shrink-0 whitespace-nowrap border-white/25 bg-white px-3 text-ink hover:border-accent hover:bg-accent hover:text-ink focus-visible:bg-accent focus-visible:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink"
             onPointerEnter={() => preloadPageChunk('/products/history')}
             onFocus={() => preloadPageChunk('/products/history')}
             onClick={() => navigate('/products/history')}

@@ -311,7 +311,10 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/pos" replace />} />
+            <Route
+              index
+              element={<Navigate to={window.matchMedia('(max-width: 1023px)').matches ? '/dashboard' : '/pos'} replace />}
+            />
             <Route path="dashboard" element={<PageSuspense><Dashboard /></PageSuspense>} />
             <Route path="pos" element={<PageSuspense><POS /></PageSuspense>} />
             <Route path="products" element={<PageSuspense><Products /></PageSuspense>} />
