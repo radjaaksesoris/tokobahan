@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { StartupLoadingScreen } from '@/components/ui/StartupLoadingScreen'
 import { getPageChunkImporter } from '@/lib/pageChunks'
+import Dashboard from '@/pages/Dashboard'
 import Login from '@/pages/Login'
 import { recoverFromStaleBuild } from '@/lib/recoverFromStaleBuild'
 
@@ -38,7 +39,6 @@ function lazyWithRecovery<T extends React.ComponentType<unknown>>(
   })
 }
 
-const Dashboard = lazyWithRecovery(getPageChunkImporter('dashboard'), 'dashboard')
 const POS = lazyWithRecovery(getPageChunkImporter('pos'), 'pos')
 const Products = lazyWithRecovery(getPageChunkImporter('products'), 'products')
 const StockHistory = lazyWithRecovery(getPageChunkImporter('stockHistory'), 'stock-history')
@@ -132,11 +132,7 @@ function PageLoader() {
 }
 
 function PageSuspense({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation()
-  const fallback = pathname === '/'
-    ? <StartupLoadingScreen phase="data" />
-    : <PageLoader />
-  return <Suspense fallback={fallback}>{children}</Suspense>
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 
 const LOCAL_SALES_RETENTION_MIGRATION_KEY = 'tokobahan.sales-retention-500-v1'

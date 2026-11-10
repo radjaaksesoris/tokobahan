@@ -13,10 +13,6 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } fr
 import { cn } from '@/lib/utils'
 import { preloadPageChunk } from '@/lib/pageChunks'
 import { CurrentDate } from '@/components/layout/CurrentDate'
-import {
-  StartupLoadingScreen,
-  type StartupLoadingPhase,
-} from '@/components/ui/StartupLoadingScreen'
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; className: string }[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir', className: '' },
@@ -32,16 +28,10 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [scrollMetrics, setScrollMetrics] = useState({ height: 0, top: 0, max: 0 })
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
-  const [dashboardReady, setDashboardReady] = useState(false)
-  const [startupPhase, setStartupPhase] = useState<StartupLoadingPhase>('data')
   const scrollTrackRef = useRef<HTMLDivElement>(null)
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
   const location = useLocation()
-  const startupScreenAllowedRef = useRef(location.pathname === '/')
-  if (location.pathname !== '/') startupScreenAllowedRef.current = false
-  const showStartupScreen = startupScreenAllowedRef.current && location.pathname === '/' &&
-    !dashboardReady
   const isPosRoute = location.pathname.endsWith('/pos')
   const scrollTrackHeight = scrollTrackRef.current?.clientHeight ?? 0
   const scrollPercent = scrollMetrics.max > 0
@@ -205,7 +195,7 @@ export function AppLayout() {
             '--tab-background-image': `url("${import.meta.env.BASE_URL}tab-background.jpg")`,
           } as CSSProperties}
         >
-          <Outlet context={{ setSnapshotGeneratedAt, setDashboardReady, setStartupPhase }} />
+          <Outlet context={{ setSnapshotGeneratedAt }} />
         </main>
         <div
           ref={scrollTrackRef}
@@ -249,7 +239,6 @@ export function AppLayout() {
           <Menu className="h-5 w-5" />
         </button>
       )}
-      {showStartupScreen && <StartupLoadingScreen phase={startupPhase} />}
     </div>
   )
 }

@@ -1,5 +1,4 @@
 const pageChunkImporters = {
-  dashboard: () => import('@/pages/Dashboard'),
   pos: () => import('@/pages/POS'),
   products: () => import('@/pages/Products'),
   stockHistory: () => import('@/pages/StockHistory'),
@@ -22,7 +21,6 @@ const routeChunks: Array<[string, PageChunk]> = [
   ['/reports', 'reports'],
   ['/settings', 'settings'],
   ['/pos', 'pos'],
-  ['/', 'dashboard'],
 ]
 
 export function getPageChunkImporter(page: PageChunk) {

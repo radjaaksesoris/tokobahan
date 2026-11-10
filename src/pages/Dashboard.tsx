@@ -90,10 +90,8 @@ function downloadSnapshotBackup(snapshot: unknown) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { setSnapshotGeneratedAt, setDashboardReady, setStartupPhase } = useOutletContext<{
+  const { setSnapshotGeneratedAt } = useOutletContext<{
     setSnapshotGeneratedAt: (timestamp: string | null) => void
-    setDashboardReady: (ready: boolean) => void
-    setStartupPhase: (phase: 'access' | 'data' | 'page') => void
   }>()
   const [stats, setStats] = useState<Stats>({
     todaySales: 0,
@@ -165,7 +163,6 @@ export default function Dashboard() {
 
   async function loadStats() {
     const requestId = ++statsRequestId.current
-    setStartupPhase('page')
     if (!initialLoadComplete.current) setLoading(true)
     setError(null)
     setSnapshotMissing(false)
@@ -178,7 +175,6 @@ export default function Dashboard() {
       setError(`Gagal membaca snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
       setLoading(false)
       initialLoadComplete.current = true
-      setDashboardReady(true)
       return
     }
     if (requestId !== statsRequestId.current) return
@@ -206,12 +202,10 @@ export default function Dashboard() {
         setSnapshotGeneratedAt(snapshot.generated_at)
         setLoading(false)
         initialLoadComplete.current = true
-        setDashboardReady(true)
       } catch (snapshotError) {
         setError(`Gagal membaca data snapshot lokal: ${snapshotError instanceof Error ? snapshotError.message : 'Kesalahan tidak diketahui'}`)
         setLoading(false)
         initialLoadComplete.current = true
-        setDashboardReady(true)
       }
       return
     }
@@ -220,7 +214,6 @@ export default function Dashboard() {
     setSnapshotMissing(true)
     setLoading(false)
     initialLoadComplete.current = true
-    setDashboardReady(true)
   }
 
   async function initializeDashboardData() {
@@ -571,7 +564,7 @@ export default function Dashboard() {
       <Card className="relative overflow-hidden border-0 bg-surface/95 shadow-[0_12px_32px_rgba(32,42,46,0.06)]">
         <CardHeader className="border-b border-[#e9e9df] px-5 pb-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Arus pembayaran</p>
-          <CardTitle className="text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
+          <CardTitle className="-mt-1 text-lg tracking-tight">Pembayaran hutang hari ini</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-4 text-ink">
@@ -603,7 +596,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Aktivitas penjualan</p>
-              <CardTitle className="mt-1 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
+              <CardTitle className="-mt-0.5 text-lg tracking-tight">Rincian transaksi hari ini</CardTitle>
             </div>
             <div className="shrink-0 rounded-xl bg-ink px-3 py-2 text-right text-white shadow-[0_5px_12px_rgba(32,42,46,0.2)]">
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">Total</p>
@@ -613,18 +606,18 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="relative z-10 grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
           {([
-            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, Banknote, 'border-border bg-surface text-ink'],
+            ['CASH', stats.todayPaymentTotals.cash, stats.todayPaymentCounts.cash, Banknote, 'border-ink bg-ink text-white'],
             ['KREDIT', stats.todayPaymentTotals.credit, stats.todayPaymentCounts.credit, CreditCard, 'border-border bg-muted/50 text-ink'],
             ['TRANSFER', stats.todayPaymentTotals.transfer, stats.todayPaymentCounts.transfer, ArrowLeftRight, 'border-border bg-surface text-ink'],
             ['QR', stats.todayPaymentTotals.qris, stats.todayPaymentCounts.qris, QrCode, 'border-border bg-muted/50 text-ink'],
           ] as const).map(([label, total, count, Icon, color]) => (
             <div key={label} className={`rounded-xl border border-t-2 px-4 py-3.5 ${color}`}>
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+              <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] ${label === 'CASH' ? 'text-white/70' : 'text-muted-foreground'}`}>
+                <Icon className={`h-4 w-4 ${label === 'CASH' ? 'text-accent' : 'text-primary'}`} aria-hidden="true" />
                 <p>{label}</p>
               </div>
               <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">{loading ? '...' : formatCurrency(total)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
+              <p className={`mt-1 text-xs ${label === 'CASH' ? 'text-white/65' : 'text-muted-foreground'}`}>{loading ? '...' : `${formatNumber(count)} transaksi`}</p>
             </div>
           ))}
         </CardContent>
