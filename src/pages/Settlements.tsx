@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { UNIT_LABELS } from '@/types'
 import { toast } from 'sonner'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
-import { WalletCards, ChevronLeft, ChevronRight, Printer } from 'lucide-react'
+import { WalletCards, ChevronLeft, ChevronRight, Printer, X } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { readOperationalSnapshot, updateOperationalSnapshot } from '@/lib/offlineOperationalSnapshot'
 
@@ -485,13 +485,25 @@ export default function Settlements() {
       </div>
       {(tab === 'vendor-history' || tab === 'customer-history') && (
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-          <Input
-            value={historySearch}
-            onChange={(event) => setHistorySearch(event.target.value)}
-            placeholder={tab === 'vendor-history' ? 'Cari vendor atau item...' : 'Cari pelanggan atau invoice...'}
-            aria-label={tab === 'vendor-history' ? 'Cari nama vendor atau item' : 'Cari nama pelanggan atau invoice'}
-            className="min-w-0 border-ink bg-ink text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30 sm:w-64"
-          />
+          <div className="relative min-w-0 sm:w-64">
+            <Input
+              value={historySearch}
+              onChange={(event) => setHistorySearch(event.target.value)}
+              placeholder={tab === 'vendor-history' ? 'Cari vendor atau item...' : 'Cari pelanggan atau invoice...'}
+              aria-label={tab === 'vendor-history' ? 'Cari nama vendor atau item' : 'Cari nama pelanggan atau invoice'}
+              className="min-w-0 border-ink bg-ink pr-10 text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30"
+            />
+            {historySearch && (
+              <button
+                type="button"
+                aria-label="Reset pencarian"
+                onClick={() => setHistorySearch('')}
+                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <label className="relative flex h-10 items-center rounded-xl border border-border bg-surface px-3 text-sm text-muted-foreground sm:w-44">
             <span className="pointer-events-none mr-2 shrink-0">Tanggal</span>
             <input
@@ -513,22 +525,34 @@ export default function Settlements() {
           <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer' ? 'bg-ink text-white shadow-sm' : 'bg-muted/50 text-ink hover:bg-muted'}`} onClick={() => setTab('customer')}>Hutang Pelanggan</button>
         </div>
       </section>
-      <section className="rounded-2xl border border-border bg-muted/50 p-2.5 shadow-sm">
+      <section className="rounded-2xl border border-accent bg-accent p-2.5 shadow-sm">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Catatan pembayaran</p>
         <div className="grid grid-cols-2 gap-2">
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-ink text-white shadow-sm' : 'bg-surface text-ink hover:bg-muted'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
-          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-ink text-white shadow-sm' : 'bg-surface text-ink hover:bg-muted'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-ink text-white shadow-sm' : 'bg-ink/90 text-white hover:bg-ink'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
+          <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-ink text-white shadow-sm' : 'bg-ink/90 text-white hover:bg-ink'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
         </div>
       </section>
     </div>
     {tab === 'customer' && (
-      <Input
-        value={customerSearch}
-        onChange={(event) => setCustomerSearch(event.target.value)}
-        placeholder="Cari nama pelanggan..."
-        aria-label="Cari nama pelanggan"
-        className="border-ink bg-ink text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30"
-      />
+      <div className="relative">
+        <Input
+          value={customerSearch}
+          onChange={(event) => setCustomerSearch(event.target.value)}
+          placeholder="Cari nama pelanggan..."
+          aria-label="Cari nama pelanggan"
+          className="border-ink bg-ink pr-10 text-white placeholder:text-white/60 focus:border-accent focus:ring-accent/30"
+        />
+        {customerSearch && (
+          <button
+            type="button"
+            aria-label="Reset pencarian"
+            onClick={() => setCustomerSearch('')}
+            className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
     )}
     {loading ? <p className="text-sm text-muted-foreground">Memuat data...</p> : tab === 'vendor-history' ? (
       filteredVendorPaymentHistory.length === 0 ? <Card className="border-border bg-surface"><CardContent className="p-6 text-center text-sm text-ink">Belum ada riwayat pembayaran vendor.</CardContent></Card> : (
