@@ -526,7 +526,7 @@ export default function Settlements() {
         </div>
       </section>
       <section className="rounded-2xl border border-accent bg-accent p-2.5 shadow-sm">
-        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Catatan pembayaran</p>
+        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-ink">Catatan pembayaran</p>
         <div className="grid grid-cols-2 gap-2">
           <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'vendor-history' ? 'bg-ink text-white shadow-sm' : 'bg-ink/90 text-white hover:bg-ink'}`} onClick={() => setTab('vendor-history')}>Riwayat Vendor</button>
           <button className={`min-w-0 rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${tab === 'customer-history' ? 'bg-ink text-white shadow-sm' : 'bg-ink/90 text-white hover:bg-ink'}`} onClick={() => setTab('customer-history')}>Riwayat Pelanggan</button>
@@ -616,8 +616,8 @@ export default function Settlements() {
               <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_6.25rem] items-center gap-x-2">
                 <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
                 <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-                <p className="w-full truncate text-[11px] text-muted-foreground">{debt.reference}</p>
-                <p className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-ink">
+                <p className="w-full truncate text-center text-[11px] text-muted-foreground">{debt.reference}</p>
+                <p className="justify-self-center whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-center text-[11px] font-bold text-ink">
                   {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
               </div>
