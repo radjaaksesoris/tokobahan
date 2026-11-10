@@ -553,7 +553,7 @@ export default function POS() {
               </div>
 
               <div className="mb-4 flex items-center gap-2">
-                <div className="grid min-w-0 flex-1 grid-cols-3 gap-2 [&>button]:min-w-0 [&>button]:truncate">
+                <div className="grid min-w-0 flex-1 auto-cols-fr grid-flow-col gap-2 [&>button]:min-w-0 [&>button]:truncate">
                   {(selectedProduct.prices?.length
                     ? selectedProduct.prices.map((p) => p.unit)
                     : [selectedProduct.stock_unit || 'satuan']
