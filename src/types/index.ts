@@ -6,6 +6,7 @@ export function isUnitType(value: string): value is UnitType {
 
 export const UNIT_LABELS: Record<string, string> = {
   satuan: 'Satuan',
+  pcs: 'Pcs',
   lusin: 'Lusin',
   kodi: 'Kodi',
   gross: 'Gross',
@@ -15,6 +16,7 @@ export const UNIT_LABELS: Record<string, string> = {
 
 export const UNIT_FACTORS: Record<string, number> = {
   satuan: 1,
+  pcs: 1,
   lusin: 12,
   kodi: 20,
   gross: 144,

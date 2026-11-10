@@ -32,7 +32,7 @@ import {
 } from '@/lib/productUnits'
 import { preloadPageChunk } from '@/lib/pageChunks'
 
-const ALL_UNITS: UnitType[] = ['satuan', 'lusin', 'kodi', 'gross', 'meter', 'pack']
+const ALL_UNITS: UnitType[] = ['satuan', 'pcs', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
 function getUnitLabel(unit: string | null | undefined) {
   return unit ? UNIT_LABELS[unit] || unit : 'Satuan'
