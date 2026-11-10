@@ -484,12 +484,12 @@ export default function POS() {
                     activeProductIndex === index
                       ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(64,87,55,0.18)]'
                       : zebraRow
-                        ? 'border-[#e1e7d9] bg-[#f0f3eb]/80'
-                        : 'border-stone-200/80 bg-surface/80'
+                        ? 'border-border bg-muted/50'
+                        : 'border-border bg-surface'
                   } ${
                     availableStock <= 0
                       ? 'cursor-not-allowed opacity-60'
-                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
+                      : 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_12px_24px_rgba(64,87,55,0.12)] active:scale-[0.98]'
                   }`}
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors group-hover:bg-ink/90 lg:h-9 lg:w-9">
