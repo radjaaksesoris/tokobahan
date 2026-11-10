@@ -37,6 +37,18 @@ html {
   scrollbar-gutter: stable;
 }
 
+@media (min-width: 1024px) {
+  html:has(#root .fixed.inset-0),
+  body:has(#root .fixed.inset-0) {
+    overflow: hidden;
+  }
+
+  #root .fixed.inset-0 {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 /* Page headers stay flush with the top edge of the main scroll container. */
 #main-content .sticky {
   top: 0 !important;
