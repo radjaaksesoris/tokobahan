@@ -180,10 +180,10 @@ export function AppLayout() {
         </nav>
 
         <div className="hidden border-t border-white/10 p-4 lg:block">
-          <div className="mb-4 rounded-xl bg-white/5 px-3 py-2.5">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Hari & tanggal</p>
+          <div className="mb-4 rounded-xl bg-accent px-3 py-2.5 text-ink">
+            <p className="mb-1 text-center text-[10px] font-bold uppercase tracking-[0.16em]">Hari & tanggal</p>
             <CurrentDate
-              className="text-left text-stone-300"
+              className="text-ink"
               snapshotGeneratedAt={snapshotGeneratedAt}
             />
           </div>

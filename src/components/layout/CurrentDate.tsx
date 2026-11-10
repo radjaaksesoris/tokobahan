@@ -19,8 +19,11 @@ export function CurrentDate({
     : null
 
   return (
-    <div className={`flex min-w-0 items-center justify-between gap-1.5 ${className}`}>
-      <p className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
+    <div
+      className={`flex min-w-0 items-center justify-center gap-1.5 text-center ${className}`}
+      title={snapshotLabel || undefined}
+    >
+      <p className="min-w-0 truncate text-[11px] font-medium">
         {new Date().toLocaleDateString('id-ID', {
           weekday: 'short',
           day: 'numeric',
@@ -28,16 +31,6 @@ export function CurrentDate({
           year: 'numeric',
         })}
       </p>
-      {snapshotLabel && (
-        <span
-          className="shrink-0 text-[9px] font-medium text-emerald-300"
-          role="status"
-          title={snapshotLabel}
-          aria-label={snapshotLabel}
-        >
-          Snapshot lokal
-        </span>
-      )}
     </div>
   )
 }
