@@ -1157,9 +1157,6 @@ export default function Products() {
                       value={formatCurrencyInput(stockCost)}
                       onChange={(event) => setStockCost(parseCurrencyInput(event.target.value))}
                     />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      HPP ini hanya berlaku untuk stok baru. Stok lama tetap dihitung dengan HPP batch sebelumnya.
-                    </p>
                   </div>
                   <div>
                     <label htmlFor="stock-vendor" className="mb-1 block text-sm font-medium">Vendor</label>
@@ -1197,9 +1194,6 @@ export default function Products() {
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Simulasi margin stok baru
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            Harga jual aktif dibandingkan dengan HPP yang dimasukkan.
                           </p>
                         </div>
                         <button
@@ -1319,14 +1313,14 @@ export default function Products() {
             className="absolute inset-0 cursor-default"
             onClick={() => setModal(false)}
           />
-          <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
-            <CardHeader className="relative z-10 flex-row items-center justify-between border-b bg-surface px-5 py-4">
-              <CardTitle>{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
-              <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-ink">
+          <Card className="product-drawer absolute inset-y-0 right-0 flex w-full max-w-xl flex-col rounded-none border-y-0 border-r-0 border-l-4 border-l-accent bg-[#fffdf7] shadow-[-12px_0_32px_rgba(32,42,46,0.18)] sm:w-[min(92vw,640px)]">
+            <CardHeader className="relative z-10 flex-row items-center justify-between border-b-2 border-accent bg-ink px-5 py-4 text-white">
+              <CardTitle className="text-white">{editingPricesOnly ? 'Ubah Harga Jual' : editing ? 'Edit Produk' : 'Tambah Produk'}</CardTitle>
+              <button type="button" onClick={() => setModal(false)} aria-label="Tutup panel produk" className="rounded-lg p-2 text-white/75 transition-colors hover:bg-white/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 <X className="h-5 w-5" />
               </button>
             </CardHeader>
-            <CardContent className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
+            <CardContent className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-[#fffdf7] px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
               <div>
                 <label htmlFor="product-name" className="mb-1 block text-sm font-medium">Nama Produk *</label>
                 <Input
@@ -1442,7 +1436,7 @@ export default function Products() {
                 </div>
               </div>
               {!editing && (
-                <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 rounded-xl border border-accent/70 bg-accent/15 p-3 sm:grid-cols-2">
                   <div className="min-w-0">
                     <label htmlFor="initial-stock-vendor" className="mb-1 block text-sm font-medium">Nama Vendor</label>
                     <Select
@@ -1575,10 +1569,10 @@ export default function Products() {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <span id="sale-prices-label" className="text-sm font-medium">Harga jual & konversi satuan</span>
-                  <Button variant="outline" size="sm" onClick={addPriceRow} disabled={editingPricesOnly}>
+              <div className="rounded-xl border border-accent/70 bg-[#fff4d8] p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span id="sale-prices-label" className="text-sm font-semibold text-ink">Harga jual & konversi satuan</span>
+                  <Button variant="outline" size="sm" className="shrink-0 border-accent bg-accent text-ink hover:border-accent/90 hover:bg-accent/90" onClick={addPriceRow} disabled={editingPricesOnly}>
                     <Plus className="h-3 w-3" /> Tambah
                   </Button>
                 </div>
@@ -1678,11 +1672,11 @@ export default function Products() {
                 </div>
               </div>
             </CardContent>
-            <div className="flex gap-2 border-t p-4">
-              <Button variant="outline" className="flex-1" onClick={() => setModal(false)}>
+            <div className="flex gap-2 border-t-2 border-accent bg-ink p-4">
+              <Button variant="outline" className="flex-1 border-white/30 bg-transparent text-white hover:border-accent hover:bg-accent hover:text-ink focus-visible:ring-accent focus-visible:ring-offset-ink" onClick={() => setModal(false)}>
                 Batal
               </Button>
-              <Button ref={saveButtonRef} className="flex-1" onClick={handleSave} disabled={saving}>
+              <Button ref={saveButtonRef} className="flex-1 bg-accent text-ink shadow-[0_6px_16px_rgba(228,168,83,0.24)] hover:bg-accent/90 focus-visible:ring-accent focus-visible:ring-offset-ink" onClick={handleSave} disabled={saving}>
                 {saving ? <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" /> : 'Simpan'}
               </Button>
             </div>
