@@ -102,15 +102,62 @@ body:has(.idle-screensaver) {
   padding-bottom: 1rem;
 }
 
-.idle-screensaver__image {
-  display: block;
+.idle-screensaver__tile {
+  display: flex;
   width: 100%;
   height: clamp(180px, 30vh, 320px);
   flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.6rem, 2vw, 1.5rem);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.15rem;
-  object-fit: cover;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.08), transparent 68%),
+    linear-gradient(145deg, #253338, #192225);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+.idle-screensaver__tile--logo {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.13), transparent 65%),
+    linear-gradient(145deg, #2c3b40, #182225);
+}
+
+.idle-screensaver__tile--wordmark {
+  flex-direction: column;
+}
+
+.idle-screensaver__tile-logo {
+  display: block;
+  width: min(54%, 10rem);
+  aspect-ratio: 1;
+  border-radius: 22%;
+  object-fit: cover;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+}
+
+.idle-screensaver__tile--combined .idle-screensaver__tile-logo {
+  width: min(36%, 7rem);
+}
+
+.idle-screensaver__tile-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: clamp(1.25rem, 3.2vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.08;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+.idle-screensaver__tile-wordmark span:last-child {
+  color: #f2c477;
+  font-size: 0.58em;
+  letter-spacing: 0.24em;
 }
 
 .idle-screensaver__scrim {
@@ -194,18 +241,6 @@ body:has(.idle-screensaver) {
   outline-offset: 4px;
 }
 
-.idle-screensaver__credit {
-  margin-top: 1.5rem;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 0.72rem;
-}
-
-.idle-screensaver__credit a {
-  color: #f2c477;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 @keyframes idle-screensaver-scroll {
   to { transform: translateY(-50%); }
 }
@@ -223,7 +258,7 @@ body:has(.idle-screensaver) {
     padding-bottom: 0.7rem;
   }
 
-  .idle-screensaver__image {
+  .idle-screensaver__tile {
     height: clamp(170px, 28vh, 250px);
     border-radius: 0.9rem;
   }
@@ -239,7 +274,7 @@ body:has(.idle-screensaver) {
 
 @media (prefers-reduced-motion: reduce) {
   .idle-screensaver__column {
-    animation: none;
+    animation-duration: 90s;
   }
 
   .idle-screensaver__button {

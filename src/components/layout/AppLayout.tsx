@@ -25,10 +25,10 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
   { to: '/settings', icon: Settings, label: 'Pengaturan', className: '' },
 ]
 
-const screensaverImages = [
-  ['bag-detail.jpg', 'bag-streetwear.jpg', 'bag-yellow.jpg'],
-  ['bag-yellow.jpg', 'bag-detail.jpg', 'bag-streetwear.jpg'],
-  ['bag-streetwear.jpg', 'bag-yellow.jpg', 'bag-detail.jpg'],
+const screensaverVariants = [
+  ['logo', 'wordmark', 'combined'],
+  ['combined', 'logo', 'wordmark'],
+  ['wordmark', 'combined', 'logo'],
 ]
 
 export function AppLayout() {
@@ -348,17 +348,29 @@ export function AppLayout() {
       {screensaverActive && (
         <div className="idle-screensaver" role="dialog" aria-modal="true" aria-labelledby="idle-screensaver-title">
           <div className="idle-screensaver__columns" aria-hidden="true">
-            {screensaverImages.map((column, columnIndex) => (
+            {screensaverVariants.map((column, columnIndex) => (
               <div className="idle-screensaver__column" key={columnIndex}>
                 {[0, 1].map((copy) => (
                   <div className="idle-screensaver__set" key={copy}>
-                    {column.map((image) => (
-                      <img
-                        className="idle-screensaver__image"
-                        key={`${copy}-${image}`}
-                        src={`${import.meta.env.BASE_URL}screensaver/${image}`}
-                        alt=""
-                      />
+                    {column.map((variant) => (
+                      <div
+                        className={`idle-screensaver__tile idle-screensaver__tile--${variant}`}
+                        key={`${copy}-${variant}`}
+                      >
+                        {variant !== 'wordmark' && (
+                          <img
+                            className="idle-screensaver__tile-logo"
+                            src={`${import.meta.env.BASE_URL}logo-radja.png`}
+                            alt=""
+                          />
+                        )}
+                        {variant !== 'logo' && (
+                          <span className="idle-screensaver__tile-wordmark">
+                            <span>RAJA</span>
+                            <span>AKSESORIS</span>
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -384,10 +396,6 @@ export function AppLayout() {
               <LogIn className="h-5 w-5" aria-hidden="true" />
               Masuk ke aplikasi
             </button>
-            <p className="idle-screensaver__credit">
-              Foto tas dari{' '}
-              <a href="https://www.pexels.com/" target="_blank" rel="noreferrer">Pexels</a>
-            </p>
           </div>
         </div>
       )}
