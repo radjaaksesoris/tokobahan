@@ -1463,7 +1463,7 @@ function CartPanel({
 
         <Button
           ref={checkoutButtonRef}
-          className="w-full bg-[#d6b879] text-ink hover:bg-[#c9aa6e] disabled:bg-[#d6b879] disabled:text-ink/70 focus-visible:bg-[#c9aa6e] focus-visible:ring-2 focus-visible:ring-[#c9aa6e]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+          className="w-full bg-accent text-ink hover:bg-[#d6b879] disabled:bg-accent disabled:text-ink/70 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
           size="lg"
           disabled={loading}
           onClick={handleCheckoutClick}
