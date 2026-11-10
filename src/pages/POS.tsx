@@ -616,7 +616,7 @@ export default function POS() {
                             ? 'border-red-600 bg-red-600 text-white'
                             : selectedUnit === unit
                               ? 'border-accent bg-accent text-ink'
-                              : 'border-ink bg-ink text-white hover:bg-ink/90'
+                              : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-ink'
                         }`}
                       >
                         {UNIT_LABELS[unit] || unit}
