@@ -613,7 +613,7 @@ export default function Settlements() {
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
             {tab === 'customer' ? (
-              <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_6.25rem] items-center gap-x-2">
+              <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_6.25rem] items-center gap-x-2 sm:pr-6">
                 <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
                 <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
                 <p className="w-full truncate text-center text-[11px] text-muted-foreground">{debt.reference}</p>

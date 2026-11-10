@@ -1027,14 +1027,14 @@ export default function Products() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs lg:min-w-[720px] lg:text-sm">
+            <table className="w-full min-w-[760px] table-fixed text-xs lg:min-w-[800px] lg:text-sm">
               <thead className="border-b border-white/10 bg-ink text-center text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   <th className="w-[8%] px-0.5 py-1.5 font-semibold lg:w-[5%] lg:px-2">No.</th>
-                  <th className="w-[32%] px-0.5 py-1.5 font-semibold lg:w-[28%] lg:px-2">Produk</th>
-                  <th className="w-[17%] px-0.5 py-1.5 font-semibold lg:w-[15%] lg:px-2">Stok</th>
-                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-[19%] lg:px-2">Modal</th>
-                  <th className="w-[23%] px-0.5 py-1.5 font-semibold lg:w-[20%] lg:px-2">Harga jual</th>
+                  <th className="w-[24%] px-0.5 py-1.5 font-semibold lg:w-[23%] lg:px-2">Produk</th>
+                  <th className="w-[15%] px-0.5 py-1.5 font-semibold lg:w-[13%] lg:px-2">Stok</th>
+                  <th className="w-[20%] px-0.5 py-1.5 font-semibold lg:w-[17%] lg:px-2">Modal</th>
+                  <th className="w-[33%] px-0.5 py-1.5 font-semibold lg:w-[29%] lg:px-2">Harga jual</th>
                   <th className="hidden whitespace-nowrap px-0.5 py-1.5 font-semibold lg:table-cell lg:w-[13%] lg:px-2">Aksi</th>
                 </tr>
               </thead>
@@ -1059,12 +1059,12 @@ export default function Products() {
                       {formatCurrency(p.cost_price)} <span className="hidden text-muted-foreground lg:inline">/ {UNIT_LABELS[(p.cost_unit || 'satuan') as UnitType] || p.cost_unit || 'Satuan'}</span>
                     </td>
                     <td className="min-w-0 px-0.5 py-1.5 text-center lg:px-2">
-                      <div className="flex flex-wrap justify-center gap-1">
+                      <div className="flex flex-nowrap justify-center gap-1">
                         {p.prices?.map((pr) => (
                           <span
                             key={pr.unit}
-                            className={`rounded bg-ink px-2 py-0.5 text-[10px] text-white lg:shrink-0 lg:whitespace-nowrap lg:text-center ${
-                              p.prices.length === 1 ? 'lg:w-[180px]' : 'lg:w-[104px]'
+                            className={`shrink-0 whitespace-nowrap rounded bg-ink px-2 py-0.5 text-center text-[10px] text-white ${
+                              p.prices.length === 1 ? 'lg:w-[180px]' : 'w-[104px]'
                             }`}
                           >
                             <span className="hidden lg:inline">{UNIT_LABELS[pr.unit] || pr.unit}: </span>{formatCurrency(pr.price)}
