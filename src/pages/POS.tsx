@@ -502,9 +502,7 @@ export default function POS() {
                     <p className={`mt-0.5 text-[10px] ${
                       availableStock <= 0
                         ? 'font-semibold text-red-500'
-                        : activeProductIndex === index
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
+                        : 'text-accent'
                     }`}>
                       {availableStock <= 0
                         ? 'Barang habis'
