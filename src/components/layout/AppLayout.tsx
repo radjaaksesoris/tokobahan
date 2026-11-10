@@ -8,6 +8,7 @@ import {
   Menu,
   Settings,
   WalletCards,
+  LogIn,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
@@ -24,11 +25,21 @@ const navItems: { to: string; icon: typeof LayoutDashboard; label: string; class
   { to: '/settings', icon: Settings, label: 'Pengaturan', className: '' },
 ]
 
+const screensaverImages = [
+  ['bag-detail.jpg', 'bag-streetwear.jpg', 'bag-yellow.jpg'],
+  ['bag-yellow.jpg', 'bag-detail.jpg', 'bag-streetwear.jpg'],
+  ['bag-streetwear.jpg', 'bag-yellow.jpg', 'bag-detail.jpg'],
+]
+
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [scrollMetrics, setScrollMetrics] = useState({ height: 0, top: 0, max: 0 })
   const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null)
+  const [screensaverActive, setScreensaverActive] = useState(false)
   const scrollTrackRef = useRef<HTMLDivElement>(null)
+  const screensaverActiveRef = useRef(false)
+  const screensaverResumeRef = useRef<HTMLButtonElement>(null)
+  const resumeScreensaverRef = useRef<() => void>(() => {})
   const dragOffsetRef = useRef(0)
   const isDraggingRef = useRef(false)
   const location = useLocation()
@@ -37,6 +48,98 @@ export function AppLayout() {
   const scrollPercent = scrollMetrics.max > 0
     ? Math.round((scrollMetrics.top / Math.max(1, scrollTrackHeight - scrollMetrics.height)) * 100)
     : 0
+
+  useEffect(() => {
+    const idleTimeout = 3 * 60 * 1000
+    let timer: number | undefined
+    let lastActivityAt = Date.now()
+    let lastPointerMoveAt = 0
+
+    const clearTimer = () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = undefined
+    }
+
+    const checkIdle = () => {
+      clearTimer()
+      if (document.visibilityState !== 'visible' || screensaverActiveRef.current) return
+
+      const idleFor = Date.now() - lastActivityAt
+      if (idleFor >= idleTimeout) {
+        screensaverActiveRef.current = true
+        setScreensaverActive(true)
+        return
+      }
+
+      timer = window.setTimeout(checkIdle, idleTimeout - idleFor)
+    }
+
+    const resetIdleTimer = () => {
+      if (screensaverActiveRef.current) return
+      lastActivityAt = Date.now()
+      clearTimer()
+      if (document.visibilityState === 'visible') {
+        timer = window.setTimeout(checkIdle, idleTimeout)
+      }
+    }
+
+    const handlePointerMove = () => {
+      const now = Date.now()
+      if (now - lastPointerMoveAt < 1000) return
+      lastPointerMoveAt = now
+      resetIdleTimer()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (screensaverActiveRef.current) {
+        if (event.key === 'Tab') {
+          event.preventDefault()
+          screensaverResumeRef.current?.focus()
+        }
+        return
+      }
+      resetIdleTimer()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        clearTimer()
+        return
+      }
+      checkIdle()
+    }
+
+    resumeScreensaverRef.current = () => {
+      screensaverActiveRef.current = false
+      setScreensaverActive(false)
+      resetIdleTimer()
+    }
+
+    document.addEventListener('pointerdown', resetIdleTimer, { passive: true })
+    document.addEventListener('pointermove', handlePointerMove, { passive: true })
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('touchstart', resetIdleTimer, { passive: true })
+    document.addEventListener('wheel', resetIdleTimer, { passive: true })
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    resetIdleTimer()
+
+    return () => {
+      clearTimer()
+      resumeScreensaverRef.current = () => {}
+      document.removeEventListener('pointerdown', resetIdleTimer)
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('touchstart', resetIdleTimer)
+      document.removeEventListener('wheel', resetIdleTimer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!screensaverActive) return
+    const frame = window.requestAnimationFrame(() => screensaverResumeRef.current?.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [screensaverActive])
 
   useEffect(() => {
     const track = scrollTrackRef.current
@@ -241,6 +344,52 @@ export function AppLayout() {
         >
           <Menu className="h-5 w-5" />
         </button>
+      )}
+      {screensaverActive && (
+        <div className="idle-screensaver" role="dialog" aria-modal="true" aria-labelledby="idle-screensaver-title">
+          <div className="idle-screensaver__columns" aria-hidden="true">
+            {screensaverImages.map((column, columnIndex) => (
+              <div className="idle-screensaver__column" key={columnIndex}>
+                {[0, 1].map((copy) => (
+                  <div className="idle-screensaver__set" key={copy}>
+                    {column.map((image) => (
+                      <img
+                        className="idle-screensaver__image"
+                        key={`${copy}-${image}`}
+                        src={`${import.meta.env.BASE_URL}screensaver/${image}`}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="idle-screensaver__scrim" aria-hidden="true" />
+          <div className="idle-screensaver__content">
+            <img
+              className="idle-screensaver__logo"
+              src={`${import.meta.env.BASE_URL}logo-radja.png`}
+              alt=""
+            />
+            <p className="idle-screensaver__eyebrow">RAJA AKSESORIS</p>
+            <h2 id="idle-screensaver-title">Aplikasi sedang istirahat</h2>
+            <p className="idle-screensaver__message">Tekan tombol di bawah untuk melanjutkan.</p>
+            <button
+              ref={screensaverResumeRef}
+              type="button"
+              className="idle-screensaver__button"
+              onClick={() => resumeScreensaverRef.current()}
+            >
+              <LogIn className="h-5 w-5" aria-hidden="true" />
+              Masuk ke aplikasi
+            </button>
+            <p className="idle-screensaver__credit">
+              Foto tas dari{' '}
+              <a href="https://www.pexels.com/" target="_blank" rel="noreferrer">Pexels</a>
+            </p>
+          </div>
+        </div>
       )}
     </div>
   )
