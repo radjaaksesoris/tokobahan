@@ -31,6 +31,7 @@ interface SaleRow {
   payment_method: string
   cashier_id: string | null
   customer_id: string | null
+  customer_name?: string | null
   amount_paid: number
   cash_received?: number | null
   created_at: string
@@ -151,13 +152,22 @@ export default function TransactionHistory() {
     try {
       const snapshot = await readOperationalSnapshot()
       if (!snapshot) throw new Error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
-      const localSales = await readOperationalTable<SaleRow>('sales', snapshot)
+      const [localSales, customers] = await Promise.all([
+        readOperationalTable<SaleRow>('sales', snapshot),
+        readOperationalTable<{ id: string; name: string }>('customers', snapshot),
+      ])
       if (requestId !== loadRequestId.current) return
+      const customerNames = new Map(customers.map((customer) => [customer.id, customer.name]))
       const filtered = localSales
+        .map((sale) => ({
+          ...sale,
+          customer_name: sale.customer_id ? customerNames.get(sale.customer_id) || null : null,
+        }))
         .filter((sale) => !date || sale.created_at >= startOfDay(new Date(`${date}T00:00:00`)).toISOString() &&
           sale.created_at <= endOfDay(new Date(`${date}T00:00:00`)).toISOString())
         .filter((sale) => !term ||
           sale.invoice_no.toLocaleLowerCase().includes(term) ||
+          sale.customer_name?.toLocaleLowerCase().includes(term) ||
           sale.payment_method.toLocaleLowerCase().includes(term) ||
           getPaymentMethodLabel(sale.payment_method).toLocaleLowerCase().includes(term))
         .sort((a, b) =>
@@ -736,7 +746,12 @@ export default function TransactionHistory() {
                       }`}
                     >
                       <td className="px-1 py-2.5 text-center text-xs text-muted-foreground lg:px-4">{page * PAGE_SIZE + index + 1}</td>
-                      <td className="truncate px-1 py-2.5 text-center text-xs font-medium text-ink lg:px-4 lg:text-sm">{sale.invoice_no}</td>
+                      <td className="px-1 py-2 text-center lg:px-4">
+                        <div className="flex min-w-0 flex-col items-center leading-tight">
+                          {sale.customer_name && <span className="w-full truncate text-[11px] font-semibold text-ink">{sale.customer_name}</span>}
+                          <span className="w-full truncate text-[10px] font-medium text-muted-foreground lg:text-xs">{sale.invoice_no}</span>
+                        </div>
+                      </td>
                       <td className="whitespace-nowrap px-1 py-2.5 text-center text-[11px] text-muted-foreground lg:px-4 lg:text-xs">
                         <span className="lg:hidden">{format(new Date(sale.created_at), 'dd MMM yy', { locale: localeId })}</span>
                         <span className="hidden lg:inline">{format(new Date(sale.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}</span>
