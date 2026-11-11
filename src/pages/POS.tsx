@@ -600,6 +600,8 @@ export default function POS() {
                       <button
                         key={unit}
                         disabled={!hasStock}
+                        aria-label={hasStock ? UNIT_LABELS[unit] || unit : `${UNIT_LABELS[unit] || unit} habis`}
+                        title={!hasStock ? `${UNIT_LABELS[unit] || unit} habis` : undefined}
                         onClick={() => {
                           const nextQuantity = Math.min(
                             Math.max(1, Number(qtyInput) || 1),
@@ -613,13 +615,13 @@ export default function POS() {
                         }}
                         className={`w-full rounded-lg border px-2 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed ${
                           !hasStock
-                            ? 'border-red-600 bg-red-600 text-white'
+                            ? 'border-border bg-muted/50 text-muted-foreground opacity-70'
                             : selectedUnit === unit
                               ? 'border-accent bg-accent text-ink'
                               : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-ink'
                         }`}
                       >
-                        {UNIT_LABELS[unit] || unit}
+                        {hasStock ? UNIT_LABELS[unit] || unit : 'Habis'}
                       </button>
                     )
                   })}
