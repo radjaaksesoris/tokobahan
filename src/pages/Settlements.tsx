@@ -609,17 +609,19 @@ export default function Settlements() {
         </CardContent></Card>
       )
     ) : openDebts.length === 0 ? <Card className="border-border bg-muted/50"><CardContent className="p-6 text-center text-sm text-ink">Tidak ada hutang terbuka.</CardContent></Card> : <div className={`grid ${tab === 'customer' ? 'gap-2' : 'gap-3'}`}>
-      {openDebts.map((debt, index) => <Card key={debt.id} className={`border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}`}><CardContent className={tab === 'customer' ? 'space-y-1.5 p-1.5 sm:p-2' : 'space-y-2 p-2.5 sm:p-3'}>
+      {openDebts.map((debt, index) => <Card key={debt.id} className={`border-border ${index % 2 === 0 ? 'bg-surface' : 'bg-muted/50'}`}><CardContent className={tab === 'customer' ? 'space-y-2 p-2 sm:p-3' : 'space-y-2 p-2.5 sm:p-3'}>
         <div className={`flex flex-col ${tab === 'customer' ? 'gap-1.5' : 'gap-2'} sm:flex-row sm:items-center sm:justify-between`}>
           <div className={`min-w-0 ${tab === 'customer' ? 'w-full sm:flex-1' : ''}`}>
             {tab === 'customer' ? (
-              <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_5rem_6.25rem] items-center gap-x-2 sm:pr-6">
-                <p className="text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
-                <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
-                <p className="w-full truncate text-center text-[11px] text-muted-foreground">{debt.reference}</p>
-                <p className="justify-self-center whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-center text-[11px] font-bold text-ink">
-                  {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
+              <div className="grid w-full min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 sm:pr-6">
+                <p className="row-span-2 self-start pt-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">{page * PAGE_SIZE + index + 1}.</p>
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <p className="truncate text-sm font-semibold text-ink">{debt.name}</p>
+                  <p className="shrink-0 whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-center text-[11px] font-bold text-ink">
+                    {new Date(debt.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <p className="truncate text-[11px] text-muted-foreground">{debt.reference}</p>
               </div>
             ) : (
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -631,7 +633,7 @@ export default function Settlements() {
             )}
             <p className={`${tab === 'customer' ? 'ml-[2.25rem]' : ''} text-xs text-muted-foreground`}>Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
-          <div className="flex w-full gap-1.5 sm:w-auto">
+          <div className={`${tab === 'customer' ? 'grid grid-cols-[minmax(0,1fr)_auto_auto] sm:flex' : 'flex'} w-full gap-2 sm:w-auto`}>
             {tab === 'customer' && (
               <Button
                 variant="outline"
@@ -659,7 +661,7 @@ export default function Settlements() {
             }}
               placeholder="Nominal"
               aria-label={`Nominal pembayaran ${debt.name}`}
-              className={`${tab === 'customer' ? 'h-8 min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
+              className={`${tab === 'customer' ? 'col-span-full h-9 min-w-0 sm:col-span-1 sm:h-8 sm:min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
             />
             <Button className={`${tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} border-accent bg-accent text-ink shadow-sm hover:border-accent/90 hover:bg-accent/90`} onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
