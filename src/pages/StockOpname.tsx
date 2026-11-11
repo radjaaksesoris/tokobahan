@@ -24,7 +24,7 @@ type ProductRow = Pick<
 > & { is_active?: boolean }
 const PAGE_SIZE = 50
 
-export default function StockOpname() {
+export default function StockOpname({ embedded = false }: { embedded?: boolean }) {
   const [allProducts, setAllProducts] = useState<ProductRow[]>([])
   const [physical, setPhysical] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
@@ -173,13 +173,15 @@ export default function StockOpname() {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6">
-      <header className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 border-b border-ink/10 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:px-8 lg:py-5">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Stok Opname</h1>
-        <p className="mt-1 text-sm text-accent">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
-      </header>
+    <div className={embedded ? 'w-full space-y-4' : 'mx-auto max-w-[1440px] space-y-6'}>
+      {!embedded && (
+        <header className="page-header sticky top-[-1rem] z-30 -mx-4 -mt-4 border-b border-ink/10 bg-ink px-4 py-4 text-white shadow-[0_3px_0_rgba(32,42,46,0.2)] sm:top-[-1.25rem] sm:-mx-5 sm:-mt-5 sm:px-5 lg:top-[-2rem] lg:-mx-8 lg:px-8 lg:py-5">
+          <h1 className="text-3xl font-bold tracking-tight text-white">Stok Opname</h1>
+          <p className="mt-1 text-sm text-accent">Sesuaikan stok sistem berdasarkan hasil penghitungan fisik.</p>
+        </header>
+      )}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/85" aria-hidden="true" />
+        <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${embedded ? 'text-muted-foreground' : 'text-white/85'}`} aria-hidden="true" />
         <Input
           type="search"
           value={searchQuery}
@@ -189,15 +191,17 @@ export default function StockOpname() {
           }}
           placeholder="Cari nama produk..."
           aria-label="Cari produk untuk stok opname"
-          className="border-ink bg-ink pl-9 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30"
+          className={embedded
+            ? 'border-border bg-surface pl-9 text-ink placeholder:text-muted-foreground'
+            : 'border-ink bg-ink pl-9 text-white placeholder:text-white/70 focus:border-accent focus:ring-accent/30'}
         />
       </div>
       {loading ? <p className="text-sm text-muted-foreground">Memuat produk...</p> : (
         <div className="grid gap-3">
           {pageProducts.map((product) => (
             <Card key={product.id}>
-              <CardContent className="grid gap-3 p-4 lg:grid-cols-[1.4fr_0.7fr_1.4fr_auto] lg:items-end">
-                <div>
+              <CardContent className="grid gap-3 p-3 sm:p-4 lg:grid-cols-[minmax(12rem,1.2fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_auto] lg:items-end">
+                <div className="min-w-0 lg:pb-2">
                   <p className="font-semibold text-ink">{product.name}</p>
                   <p className="text-xs text-muted-foreground">Stok sistem: {formatMixedStockQuantity(product)}</p>
                 </div>

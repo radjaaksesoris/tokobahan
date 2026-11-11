@@ -1119,7 +1119,7 @@ export default function Settings() {
         </CardHeader>
         {stockOpnameOpen && (
           <CardContent id="stock-opname-content" className="border-t border-sky-200 pt-5">
-            <StockOpname />
+            <StockOpname embedded />
           </CardContent>
         )}
       </Card>
