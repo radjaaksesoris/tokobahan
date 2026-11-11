@@ -633,7 +633,7 @@ export default function Settlements() {
             )}
             <p className={`${tab === 'customer' ? 'ml-[2.25rem]' : ''} text-xs text-muted-foreground`}>Sisa <strong className="text-primary">{formatCurrency(debt.total - debt.paid)}</strong></p>
           </div>
-          <div className={`${tab === 'customer' ? 'grid grid-cols-[minmax(0,1fr)_auto_auto] sm:flex' : 'flex'} w-full gap-2 sm:w-auto`}>
+          <div className={`${tab === 'customer' ? 'grid grid-cols-[2rem_minmax(0,1fr)_auto_auto] items-center gap-1 sm:flex sm:gap-2' : 'flex gap-2'} w-full sm:w-auto`}>
             {tab === 'customer' && (
               <Button
                 variant="outline"
@@ -661,7 +661,7 @@ export default function Settlements() {
             }}
               placeholder="Nominal"
               aria-label={`Nominal pembayaran ${debt.name}`}
-              className={`${tab === 'customer' ? 'col-span-full h-9 min-w-0 sm:col-span-1 sm:h-8 sm:min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
+              className={`${tab === 'customer' ? 'h-9 min-w-0 px-2 sm:h-8 sm:min-w-[7rem]' : 'h-10 min-w-[8.5rem]'} flex-1 sm:w-40 sm:flex-none`}
             />
             <Button className={`${tab === 'customer' ? 'h-8 px-2.5 text-xs' : 'h-10 px-3'} border-accent bg-accent text-ink shadow-sm hover:border-accent/90 hover:bg-accent/90`} onClick={() => setExpandedDebtId((current) => current === debt.id ? null : debt.id)}>
               Rincian
