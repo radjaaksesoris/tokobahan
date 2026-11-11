@@ -256,7 +256,7 @@ export default function TransactionHistory() {
       toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal.')
       return
     }
-    const quantity = Number(returnQuantity)
+    const quantity = roundStockQuantity(Number(returnQuantity))
     if (!Number.isFinite(quantity) || quantity <= 0 || !returnReason.trim()) {
       toast.error('Jumlah dan alasan retur wajib diisi')
       return
@@ -270,6 +270,9 @@ export default function TransactionHistory() {
           const sale = snapshot.tables.sales.find((row) => row.id === item.sale_id)
           const product = snapshot.tables.products.find((row) => row.id === item.product_id)
           if (!sale || !product) throw new Error('Transaksi atau produk tidak ditemukan di penyimpanan lokal')
+          if (product.stock_unit_mode !== 'integer-base') {
+            throw new Error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
+          }
           const priorReturns = snapshot.tables.sale_returns.filter((row) => row.sale_item_id === item.id)
           const alreadyReturned = priorReturns.reduce((sum, row) => sum + Number(row.quantity), 0)
           const itemQuantity = Number(item.quantity)
@@ -521,7 +524,7 @@ export default function TransactionHistory() {
         saleId: selectedSale.id,
         items: editItems.map((item) => ({
           ...item,
-          quantity: Number(item.quantity),
+          quantity: roundStockQuantity(Number(item.quantity)),
           unitPrice: Number(item.unitPrice),
         })),
         paymentMethod: editPaymentMethod,
@@ -933,7 +936,7 @@ export default function TransactionHistory() {
                       <button type="button" onClick={() => setReturningItem(null)} aria-label="Tutup"><X className="h-5 w-5 text-muted-foreground" /></button>
                     </CardHeader>
                     <CardContent className="space-y-4 pt-4">
-                      <Input type="number" min="0.001" max={returningItem.quantity} step="any" value={returnQuantity} onChange={(event) => setReturnQuantity(event.target.value)} placeholder="Jumlah retur" />
+                      <Input type="number" min="1" max={returningItem.quantity} step="1" value={returnQuantity} onChange={(event) => setReturnQuantity(event.target.value)} placeholder="Jumlah retur" />
                       <Input value={returnReason} onChange={(event) => setReturnReason(toTitleCase(event.target.value))} placeholder="Alasan retur" />
                       <button type="button" className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" disabled={returnSaving} onClick={() => void submitReturn()}>
                         {returnSaving ? 'Memproses...' : 'Proses retur'}
@@ -1041,8 +1044,8 @@ export default function TransactionHistory() {
                           Jumlah
                           <Input
                             type="number"
-                            min="0.001"
-                            step="any"
+                            min="1"
+                            step="1"
                             value={item.quantity}
                             disabled={editSaving}
                             onChange={(event) => updateEditItem(index, { quantity: event.target.value })}

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CartItem, Product, UnitType } from '@/types'
 import { UNIT_FACTORS } from '@/types'
-import { getStockConversion, getUnitConversion, getUnitCost } from '@/lib/productUnits'
+import { getAvailableQuantityInUnit, getStockConversion, getUnitCost, roundStockQuantity } from '@/lib/productUnits'
 
 interface CartState {
   items: CartItem[]
@@ -29,10 +29,7 @@ function getAvailableQuantity(product: Product, unit: UnitType, items: CartItem[
     .filter((item) => item.product.id === product.id && item !== currentItem)
     .reduce((sum, item) => sum + item.quantity * item.conversion, 0)
   const availableBaseUnits = Math.max(0, Number(product.stock) * getStockConversion(product) - reservedBaseUnits)
-  const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
-  return product.stock_unit_mode === 'integer-base'
-    ? Math.floor(availableQuantity + 1e-8)
-    : availableQuantity
+  return getAvailableQuantityInUnit(product, unit, availableBaseUnits)
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -41,12 +38,14 @@ export const useCartStore = create<CartState>((set, get) => ({
   addItem: (product, unit, quantity = 1, unitPrice) => {
     const { price: defaultPrice, conversion } = getPriceForUnit(product, unit)
     const price = unitPrice ?? defaultPrice
+    const requestedQuantity = roundStockQuantity(quantity)
+    if (requestedQuantity <= 0) return
     set((state) => {
       const existing = state.items.find(
         (i) => i.product.id === product.id && i.unit === unit
       )
       const availableQuantity = getAvailableQuantity(product, unit, state.items, existing)
-      const safeQuantity = Math.min(quantity, availableQuantity)
+      const safeQuantity = Math.min(requestedQuantity, availableQuantity)
       if (safeQuantity <= 0) return state
       if (existing) {
         const newQty = Math.min(existing.quantity + safeQuantity, existing.quantity + availableQuantity)
@@ -85,14 +84,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   updateQuantity: (productId, unit, quantity) => {
-    if (quantity <= 0) {
+    const requestedQuantity = roundStockQuantity(quantity)
+    if (requestedQuantity <= 0) {
       get().removeItem(productId, unit)
       return
     }
     set((state) => ({
       items: state.items.map((i) => {
         if (i.product.id === productId && i.unit === unit) {
-          const safeQuantity = Math.min(quantity, getAvailableQuantity(i.product, i.unit, state.items, i))
+          const safeQuantity = Math.min(requestedQuantity, getAvailableQuantity(i.product, i.unit, state.items, i))
           return {
             ...i,
             quantity: safeQuantity,

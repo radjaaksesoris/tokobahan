@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseProductPrices, type Product } from '@/types'
-import { formatAvailableStockInUnit, formatMixedStockQuantity, getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
+import { formatAvailableStockInUnit, formatMixedStockQuantity, getAvailableQuantityInUnit, getFifoCostForSale, getStockUnitCostForSale, getStockUnitsForSale } from './productUnits'
 
 describe('stock unit conversions', () => {
   const product: Pick<Product, 'stock_unit' | 'stock_conversion' | 'prices'> = {
@@ -12,9 +12,9 @@ describe('stock unit conversions', () => {
     ],
   }
 
-  it('rounds converted sale stock to database precision', () => {
-    expect(getStockUnitsForSale(product, 'pack', 0.1)).toBe(0.3)
-    expect(getStockUnitsForSale({ ...product, stock_conversion: 3 }, 'satuan', 1)).toBe(0.333)
+  it('rounds converted sale stock to whole units', () => {
+    expect(getStockUnitsForSale(product, 'pack', 0.1)).toBe(0)
+    expect(getStockUnitsForSale({ ...product, stock_conversion: 3 }, 'satuan', 1)).toBe(0)
   })
 
   it('uses integer base units for roll and meter sales', () => {
@@ -32,8 +32,24 @@ describe('stock unit conversions', () => {
     expect(getStockUnitsForSale(meterStockProduct, 'roll', 20)).toBe(880)
     expect(getStockUnitsForSale(meterStockProduct, 'meter', 1)).toBe(1)
     expect(formatMixedStockQuantity(meterStockProduct)).toBe('19 roll + 43 Meter')
-    expect(() => getStockUnitsForSale(meterStockProduct, 'meter', 0.5))
-      .toThrow('Jumlah meter harus setara dengan bilangan bulat meter')
+    expect(getStockUnitsForSale(meterStockProduct, 'meter', 0.5)).toBe(1)
+  })
+
+  it('only offers whole package units when fractional stock is below a package', () => {
+    const meterProduct = {
+      stock_unit: 'roll',
+      stock_conversion: 44,
+      stock_unit_mode: 'fractional' as const,
+      prices: [
+        { unit: 'meter', price: 23000, conversion: 1 },
+        { unit: 'roll', price: 950000, conversion: 44 },
+      ],
+    }
+
+    expect(getAvailableQuantityInUnit(meterProduct, 'roll', 43)).toBe(0)
+    expect(getAvailableQuantityInUnit(meterProduct, 'roll', 44)).toBe(1)
+    expect(getAvailableQuantityInUnit(meterProduct, 'roll', 66)).toBe(1)
+    expect(getAvailableQuantityInUnit(meterProduct, 'meter', 43)).toBe(43)
   })
 
   it('displays pack stock as whole packs and rolls without changing stored stock', () => {
@@ -98,20 +114,24 @@ describe('stock unit conversions', () => {
   it('estimates the same FIFO cost as checkout across stock batches', () => {
     const meterProduct = {
       id: 'product-1',
-      stock_unit: 'roll',
-      stock_conversion: 44,
-      prices: [{ unit: 'meter', price: 13000, conversion: 1 }],
+      stock_unit: 'meter',
+      stock_conversion: 1,
+      stock_unit_mode: 'integer-base' as const,
+      prices: [
+        { unit: 'meter', price: 13000, conversion: 1 },
+        { unit: 'roll', price: 525000, conversion: 44 },
+      ],
     }
     const batches = [
-      { id: 'batch-1', product_id: 'product-1', quantity_remaining: 0.01, unit_cost: 44000, received_at: '2026-01-01' },
+      { id: 'batch-1', product_id: 'product-1', quantity_remaining: 1, unit_cost: 44000, received_at: '2026-01-01' },
       { id: 'batch-2', product_id: 'product-1', quantity_remaining: 1, unit_cost: 48000, received_at: '2026-01-02' },
     ]
 
-    expect(getFifoCostForSale(meterProduct, batches, 'meter', 1)).toBe(1064)
-    expect(getFifoCostForSale(meterProduct, batches, 'meter', 2)).toBe(2120)
+    expect(getFifoCostForSale(meterProduct, batches, 'meter', 1)).toBe(44000)
+    expect(getFifoCostForSale(meterProduct, batches, 'meter', 2)).toBe(92000)
     expect(getFifoCostForSale(meterProduct, [
       { id: 'batch-1', product_id: 'product-1', quantity_remaining: 1, unit_cost: 48000, received_at: '2026-01-01' },
-    ], 'meter', 1)).toBe(1104)
+    ], 'meter', 1)).toBe(48000)
     expect(getFifoCostForSale(meterProduct, batches, 'meter', 100)).toBeNull()
   })
 

@@ -31,7 +31,7 @@ import {
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
-import { formatAvailableStockInUnit, formatMixedStockQuantity, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
+import { formatAvailableStockInUnit, formatMixedStockQuantity, getAvailableQuantityInUnit, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -122,10 +122,7 @@ export default function POS() {
   }, [reservedBaseUnitsByProduct])
   const getAvailableStock = useCallback((product: Product, unit: UnitType = product.stock_unit) => {
     const availableBaseUnits = getAvailableStockBaseUnits(product)
-    const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
-    return product.stock_unit_mode === 'integer-base'
-      ? Math.floor(availableQuantity + 1e-8)
-      : availableQuantity
+    return getAvailableQuantityInUnit(product, unit, availableBaseUnits)
   }, [getAvailableStockBaseUnits])
   const selectedFifoQuantity = Math.max(1, Number(qtyInput) || 1)
   const selectedFifoCost = selectedProduct
@@ -315,6 +312,10 @@ export default function POS() {
   }
 
   const openAdd = useCallback((product: Product) => {
+    if (product.stock_unit_mode !== 'integer-base') {
+      toast.error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
+      return
+    }
     const firstAvailableUnit = getProductSaleUnits(product)
       .find((unit) => getAvailableStock(product, unit) > 0)
     if (!firstAvailableUnit) {
@@ -394,11 +395,11 @@ export default function POS() {
       })
       const insufficientStock = items.find((item) => (requestedStockByProduct.get(item.product.id) || 0) > Number(item.product.stock))
       if (insufficientStock) {
-        const availableQuantity = Number(insufficientStock.product.stock) * getStockConversion(insufficientStock.product) /
-          getUnitConversion(insufficientStock.product, insufficientStock.unit)
-        const availableInSelectedUnit = insufficientStock.product.stock_unit_mode === 'integer-base'
-          ? Math.floor(availableQuantity + 1e-8)
-          : availableQuantity
+        const availableInSelectedUnit = getAvailableQuantityInUnit(
+          insufficientStock.product,
+          insufficientStock.unit,
+          Number(insufficientStock.product.stock) * getStockConversion(insufficientStock.product),
+        )
         toast.error(
           availableInSelectedUnit <= 0
             ? `${insufficientStock.product.name} habis`

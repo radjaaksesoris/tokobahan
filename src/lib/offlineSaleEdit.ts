@@ -50,6 +50,8 @@ export interface SaleEditInput {
 }
 
 const roundMoney = (amount: number) => Math.round((amount + Number.EPSILON) * 100) / 100
+const roundHistoricalQuantity = (quantity: number) =>
+  Math.sign(quantity) * Math.round((Math.abs(quantity) + Number.EPSILON) * 1000) / 1000
 
 function normalizedName(name: string) {
   return name.trim().toLocaleLowerCase()
@@ -113,7 +115,7 @@ export function applyOfflineSaleEdit(
     }
 
     const originalQuantity = Number(item.quantity)
-    const returnedQuantity = roundStockQuantity(itemReturns.reduce((sum, row) => sum + Number(row.quantity), 0))
+    const returnedQuantity = roundHistoricalQuantity(itemReturns.reduce((sum, row) => sum + Number(row.quantity), 0))
     if (!Number.isFinite(originalQuantity) || originalQuantity <= 0 || returnedQuantity > originalQuantity) {
       throw new Error(`Jumlah retur untuk ${item.product_name} tidak valid`)
     }
@@ -140,7 +142,7 @@ export function applyOfflineSaleEdit(
       line_profit: returnedProfit,
     })
 
-    const remainingQuantity = roundStockQuantity(originalQuantity - returnedQuantity)
+    const remainingQuantity = roundHistoricalQuantity(originalQuantity - returnedQuantity)
     if (remainingQuantity > 0) {
       editableOriginalItems.push({
         ...item,
@@ -168,12 +170,16 @@ export function applyOfflineSaleEdit(
   input.items.forEach((draft, index) => {
     const product = productById.get(draft.productId)
     if (!product) throw new Error('Produk transaksi tidak ditemukan di katalog lokal')
+    if (product.stock_unit_mode !== 'integer-base') {
+      throw new Error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
+    }
     const price = parseProductPrices(product.prices).find((entry) => entry.unit === draft.unit)
     if (!price || price.conversion <= 0) {
       throw new Error(`Satuan ${draft.unit} untuk ${product.name} tidak tersedia`)
     }
     if (
       !Number.isFinite(draft.quantity) || draft.quantity <= 0 ||
+      !Number.isInteger(draft.quantity) ||
       !Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0
     ) {
       throw new Error(`Jumlah atau harga ${product.name} tidak valid`)

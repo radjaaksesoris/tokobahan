@@ -21,6 +21,7 @@ const product: Product = {
   stock: 10,
   stock_unit: 'satuan',
   stock_conversion: 1,
+  stock_unit_mode: 'integer-base',
   min_stock: 1,
   unit_base: 'pcs',
   prices: [
@@ -274,14 +275,15 @@ describe('offline checkout', () => {
     expect(updated?.tables.sale_items[0].line_cost).toBe(10909.09)
   })
 
-  it('calculates FIFO cost when modal and stock use different units', async () => {
+  it('calculates FIFO cost with cost and stock in different units', async () => {
     const dozenStockProduct: Product = {
       ...product,
-      stock: 2,
-      stock_unit: 'lusin',
-      stock_conversion: 12,
-      cost_unit: 'satuan',
-      cost_conversion: 1,
+      stock: 24,
+      stock_unit: 'satuan',
+      stock_conversion: 1,
+      cost_price: 96,
+      cost_unit: 'lusin',
+      cost_conversion: 12,
       prices: [{ unit: 'satuan', price: 10, conversion: 1 }],
     }
     const singleItem: CartItem = {
@@ -303,9 +305,9 @@ describe('offline checkout', () => {
         product_stock_batches: [{
           id: 'batch-dozen',
           product_id: product.id,
-          quantity_received: 2,
-          quantity_remaining: 2,
-          unit_cost: 120,
+          quantity_received: 24,
+          quantity_remaining: 24,
+          unit_cost: 8,
           received_at: '2026-09-01T00:00:00.000Z',
         }],
       },
@@ -322,29 +324,29 @@ describe('offline checkout', () => {
 
     await expect(readOperationalSnapshot()).resolves.toMatchObject({
       tables: {
-        products: [{ stock: 1.917 }],
-        product_stock_batches: [{ quantity_remaining: 1.917 }],
-        sale_items: [{ line_cost: 9.96, line_profit: 0.04 }],
+        products: [{ stock: 23 }],
+        product_stock_batches: [{ quantity_remaining: 23 }],
+        sale_items: [{ line_cost: 8, line_profit: 2 }],
       },
     })
   })
 
-  it('keeps repeated fractional stock deductions at three-decimal precision', async () => {
+  it('rounds stock deductions to whole units', async () => {
     const convertedProduct = {
       ...product,
-      stock: 10,
+      stock: 20,
       stock_conversion: 2.54,
     }
     const convertedItem: CartItem = {
       ...item,
       product: convertedProduct,
       unit: 'lusin',
-      quantity: 0.1,
+      quantity: 1,
       unit_price: 120,
       conversion: 12,
-      line_total: 12,
-      line_cost: 0.4,
-      line_profit: 11.6,
+      line_total: 120,
+      line_cost: 5,
+      line_profit: 115,
     }
     await writeOperationalSnapshot({
       ...snapshot,
@@ -354,15 +356,15 @@ describe('offline checkout', () => {
         product_stock_batches: [{
           id: 'batch-1',
           product_id: product.id,
-          quantity_remaining: 10,
-          quantity_received: 10,
+          quantity_remaining: 20,
+          quantity_received: 20,
           unit_cost: 1,
           received_at: '2026-09-01T00:00:00.000Z',
         }],
       },
     })
 
-    for (const invoiceNo of ['OFF-FRACTIONAL-1', 'OFF-FRACTIONAL-2']) {
+    for (const invoiceNo of ['OFF-ROUNDED-1', 'OFF-ROUNDED-2']) {
       await saveOfflineCheckout({
         invoiceNo,
         items: [convertedItem],
@@ -375,8 +377,8 @@ describe('offline checkout', () => {
 
     await expect(readOperationalSnapshot()).resolves.toMatchObject({
       tables: {
-        products: [{ stock: 9.056 }],
-        product_stock_batches: [{ quantity_remaining: 9.056 }],
+        products: [{ stock: 10 }],
+        product_stock_batches: [{ quantity_remaining: 10 }],
       },
     })
   })
@@ -407,6 +409,35 @@ describe('offline checkout', () => {
         sales: [],
       },
     })
+  })
+
+  it('requires normalized stock and whole sale quantities', async () => {
+    const legacyProduct = { ...product, stock_unit_mode: 'fractional' as const }
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [legacyProduct],
+      },
+    })
+    await expect(saveOfflineCheckout({
+      invoiceNo: 'OFF-LEGACY-STOCK',
+      items: [{ ...item, product: legacyProduct }],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })).rejects.toThrow('Normalisasi stok Benang terlebih dahulu')
+
+    await writeOperationalSnapshot(snapshot)
+    await expect(saveOfflineCheckout({
+      invoiceNo: 'OFF-FRACTIONAL-QUANTITY',
+      items: [{ ...item, quantity: 1.4 }],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })).rejects.toThrow('Jumlah atau harga Benang tidak valid')
   })
 
   it('does not partially update stock when the FIFO batches are incomplete', async () => {

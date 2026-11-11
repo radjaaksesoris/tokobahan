@@ -79,20 +79,14 @@ export default function StockOpname({ embedded = false }: { embedded?: boolean }
   async function save(product: ProductRow) {
     const rawValue = physical[product.id]?.trim()
     const enteredValue = rawValue ? Number(rawValue) : Number.NaN
-    if (
-      product.stock_unit_mode === 'integer-base' &&
-      Number.isFinite(enteredValue) &&
-      !Number.isInteger(enteredValue)
-    ) {
-      toast.error(`Stok fisik ${product.name} harus berupa bilangan bulat ${UNIT_LABELS[product.stock_unit] || product.stock_unit}`)
-      return
-    }
-    const value = product.stock_unit_mode === 'integer-base'
-      ? enteredValue
-      : roundStockQuantity(enteredValue)
+    const value = roundStockQuantity(enteredValue)
     const reason = reasons[product.id]?.trim() || ''
     if (!Number.isFinite(value) || value < 0 || !reason) {
       toast.error('Stok fisik dan alasan wajib diisi')
+      return
+    }
+    if (product.stock_unit_mode !== 'integer-base') {
+      toast.error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
       return
     }
     setSaving(product.id)
@@ -117,6 +111,9 @@ export default function StockOpname({ embedded = false }: { embedded?: boolean }
           const currentProduct = products.find((row) => row.id === product.id)
           if (!currentProduct || !currentProduct.is_active) {
             throw new Error('Produk tidak ditemukan atau sudah tidak aktif di snapshot lokal')
+          }
+          if (currentProduct.stock_unit_mode !== 'integer-base') {
+            throw new Error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
           }
           const systemStock = Number(currentProduct.stock)
           const cost = Number(currentProduct.cost_price)
@@ -205,7 +202,7 @@ export default function StockOpname({ embedded = false }: { embedded?: boolean }
                   <p className="font-semibold text-ink">{product.name}</p>
                   <p className="text-xs text-muted-foreground">Stok sistem: {formatMixedStockQuantity(product)}</p>
                 </div>
-                <Input type="number" min="0" step={product.stock_unit_mode === 'integer-base' ? 1 : 'any'} value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder={`Stok fisik (${UNIT_LABELS[product.stock_unit] || product.stock_unit})`} aria-label={`Stok fisik ${product.name}`} />
+                <Input type="number" min="0" step="1" value={physical[product.id] || ''} onChange={(event) => setPhysical((current) => ({ ...current, [product.id]: event.target.value }))} placeholder={`Stok fisik (${UNIT_LABELS[product.stock_unit] || product.stock_unit})`} aria-label={`Stok fisik ${product.name}`} />
                 <Input value={reasons[product.id] || ''} onChange={(event) => setReasons((current) => ({ ...current, [product.id]: toTitleCase(event.target.value) }))} placeholder="Alasan penyesuaian" aria-label={`Alasan penyesuaian ${product.name}`} />
                 <Button onClick={() => void save(product)} disabled={saving === product.id}>{saving === product.id ? 'Menyimpan...' : 'Simpan'}</Button>
               </CardContent>

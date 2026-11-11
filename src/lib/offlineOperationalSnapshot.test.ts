@@ -71,11 +71,11 @@ describe('offline operational snapshot storage', () => {
     await expect(readOperationalSnapshot()).resolves.toEqual(snapshot)
 
     const replacement = createSnapshot({
-      products: [{ id: 'product-2', name: 'Benang', stock: 3.9400000000000004 }],
+      products: [{ id: 'product-2', name: 'Benang', stock: 3.9400000000000004, stock_unit_mode: 'integer-base' }],
     })
     await writeOperationalSnapshot(replacement)
     await expect(readOperationalSnapshot()).resolves.toMatchObject({
-      tables: { products: [{ id: 'product-2', name: 'Benang', stock: 3.94 }] },
+      tables: { products: [{ id: 'product-2', name: 'Benang', stock: 4 }] },
     })
 
     await clearOperationalSnapshot()
@@ -181,7 +181,7 @@ describe('offline operational snapshot storage', () => {
     expect(settlementRows).toEqual([{ id: 'settlement-1' }])
   })
 
-  it('normalizes existing product and batch stock to the server precision', async () => {
+  it('normalizes integer-base product and batch stock to whole units', async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('konveksi-pos', 4)
       request.onupgradeneeded = () => {
@@ -194,9 +194,10 @@ describe('offline operational snapshot storage', () => {
     transaction.objectStore(OFFLINE_OPERATIONAL_SNAPSHOT_STORE).put({
       id: 'current',
       data: createSnapshot({
-        products: [{ id: 'product-1', stock: 3.9400000000000004 }],
+        products: [{ id: 'product-1', stock: 3.9400000000000004, stock_unit_mode: 'integer-base' }],
         product_stock_batches: [{
           id: 'batch-1',
+          product_id: 'product-1',
           quantity_received: 3.9400000000000004,
           quantity_remaining: 3.9400000000000004,
         }],
@@ -210,10 +211,10 @@ describe('offline operational snapshot storage', () => {
 
     await expect(readOperationalSnapshot()).resolves.toMatchObject({
       tables: {
-        products: [{ stock: 3.94 }],
+        products: [{ stock: 4 }],
         product_stock_batches: [{
-          quantity_received: 3.94,
-          quantity_remaining: 3.94,
+          quantity_received: 4,
+          quantity_remaining: 4,
         }],
       },
     })

@@ -67,9 +67,13 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
       if (!product || product.is_active !== true) {
         throw new Error(`Produk ${item.product.name} tidak ditemukan atau tidak aktif`)
       }
+      if (product.stock_unit_mode !== 'integer-base') {
+        throw new Error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
+      }
       if (
         !Number.isFinite(item.quantity) ||
         item.quantity <= 0 ||
+        !Number.isInteger(item.quantity) ||
         !Number.isFinite(item.unit_price) ||
         item.unit_price <= 0
       ) {

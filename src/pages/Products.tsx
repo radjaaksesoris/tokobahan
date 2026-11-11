@@ -349,7 +349,11 @@ export default function Products() {
 
   async function handleStockReceipt() {
     if (!stockProduct) return
-    const enteredQuantity = Number(stockQuantity)
+    if (stockProduct.stock_unit_mode !== 'integer-base') {
+      toast.error(`Normalisasi stok ${stockProduct.name} terlebih dahulu di Pengaturan > Stok`)
+      return
+    }
+    const enteredQuantity = roundStockQuantity(Number(stockQuantity))
     if (!Number.isFinite(enteredQuantity) || enteredQuantity <= 0 || stockCost < 0) {
       toast.error('Jumlah stok harus lebih besar dari 0 dan HPP tidak boleh negatif')
       return
@@ -371,6 +375,9 @@ export default function Products() {
         await updateOperationalSnapshot((current) => {
           const product = current.tables.products.find((row) => row.id === stockProduct.id)
           if (!product) throw new Error('Produk tidak ditemukan di penyimpanan lokal')
+          if (product.stock_unit_mode !== 'integer-base') {
+            throw new Error(`Normalisasi stok ${product.name} terlebih dahulu di Pengaturan > Stok`)
+          }
           if (!current.tables.vendors.some((vendor) => vendor.id === stockVendorId)) {
             throw new Error('Vendor tidak ditemukan di penyimpanan lokal')
           }
@@ -549,7 +556,11 @@ export default function Products() {
   }
 
   async function handleSave() {
-    const initialStock = Number(stock) || 0
+    if (editing && editing.stock_unit_mode !== 'integer-base') {
+      toast.error(`Normalisasi stok ${editing.name} terlebih dahulu di Pengaturan > Stok`)
+      return
+    }
+    const initialStock = roundStockQuantity(Number(stock) || 0)
 
     if (!name.trim()) {
       toast.error('Nama produk wajib diisi')
@@ -1126,7 +1137,7 @@ export default function Products() {
                         id="stock-quantity"
                         type="number"
                         min="0"
-                        step="any"
+                        step="1"
                         value={stockQuantity}
                         onFocus={() => {
                           if (stockQuantity === '0') setStockQuantity('')
@@ -1459,6 +1470,7 @@ export default function Products() {
                       id="product-stock"
                       className="min-w-0 w-full"
                       type={editing ? 'text' : 'number'}
+                      step={editing ? undefined : 1}
                       value={editing ? formatMixedStockQuantity(editing) : stock}
                       onFocus={() => {
                         if (stock === '0') setStock('')

@@ -1080,9 +1080,9 @@ export default function Settings() {
       <Card className="border-amber-200 bg-amber-50/40">
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-3xl">
-            <p className="font-semibold text-ink">Simpan stok dalam unit terkecil</p>
+            <p className="font-semibold text-ink">Bulatkan stok pecahan dan gunakan unit terkecil</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Ubah stok lama ke bilangan unit terkecil dari konversi harga jual. Jalankan hanya di komputer admin dengan data terbaru; backup lokal akan diunduh sebelum perubahan.
+              Normalisasi satu kali untuk membulatkan stok produk dan batch lama ke unit terkecil dari konversi harga jual. Produk yang belum dinormalisasi belum dapat dipakai untuk transaksi atau perubahan stok. Backup lokal akan diunduh sebelum perubahan.
             </p>
           </div>
           <Button
@@ -1091,7 +1091,7 @@ export default function Settings() {
             onClick={() => void normalizeLocalStockUnits()}
             disabled={normalizingStock}
           >
-            {normalizingStock ? <LoadingDots /> : 'Normalisasi stok'}
+            {normalizingStock ? <LoadingDots /> : 'Bulatkan & normalisasi'}
           </Button>
         </CardContent>
       </Card>

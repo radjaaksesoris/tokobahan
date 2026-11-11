@@ -15,6 +15,7 @@ const product: Product = {
   stock: 7,
   stock_unit: 'satuan',
   stock_conversion: 1,
+  stock_unit_mode: 'integer-base',
   min_stock: 1,
   unit_base: 'pcs',
   prices: [

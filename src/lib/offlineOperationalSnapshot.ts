@@ -92,13 +92,23 @@ export function ensureOfflineOperationalStores(database: IDBDatabase) {
 function normalizeSnapshotStockPrecision(snapshot: OperationalSnapshot): OperationalSnapshot {
   let changed = false
   const products = snapshot.tables.products.map((product) => {
-    if (typeof product.stock !== 'number' || !Number.isFinite(product.stock)) return product
+    if (
+      product.stock_unit_mode !== 'integer-base' ||
+      typeof product.stock !== 'number' ||
+      !Number.isFinite(product.stock)
+    ) return product
     const stock = roundStockQuantity(product.stock)
     if (stock === product.stock) return product
     changed = true
     return { ...product, stock }
   })
+  const integerStockProductIds = new Set(
+    products
+      .filter((product) => product.stock_unit_mode === 'integer-base')
+      .map((product) => String(product.id)),
+  )
   const batches = snapshot.tables.product_stock_batches.map((batch) => {
+    if (!integerStockProductIds.has(String(batch.product_id))) return batch
     let normalized = batch
     for (const field of ['quantity_received', 'quantity_remaining'] as const) {
       const quantity = batch[field]
@@ -143,10 +153,16 @@ function migrateStoredStockPrecision(database: IDBDatabase): Promise<void> {
     const migrateSnapshot = (stored: StoredSnapshot | undefined) => {
       const products = stored?.data?.tables?.products
       const batches = stored?.data?.tables?.product_stock_batches
+      const integerStockProductIds = new Set(
+        (Array.isArray(products) ? products : [])
+          .filter((product) => product?.stock_unit_mode === 'integer-base')
+          .map((product) => String(product.id)),
+      )
       let changed = false
 
       for (const product of Array.isArray(products) ? products : []) {
         if (!product || typeof product !== 'object') continue
+        if (product.stock_unit_mode !== 'integer-base') continue
         if (typeof product.stock !== 'number' || !Number.isFinite(product.stock)) continue
         const normalizedStock = roundStockQuantity(product.stock)
         if (normalizedStock !== product.stock) {
@@ -156,6 +172,7 @@ function migrateStoredStockPrecision(database: IDBDatabase): Promise<void> {
       }
       for (const batch of Array.isArray(batches) ? batches : []) {
         if (!batch || typeof batch !== 'object') continue
+        if (!integerStockProductIds.has(String(batch.product_id))) continue
         for (const field of ['quantity_received', 'quantity_remaining'] as const) {
           const quantity = batch[field]
           if (typeof quantity !== 'number' || !Number.isFinite(quantity)) continue

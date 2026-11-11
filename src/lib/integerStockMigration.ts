@@ -36,7 +36,6 @@ export function migrateSnapshotToIntegerStock(
   let adjustmentRows = 0
 
   for (const productRow of products) {
-    if (productRow.stock_unit_mode === 'integer-base') continue
     const product = { ...productRow }
     const prices = parseProductPrices(product.prices)
     const smallestUnit = getSmallestConfiguredUnit(prices)
@@ -52,6 +51,19 @@ export function migrateSnapshotToIntegerStock(
         )
       }
     }
+
+    const productBatches = batches.filter((batch) => batch.product_id === product.id)
+    if (
+      product.stock_unit_mode === 'integer-base' &&
+      product.stock_unit === smallestUnit.unit &&
+      Math.abs(getStockConversion(product) - smallestUnit.conversion) <= 1e-8 &&
+      Number.isInteger(Number(product.stock)) &&
+      Number.isInteger(Number(product.min_stock || 0)) &&
+      productBatches.every((batch) =>
+        Number.isInteger(Number(batch.quantity_received)) &&
+        Number.isInteger(Number(batch.quantity_remaining)),
+      )
+    ) continue
 
     const oldStockConversion = getStockConversion(product)
     const costConversion = getCostConversion(product)
@@ -80,7 +92,6 @@ export function migrateSnapshotToIntegerStock(
     }
     products[products.indexOf(productRow)] = convertedProduct
 
-    const productBatches = batches.filter((batch) => batch.product_id === product.id)
     let batchAdjusted = false
     for (const batch of productBatches) {
       const oldReceived = Number(batch.quantity_received)

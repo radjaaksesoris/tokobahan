@@ -155,4 +155,31 @@ describe('integer stock migration', () => {
     expect(result.convertedProducts).toBe(0)
     expect(result.snapshot).toBe(snapshot)
   })
+
+  it('rounds decimal values in products already marked as integer-base', () => {
+    const snapshot = createSnapshot([
+      rollProduct({
+        stock: 3.4,
+        stock_unit: 'meter',
+        stock_conversion: 1,
+        stock_unit_mode: 'integer-base',
+      }),
+    ], [{
+      id: 'batch-1',
+      product_id: 'product-1',
+      quantity_received: 4.4,
+      quantity_remaining: 3.4,
+      unit_cost: 10,
+      received_at: '2026-10-01T00:00:00.000Z',
+    }])
+
+    const result = migrateSnapshotToIntegerStock(snapshot)
+
+    expect(result.snapshot.tables.products[0].stock).toBe(3)
+    expect(result.snapshot.tables.product_stock_batches[0]).toMatchObject({
+      quantity_received: 4,
+      quantity_remaining: 3,
+    })
+    expect(result.convertedProducts).toBe(1)
+  })
 })

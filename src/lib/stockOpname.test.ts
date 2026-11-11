@@ -57,7 +57,7 @@ describe('reconcileStockBatches', () => {
     expect(result).toEqual([other])
   })
 
-  it('normalizes existing stock quantities even when the physical count is unchanged', () => {
+  it('rounds stock quantities to whole units when reconciling', () => {
     const batchWithFloatingPointNoise = {
       ...batch('noisy', '2026-01-01T00:00:00.000Z', 3.9400000000000004),
       quantity_received: 3.9400000000000004,
@@ -66,12 +66,12 @@ describe('reconcileStockBatches', () => {
     expect(reconcileStockBatches(
       [batchWithFloatingPointNoise],
       'product-1',
-      3.94,
+      4,
       10,
       '2026-03-01T00:00:00.000Z',
     )).toMatchObject([{
-      quantity_received: 3.94,
-      quantity_remaining: 3.94,
+      quantity_received: 4,
+      quantity_remaining: 4,
     }])
   })
 })

@@ -8,7 +8,7 @@ function positiveNumber(value: unknown) {
 }
 
 export function roundStockQuantity(value: number) {
-  return Math.sign(value) * Math.round((Math.abs(value) + Number.EPSILON) * 1000) / 1000
+  return Math.sign(value) * Math.round(Math.abs(value) + Number.EPSILON)
 }
 
 export function getSmallestConfiguredUnit(prices: ProductPrice[]) {
@@ -81,6 +81,23 @@ export function getUnitConversion(product: Pick<Product, 'prices'>, unit: UnitTy
   return getPriceConversion(product.prices || [], unit)
 }
 
+export function isWholeSaleUnit(product: Pick<Product, 'prices'>, unit: UnitType) {
+  const baseUnit = getSmallestConfiguredUnit(product.prices || [])
+  if (!baseUnit) return false
+  const ratio = getUnitConversion(product, unit) / baseUnit.conversion
+  return ratio > 1 && Math.abs(ratio - Math.round(ratio)) <= 1e-8
+}
+
+export function getAvailableQuantityInUnit(
+  product: Pick<Product, 'prices' | 'stock_unit_mode'>,
+  unit: UnitType,
+  availableBaseUnits: number,
+) {
+  const availableQuantity = availableBaseUnits / getUnitConversion(product, unit)
+  if (isWholeSaleUnit(product, unit)) return Math.floor(availableQuantity + 1e-8)
+  return roundStockQuantity(availableQuantity)
+}
+
 export function formatAvailableStockInUnit(
   product: Pick<Product, 'prices' | 'stock_unit_mode'>,
   unit: UnitType,
@@ -147,7 +164,7 @@ export function getStockUnitsFromConversion(
   },
   saleUnitConversion: number,
   quantity: number,
-  saleUnit = 'Satuan',
+  _saleUnit = 'Satuan',
 ) {
   if (
     !Number.isFinite(saleUnitConversion) || saleUnitConversion <= 0 ||
@@ -157,11 +174,7 @@ export function getStockUnitsFromConversion(
   }
   const stockQuantity = quantity * saleUnitConversion / getStockConversion(product)
   if (product.stock_unit_mode === 'integer-base') {
-    const rounded = Math.round(stockQuantity)
-    if (!Number.isFinite(stockQuantity) || Math.abs(stockQuantity - rounded) > 1e-8) {
-      throw new Error(`Jumlah ${saleUnit} harus setara dengan bilangan bulat ${product.stock_unit}`)
-    }
-    return rounded
+    return roundStockQuantity(stockQuantity)
   }
   return roundStockQuantity(stockQuantity)
 }
@@ -173,10 +186,6 @@ function getNormalizedStockQuantity(
 ) {
   const stockQuantity = quantity * getUnitConversion(product, unit) / getStockConversion(product)
   if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) return null
-  if (product.stock_unit_mode === 'integer-base') {
-    const rounded = Math.round(stockQuantity)
-    return Math.abs(stockQuantity - rounded) <= 1e-8 ? rounded : null
-  }
   return roundStockQuantity(stockQuantity)
 }
 
