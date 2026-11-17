@@ -26,12 +26,12 @@ import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import {
   readOperationalSnapshot,
-  type OperationalSnapshot,
+  OPERATIONAL_SNAPSHOT_CHANGE_EVENT,
 } from '@/lib/offlineOperationalSnapshot'
 import { readOperationalTable } from '@/lib/offlineOperationalRepository'
 import { saveOfflineCheckout } from '@/lib/offlineCheckout'
 import { createOfflineInvoice } from '@/lib/offlineInvoice'
-import { formatAvailableStockInUnit, formatMixedStockQuantity, getAvailableQuantityInUnit, getFifoCostForSale, getStockConversion, getStockUnitsForSale, getUnitConversion } from '@/lib/productUnits'
+import { formatAvailableStockInUnit, formatMixedStockQuantity, getAvailableQuantityInUnit, getStockConversion, getStockUnitsForSale, getUnitConversion, getUnitCost } from '@/lib/productUnits'
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/paymentMethods'
 import { invokeReceiptPrint } from '@/lib/receiptPrint'
 import { ReceiptPaymentMethod } from '@/components/ReceiptPaymentMethod'
@@ -71,7 +71,6 @@ function getProductSaleUnits(product: Product): UnitType[] {
 export default function POS() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
-  const [stockBatches, setStockBatches] = useState<OperationalSnapshot['tables']['product_stock_batches']>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -103,7 +102,7 @@ export default function POS() {
   const [receiptAutoPrint, setReceiptAutoPrint] = useState(false)
   const [showReceiptPreview, setShowReceiptPreview] = useState(true)
 
-  const { items, addItem, updateQuantity, removeItem, clearCart, getTotals } = useCartStore()
+  const { items, addItem, updateQuantity, removeItem, clearCart, getTotals, refreshProducts } = useCartStore()
   const profile = useAuthStore((s) => s.profile)
   const totals = getTotals()
   const reservedBaseUnitsByProduct = useMemo(() => {
@@ -124,11 +123,9 @@ export default function POS() {
     const availableBaseUnits = getAvailableStockBaseUnits(product)
     return getAvailableQuantityInUnit(product, unit, availableBaseUnits)
   }, [getAvailableStockBaseUnits])
-  const selectedFifoQuantity = Math.max(1, Number(qtyInput) || 1)
-  const selectedFifoCost = selectedProduct
-    ? getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, selectedFifoQuantity)
+  const selectedUnitCost = selectedProduct
+    ? getUnitCost(selectedProduct, selectedUnit)
     : null
-  const selectedFifoUnitCost = selectedFifoCost === null ? null : selectedFifoCost / selectedFifoQuantity
 
   function createReceipt(invoiceNo: string): ReceiptData {
     const amountPaid = paymentMethod === 'cash' || paymentMethod === 'credit'
@@ -155,9 +152,18 @@ export default function POS() {
 
   useEffect(() => {
     const controller = new AbortController()
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void loadProducts()
+    }
     void loadProducts(controller.signal)
+    window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
     return () => {
       controller.abort()
+      window.removeEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, refreshWhenVisible)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
   }, [])
 
@@ -240,7 +246,6 @@ export default function POS() {
       const snapshot = await readOperationalSnapshot()
       if (signal?.aborted) return
       if (!snapshot) {
-        setStockBatches([])
         toast.error('Data lokal belum disiapkan. Buka Pengaturan untuk mengambil data awal sebelum bertransaksi.')
         setProducts([])
         initialLoadComplete.current = true
@@ -248,7 +253,6 @@ export default function POS() {
         return
       }
 
-      setStockBatches(snapshot.tables.product_stock_batches)
       const localProducts = await readOperationalTable<Product>('products', snapshot)
       if (signal?.aborted) return
       const rows = localProducts
@@ -258,12 +262,16 @@ export default function POS() {
           prices: parseProductPrices(product.prices),
         }))
       if (signal?.aborted) return
-      setProducts(sortCatalogProducts(rows))
+      const sortedRows = sortCatalogProducts(rows)
+      setProducts(sortedRows)
+      setSelectedProduct((current) => current
+        ? sortedRows.find((product) => product.id === current.id) ?? current
+        : current)
+      refreshProducts(sortedRows)
       initialLoadComplete.current = true
       setLoading(false)
     } catch (error) {
       if (signal?.aborted) return
-    setStockBatches([])
     toast.error(`Gagal membaca katalog lokal: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
       setProducts([])
       setLoading(false)
@@ -336,14 +344,10 @@ export default function POS() {
     const availableStock = getAvailableStock(selectedProduct, selectedUnit)
     const quantity = Math.min(availableStock, Math.max(1, Number(qtyInput) || 1))
     const salePrice = Number(salePriceInput)
-    const fifoCost = getFifoCostForSale(selectedProduct, stockBatches, selectedUnit, quantity)
-    if (fifoCost === null) {
-      toast.error(`Batch HPP untuk ${selectedProduct.name} tidak mencukupi`)
-      return
-    }
+    const lineCost = getUnitCost(selectedProduct, selectedUnit) * quantity
     const lineTotal = Math.round((salePrice * quantity + Number.EPSILON) * 100) / 100
-    if (!Number.isFinite(salePrice) || lineTotal <= fifoCost) {
-      toast.error(`Total harga jual harus lebih besar dari HPP FIFO (${formatCurrency(fifoCost)})`)
+    if (!Number.isFinite(salePrice) || lineTotal <= lineCost) {
+      toast.error(`Total harga jual harus lebih besar dari HPP saat ini (${formatCurrency(lineCost)})`)
       return
     }
     setQty(quantity)
@@ -681,9 +685,9 @@ export default function POS() {
                 <div className="rounded-lg bg-ink p-3 text-center text-white">
                   <p className="text-xs text-white/70">HPP</p>
                   <p className="text-lg font-bold text-white">
-                    {selectedFifoUnitCost === null
+                    {selectedUnitCost === null
                       ? 'Tidak tersedia'
-                      : `${formatCurrency(selectedFifoUnitCost)} / ${UNIT_LABELS[selectedUnit] || selectedUnit}`}
+                      : `${formatCurrency(selectedUnitCost)} / ${UNIT_LABELS[selectedUnit] || selectedUnit}`}
                   </p>
                 </div>
                 <div className="rounded-lg bg-ink p-3 text-center text-white">
@@ -700,7 +704,7 @@ export default function POS() {
                     onBlur={() => setSalePriceEditing(false)}
                     onChange={(event) => {
                       const nextValue = String(parseCurrencyInput(event.target.value))
-                      const nextError = !nextValue || Number(nextValue) <= selectedProduct.cost_price
+                      const nextError = !nextValue || Number(nextValue) <= (selectedUnitCost ?? selectedProduct.cost_price)
                       setSalePriceInput(nextValue)
                       setSalePriceError(nextError ? 'invalid' : '')
                     }}

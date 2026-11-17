@@ -207,14 +207,13 @@ export function getStockUnitCostForSale(
   return Math.round((stockUnitCost + Number.EPSILON) * 100) / 100
 }
 
-export function consumeFifoStockBatches(
+function allocateStockBatches(
   batches: Record<string, unknown>[],
   productId: string,
   stockQuantity: number,
-): { cost: number; remainingByBatchId: Map<string, number> } | null {
+): Map<string, number> | null {
   if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) return null
   let remaining = roundStockQuantity(stockQuantity)
-  let totalCost = 0
   const remainingByBatchId = new Map<string, number>()
   const fifoBatches = batches
     .filter((batch) =>
@@ -230,15 +229,38 @@ export function consumeFifoStockBatches(
   for (const batch of fifoBatches) {
     if (remaining <= 0) break
     const available = Number(batch.quantity_remaining)
-    const unitCost = Number(batch.unit_cost)
-    if (!Number.isFinite(unitCost) || unitCost < 0) return null
     const consumed = roundStockQuantity(Math.min(remaining, available))
-    totalCost += consumed * unitCost
     remaining = roundStockQuantity(remaining - consumed)
     remainingByBatchId.set(String(batch.id), roundStockQuantity(available - consumed))
   }
 
   if (remaining > 0) return null
+  return remainingByBatchId
+}
+
+export function consumeStockBatches(
+  batches: Record<string, unknown>[],
+  productId: string,
+  stockQuantity: number,
+) {
+  return allocateStockBatches(batches, productId, stockQuantity)
+}
+
+export function consumeFifoStockBatches(
+  batches: Record<string, unknown>[],
+  productId: string,
+  stockQuantity: number,
+): { cost: number; remainingByBatchId: Map<string, number> } | null {
+  const remainingByBatchId = allocateStockBatches(batches, productId, stockQuantity)
+  if (!remainingByBatchId) return null
+  let totalCost = 0
+  for (const batch of batches) {
+    const remaining = remainingByBatchId.get(String(batch.id))
+    if (remaining === undefined) continue
+    const unitCost = Number(batch.unit_cost)
+    if (!Number.isFinite(unitCost) || unitCost < 0) return null
+    totalCost += (Number(batch.quantity_remaining) - remaining) * unitCost
+  }
   return {
     cost: Math.round((totalCost + Number.EPSILON) * 100) / 100,
     remainingByBatchId,
@@ -257,6 +279,23 @@ export function getFifoCostForSale(
   return consumeFifoStockBatches(batches, product.id, stockQuantity)?.cost ?? null
 }
 
-export function getUnitCost(product: Pick<Product, 'prices' | 'cost_conversion' | 'cost_unit' | 'cost_price'>, unit: UnitType) {
-  return product.cost_price / getCostConversion(product) * getUnitConversion(product, unit)
+export function getUnitCost(
+  product: {
+    prices?: unknown
+    cost_conversion?: unknown
+    cost_unit?: unknown
+    cost_price?: unknown
+  },
+  unit: UnitType,
+) {
+  const costPrice = Number(product.cost_price)
+  if (!Number.isFinite(costPrice) || costPrice < 0) {
+    throw new Error('HPP produk tidak valid')
+  }
+  const prices = Array.isArray(product.prices) ? product.prices as ProductPrice[] : []
+  return costPrice / getCostConversion({
+    prices,
+    cost_conversion: product.cost_conversion,
+    cost_unit: product.cost_unit,
+  }) * getUnitConversion({ prices }, unit)
 }

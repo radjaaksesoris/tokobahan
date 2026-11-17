@@ -6,6 +6,7 @@ import { getAvailableQuantityInUnit, getStockConversion, getUnitCost, roundStock
 interface CartState {
   items: CartItem[]
   addItem: (product: Product, unit: UnitType, quantity?: number, unitPrice?: number) => void
+  refreshProducts: (products: Product[]) => void
   updateQuantity: (productId: string, unit: UnitType, quantity: number) => void
   removeItem: (productId: string, unit: UnitType) => void
   clearCart: () => void
@@ -81,6 +82,23 @@ export const useCartStore = create<CartState>((set, get) => ({
         ],
       }
     })
+  },
+
+  refreshProducts: (products) => {
+    const productsById = new Map(products.map((product) => [product.id, product]))
+    set((state) => ({
+      items: state.items.map((item) => {
+        const product = productsById.get(item.product.id)
+        if (!product) return item
+        const line_cost = item.quantity * getUnitCost(product, item.unit)
+        return {
+          ...item,
+          product,
+          line_cost,
+          line_profit: item.line_total - line_cost,
+        }
+      }),
+    }))
   },
 
   updateQuantity: (productId, unit, quantity) => {

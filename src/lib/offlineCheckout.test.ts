@@ -86,7 +86,7 @@ describe('offline checkout', () => {
   })
   afterEach(deleteOfflineDatabase)
 
-  it('saves sales locally and consumes FIFO stock batches atomically', async () => {
+  it('uses the current product HPP for new sales and consumes stock batches atomically', async () => {
     await saveOfflineCheckout({
       invoiceNo: 'OFF-TEST-1',
       items: [item],
@@ -102,8 +102,8 @@ describe('offline checkout', () => {
     expect(updated?.tables.sales[0]).toMatchObject({
       invoice_no: 'OFF-TEST-1',
       total_amount: 30,
-      total_cost: 8,
-      total_profit: 22,
+      total_cost: 12,
+      total_profit: 18,
       payment_method: 'credit',
       amount_paid: 10,
     })
@@ -112,8 +112,8 @@ describe('offline checkout', () => {
       normalized_name: 'pelanggan satu',
     })
     expect(updated?.tables.sale_items[0]).toMatchObject({
-      line_cost: 8,
-      line_profit: 22,
+      line_cost: 12,
+      line_profit: 18,
     })
   })
 
@@ -275,7 +275,7 @@ describe('offline checkout', () => {
     expect(updated?.tables.sale_items[0].line_cost).toBe(10909.09)
   })
 
-  it('calculates FIFO cost with cost and stock in different units', async () => {
+  it('calculates current product HPP with cost and stock in different units', async () => {
     const dozenStockProduct: Product = {
       ...product,
       stock: 24,
@@ -327,6 +327,35 @@ describe('offline checkout', () => {
         products: [{ stock: 23 }],
         product_stock_batches: [{ quantity_remaining: 23 }],
         sale_items: [{ line_cost: 8, line_profit: 2 }],
+      },
+    })
+
+  })
+
+  it('uses an updated product HPP instead of old batch costs', async () => {
+    const updatedProduct = { ...product, cost_price: 6 }
+    await writeOperationalSnapshot({
+      ...snapshot,
+      tables: {
+        ...snapshot.tables,
+        products: [updatedProduct],
+      },
+    })
+
+    await saveOfflineCheckout({
+      invoiceNo: 'OFF-UPDATED-HPP',
+      items: [item],
+      paymentMethod: 'cash',
+      customerName: null,
+      amountPaid: 30,
+      cashierId: 'admin-1',
+    })
+
+    await expect(readOperationalSnapshot()).resolves.toMatchObject({
+      tables: {
+        sales: [{ total_cost: 18, total_profit: 12 }],
+        sale_items: [{ line_cost: 18, line_profit: 12 }],
+        product_stock_batches: [{ unit_cost: 2 }, { unit_cost: 4 }],
       },
     })
   })
@@ -440,7 +469,7 @@ describe('offline checkout', () => {
     })).rejects.toThrow('Jumlah atau harga Benang tidak valid')
   })
 
-  it('does not partially update stock when the FIFO batches are incomplete', async () => {
+  it('does not partially update stock when stock batch quantities are incomplete', async () => {
     const incomplete = {
       ...snapshot,
       tables: {
@@ -457,7 +486,7 @@ describe('offline checkout', () => {
       customerName: null,
       amountPaid: 30,
       cashierId: 'admin-1',
-    })).rejects.toThrow('Batch HPP untuk Benang tidak mencukupi')
+    })).rejects.toThrow('Rincian batch stok untuk Benang tidak mencukupi')
     await expect(readOperationalSnapshot()).resolves.toMatchObject({
       tables: {
         products: [{ stock: 10 }],

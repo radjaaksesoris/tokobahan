@@ -2,7 +2,7 @@ import type { CartItem } from '@/types'
 import {
   updateOperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
-import { consumeFifoStockBatches, getStockUnitsFromConversion, roundStockQuantity } from '@/lib/productUnits'
+import { consumeStockBatches, getStockUnitsFromConversion, getUnitCost, roundStockQuantity } from '@/lib/productUnits'
 import type { PaymentMethod } from '@/lib/paymentMethods'
 
 export type OfflinePaymentMethod = PaymentMethod
@@ -113,21 +113,21 @@ export async function saveOfflineCheckout(input: OfflineCheckoutInput) {
         throw new Error(`Stok ${item.product.name} tidak mencukupi`)
       }
 
-      const fifoResult = consumeFifoStockBatches(
+      const batchAllocation = consumeStockBatches(
         [...nextBatches.values()],
         item.product.id,
         stockQuantity,
       )
-      if (!fifoResult) throw new Error(`Batch HPP untuk ${item.product.name} tidak mencukupi`)
-      for (const [batchId, quantityRemaining] of fifoResult.remainingByBatchId) {
+      if (!batchAllocation) throw new Error(`Rincian batch stok untuk ${item.product.name} tidak mencukupi`)
+      for (const [batchId, quantityRemaining] of batchAllocation) {
         const batch = nextBatches.get(batchId)
         if (batch) nextBatches.set(batchId, { ...batch, quantity_remaining: quantityRemaining })
       }
 
       const lineTotal = roundMoney(item.unit_price * item.quantity)
-      const lineCost = fifoResult.cost
+      const lineCost = roundMoney(getUnitCost(product, item.unit) * item.quantity)
       if (lineTotal <= lineCost) {
-        throw new Error(`Harga jual ${product.name} harus lebih besar dari HPP FIFO`)
+        throw new Error(`Harga jual ${product.name} harus lebih besar dari HPP saat ini`)
       }
       const lineProfit = roundMoney(lineTotal - lineCost)
       saleItems.push({
