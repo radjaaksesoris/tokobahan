@@ -44,6 +44,10 @@ import StockOpname from '@/pages/StockOpname'
 import { chooseLocalBackupFolder, getLocalBackupStatus, saveLocalBackup } from '@/lib/localBackup'
 import { checkTauriUpdate, installTauriUpdate, isTauriRuntime } from '@/lib/tauriUpdater'
 import { migrateSnapshotToIntegerStock } from '@/lib/integerStockMigration'
+import {
+  getInactiveProductVisibility,
+  setInactiveProductVisibility,
+} from '@/lib/inactiveProductVisibility'
 
 const BUILT_IN_UNITS = Object.entries(UNIT_LABELS).map(([id, name]) => ({ id, name, builtIn: true }))
 const BACKUP_BUCKET = 'operational-backups'
@@ -91,7 +95,7 @@ export default function Settings() {
   const [units, setUnits] = useState<{ id: string; name: string }[]>([])
   const [unitName, setUnitName] = useState('')
   const [unitLoading, setUnitLoading] = useState(false)
-  const [reactivatingInactiveProducts, setReactivatingInactiveProducts] = useState(false)
+  const [showInactiveProducts, setShowInactiveProducts] = useState(getInactiveProductVisibility)
   const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
   const [normalizingStock, setNormalizingStock] = useState(false)
   const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
@@ -257,51 +261,14 @@ export default function Settings() {
     }
   }
 
-  async function reactivateAllInactiveProducts() {
-    if (reactivatingInactiveProducts) return
-    setReactivatingInactiveProducts(true)
+  function toggleInactiveProductsVisibility() {
+    const visible = !showInactiveProducts
     try {
-      const snapshot = await readOperationalSnapshot()
-      if (!snapshot) {
-        throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
-      }
-
-      const inactiveCount = snapshot.tables.products.filter((product) => product.is_active === false).length
-      if (inactiveCount === 0) {
-        toast.info('Tidak ada barang nonaktif untuk diaktifkan')
-        return
-      }
-      if (!window.confirm(
-        `Aktifkan kembali semua ${inactiveCount} barang nonaktif? Stok dan riwayat barang tidak akan diubah. ` +
-        'Perubahan dilakukan pada data lokal dan dikirim saat sinkronisasi berikutnya.',
-      )) return
-
-      const reactivatedCount = await updateOperationalSnapshot((current) => {
-        const now = new Date().toISOString()
-        let count = 0
-        const products = current.tables.products.map((product) => {
-          if (product.is_active !== false) return product
-          count += 1
-          return { ...product, is_active: true, updated_at: now }
-        })
-        return {
-          snapshot: {
-            ...current,
-            tables: { ...current.tables, products },
-          },
-          result: count,
-        }
-      })
-
-      if (reactivatedCount === 0) {
-        toast.info('Tidak ada barang nonaktif untuk diaktifkan')
-      } else {
-        toast.success(`${reactivatedCount} barang berhasil diaktifkan kembali`)
-      }
+      setInactiveProductVisibility(visible)
+      setShowInactiveProducts(visible)
+      toast.success(visible ? 'Daftar barang nonaktif ditampilkan' : 'Daftar barang nonaktif disembunyikan')
     } catch (error) {
-      toast.error(`Gagal mengaktifkan barang nonaktif: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-    } finally {
-      setReactivatingInactiveProducts(false)
+      toast.error(`Gagal mengubah tampilan barang nonaktif: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
     }
   }
 
@@ -986,16 +953,14 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Tombol ini hanya mengaktifkan barang saat ditekan. Stok dan riwayat tetap dipertahankan.
+              Atur apakah barang nonaktif ditampilkan di halaman Produk. Ini hanya mengubah tampilan, bukan status barang atau stok.
             </p>
             <Button
               type="button"
               className="shrink-0"
-              disabled={reactivatingInactiveProducts}
-              onClick={() => void reactivateAllInactiveProducts()}
+              onClick={toggleInactiveProductsVisibility}
             >
-              {reactivatingInactiveProducts && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
-              Aktifkan semua barang nonaktif
+              {showInactiveProducts ? 'Sembunyikan barang nonaktif' : 'Tampilkan barang nonaktif'}
             </Button>
           </CardContent>
         </Card>

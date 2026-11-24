@@ -31,6 +31,10 @@ import {
   roundStockQuantity,
 } from '@/lib/productUnits'
 import { preloadPageChunk } from '@/lib/pageChunks'
+import {
+  getInactiveProductVisibility,
+  INACTIVE_PRODUCT_VISIBILITY_EVENT,
+} from '@/lib/inactiveProductVisibility'
 
 const ALL_UNITS: UnitType[] = ['satuan', 'pcs', 'lusin', 'kodi', 'gross', 'meter', 'pack']
 
@@ -93,7 +97,7 @@ export default function Products() {
     product: Product
     deletionBlockReason: string | null
   }>>([])
-  const [inactiveProductsOpen, setInactiveProductsOpen] = useState(false)
+  const [showInactiveProducts, setShowInactiveProducts] = useState(getInactiveProductVisibility)
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -191,6 +195,16 @@ export default function Products() {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 200)
     return () => window.clearTimeout(timer)
   }, [search])
+
+  useEffect(() => {
+    const syncVisibility = () => setShowInactiveProducts(getInactiveProductVisibility())
+    window.addEventListener(INACTIVE_PRODUCT_VISIBILITY_EVENT, syncVisibility)
+    window.addEventListener('storage', syncVisibility)
+    return () => {
+      window.removeEventListener(INACTIVE_PRODUCT_VISIBILITY_EVENT, syncVisibility)
+      window.removeEventListener('storage', syncVisibility)
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -918,7 +932,7 @@ export default function Products() {
           </Button>
         </div>
       </div>
-      {inactiveProducts.length > 0 && (
+      {showInactiveProducts && inactiveProducts.length > 0 && (
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-3">
             <div>
@@ -927,49 +941,38 @@ export default function Products() {
                 Hanya barang tanpa stok dan tanpa riwayat yang dapat dihapus permanen.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="shrink-0"
-              aria-expanded={inactiveProductsOpen}
-              onClick={() => setInactiveProductsOpen((open) => !open)}
-            >
-              {inactiveProductsOpen ? 'Tutup daftar' : 'Kelola'}
-            </Button>
           </CardHeader>
-          {inactiveProductsOpen && (
-            <CardContent className="space-y-2 pt-0">
-              {visibleInactiveProducts.length === 0 ? (
-                <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                  Tidak ada barang nonaktif yang cocok dengan pencarian.
-                </p>
-              ) : visibleInactiveProducts.map(({ product, deletionBlockReason }) => (
-                <div
-                  key={product.id}
-                  className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {deletionBlockReason
-                        ? `Dipertahankan: ${deletionBlockReason}`
-                        : 'Tidak ada stok atau riwayat terkait; aman dihapus permanen.'}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={Boolean(deletionBlockReason)}
-                    onClick={() => requestPermanentDelete(product)}
-                    className="shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Hapus permanen
-                  </Button>
+          <CardContent className="space-y-2 pt-0">
+            {visibleInactiveProducts.length === 0 ? (
+              <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                Tidak ada barang nonaktif yang cocok dengan pencarian.
+              </p>
+            ) : visibleInactiveProducts.map(({ product, deletionBlockReason }) => (
+              <div
+                key={product.id}
+                className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {deletionBlockReason
+                      ? `Dipertahankan: ${deletionBlockReason}`
+                      : 'Tidak ada stok atau riwayat terkait; aman dihapus permanen.'}
+                  </p>
                 </div>
-              ))}
-            </CardContent>
-          )}
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={Boolean(deletionBlockReason)}
+                  onClick={() => requestPermanentDelete(product)}
+                  className="shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Hapus permanen
+                </Button>
+              </div>
+            ))}
+          </CardContent>
         </Card>
       )}
       {permanentDeleteTarget && (
