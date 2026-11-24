@@ -50,7 +50,7 @@ export function AppLayout() {
     : 0
 
   useEffect(() => {
-    const idleTimeout = 3 * 60 * 1000
+    const idleTimeout = 5 * 60 * 1000
     let timer: number | undefined
     let lastActivityAt = Date.now()
     let lastPointerMoveAt = 0
