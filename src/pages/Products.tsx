@@ -6,7 +6,7 @@ import { formatCurrency, formatCurrencyInput, parseCurrencyInput, toTitleCase } 
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight, Boxes, History, RotateCcw } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Package, Search, ChevronLeft, ChevronRight, Boxes, History } from 'lucide-react'
 import { LoadingDots } from '@/components/ui/LoadingDots'
 import { toast } from 'sonner'
 import type { Json } from '@/types/database'
@@ -834,32 +834,6 @@ export default function Products() {
     }
   }
 
-  async function handleReactivate(product: Product) {
-    try {
-      await updateOperationalSnapshot((current) => {
-        const storedProduct = current.tables.products.find((row) => row.id === product.id)
-        if (!storedProduct) throw new Error('Produk tidak ditemukan di penyimpanan lokal')
-        if (storedProduct.is_active !== false) throw new Error('Produk sudah aktif')
-
-        return {
-          snapshot: {
-            ...current,
-            tables: {
-              ...current.tables,
-              products: current.tables.products.map((row) => row.id === product.id
-                ? { ...row, is_active: true, updated_at: new Date().toISOString() }
-                : row),
-            },
-          },
-          result: true,
-        }
-      })
-      toast.success(`${product.name} berhasil diaktifkan kembali`)
-    } catch (error) {
-      toast.error(`Gagal mengaktifkan produk: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
-    }
-  }
-
   function requestPermanentDelete(product: Product) {
     const inactiveProduct = inactiveProducts.find((entry) => entry.product.id === product.id)
     if (inactiveProduct?.deletionBlockReason) {
@@ -982,25 +956,16 @@ export default function Products() {
                         : 'Tidak ada stok atau riwayat terkait; aman dihapus permanen.'}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => void handleReactivate(product)}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      Aktifkan kembali
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      disabled={Boolean(deletionBlockReason)}
-                      onClick={() => requestPermanentDelete(product)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Hapus permanen
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={Boolean(deletionBlockReason)}
+                    onClick={() => requestPermanentDelete(product)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Hapus permanen
+                  </Button>
                 </div>
               ))}
             </CardContent>

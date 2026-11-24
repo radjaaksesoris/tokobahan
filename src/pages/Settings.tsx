@@ -91,6 +91,7 @@ export default function Settings() {
   const [units, setUnits] = useState<{ id: string; name: string }[]>([])
   const [unitName, setUnitName] = useState('')
   const [unitLoading, setUnitLoading] = useState(false)
+  const [reactivatingInactiveProducts, setReactivatingInactiveProducts] = useState(false)
   const [stockOpnameOpen, setStockOpnameOpen] = useState(false)
   const [normalizingStock, setNormalizingStock] = useState(false)
   const [activeTab, setActiveTab] = useState<'master' | 'stock' | 'backup' | 'notification'>('master')
@@ -253,6 +254,54 @@ export default function Settings() {
       setLocalSnapshotStatus('error')
       setLocalSnapshotError(message)
       console.error('Gagal memeriksa snapshot operasional lokal:', error)
+    }
+  }
+
+  async function reactivateAllInactiveProducts() {
+    if (reactivatingInactiveProducts) return
+    setReactivatingInactiveProducts(true)
+    try {
+      const snapshot = await readOperationalSnapshot()
+      if (!snapshot) {
+        throw new Error('Data lokal belum disiapkan. Buka Backup dan pemulihan untuk mengambil data awal.')
+      }
+
+      const inactiveCount = snapshot.tables.products.filter((product) => product.is_active === false).length
+      if (inactiveCount === 0) {
+        toast.info('Tidak ada barang nonaktif untuk diaktifkan')
+        return
+      }
+      if (!window.confirm(
+        `Aktifkan kembali semua ${inactiveCount} barang nonaktif? Stok dan riwayat barang tidak akan diubah. ` +
+        'Perubahan dilakukan pada data lokal dan dikirim saat sinkronisasi berikutnya.',
+      )) return
+
+      const reactivatedCount = await updateOperationalSnapshot((current) => {
+        const now = new Date().toISOString()
+        let count = 0
+        const products = current.tables.products.map((product) => {
+          if (product.is_active !== false) return product
+          count += 1
+          return { ...product, is_active: true, updated_at: now }
+        })
+        return {
+          snapshot: {
+            ...current,
+            tables: { ...current.tables, products },
+          },
+          result: count,
+        }
+      })
+
+      if (reactivatedCount === 0) {
+        toast.info('Tidak ada barang nonaktif untuk diaktifkan')
+      } else {
+        toast.success(`${reactivatedCount} barang berhasil diaktifkan kembali`)
+      }
+    } catch (error) {
+      toast.error(`Gagal mengaktifkan barang nonaktif: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`)
+    } finally {
+      setReactivatingInactiveProducts(false)
     }
   }
 
@@ -931,6 +980,25 @@ export default function Settings() {
           <h3 id="master-data-heading" className="text-lg font-bold tracking-tight text-ink">Data dasar dan akses admin</h3>
           <p className="mt-1 text-sm text-muted-foreground">Kelola data yang dipakai saat membuat produk, mencatat transaksi, dan menjaga aplikasi.</p>
         </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Barang nonaktif</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Tombol ini hanya mengaktifkan barang saat ditekan. Stok dan riwayat tetap dipertahankan.
+            </p>
+            <Button
+              type="button"
+              className="shrink-0"
+              disabled={reactivatingInactiveProducts}
+              onClick={() => void reactivateAllInactiveProducts()}
+            >
+              {reactivatingInactiveProducts && <LoadingDots className="text-current" dotClassName="h-1.5 w-1.5" />}
+              Aktifkan semua barang nonaktif
+            </Button>
+          </CardContent>
+        </Card>
         <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-red-200">
           <CardHeader>
