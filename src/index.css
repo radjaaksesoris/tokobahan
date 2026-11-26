@@ -323,14 +323,19 @@ body {
 }
 
 .app-tab-background {
-  background-color: #fbfaf5;
+  background-color: var(--color-canvas);
   background-image:
-    linear-gradient(rgba(251, 250, 245, 0.92), rgba(251, 250, 245, 0.92)),
+    linear-gradient(rgba(245, 245, 244, 0.9), rgba(245, 245, 244, 0.9)),
     var(--tab-background-image);
-  background-position: center, top left;
-  background-size: 100% 100%, 768px 1365px;
-  background-repeat: no-repeat, repeat;
-  background-attachment: scroll;
+  background-image:
+    linear-gradient(rgba(245, 245, 244, 0.9), rgba(245, 245, 244, 0.9)),
+    image-set(
+      var(--tab-background-image-webp) type("image/webp"),
+      var(--tab-background-image) type("image/jpeg")
+    );
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 @media (max-width: 1023px) {

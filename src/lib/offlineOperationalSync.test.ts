@@ -13,6 +13,7 @@ import {
   updateOperationalSnapshot,
   writeOperationalSnapshot,
   type OperationalSnapshot,
+  resetOperationalSnapshotReadCacheForTests,
 } from './offlineOperationalSnapshot'
 import { syncOperationalSnapshot } from './offlineOperationalSync'
 
@@ -67,6 +68,8 @@ describe('operational snapshot sync', () => {
   })
 
   afterEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
     vi.unstubAllGlobals()
   })

@@ -1,3 +1,4 @@
+import { resetOperationalSnapshotReadCacheForTests } from './offlineOperationalSnapshot'
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -39,10 +40,12 @@ async function storeLegacySettlement() {
 
 describe('legacy offline settlements', () => {
   beforeEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
   })
 
   afterEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
   })
 

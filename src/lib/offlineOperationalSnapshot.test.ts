@@ -12,6 +12,7 @@ import {
   pruneStoredOperationalSales,
   readOperationalSnapshot,
   replaceOperationalSnapshotAfterRefresh,
+  resetOperationalSnapshotReadCacheForTests,
   updateOperationalSnapshot,
   type OperationalSnapshot,
   validateOperationalSnapshot,
@@ -54,9 +55,13 @@ async function writeSyncLock(lock: Record<string, unknown>) {
 }
 
 describe('offline operational snapshot storage', () => {
-  beforeEach(deleteOfflineDatabase)
+  beforeEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
+    await deleteOfflineDatabase()
+  })
   afterEach(async () => {
     vi.unstubAllGlobals()
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
   })
 
@@ -82,14 +87,14 @@ describe('offline operational snapshot storage', () => {
     await expect(readOperationalSnapshot()).resolves.toBeNull()
   })
 
-  it('skips the stock migration snapshot read after its completion marker exists', async () => {
+  it('serves repeated snapshot reads from memory cache without reopening IndexedDB', async () => {
     await writeOperationalSnapshot(createSnapshot())
     await readOperationalSnapshot()
 
     const getSpy = vi.spyOn(IDBObjectStore.prototype, 'get')
     await readOperationalSnapshot()
 
-    expect(getSpy.mock.calls.filter(([key]) => key === 'current')).toHaveLength(1)
+    expect(getSpy.mock.calls.filter(([key]) => key === 'current')).toHaveLength(0)
     getSpy.mockRestore()
   })
 

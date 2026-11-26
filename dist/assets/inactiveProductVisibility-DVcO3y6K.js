@@ -1,0 +1,1 @@
+const i="tokobahan:inactive-product-visibility-change",t="tokobahan.showInactiveProducts";function e(){return typeof window>"u"?!1:window.localStorage.getItem(t)==="true"}function o(n){if(typeof window>"u")throw new Error("Pengaturan tampilan barang nonaktif tidak tersedia");window.localStorage.setItem(t,String(n)),window.dispatchEvent(new Event(i))}export{i as I,e as g,o as s};

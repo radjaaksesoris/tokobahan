@@ -7,6 +7,20 @@ export const OFFLINE_OPERATIONAL_SNAPSHOT_STORE = 'offline-operational-snapshot'
 export const OFFLINE_INVOICE_SEQUENCE_STORE = 'offline-invoice-sequence'
 export const OPERATIONAL_SNAPSHOT_CHANGE_EVENT = 'tokobahan:operational-snapshot-change'
 
+let snapshotReadCache: OperationalSnapshot | null | undefined
+let snapshotReadPromise: Promise<OperationalSnapshot | null> | null = null
+let snapshotReadGeneration = 0
+
+function clearOperationalSnapshotReadCache() {
+  snapshotReadGeneration += 1
+  snapshotReadCache = undefined
+  snapshotReadPromise = null
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener(OPERATIONAL_SNAPSHOT_CHANGE_EVENT, clearOperationalSnapshotReadCache)
+}
+
 const TRANSACTION_STORE = 'offline-transactions'
 const SETTLEMENT_STORE = 'offline-settlements'
 const SNAPSHOT_KEY = 'current'
@@ -303,8 +317,11 @@ async function withSnapshotStore<T>(
           if (settled) return
           settled = true
           if (timeout !== null) clearTimeout(timeout)
-          if (shouldDispatchChange() && typeof window !== 'undefined') {
-            window.dispatchEvent(new Event(OPERATIONAL_SNAPSHOT_CHANGE_EVENT))
+          if (shouldDispatchChange()) {
+            clearOperationalSnapshotReadCache()
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event(OPERATIONAL_SNAPSHOT_CHANGE_EVENT))
+            }
           }
           resolve(result)
         }
@@ -335,7 +352,7 @@ async function withSnapshotStore<T>(
   }
 }
 
-export function readOperationalSnapshot<
+function readOperationalSnapshotFromDatabase<
   TSnapshot extends OperationalSnapshot = OperationalSnapshot,
 >(): Promise<TSnapshot | null> {
   return withSnapshotStore('readonly', (store, setResult) => {
@@ -345,6 +362,26 @@ export function readOperationalSnapshot<
       setResult(record ? validateOperationalSnapshot(record.data) as TSnapshot : null)
     }
   })
+}
+
+export function readOperationalSnapshot<
+  TSnapshot extends OperationalSnapshot = OperationalSnapshot,
+>(): Promise<TSnapshot | null> {
+  if (snapshotReadCache !== undefined) return Promise.resolve(snapshotReadCache as TSnapshot | null)
+  if (!snapshotReadPromise) {
+    const generation = snapshotReadGeneration
+    snapshotReadPromise = readOperationalSnapshotFromDatabase().then((snapshot) => {
+      if (generation === snapshotReadGeneration) {
+        snapshotReadCache = snapshot
+      }
+      snapshotReadPromise = null
+      return snapshot
+    }, (error) => {
+      snapshotReadPromise = null
+      throw error
+    })
+  }
+  return snapshotReadPromise as Promise<TSnapshot | null>
 }
 
 export function writeOperationalSnapshot<TSnapshot extends OperationalSnapshot>(
@@ -397,6 +434,10 @@ export function initializeOperationalSnapshotIfMissing<TSnapshot extends Operati
       initialize()
     }
   })
+}
+
+export function resetOperationalSnapshotReadCacheForTests(): void {
+  clearOperationalSnapshotReadCache()
 }
 
 export function clearOperationalSnapshot(): Promise<void> {

@@ -7,6 +7,7 @@ import {
   OPERATIONAL_SNAPSHOT_FORMAT,
   OPERATIONAL_SNAPSHOT_VERSION,
   writeOperationalSnapshot,
+  resetOperationalSnapshotReadCacheForTests,
 } from './offlineOperationalSnapshot'
 
 function deleteOfflineDatabase() {
@@ -67,10 +68,12 @@ async function setInvoiceSequence(nextNumber: number) {
 
 describe('legacy offline transactions', () => {
   beforeEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
   })
 
   afterEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
   })
 

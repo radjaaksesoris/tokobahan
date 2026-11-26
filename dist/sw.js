@@ -1,5 +1,5 @@
 // Keep the previous cache briefly so open tabs can finish loading their chunks.
-const CACHE_NAME = 'konveksipos-v9'
+const CACHE_NAME = 'konveksipos-v10'
 const BASE_PATH = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   BASE_PATH,
@@ -9,7 +9,10 @@ const APP_SHELL = [
   `${BASE_PATH}icon-192.png`,
   `${BASE_PATH}icon-96.png`,
   `${BASE_PATH}icon-512.png`,
+  `${BASE_PATH}login-background.webp`,
   `${BASE_PATH}login-background.jpg`,
+  `${BASE_PATH}tab-background.webp`,
+  `${BASE_PATH}tab-background.jpg`,
 ]
 
 self.addEventListener('install', (event) => {
@@ -99,7 +102,38 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Network-first keeps deployed hashed JS/CSS chunks current while retaining
+  const requestUrl = new URL(event.request.url)
+  const isVersionedAsset = requestUrl.pathname.startsWith(`${BASE_PATH}assets/`)
+
+  if (isVersionedAsset) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request)
+        const network = fetch(event.request)
+          .then((response) => {
+            if (response.ok) {
+              event.waitUntil(cache.put(event.request, response.clone()).catch((error) => {
+                console.error('Gagal menyimpan aset aplikasi ke cache:', error)
+              }))
+            }
+            return response
+          })
+          .catch((error) => {
+            if (cached) return cached
+            throw error
+          })
+
+        if (cached) {
+          event.waitUntil(network.catch(() => undefined))
+          return cached
+        }
+        return network
+      }),
+    )
+    return
+  }
+
+  // Network-first keeps HTML/non-hashed app files current while retaining
   // offline support when the network is unavailable.
   event.respondWith(
     fetch(event.request)

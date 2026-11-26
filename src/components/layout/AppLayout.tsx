@@ -299,6 +299,7 @@ export function AppLayout() {
           className="app-tab-background min-h-0 flex-1 overscroll-contain bg-canvas px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:p-8"
           style={{
             '--tab-background-image': `url("${import.meta.env.BASE_URL}tab-background.jpg")`,
+            '--tab-background-image-webp': `url("${import.meta.env.BASE_URL}tab-background.webp")`,
           } as CSSProperties}
         >
           <Outlet context={{ setSnapshotGeneratedAt }} />

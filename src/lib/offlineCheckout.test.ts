@@ -5,6 +5,7 @@ import {
   readOperationalSnapshot,
   writeOperationalSnapshot,
   type OperationalSnapshot,
+  resetOperationalSnapshotReadCacheForTests,
 } from './offlineOperationalSnapshot'
 import { saveOfflineCheckout } from './offlineCheckout'
 import { formatMixedStockQuantity } from './productUnits'
@@ -81,10 +82,11 @@ function deleteOfflineDatabase() {
 
 describe('offline checkout', () => {
   beforeEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await deleteOfflineDatabase()
     await writeOperationalSnapshot(snapshot)
   })
-  afterEach(deleteOfflineDatabase)
+  afterEach(async () => { resetOperationalSnapshotReadCacheForTests(); await deleteOfflineDatabase() })
 
   it('uses the current product HPP for new sales and consumes stock batches atomically', async () => {
     await saveOfflineCheckout({

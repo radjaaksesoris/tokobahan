@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { clearOfflineOperationalData } from './offlineOperationalData'
-import { OFFLINE_DB_VERSION } from './offlineOperationalSnapshot'
+import { OFFLINE_DB_VERSION ,
+  resetOperationalSnapshotReadCacheForTests,
+} from './offlineOperationalSnapshot'
 
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -34,10 +36,12 @@ function clearDatabase() {
 
 describe('clear offline operational data', () => {
   beforeEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await clearDatabase()
   })
 
   afterEach(async () => {
+    resetOperationalSnapshotReadCacheForTests()
     await clearDatabase()
   })
 

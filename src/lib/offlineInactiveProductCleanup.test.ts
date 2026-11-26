@@ -4,6 +4,7 @@ import {
   readOperationalSnapshot,
   writeOperationalSnapshot,
   type OperationalSnapshot,
+  resetOperationalSnapshotReadCacheForTests,
 } from './offlineOperationalSnapshot'
 import {
   getInactiveProductDeletionBlockReason,
@@ -50,8 +51,8 @@ function deleteOfflineDatabase() {
 }
 
 describe('inactive product permanent deletion safety', () => {
-  beforeEach(deleteOfflineDatabase)
-  afterEach(deleteOfflineDatabase)
+  beforeEach(async () => { resetOperationalSnapshotReadCacheForTests(); await deleteOfflineDatabase() })
+  afterEach(async () => { resetOperationalSnapshotReadCacheForTests(); await deleteOfflineDatabase() })
 
   it('allows removing an inactive product with no remaining stock or history', () => {
     expect(getInactiveProductDeletionBlockReason(createSnapshot(), 'product-1')).toBeNull()

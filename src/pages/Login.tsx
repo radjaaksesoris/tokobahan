@@ -76,12 +76,17 @@ export default function Login() {
 
   return (
     <div className={`login-shell relative flex min-h-dvh justify-center overflow-y-auto bg-ink px-3 py-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-6 lg:items-center lg:overflow-hidden lg:p-10 ${keyboardVisible ? 'items-start' : 'items-center'}`}>
-      <img
-        src={`${import.meta.env.BASE_URL}login-background.jpg`}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover opacity-75"
-      />
+      <picture className="absolute inset-0" aria-hidden="true">
+        <source srcSet={`${import.meta.env.BASE_URL}login-background.webp`} type="image/webp" />
+        <img
+          src={`${import.meta.env.BASE_URL}login-background.jpg`}
+          alt=""
+          className="h-full w-full object-cover opacity-75"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
+      </picture>
       <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,31,34,0.97)_0%,rgba(21,31,34,0.72)_42%,rgba(21,31,34,0.82)_100%)]" aria-hidden="true" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(228,168,83,0.22),transparent_24%),radial-gradient(circle_at_86%_72%,rgba(36,126,121,0.22),transparent_30%)]" aria-hidden="true" />
       <div className="relative mx-auto grid w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-white/20 bg-ink/35 shadow-[0_30px_100px_rgba(10,16,18,0.48)] backdrop-blur-sm sm:max-w-5xl lg:grid-cols-[1.05fr_0.95fr] lg:rounded-[2rem]">

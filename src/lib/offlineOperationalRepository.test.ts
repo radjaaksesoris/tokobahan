@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   readOperationalSnapshot,
+  resetOperationalSnapshotReadCacheForTests,
   writeOperationalSnapshot,
   type OperationalSnapshot,
 } from '@/lib/offlineOperationalSnapshot'
@@ -43,8 +44,8 @@ function deleteOfflineDatabase() {
 }
 
 describe('offline operational repository', () => {
-  beforeEach(deleteOfflineDatabase)
-  afterEach(deleteOfflineDatabase)
+  beforeEach(async () => { resetOperationalSnapshotReadCacheForTests(); await deleteOfflineDatabase() })
+  afterEach(async () => { resetOperationalSnapshotReadCacheForTests(); await deleteOfflineDatabase() })
 
   it('reads only initialized local operational data', async () => {
     await expect(readOperationalTable('products')).rejects.toThrow('Snapshot lokal belum diinisialisasi')
